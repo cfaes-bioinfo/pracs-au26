@@ -1,0 +1,642 @@
+---
+title: "Running command-line software with shell scripts"
+subtitle: "Week 6 -- Lecture B"
+pagetitle: "w6b: Shell scripting 2"
+date: 2025-09-26
+author:
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+    affiliation: 
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://mcic.osu.edu/bioinformatics
+other-links:
+  - text: "Week 6 overview"
+    icon: book
+    href: w6_overview.html
+  - text: "w6a: Shell scripting basics"
+    icon: bookmarks
+    href: w6a_scripts.html
+  - text: "w6c: Shell tips and tricks"
+    icon: bookmarks
+    href: w6c_tricks.html
+  - text: "Week 6 graded assignment"
+    icon: pencil
+    href: w6_ga.html
+editor_options: 
+  chunk_output_type: console
+---
+
+--------------------------------------------------------------------------------
+
+<br>
+
+## Introduction
+
+### Learning goals
+
+Now that you've learned the basics of shell scripts,
+we will here focus on using them to run bioinformatics programs with command-line
+interfaces (CLIs), and on running them many times with loops.
+Specifically, you will learn:
+
+- By means of example, how to write a shell script that runs FastQC
+- How `for` loops work
+- How to use a `for` loop to loop over files and run a shell script many times
+
+### Getting ready
+
+1. At <https://ondemand.osc.edu>,
+   start a VS Code session in `/fs/ess/PAS2880/users/$USER`
+2. In the terminal, navigate to your `week06` dir
+3. _Optional: Create a new Markdown file for class notes and save it in your `week06` dir_
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: callout-warning
+### Making the Shellcheck extension work
+In VS Code Server, there is currently an odd problem with the Shellcheck extension.
+This extension checks your shell scripts for errors and bad practices,
+and can be incredibly useful.
+As a work-around to get the extension to function, do the following:
+
+1. In the narrow side bar,
+   click on the Extensions icon to switch the wide side bar to Extensions
+2. In the wide side bar, find the Shellcheck extension,
+   click on the cog wheel {{< fa cog >}},
+   and then on "Extension Settings" to show the Shellcheck extension settings
+   in the editor pane.
+3. Find the "Shellcheck: Executable Path" option, and in the box below it,
+   paste the following path:
+  
+   ```bash-out-solo
+   /fs/ess/PAS2880/share/software/shellcheck
+   ```
+4. Close the settings tab, your changes should be saved automatically.
+:::
+
+## The big picture
+
+Recall that you are learning about shell scripts so you can eventually run
+your analyses highly efficiently,
+by submitting these scripts as "batch jobs" using HPC resources like those at OSC.
+More specifically, the strategy you'll learn is
+**to write scripts that run a single program a single time**.
+
+You will do this even though (or because!) you commonly need to run a CLI tool
+many times in bionformatics,
+since many tools have to be run separately for each file or sample.
+The reason is this: given that you have access to OSC's clusters,
+you can save a lot of time by
+**submitting a separate batch job for each file or sample**^[
+It is possible to use another strategy that parallelizes program runs within a
+script, but we will use this strategy instead.
+], since these jobs can all run simultaneously.
+
+To accommodate this, you will:
+
+- Need to make your scripts flexible:
+  instead of "hard-coding" file paths and potentially other settings
+  inside the scripts,
+  you will pass arguments to scripts _(as seen in in the previous session)_.
+
+- Loop over files/samples _outside_ of that script and run/submit the script
+  possibly many times _(as you'll see today)_
+
+#### Shell scripts as workhorses, and Markdown documents to orchestrate the workflow
+
+When your scripts are flexible and only meant to run a single program a single time,
+**you'll also type lots of important code outside of these scripts**,
+which essentially orchestrates your workflow.
+For example, looping is done outside of the shell script.
+You will need to store this code, too,
+as it provides a record of what you did,
+and can easily be reorganized into a reproducible protocol of your workflow.
+You will continue to use **Markdown files** for this purpose.
+
+## Running FastQC with a shell script
+
+Instead of running FastQC interactively, like we did previously for practice,
+we'll want to write a script that runs it.
+As described above, our script will deliberately run FastQC on only one FASTQ file.
+
+### Quick overview of our approach
+
+Because we want to run the script for one FASTQ file at a time,
+your script needs to **accept a FASTQ file name as an argument**.
+Additionally, you will use an argument for the output dir,
+because it is a good idea to keep that flexible as well.
+With code to copy the placeholder variables containing the command-line arguments,
+that part of the script would look like this:
+
+```bash
+# [Don't copy or run this]
+# Copy the placeholder variables
+fastq="$1"
+outdir="$2"
+
+# Run FastQC
+fastqc --outdir "$outdir" "$fastq"
+```
+
+You could run such a script as follows for a single FASTQ file:
+
+```bash
+# [Don't copy or run this]
+# Syntax: 'bash <script-path> <argument1> <argument2>'
+bash scripts/fastqc.sh ../garrigos-data/fastq/ERR10802863_R2.fastq.gz results/fastqc
+```
+
+Let's dive into this and create a complete script and run it ---
+first for one file like above, and then for all files with a loop.
+
+### Creating an initial script
+
+We saw some code to run FastQC inside a script,
+to which we should add some "boilerplate" but important code:
+
+- The shebang line and strict Bash settings:
+
+  ```bash
+  #!/bin/bash
+  set -euo pipefail
+  ```
+
+- A line to load the relevant OSC software module:
+
+  ```bash
+  module load fastqc/0.12.1
+  ```
+  
+- A line to create the output directory if it doesn't yet exist:
+
+  ```bash
+  mkdir -p "$outdir"
+  ```
+
+  :::{.callout-tip collapse="true"}
+  #### About the `-p` option to `mkdir` _(Click to expand)_
+
+  Using `mkdir`'s `-p` option does two things at once,
+  both of which are very useful when including this command in a script:
+
+  - It will enable `mkdir` to create multiple levels of directories at once
+    (i.e., to act recursively):
+    by default, `mkdir` errors out if the parent directory/ies of the
+    specified directory don't yet exist.
+
+    ```bash
+    mkdir newdir1/newdir2
+    ```
+    ```{.bash-out}
+    mkdir: cannot create directory ‘newdir1/newdir2’: No such file or directory
+    ```
+
+    ```bash
+    # This successfully creates both directories:
+    mkdir -p newdir1/newdir2
+    ```
+
+  - If the directory already exists, with `-p`,
+    `mkdir` won't do anything and won't return an error.
+    Without this option, `mkdir` would return an error,
+    which would in turn lead the script to abort (given our `set` settings):
+  
+    ```bash
+    mkdir newdir1/newdir2
+    ```
+    ```{.bash-out}
+    mkdir: cannot create directory ‘newdir1/newdir2’: File exists
+    ```
+    
+    ```bash
+    # This does nothing since the dirs already exist
+    mkdir -p newdir1/newdir2
+    ```
+  :::
+
+With those additions, your partial script looks like this:
+
+```bash
+# [Don't copy or run this - we'll add to it later]
+
+#!/bin/bash
+set -euo pipefail
+
+# Load the OSC module for FastQC
+module load fastqc/0.12.1
+
+# Copy the placeholder variables
+fastq="$1"
+outdir="$2"
+
+# Create the output dir if needed
+mkdir -p "$outdir"
+
+# Run FastQC
+fastqc --outdir "$outdir" "$fastq"
+```
+
+Notice that this script to run a CLI tool is very similar to our "toy scripts"
+from the previous sessions: mostly boilerplate code with
+**just a single command to run our program of interest.**
+Therefore, you can adopt this script as a template for scripts that run other
+command-line programs, and will generally only need minor modifications!
+
+
+### Add some "logging" statements
+
+It is often useful to have your shell scripts report or "log" what it is doing.
+For instance:
+
+- At what date and time was the script run
+- Which arguments were passed to the script
+- What are the designated output dirs/files
+- Perhaps even summaries of the output (we won't do this here)
+
+This information can help with troubleshooting and record-keeping.
+One thing to keep in mind here is that later,
+when you submit scripts as batch jobs,
+such logging output will not be printed to screen but will end up in text files.
+_Therefore, you can store those text files along with other output files to keep_
+_detailed records of what you did!_
+
+Let's add some code to produce logging information to the FastQC script:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# Load the OSC module for FastQC
+module load fastqc/0.12.1
+
+# Copy the placeholder variables
+fastq="$1"
+outdir="$2"
+
+# Initial logging
+echo "# Starting script fastqc.sh"
+date
+echo "# Input FASTQ file:   $fastq"
+echo "# Output dir:         $outdir"
+echo
+
+# Create the output dir if needed
+mkdir -p "$outdir"
+
+# Run FastQC
+fastqc --outdir "$outdir" "$fastq"
+
+# Final logging
+echo
+echo "# Used FastQC version:"
+fastqc --version
+echo
+echo "# Successfully finished script fastqc.sh"
+date
+```
+
+A couple of notes about the lines that were added to the script above:
+
+- A "marker line" `Successfully finished script` indicates that the end of the
+  script was reached. This is useful because of your `set` settings:
+  **seeing this line printed means that no errors were encountered**.
+- Running `date` at the beginning and end of the script is one way to be able to
+  see how long the script took to run.
+- Printing the input file names can be particularly useful for troubleshooting.
+- The lines that only have `echo` will simply print a blank line,
+  basically as a separator between sections.
+- For scripts that run bioinformatics tools,
+  it's a good idea **include a line to print the program version**.
+
+{{< fa user-edit >}} Create a script to run FastQC:
+
+```bash
+touch scripts/fastqc.sh
+```
+
+Open the script, and paste the code from the box above into it.
+
+### Running your FastQC script for 1 file
+
+Run your FastQC script for one FASTQ file:
+
+```bash
+bash scripts/fastqc.sh ../garrigos-data/fastq/ERR10802863_R1.fastq.gz results/fastqc
+```
+```bash-out
+# Starting script fastqc.sh
+Thu Sep 25 13:53:13 EDT 2025
+# Input FASTQ file:   ../garrigos-data/fastq/ERR10802863_R1.fastq.gz
+# Output dir:         results/fastqc
+
+Started analysis of ERR10802863_R1.fastq.gz
+Approx 5% complete for ERR10802863_R1.fastq.gz
+Approx 10% complete for ERR10802863_R1.fastq.gz
+Approx 15% complete for ERR10802863_R1.fastq.gz
+Approx 20% complete for ERR10802863_R1.fastq.gz
+Approx 25% complete for ERR10802863_R1.fastq.gz
+Approx 30% complete for ERR10802863_R1.fastq.gz
+Approx 35% complete for ERR10802863_R1.fastq.gz
+Approx 40% complete for ERR10802863_R1.fastq.gz
+Approx 45% complete for ERR10802863_R1.fastq.gz
+Approx 50% complete for ERR10802863_R1.fastq.gz
+Approx 55% complete for ERR10802863_R1.fastq.gz
+Approx 60% complete for ERR10802863_R1.fastq.gz
+Approx 65% complete for ERR10802863_R1.fastq.gz
+Approx 70% complete for ERR10802863_R1.fastq.gz
+Approx 75% complete for ERR10802863_R1.fastq.gz
+Approx 80% complete for ERR10802863_R1.fastq.gz
+Approx 85% complete for ERR10802863_R1.fastq.gz
+Approx 90% complete for ERR10802863_R1.fastq.gz
+Approx 95% complete for ERR10802863_R1.fastq.gz
+Approx 100% complete for ERR10802863_R1.fastq.gz
+Analysis complete for ERR10802863_R1.fastq.gz
+
+# Used FastQC version:
+FastQC v0.12.1
+
+# Succesfully finished script fastqc.sh
+Thu Sep 25 13:53:19 EDT 2025
+```
+
+However, as discussed above,
+we'll want to run the script for each FASTQ file.
+We will write the loop to do so in an accompanying Markdown document.
+
+## A "protocol" Markdown file
+
+The abovementioned loop code _could_ be directly typed in the terminal.
+But it is more convenient and reproducible to put this in a Markdown file,
+so you will keep a record of your analysis steps.
+For small projects, a simple "protocol" could be added to your main `README.md`.
+Let's practice with that by writing a README for the current analysis:
+
+```bash
+touch README.md
+```
+
+Open that file in the VS Code editor, and add the following to it:
+
+````markdown
+# RNA-Seq data analysis
+
+## General information
+
+- Author: <your name>
+- Date: 2025-10-07
+- Environment: Pitzer cluster at OSC via VS Code
+- Working dir: `/fs/ess/PAS2880/users/<username>/week06`
+
+## Project background
+
+This project is ...
+
+## Protocol
+````
+
+::: {.callout-tip appearance="simple"}
+In a few weeks, we'll discuss how you can organize this kind of information for
+larger projects.
+:::
+
+## For loops
+
+Loops are another universal element of programming languages,
+and are used to **repeat operations**.
+Here, we'll only cover the most common type of loop: the `for` loop.
+
+A `for` loop **iterates** over a collection, such as a list of files,
+and allows you to perform one or more actions for each element in the collection.
+In the example below,
+the collection is just a short list of numbers (`1`, `2`, and `3`):
+
+```bash
+for a_number in 1 2 3; do
+    echo "In this iteration of the loop, the number is $a_number"
+    echo "--------"
+done
+```
+```bash-out
+In this iteration of the loop, the number is 1
+--------
+In this iteration of the loop, the number is 2
+--------
+In this iteration of the loop, the number is 3
+--------
+```
+
+The **indented lines** between `do` and `done` contain the code that is being executed
+_as many times as there are items in the collection_:
+in this case 3 times, as you can tell from the output above.
+
+What was actually run under the hood is the following:
+
+```bash
+# (Don't run this)
+a_number=1
+echo "In this iteration of the loop, the number is $a_number"
+echo "--------"
+
+a_number=2
+echo "In this iteration of the loop, the number is $a_number"
+echo "--------"
+
+a_number=3
+echo "In this iteration of the loop, the number is $a_number"
+echo "--------"
+```
+
+Here are two key things to understand about `for` loops:
+
+- In each iteration of the loop, one element in the collection
+  **is being assigned to the variable** specified after `for`.
+  In the example above, we used `a_number` as the variable name,
+  so that variable contained `1` when the loop ran for the first time,
+  `2` when it ran for the second time,
+  and `3` when it ran for the third and last time.
+
+- The loop runs sequentially for each item in the collection,
+  and will run exactly as many times as there are items in the collection.
+
+::: {.callout-note}
+#### A further explanation of `for` loop syntax
+
+On the first and last, unindented lines,
+`for` loops contain the following mandatory keywords:
+
+| Keyword | Purpose	                            |
+|---------|-------------------------------------|
+| `for`	  | After `for`, we set the **variable name** (an arbitrary name; above we used `a_number`)
+| `in`	  | After `in`, we specify the **collection** (list of items) we are looping over	
+| `do`	  | After `do`, we have one ore more lines specifying what to do with each item	
+| `done`  | Tells the shell we are done with the loop 
+
+: {.striped .hover}
+
+:::
+
+#### Combining loops and globbing
+
+An extremely common strategy is to loop over files with globbing, for example:
+
+```bash
+for fastq_file in ../garrigos-data/fastq/*fastq.gz; do
+    echo "# Running an analysis on $fastq_file"
+    # [This is where you would put additional commands to process each FASTQ file]
+done
+```
+```bash-out
+# Running an analysis on ../garrigos-data/fastq/ERR10802863_R1.fastq.gz
+# Running an analysis on ../garrigos-data/fastq/ERR10802863_R2.fastq.gz
+# Running an analysis on ../garrigos-data/fastq/ERR10802864_R1.fastq.gz
+# Running an analysis on ../garrigos-data/fastq/ERR10802864_R2.fastq.gz
+# [...output truncated...]
+```
+
+:::{.exercise}
+#### {{< fa user-edit >}} Exercise: Another loop
+
+Modify the loop in the previous example to print the following for each FASTQ
+file (output for 2 files shown):
+
+```bash-out-solo
+# Running an analysis on ../garrigos-data/fastq/ERR10802863_R1.fastq.gz
+# File size:
+-rw-rw----+ 1 jelmer PAS0471 21M Sep  9 13:46 ../garrigos-data/fastq/ERR10802863_R1.fastq.gz
+# Number of lines:
+2000000
+
+# Running an analysis on ../garrigos-data/fastq/ERR10802863_R2.fastq.gz
+# File size:
+-rw-rw----+ 1 jelmer PAS0471 22M Sep  9 13:46 ../garrigos-data/fastq/ERR10802863_R2.fastq.gz
+# Number of lines:
+2000000
+```
+
+<hr style="height:1pt; visibility:hidden;" />
+<details><summary>Click for the solution</summary>
+
+```bash
+for fastq_file in ../garrigos-data/fastq/*fastq.gz; do
+    echo "# Running an analysis on $fastq_file"
+    echo "# File size:"
+    ls -lh "$fastq_file"
+    echo "# Number of lines:"
+    zcat "$fastq_file" | wc -l
+    echo
+done
+```
+</details>
+
+:::
+
+## Running a script many times with a loop
+
+You will now loop over all FASTQ files in the `../garrigos-data/fastq` dir,
+and run your `fastqc.sh` script for each file.
+Add the following to your `README.md` file,
+and then run the code inside the code block:
+
+````markdown
+- Step 1 - Run FastQC for each FASTQ file:
+
+```bash
+for fastq in ../garrigos-data/fastq/*fastq.gz; do
+    bash scripts/fastqc.sh "$fastq" results/fastqc
+done
+```
+````
+
+```bash-out
+# Starting script fastqc.sh
+Thu Sep 25 13:58:21 EDT 2025
+# Input FASTQ file:   ../garrigos-data/fastq/ERR10802863_R1.fastq.gz
+# Output dir:         results/fastqc
+
+Started analysis of ERR10802863_R1.fastq.gz
+Approx 5% complete for ERR10802863_R1.fastq.gz
+# [...output truncated...]
+
+# Successfully finished script fastqc.sh
+Thu Sep 25 13:58:26 EDT 2025
+
+# Starting script fastqc.sh
+Thu Sep 25 13:58:26 EDT 2025
+# Input FASTQ file:   ../garrigos-data/fastq/ERR10802863_R2.fastq.gz
+# Output dir:         results/fastqc
+
+Started analysis of ERR10802863_R2.fastq.gz
+Approx 5% complete for ERR10802863_R2.fastq.gz
+# [...output truncated...]
+```
+
+That produces a lot of output!
+You can hopefully see that this looping approach is quite powerful,
+allowing you to easily run a script many times.
+
+However, note that this runs the `fastqc.sh` script _sequentially_:
+after it was run for the first FASTQ file, it will run for the second file,
+and so on.
+If these had been full-size FASTQ files,
+it may have still taken hours for this to finish.
+So, while you have now learned an elegant way to run a script many times,
+you have not yet learned how to run it simultaneously in parallel. 
+Next week, you'll learn about submitting scripts like this as batch jobs,
+so they can be run simultaneously, which saves a lot of time.
+
+## Recap and next steps
+
+In this lecture,
+you've seen an example of using a shell script to run a CLI bioinformatics tool.
+You've also learned how to write and use `for` loops.
+
+Next, you'll learn a few final Unix shell tips and tricks that are especially
+useful in a shell scripting context.
+And next week, we'll move on to submitting shell scripts as batch jobs at OSC.
+
+::: {.callout-note collapse="true"}
+#### About the "hard-coding" of settings _(Click to expand)_
+
+We've been writing shell scripts that accept arguments,
+instead of including variable things like inputs and outputs in the scripts themselves.
+The latter method can be referred to as "hard-coding" these items.
+  
+You can also use arguments for _settings_ like bioinformatics program options
+you may want to vary among different runs of the script,
+or relatedly, for information about your data like read length.
+If you don't hard-code these options in your script but have arguments for them,
+it is easier to re-use your script in different contexts.
+
+But there is balance to be struck,
+and you can also "hobble" your script with a confusing array of arguments.
+When you do hard-code potentially variable things in your script,
+you may want to clearly define them **at the top of your script**.
+For example:
+  
+```bash
+#!/bin/bash
+set -euo pipefail
+  
+# Settings and constants
+MIN_QUAL=30
+```
+
+Another applicable example is when you use an Apptainer container in your script.
+It can be a good idea to define the URL or path to the container as a variable
+at the top of your script:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+  
+# Settings and constants
+FASTQC_CONTAINER=oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
+```
+
+Such variables can be referred to as "constants",
+since they are hard-coded in the script.
+In shell code, ALL-CAPS is regularly used for them^[
+But this is far from universal. It is also fairly common to use all-caps
+for all shell variables, but this is not what we've been doing.].
+:::

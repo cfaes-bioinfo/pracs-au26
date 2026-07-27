@@ -1,0 +1,428 @@
+---
+title: "Untitled"
+---
+
+### Exercise 2
+
+<details><summary>**1.** Create a new dir and navigate there</summary>
+
+```bash
+# (You should already be in /fs/ess/PAS2880/users/$USER/)
+cd /fs/ess/PAS2880/users/$USER/week03
+mkdir ex2
+cd ex2
+```
+</details>
+
+<details><summary>**2.** Copy the genome annotation file `garrigos-data/ref/GCF_016801865.2.gtf.gz`</summary>
+
+```bash
+cp ../../garrigos-data/ref/GCF_016801865.2.gtf.gz annot.gtf.gz
+```
+</details>
+
+<details><summary>**3.** Unzip (decompress) the GTF file</summary>
+
+- Check the file size:
+  
+  ```bash
+  ls -lh
+  ```
+  ```bash-out
+  -rw-rw----+ 1 jelmer PAS0471 5.1M Jul 14 18:55 annot.gtf.gz
+  ```
+  
+- Unzip:
+
+  ```bash
+  gunzip annot.gtf.gz
+  ```
+
+- Check the file size (and name) again:
+  
+  ```bash
+  ls -lh
+  ```
+  ```bash-out
+  -rw-rw----+ 1 jelmer PAS0471 123M Jul 14 18:55 annot.gtf
+  ```
+  
+- That's a pretty big difference, from 5.1 Mb to 123 Mb!
+  The amount of space saved by file compression varies a lot and depends on the
+  amount of repetition in the uncompressed file.
+  GTF files are highly repetitive, so relatively much space can be saved.
+
+</details>
+
+<details><summary>**4.** How many lines does the GTF file contain?</summary>
+
+A simple line count tells you that the file has 408,402 lines:
+
+```bash
+wc -l annot.gtf 
+```
+```bash-out
+408402 annot.gtf 
+```
+</details>
+
+<details><summary>**5.** Count the number of line in the GTF table.</summary>
+
+- Since the header lines contain a `#`,
+  you'll want to exclude those and then count the remaining number of lines:
+
+  ```bash
+  grep -v "#" annot.gtf | wc -l
+  ```
+  ```bash-out
+  408397
+  ```
+
+- The file has only 4 header lines, while the line count has decreased by 5
+  (from 408402 to 408397). So, which other line in the file has a `#`?
+  
+  Use the `-n` option to `grep` to print line numbers along with each match:
+
+  ```bash
+  grep -n "#" annot.gtf
+  ```
+  ```bash-out
+  1:#gtf-version 2.2
+  2:#!genome-build TS_CPP_V2
+  3:#!genome-build-accession NCBI_Assembly:GCF_016801865.2
+  4:#!annotation-source NCBI RefSeq GCF_016801865.2-RS_2022_12
+  408402:###
+  ```
+
+  So, it looks like the very last line also has a `#`:
+  it is simply `###`, functioning as an end-of-file marker.
+
+</details>
+
+<details><summary>**6.** How many distinct sequences are represented in the annotation?</summary>
+
+- Make sure to first exclude the header lines with `grep -v`
+- The first column contains the sequence name (`cut -f 1`)
+- To only keep distinct sequences, use `sort | uniq`
+- To get a count of the resulting list of distinct sequences, use `wc -l`.
+
+```bash
+grep -v "#" annot.gtf | cut -f 1 | sort | uniq | wc -l
+```
+```bash-out
+167
+```
+
+</details>
+
+<details><summary>**7.** Store a list of distinct sequences in the GTF in a file `scaffolds.txt`.</summary>
+
+- Same command as above,
+  but we get rid of `wc -l` and instead redirect the output of `uniq` to a file:
+
+  ```bash
+  grep -v "#" annot.gtf | cut -f 1 | sort | uniq > scaffolds.txt
+  ```
+
+- Take a peek at `scaffolds.txt` for a sanity check:
+
+  ```bash
+  head -n 3 scaffolds.txt
+  ```
+  ```bash-out
+  NC_015079.1
+  NC_068937.1
+  NC_068938.1
+  ```
+
+</details>
+
+<details><summary>**9.** Produce a "count table" of feature types in the annotation</summary>
+
+- The feature type is in the third column (`cut -f 3`)
+- To produce a count table, use the `sort | uniq -c` idiom.
+
+```bash
+grep -v "#" annot.gtf | cut -f 3 | sort | uniq -c
+```
+```bash-out
+ 141444 CDS
+ 166177 exon
+  19673 gene
+  25864 start_codon
+  25892 stop_codon
+  29347 transcript
+```
+</details>
+
+<details><summary>**9.** Print a count table of annotated features for gene `LOC120427725`</summary>
+
+```bash
+grep "LOC120427725" annot.gtf | cut -f 3 | sort | uniq -c
+```
+```bash-out
+     15 CDS
+     20 exon
+      1 gene
+      3 start_codon
+      3 stop_codon
+      3 transcript
+```
+
+</details>
+
+<details><summary>**10.** Print a start codon genomic coordinate table</summary>
+
+- After `grep`ing for `start_codon`,
+  you need to select (`cut`) the first, fourth, and fifth columns.
+
+- Taking a peek at the output, it appears that start codons may duplicated:
+
+  ```bash
+  grep "start_codon" annot.gtf | cut -f 1,4,5 | head -n 5
+  ```
+  ```bash-out
+  NC_068937.1     70143   70145
+  NC_068937.1     70143   70145
+  NC_068937.1     70143   70145
+  NC_068937.1     49062   49064
+  NC_068937.1     160735  160737
+  ```
+  
+  This is because distinct transcripts of a gene (producing different isoforms)
+  may share the same start codon.
+  
+- To get rid of the duplicates, use `sort | uniq` ---
+  and then we can redirect the output to `start_codons.tsv`:
+  
+  ```bash
+  grep "start_codon" annot.gtf | cut -f 1,4,5 | sort | uniq > start_codons.tsv
+  ```
+
+- Take a peek at the output file for a sanity check:
+
+  ```bash
+  head -n 5 start_codons.tsv
+  ```
+  ```bash-out
+  NC_015079.1     10427   10429
+  NC_015079.1     12600   12602
+  NC_015079.1     211     213
+  NC_015079.1     3055    3057
+  NC_015079.1     3898    3900
+  ```
+</details>
+
+<details><summary>**11.** Which sequence (scaffold) appears to be the largest one?</summary>
+
+- You'll want to reverse (`-r`) numerically (`-n`) sort by the (fourth or) fifth column.
+- To only get the feature with the largest end position, add `head -n 1`
+- (We could add `| cut -f 1` to only get the sequence name, not the entire line.)
+
+```bash
+grep -v "#" annot.gtf | sort -k5nr | head -n 1
+```
+```bash-out
+NC_068938.1     Gnomon  exon    224093433       224093803       .       +       .       gene_id "LOC120429120"; transcript_id "XM_039594310.2"; db_xref "GeneID:120429120"; experiment "COORDINATES: polyA evidence [ECO:0006239]"; gene "LOC120429120"; model_evidence "Supporting evidence includes similarity to: 6 Proteins"; product "caprin homolog"; transcript_biotype "mRNA"; exon_number "4"; 
+```
+
+- So the largest sequence appears to be `NC_068938.1`.
+
+</details>
+
+<details><summary>**12.** Count the number of snRNAs in the annotation.</summary>
+
+Because the search pattern itself contains double quotes (`"`),
+the easiest way out is to use **single quotes** (`'`) around it:
+
+```bash
+grep -c 'gene_biotype "snRNA"' annot.gtf
+```
+```bash-out
+58
+```
+</details>
+
+### Exercise 3
+
+<details><summary>**1.** Navigate into the dir with FASTQ files</summary>
+
+```bash
+cd ../../garrigos-data/fastq/
+
+# Or, with an absolute path:
+# cd /fs/ess/PAS2880/users/$USER/garrigos-data/fastq
+```
+</details>
+
+<details><summary>**2.** How many reads does the file contain?</summary>
+
+- As the hint suggested, use `zcat <file> | wc -l` to get an "uncompressed count":
+
+```bash
+zcat ERR10802863_R1.fastq.gz | wc -l
+```
+```bash-out
+2000000
+```
+
+- This means that the number of reads is 2,000,000 / 4  =  500,000.
+
+- To confirm -- a direct line count on the compressed file gives the wrong answer!
+
+```bash
+wc -l ERR10802863_R1.fastq.gz
+```
+```bash-out
+101139
+```
+
+</details>
+
+<details><summary>**3.** How many reads contain the sequence `ACGT`?</summary>
+
+- Either use `zcat <file> | grep`:
+
+  ```bash
+  zcat ERR10802863_R1.fastq.gz | grep -c "ACGT"
+  ```
+  ```bash-out
+  100465
+  ```
+
+- Or `zgrep`:
+
+  ```bash
+  zgrep -c "ACGT" ERR10802863_R1.fastq.gz
+  ```
+  ```bash-out
+  100465
+  ```
+  
+</details>
+
+<details><summary>**4.** Print a count table of read lengths</summary>
+
+- First select only header lines with `grep "@"`.
+- Then use `=` as the `cut` delimiter and select the second "column".
+- Finally, use the by now familiar `sort | uniq -c` idiom to create the count table.
+
+```bash
+zcat ERR10802863_R1.fastq.gz | grep "@" | cut -d "=" -f 2 | sort | uniq -c
+```
+```bash-out
+  32678 35
+      4 36
+      7 37
+      2 38
+      3 39
+      4 40
+      4 41
+      3 42
+      6 43
+      6 44
+      4 45
+      8 46
+      6 47
+      3 48
+      2 49
+     11 50
+     14 51
+     14 52
+     12 53
+     11 54
+     18 55
+     13 56
+     13 57
+     17 58
+     21 59
+     27 60
+     28 61
+     28 62
+     47 63
+     90 64
+     61 65
+     49 66
+     78 67
+    276 68
+    620 69
+   1962 70
+   8483 71
+  28617 72
+ 123453 73
+ 303297 74
+```
+
+</details>
+
+<details><summary>**5.** Count the number of reads that contain at least 10 consecutive `N`s</summary>
+
+```bash
+zcat ERR10802863_R1.fastq.gz | grep -c "NNNNNNNNNN"
+```
+```bash-out
+32612
+```
+
+</details>
+
+<details><summary>**6.** What's up with the 35-bp reads?</summary>
+
+The number of reads with at least 10 consecutive `N`s (32,612 -- previous question)
+is rather close to the number of 35-bp reads (32,678 -- question before that).
+Might nearly all 35-bp reads consist of mostly or only `N`s?
+
+One way to see a sample of 35-bp reads is by using `grep`s `-A` option to also
+print the line _after_ each match:
+
+```bash
+zcat ERR10802863_R1.fastq.gz | grep -A1 "length=35" | head -n 20
+```
+```bash-out
+@ERR10802863.11918285 11918285 length=35
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+--
+@ERR10802863.6436756 6436756 length=35
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+--
+@ERR10802863.31676291 31676291 length=35
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+--
+@ERR10802863.3768169 3768169 length=35
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+--
+@ERR10802863.4421608 4421608 length=35
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+--
+@ERR10802863.4569065 4569065 length=35
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+--
+@ERR10802863.14070693 14070693 length=35
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+```
+
+They do!
+Note that this makes some sense because the target length of these reads is 75 bp.
+Read length variation in Illumina reads is usually very minor, with >99% of reads
+typically being up to 1 or bases from the target base length.
+As such, these 35-bp reads are unusual to begin with, and it may not be entirely
+surprising that they are of very poor quality.
+
+</details>
+
+<details><summary>**7.** What is the total number of reads across all R1 files?</summary>
+
+We can use `zcat` with a `*` wildcard pattern to print the contents of all R1
+files, and simply perform a line count on that (this takes some seconds to run):
+
+```bash
+zcat *_R1.fastq.gz | wc -l
+```
+```bash-out
+44000000
+```
+
+So, the total number of reads is 44,000,000 / 4 = 11,000,000.
+This makes sense because we have 22 R1 FASTQ files, each of which has 500 k reads.
+
+</details>

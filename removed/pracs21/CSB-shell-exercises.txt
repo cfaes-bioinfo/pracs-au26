@@ -1,0 +1,466 @@
+---
+title: "Week 3 bonus exercises: CSB book"
+pagetitle: "PRACS25: Week 3 exercises"
+author: Jelmer Poelstra
+date: 2025-09-08
+number-sections: false
+---
+
+---------
+
+<br>
+
+*The following are exercises from Chapter 1 of the*
+*[CSB book](https://library.ohio-state.edu/record=b8624007~S7), some slightly modified.*
+
+TBA `git clone`
+
+### Exercise 1: Working with files
+
+**(a)** Go to the `data` directory within `CSB/unix`.  
+
+**(b)** How many lines are in the file `Marra2014_data.fasta`?
+
+**(c)** Create the empty file `toremove.txt` in the `CSB/unix/sandbox` directory
+        without leaving the current directory.  
+
+**(d)** List the contents of the directory `unix/sandbox`.  
+
+**(e)** Remove the file `toremove.txt`.  
+
+<hr style="height:1pt; visibility:hidden;" />
+
+### Exercise 2: Summarizing tabular files
+
+**(a)** If we order all species names (fifth column) of `Pacifici2013_data.csv`
+        (in `CSB/unix/data/`) in alphabetical order, which is the first species?
+        And which is the last?
+
+<details><summary>Show hints</summary>
+You will want to use `cut` followed by `sort`,
+and you will need to specify the delimiter with `cut`.
+
+To view just the first or the last line,
+so you don't have to scroll to get your answer, pipe to `head` or `tail`.
+</details>
+
+**(b)** How many families are represented in the database?
+
+<details><summary>Show hints</summary>
+- Check the first line of the file to see which column contains the family,
+  and then select the relevant column with `cut`.
+- Use the "`tail` trick" we saw in class to exclude the first line.
+- Remember to `sort` before using `uniq`, or `uniq` won't work properly.
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+
+### Exercise 3: Next-Generation Sequencing Data
+
+In this exercise, we work with next generation sequencing (NGS) data.
+Unix is excellent at manipulating the huge FASTA files that are generated in NGS
+experiments.
+
+FASTA files contain sequence data in text format. Each sequence segment is
+preceded by a single-line description.
+The first character of the description line is a "greater than" sign (`>`).
+
+The NGS data set we will be working with was published by Marra and DeWoody (2014),
+who investigated the immunogenetic repertoire of rodents.
+You will find the sequence file `Marra2014_data.fasta` in the directory
+`CSB/unix/data`. The file contains sequence segments (*contigs*) of variable size.
+The description of each contig provides its length, the number of reads that
+contributed to the contig, its isogroup (basically, a gene-level grouping of the
+transcripts: multiple transcripts can be produced by a genes),
+and some kind of status.
+
+**1.** Change directory to `CSB/unix/sandbox`.
+
+**2.** What is the size of the file `Marra2014_data.fasta`?
+
+<details><summary>Show hints</summary>
+Recall that you can see file sizes by using specific options to the `ls` command.
+</details>
+
+**3.** Create a copy of `Marra2014_data.fasta` in the sandbox, and name it `my_file.fasta`.
+
+**4.** How many "contigs" (FASTA entries, in this case) are classified as `isogroup00036`?
+
+<details><summary>Show hints</summary>
+Is there a `grep` option that counts the number of occurrences?
+Alternatively, you can pipe (`|`) the output of `grep` to `wc -l`.
+</details>
+
+**5.** Modify `my_file.fasta` to replace the original "two-spaces" delimiter with a **comma**
+       (i.e. don't just print the output to screen, but end up with a modified file).
+       You'll probably want to take a look at the "output file hints" below to see how you
+       can end up with modified file contents.
+
+<details><summary>Show output file hints</summary>
+{{< fa warning >}} Due to the "streaming" nature of Unix commands,
+we can't write output to a file that also serves as input
+(see [here](http://goo.gl/KIYV2N)). So the following is not possible:
+
+```sh
+cat myfile.txt | tr "a" "b" > myfile.txt # Don't do this! 
+```
+
+In this case, you'll have to save the output in a different file.
+Then, if you do want to end up with a modified original file,
+you can overwrite the original file using `mv`.
+</details>
+
+<details><summary>Show other hints</summary>
+
+- In the file, the information on each contig is separated by two spaces:
+
+  ```sh
+  >contig00001  length=527  numreads=2  ...
+  ```
+  
+  We would like to obtain:
+  
+  ```sh
+  >contig00001,length=527,numreads=2,...
+  ```
+
+- Use `cat` to print the file, and substitute the spaces using the command `tr`.
+  Note that you'll first have to reduce the two spaces two one -- can you remember an option to do that?
+
+</details>
+
+**6.** How many unique isogroups are in the file?
+
+<details><summary>Show hints</summary>
+You can use `grep` to match any line containing the word `isogroup`.
+Then, use `cut` to isolate the part detailing the isogroup.
+Finally, you want to remove the duplicates, and count.
+</details>
+
+**7.** Which contig has the highest number of reads (`numreads`)?
+   How many reads does it have?
+
+<details><summary>Show hints</summary>
+Use a combination of `grep` and `cut` to extract the contig names and read counts.
+The command `sort` allows you to choose the delimiter and to order numerically ---
+we didn't see those `sort` options in class, so check the book for details.
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+
+### Exercise 4: Hormone Levels in Baboons
+
+Gesquiere et al. (2011) studied hormone levels in the blood of baboons.
+The data file is in `CSB/unix/data/Gesquiere2011_data.csv`.
+
+Every individual was sampled several times.
+How many times were the levels of individuals 3 and 27 recorded?
+
+<details><summary>Show hints</summary>
+
+  - You can first use `cut` to extract just the `maleID` column from the file.
+  - To match an individual (3 or 27), you can use `grep` with the `-w`
+    option to match whole "words" only: this will prevent and individual ID
+    like "13" to match when you search for "3".
+</details>
+
+<br>
+
+## Exercise solutions
+
+### Exercise 1
+
+<details><summary>Solution</summary>
+
+**(a)** Go to the data directory within `CSB/unix`.
+
+```sh
+cd /fs/ess/PAS2880/users/$USER/CSB/unix/data
+```
+
+**(b)** How many lines are in file `Marra2014_data.fasta`?
+```sh
+wc -l Marra2014_data.fasta
+```
+```bash-out
+9515 Marra2014_data.fasta
+```
+
+**(c)** Create the empty file `toremove.txt` in the `CSB/unix/sandbox` directory without leaving the current directory. 
+
+```sh
+touch ../sandbox/toremove.txt
+```
+
+**(d)** List the contents of the directory `unix/sandbox`. 
+
+```sh
+ls ../sandbox
+```
+```bash-out
+Papers and reviews  toremove.txt
+```
+
+**(e)** Remove the file `toremove.txt`.
+
+```sh
+rm ../sandbox/toremove.txt
+```
+
+</details>
+
+### Exercise 2
+
+<details><summary>Solution</summary>
+
+**(a)** If we order all species names (fifth column) of `Pacifici2013_data.csv` in alphabetical order,
+which is the first species? And which is the last?
+
+```sh
+# First species:
+cut -d ";" -f 5 Pacifici2013_data.csv | sort | head -n 1
+```
+```bash-out
+Abditomys latidens
+```
+
+```bash
+# Last species:
+cut -d ";" -f 5 Pacifici2013_data.csv | sort | tail -n 1
+```
+```bash-out
+Zyzomys woodwardi
+```
+
+**(b)** How many families are represented in the database?
+```sh
+cut -d ";" -f 3 Pacifici2013_data.csv | tail -n +2 | sort | uniq | wc -l
+```
+```bash-out
+152
+```
+
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+
+### Exercise 3
+
+<details><summary>**1.** Change directory to `CSB/unix/sandbox`.</summary>
+
+```sh
+cd /fs/ess/PAS2880/users/$USER/CSB/unix/sandbox
+```
+</details>
+
+<details><summary>**2.** What is the size of the file `Marra2014_data.fasta`?</summary>
+
+```sh
+ls -lh ../data/Marra2014_data.fasta
+```
+```bash-out
+-rw-rw----+ 1 jelmer PAS0471 553K Feb 24 20:30 ../data/Marra2014_data.fasta
+```
+
+Alternatively, the command `du` (disk usage) can be used for more compact output:
+
+```sh
+du -h ../data/Marra2014_data.fasta 
+```
+```bash-out
+560K    ../data/Marra2014_data.fasta
+```
+
+</details>
+
+<details><summary>**3.** Create a copy of `Marra2014_data.fasta` in the sandbox, and name it `my_file.fasta`.</summary>
+
+```sh
+cp ../data/Marra2014_data.fasta my_file.fasta
+```
+
+</details><details><summary>**4.** How many contigs are classified as `isogroup00036`?</summary>
+
+To count the occurrences of a given string, use `grep` with the option `-c`:
+
+```sh
+grep -c isogroup00036 my_file.fasta 
+```
+```bash-out
+16
+```
+
+Slightly less efficient is to use a "regular" `grep` and then pipe to `wc -l`:
+
+```sh
+grep isogroup00036 my_file.fasta | wc -l
+```
+```bash-out
+16
+```
+
+</details><details><summary>**5.** Replace the original "two-spaces" delimiter with a comma.</summary>
+
+1. We use the `tr` option `-s` (squeeze) to change two spaces two one,
+   and then replace the space with a `,`.
+   Importantly, we also write the output to a new file (see the Hints for details):
+
+   ```sh
+   cat my_file.fasta | tr -s ' ' ',' > my_file.tmp
+   ```
+
+2. If we want to change the original file, we can now overwrite it as follows:
+
+   ```bash
+   mv my_file.tmp my_file.fasta
+   ```
+
+3. Let's take a look to check whether out delimiter replacement worked:
+
+   ```bash
+   grep ">" my_file.fasta | head
+   ```
+   ```bash-out
+   >contig00001,length=527,numreads=2,gene=isogroup00001,status=it_thresh
+   >contig00002,length=551,numreads=8,gene=isogroup00001,status=it_thresh
+   >contig00003,length=541,numreads=2,gene=isogroup00001,status=it_thresh
+   >contig00004,length=291,numreads=3,gene=isogroup00001,status=it_thresh
+   >contig00005,length=580,numreads=12,gene=isogroup00001,status=it_thresh
+   >contig00006,length=3288,numreads=35,gene=isogroup00001,status=it_thresh
+   >contig00008,length=1119,numreads=10,gene=isogroup00001,status=it_thresh
+   >contig00010,length=202,numreads=4,gene=isogroup00001,status=it_thresh
+   >contig00011,length=5563,numreads=61,gene=isogroup00001,status=it_thresh
+   >contig00012,length=824,numreads=10,gene=isogroup00001,status=it_thresh
+   ```
+
+</details><details><summary>**6.** How many unique isogroups are in the file?</summary>
+
+1. First, searching for `>` with grep will extract all lines with contig information:
+
+   ```sh
+   grep '>' my_file.fasta | head -n 2
+   ```
+   ```bash-out
+   >contig00001,length=527,numreads=2,gene=isogroup00001,status=it_thresh
+   >contig00002,length=551,numreads=8,gene=isogroup00001,status=it_thresh
+   ```
+
+2. Now, add `cut` to extract the 4th column:
+
+   ```sh
+   grep '>' my_file.fasta | cut -d ',' -f 4 | head -n 2
+   ```
+   ```bash-out
+   gene=isogroup00001
+   gene=isogroup00001
+   ```
+
+3. Finally, add `sort` -> `uniq` -> `wc -l` to count the number of unique occurrences:
+
+   ```sh
+   grep '>' my_file.fasta | cut -d ',' -f 4 | sort | uniq | wc -l
+   ```
+   ```bash-out
+   43
+   ````
+
+</details>
+
+<details><summary>**7.** Which contig has the highest number of reads (`numreads`)? How many reads does it have?</summary>
+
+1. First, we need to isolate the number of reads as well as the contig names.
+   We can use a combination of `grep` and `cut`:
+
+   ```bash
+   grep '>' my_file.fasta | cut -d ',' -f 1,3 | head -n 3
+   ```
+   ```bash-out
+   >contig00001,numreads=2
+   >contig00002,numreads=8
+   >contig00003,numreads=2
+   ```
+
+2. Now we want to sort according to the number of reads.
+   However, the number of reads is part of a more complex string.
+   We can use `-t '='` to split according to the `=` sign,
+   and then take the second column (`-k 2`) to sort numerically (`-n`):
+
+   ```bash
+   grep '>' my_file.fasta | cut -d ',' -f 1,3 | sort -t '=' -k 2 -n | head -n 5
+   ```
+   ```bash-out
+   >contig00089,numreads=1
+   >contig00176,numreads=1
+   >contig00210,numreads=1
+   >contig00001,numreads=2
+   >contig00003,numreads=2
+   ```
+
+3. Adding the `sort` option `-r`, we can sort in reverse order,
+   which tells us that `contig00302` has the highest coverage, with 3330 reads:
+
+   ```sh
+   grep '>' my_file.fasta | cut -d ',' -f 1,3 | sort -t '=' -k 2 -n -r | head -n 1
+   ```
+   ```bash-out
+   >contig00302,numreads=3330
+   ```
+   
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+
+### Exercise 4
+
+<details><summary> How many times were the levels of individuals 3 and 27 recorded?</summary>
+
+1. First, let's move back into the data dir:
+
+   ```sh
+   cd ../data
+   ```
+
+1. Next, let's take a look at the structure of the file:
+
+   ```sh
+   head -n 3 Gesquiere2011_data.csv
+   ```
+   ```bash-out
+   maleID        GC      T
+   1     66.9    64.57
+   1     51.09   35.57
+   ```
+
+2. We want to extract all the rows in which the first column is 3 (or 27),
+   and count them. To extract only the first column, we can use `cut`:
+
+   ```sh
+   cut -f 1 Gesquiere2011_data.csv | head -n 3
+   ```
+   ```bash-out
+   maleID
+   1
+   1
+   ```
+
+- Then we can pipe the results to `grep -c` to count the number of occurrences
+  (note the option `-w` to match whole "words" -- this will make it match 3 but not 13 or 23):
+
+  ```sh
+  # For maleID 3
+  cut -f 1 Gesquiere2011_data.csv | grep -c -w 3
+  ```
+  ```bash-out
+  61
+  ```
+  
+  ```bash
+  # For maleID 27
+  cut -f 1 Gesquiere2011_data.csv | grep -c -w 27
+  ```
+  ```bash-out
+  5
+  ```
+</details>
+
+<br>

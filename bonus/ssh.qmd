@@ -1,0 +1,134 @@
+---
+title: "Connecting to OSC with SSH in a terminal"
+subtitle: "Optional self-study content for week 9"
+pagetitle: "SSH bonus"
+date: 2025-10-17
+author:
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+    affiliation: 
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://mcic.osu.edu/bioinformatics
+other-links:
+  - text: "Bonus: Data management part 2"
+    icon: bookmarks
+    href: data.html
+---
+
+------
+
+<br>
+
+_This page will show you how you can connect a terminal on your local computer to OSC._
+
+<br>
+
+## Basic SSH connection in a terminal
+
+To connect to OSC or other remote computers without using a web portal like
+OnDemand, you can use SSH.
+You can do so via the **`ssh` command**, which works in Windows and Unix-based
+(Max/Linux) terminals alike.
+
+1. On your own computer, open a terminal application.
+   - On a Mac, you should have an app called "Terminal" and potentially other
+     options like "iTerm": any of these fill work
+   - On Windows 11+, this should be called the "Windows Terminal"
+
+2. Type the command `ssh <user>@<host>`, replacing:
+
+   - `<user>` with your OSC username
+   - `<host>` with the name of the computer/cluster you want to connect to:
+     - `pitzer.osc.edu` to connect to the Pitzer cluster
+     - `cardinal.osc.edu` to connect to the Cardinal cluster
+
+   For example, if I (username `jelmer`) wanted to log in to the Pitzer cluster,
+   I would use:
+
+   ```bash
+   ssh jelmer@pitzer.osc.edu
+   ```
+   ``` {.bash-out}
+   The authenticity of host 'pitzer.osc.edu' can't be established.
+   RSA key fingerprint is 2a:b6:f6:8d:9d:c2:f8:2b:8c:c5:03:06:a0:f8:59:12.
+   Are you sure you want to continue connecting (yes/no)?
+   ```
+
+3. If this is the first time you are connecting to Pitzer via SSH, 
+   you’ll encounter a message similar to the one above.
+   While the phrase _"The authenticity of host 'pitzer.osc.edu' can't be established."_
+   sounds ominous, you will always get this warning when you attempt to connect to a
+   remote computer for the first time, and you should type `yes` to proceed
+   (you then won't see this message again).
+
+4. Assuming that you did the
+   [no-password setup in week 9's ungraded assignment](../week09/w9_ua_ssh.qmd),
+   you should not be prompted for your password.
+   (If you are asked for your password, then type it followed by <kbd>Enter</kbd>,
+   and keep in mind that when you do so,
+   _no characters or even \*s will appear on the screen_!)
+
+5. Your shell will now connect to OSC, and you should see some welcome messages
+   and the familiar file quota listing --
+   and your prompt should indicate that you're at OSC, e.g.:
+   
+   ```bash-out-solo
+   [jelmer@pitzer-login04 ~]$
+   ```
+
+## Custom names for your SSH connections
+
+### Set up custom names
+
+You can set up alternative names ("aliases") for your SSH connections,
+such as shortening `jelmer@pitzer.osc.edu` to `jp`.
+This can be convenient when you use SSH a lot,
+especially when transferring files to and from OSC with SSH-based commands
+like `scp` and `rsync`
+(see [this optional self-study page](./data.qmd#remote-transfer-commands)).
+
+These two steps should both be done *on your local machine*:
+
+1. Create a file called `~/.ssh/config`:
+
+   ```bash
+   touch ~/.ssh/config
+   ```
+
+2. Open the file in a text editor and add your alias(es) in the following format:
+
+   ```bash-out-solo
+   Host <arbitrary-alias-name>    
+      HostName <remote-address>
+      User <username>
+   ```
+
+   For instance, my file contains the following so as to connect to Pizer with
+   `jp` and to Cardinal with `jc`:
+
+   ```bash-out-solo
+   Host jp
+      HostName pitzer.osc.edu
+      User jelmer
+
+   Host jc
+      HostName cardinal.osc.edu
+      User jelmer
+  ```
+
+### Connecting from now on
+
+From now on, you just need to use your alias to log in:
+
+```bash
+ssh jp
+```
+
+And these shortcuts also work with
+[remote transfer commands like `scp` and `rsync`](data.qmd#remote-transfer-commands)!
+For example:
+
+```bash
+rsync ~/scripts op:/fs/scratch/PAS2880
+```

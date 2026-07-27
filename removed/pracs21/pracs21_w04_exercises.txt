@@ -1,0 +1,961 @@
+---
+title: "Exercises: Week 4"
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 3
+---
+
+## Main exercises
+
+These exercises will use the same files that we've been working with in class:
+those in `chapter-07-unix-data-tools` in the `bds-files` repository for the
+Buffalo book.
+
+You can either work directly in that directory, or create a "sandbox" directory
+with the Buffalo files copied.
+
+For many of the exercises, there are multiple ways of solving them.
+The hints and solutions provide one or a few ways, but you may well end up
+using a different approach. If you struggle, try to follow the approach
+suggested by the hints, so you can later cross-check with solutions that
+use this same approach.
+
+For most questions, the code required is quite similar to the examples in
+Buffalo chapter 7 (and the slides). If the hints are too cryptic for you,
+I recommend you first go back to the section on the relevant command in the
+chapter.
+
+### Exercise 1: Pseudogenes with `grep`, `uniq -c`, and others
+
+In this exercise, we will start using the file `Mus_musculus.GRCm38.75_chr1.gtf`
+that we've seen in class.
+
+Let's say that you need to extract annotation information for all pseudogenes
+on mouse chromosome 1 from the GTF, and write the results to a new GTF file.
+We'll do that in this exercise with a detour along the way.
+
+1. Count the number of lines with the string "*pseudogene*".
+
+<details><summary>Hints</summary>
+</p>
+
+Use `grep -c` to count the matches.
+
+</p>
+</details>
+
+Does this mean there are over a 1,000 pseudogenes on this chromosome?
+No, because there are "nested" genomic features in the file:
+for each gene, several "subfeatures" are listed, such as individual exons.
+This genomic feature type information is listed in column 3.
+
+2. For lines that match "pseudogene" as above,
+   which different feature types are listed in column 3,
+   and what are their counts (i.e., create a count table for column 3)?
+   
+   Are there any coding sequences ("CDS"), start codons ("start_codon") and stop
+   codons ("stop_codon")?
+   
+<details><summary>Hints</summary>
+<p>
+
+To answer this question, compute count tables using `sort | uniq -c`
+after `grep`ping for "pseudogene".
+
+</p>
+</details>
+
+3. If you are more restrictive in your `grep` matching to only match
+   "pseudogene" as a full "word",
+   do you still see CDS or start/stop codons?
+
+<details><summary>Hints</summary>
+<p>
+
+Use `grep -w` to only match full "words":
+consecutive alphanumeric characters and the underscore.
+
+This would avoid matching longer words that *contain* "pseudogene",
+such as "transcribed_pseudogene".
+
+</p>
+</details>
+   
+4. We have "exon", "transcript" and "gene" features in column 3,
+   but we want just the **gene-level coordinates** of the pseudogenes:
+   after `grep`ping for "*pseudogene*" like in the previous question,
+   select only rows for which the feature type in column 3 is `gene`.
+
+   Pipe your output into `head` or `less`;
+   we don't want to write to a new file yet.
+   
+<details><summary>Hints</summary>
+<p>
+
+The "gene" you want to match is in its own column.
+Matching restrictively using the `-w` flag to only match whole "words"
+will work in this case.
+
+Even better would be to *explicitly match the tabs* surrounding "gene".
+This can be done using the `-P` flag to grep (`grep -P`) and the `\t`
+symbol for tabs.
+
+Yet another approach that is even more explicit uses `awk` to make
+the match specifically for the 3rd column (recall that `$3` is the third
+column in `awk`, so you can use `$3 == "gene"`).
+If you try with `awk`, you'll have to make sure to ignore the header lines,
+which are not tabular.
+
+</p>
+</details>
+
+5. Comprehensively check that your output only contains "gene" in column 3.
+
+<details><summary>Hints</summary>
+<p>
+
+Pipe your previous command into `cut` and then `sort | uniq -c` to quickly
+check which values are present in column 3.
+
+</p>
+</details>
+
+6. Now, you are almost ready to write the results to a new GTF file,
+   called `pseudogenes.gtf`,
+   with the features you selected above: gene-level *pseudogene* features.
+
+   One challenge is that you also want the header,
+   which you won't get when redirecting the output from the previous command.
+
+   A straightforward solution would be to first write the header to a new file,
+   and then *append* the lines with the selected features.
+
+   Alternatively, you can use *subshells* to do this in a single go.
+   If you want to try this, make sure you have read the Buffalo section on
+   subshells (p. 169-170) first.
+   
+<details><summary>Hints</summary>
+<p>
+
+Structure the subshell solution as follows:  
+`(<select-header> ; <select-from-rest-of-file>) > pseudogenes.gtf`
+
+</p>
+</details>
+
+<br>
+
+### Exercise 2: Calculations with `awk`
+
+In this exercise, you will continue working with the GTF file `Mus_musculus.GRCm38.75_chr1.gtf`.
+
+1. How many elements are at least 1,000 base pairs long?
+
+<details><summary>Hints</summary>
+<p>
+
+- Remove the header from consideration using `grep -v`.
+  
+- Filter by feature length using `awk`,
+  and get the length by subtracting  column 4 from column 5.
+
+</p>
+</details>
+
+2. How many genes ("gene" in column 3) on the + strand ("+" in column 7)
+   are at least 1,000 base pairs long?
+   
+<details><summary>Hints</summary>
+<p>
+
+Adjust your command for the previous question as follows:
+
+- Match columns 3 (feature type) and 7 (strand) with `awk`,
+  using `==` to only select matching rows.
+
+- Use the `&&` operator in `awk` to combine conditions.
+
+</p>
+</details>
+
+2. What's the combined size of all genes?  
+   (On this chromosome, that is: this GTF only contains a single chromosome.)
+
+<details><summary>Hints</summary>
+<p>
+
+- First, remove the header from consideration using `grep -v`.
+
+- Next, select "gene"-level features only,
+  which you can do with `awk` as above,
+  with `grep -w`, or with `grep -P` with `\t` for tab.
+ 
+- Next, use a **variable** in `awk`:
+   - Initialize the variable in a `BEGIN` statement;
+   - Add the length of the gene (column 5 - column 4) for each row;
+   - Print the result with an `END` statement.
+ 
+</p>
+</details>
+     
+3. What is the mean UTR length?
+
+<details><summary>Hints</summary>
+<p>
+
+The code is very similar to that for the previous question;
+just `grep` for "UTR" instead,
+and calculate the mean by dividing the final value of `awk` variable by the
+number of rows (`NR`) in the `END` statement.
+
+</p>
+</details>
+
+<br>
+
+### Exercise 3: Replacements with `sed`
+
+The `genotypes.txt` contains diploid genotypes for 4 loci for 9 individuals.
+
+1. Remove all underscores from `genotypes.txt` and write the output to a new
+   file.
+
+<details><summary>Hints</summary>
+<p>
+
+- Use the `sed 's/<pattern>/<replacement>/<modifiers>' <file>` construct.
+- You'll need the modifier to do *global* (i.e., >1 per line) replacements.
+
+</p>
+</details>
+   
+2. Replace the `/` delimiter for genotypes (`G/G`) in `genotypes.txt` by a colon
+   (`G:G`) and write the output to a new file.
+   
+<details><summary>Hints</summary>
+<p>
+
+- In the `sed 's/<pattern>/<replacement>/<modifiers>' <file>` construct,
+  forward slashes `/` will not work here, because the pattern we are looking
+  for is a forward slash. Use a different symbol instead, e.g. a `#`:  
+  `sed 's#<pattern>#<replacement>#<modifiers>' <file>`
+
+</p>
+</details>
+
+<br>
+
+## Bonus exercises
+
+### Exercise 4: FASTA
+
+1. First, convert the FASTQ file `contaminated.fastq` to a FASTA file using the
+   following `awk` command, and try to understand what it does, by and large:
+   
+```sh
+awk '{ if(NR%4 == 1) { printf(">%s\n", substr($0,2)); } else if(NR%4 == 2) print; }' \
+    contaminated.fastq > contaminated.fasta
+```
+
+2. Select FASTA entries (sequence *and* header) from `contaminated.fasta`
+  with the sequence `AGATCGGAAGA` and write them to a new file,
+  `contaminated_sel.fasta`.
+  (Your new file should have 6 sequences, so 12 lines.)
+  
+<details><summary>Hints</summary>
+<p>
+
+Match the sequence with `grep` and use the `-B` option to also retrieve the
+preceding line, which is the sequence header/identifier.
+
+In addition, use `--no-group-separator` to prevent grep from printing `--`
+between matches (alternatively, you could use another call to `grep` with
+`-v` to filter out `--` lines).
+
+</p>
+</details>
+
+3. Check how many sequences, if any, have one ore more undetermined bases (`N`).
+   
+<details><summary>Hints</summary>
+<p>
+
+Make sure you first exclude the header lines,
+since you only want to match `N` in the sequences.
+
+</p>
+</details>
+
+4. Apparently, there may have been a problem with cycle 50 in the Illumina run.  
+   Get the frequency of each base for position 50 in the FASTA file.
+
+<details><summary>Hints</summary>
+<p>
+
+Use `cut -c <n>` to extract the 50th position.
+
+</p>
+</details>
+
+<br>
+
+### Exercise 5: Exons
+
+In this exercise, you will once again work with the GTF file `Mus_musculus.GRCm38.75_chr1.gtf`.
+
+Now, let's explore some statistics on *exons* in the GTF file. 
+
+1. Create a tab-separated, two-column file called `exons.txt` that lists each
+   unique "exon_id" along with its "gene_id", sorted by gene ID.
+   (The "exon_id" and "gene_id" key-value pairs are in the huge final column.)
+   
+   The first couple of lines of the file should look as follows:
+
+   ```sh
+  ENSMUSG00000000544      ENSMUSE00000160546
+  ENSMUSG00000000544      ENSMUSE00000160549
+  ENSMUSG00000000544      ENSMUSE00000226264
+  ENSMUSG00000000544      ENSMUSE00000395516
+   ```
+   
+<details><summary>Hints</summary>
+<p>
+
+- First `grep` for lines that contain "gene_id" followed by "exon_id".
+
+- Use a `sed` command with two backreferences (capture the backreferences
+  with parentheses, `(<match>)`, and recall them with `\1` and `\2`)
+  to extract just the gene ID and the exon ID.
+  
+- Finally, only keep unique lines and sort.
+
+</p>
+</details>
+
+Use the `exons.txt` file you created to answer the following questions.
+
+2. On average, how many exons does each gene have?
+
+<details><summary>Hints</summary>
+<p>
+
+- The number of genes is simply the number of lines in `exons.txt`.
+
+- Count the number of exons using `uniq` and then `wc -l`.
+
+- The division can be done with `expr $n_genes / $n_exons`
+  although you will not get any decimals (arithmetic in bash is very limited!).
+  The above exmplae assumes you assigned the results to variables using command
+  substitution, e.g.: `ngenes=$(wc -l ...)`.
+  
+  (You could also, e.g., call Python inline, but we're not there yet.)
+
+</p>
+</details>
+
+3. What is the highest number of exons for one gene?
+
+<details><summary>Hints</summary>
+<p>
+
+Use `uniq -c` followed by a reverse numeric `sort`.
+
+</p>
+</details>
+
+4. Create a count table for the number of exons per gene.
+   It should tell you how many genes have one exon, how many have two exons,
+   etc.
+   
+<details><summary>Hints</summary>
+<p>
+
+- You'll need to process the `uniq -c` output of exon counts to get rid of the
+  leading spaces.
+  You can do this with `sed`; use `^ *` as the search pattern,
+  or `^ +` with `sed -E` (the `+` symbol to match one ore more of the preceding
+  character is in the *extended* regex set).
+  
+- Then, you'll need to create a count table from these counts,
+  so another round of `count | uniq -c`.
+
+</p>
+</details>
+   
+<br>
+
+### Exercise 6: Miscellaneous
+
+In this exercise, you will once again work with the GTF file `Mus_musculus.GRCm38.75_chr1.gtf`.
+
+1. Count the total number of features on each strand (`+` or `-`, column 7).
+
+2. Count the number of features from each of the three values for "gene_source"
+  ("ensembl", "havana", and "ensembl_havana").
+  
+<details><summary>Hints</summary>
+<p>
+
+You can either use `sed` with a backreference to capture the "gene_source"
+type, or `grep -o` to capture a larger match followed by `cut` and `sed` to
+extract just the "gene_source" type. 
+
+</p>
+</details>
+
+3. How many genes have a UTR (untranslated region)?
+   Create a list of "gene_id"s for genes with a UTR.
+
+<details><summary>Hints</summary>
+<p>
+
+First `grep` for UTR, then for the "gene_id" while also extracting the match
+with `grep -o`.
+Once again, the extraction of a match can alternatively be done with a
+backreference in `sed`.
+
+</p>
+</details>
+   
+<br>
+
+## Solutions
+
+### Exercise 1: Pseudogenes with `grep`, `uniq -c`, and others
+
+To start with, I will assign the name of the GTF file to the variable `$gtf`,
+for quick reference in the solutions for the and the next exercises:
+```sh
+gtf=Mus_musculus.GRCm38.75_chr1.gtf
+```
+
+<details>
+<summary>(1.) Count the number of lines with the string "pseudogene".</summary>
+<p>
+
+```sh
+$ grep -c "pseudogene" $gtf
+
+#> 1041
+```
+The `-c` option to `grep` will count the number of matching lines.
+</p>
+</details>
+
+<details>
+<summary>(2.) Count feature types.</summary>
+<p>
+```sh
+$ grep -v "^#" $gtf | grep "pseudogene" | cut -f 3 | sort | uniq -c
+
+#>     15 CDS
+#>    524 exon
+#>    223 gene
+#>      4 start_codon
+#>      4 stop_codon
+#>    264 transcript
+#>      7 UTR
+```
+
+The first line computes a count table for pseudogenes,
+and the second line computes an equivalent count table for all genes.
+
+- We use `grep -v "^#"` to exclude the header (the command would work without
+  this line, but it's better not to assume the header won't match, and to
+  explicitly remove it first).
+  Note that the caret `^` is a regex symbol for the beginning of the line.
+  We use the `-v` option to `grep` to invert the match.
+
+- We use `cut -f 3` to select the third column.
+
+- We use the `sort | uniq -c` combination to create a count table.
+
+</p>
+</details>
+
+<details>
+<summary>(3.) Count feature types after more restrictive matching.</summary>
+<p>
+
+```sh
+$ grep -v "^#" $gtf | grep -w "pseudogene" | cut -f 3 | sort | uniq -c
+
+#>    499 exon
+#>    221 gene
+#>    258 transcript
+```
+
+This is very similar to the solution for the previous exercise,
+but now we use the `-w` option to `grep` to only select full words
+(consecutive alphanumeric characters and the underscore).
+
+</p>
+</details>
+
+<details>
+<summary>(4.) Select "*pseudogene*" matches for which the feature type in column 3 is "gene".</summary>
+<p>
+
+```sh
+$ grep -v "^#" $gtf | grep -w "pseudogene" | grep -w "gene" | head
+
+# Alternative 1: More explicit match by matching tabs:
+$ grep -v "^#" $gtf | grep -w "pseudogene" | grep -P "\tgene\t" | head
+
+# Alternative 2: More explicit match by matching column 3 only:
+$ grep -v "^#" $gtf | grep -w "pseudogene" | awk '$3 == "gene"' | head
+```
+
+To match tabs like in the second solution, we need to use `grep`s `-P` option,
+for "Perl-like regular expressions. (Yes, it confusing and unfortunate that
+there are three types of regular expressions in `grep`!)
+
+In the third solution we explicitly and exactly match column 3 with `awk` --
+this is the most robust solution.
+
+</p>
+</details>
+
+<details>
+<summary>(5.) Check that your output only contains "gene" in column 3.</summary>
+<p>
+
+```sh
+$ grep -v "^#" $gtf | grep "pseudogene" | grep -w "gene" | \
+      cut -f 3 | sort | uniq -c
+
+#> 223 gene
+```
+
+We select the third column and use the `sort | uniq -c` combination to create
+a count table, which will quickly tell us whether there are multiple values
+in the column.
+
+</p>
+</details>
+
+<details>
+<summary>(6.) Write the pseudogene selection to a new GTF file.</summary>
+<p>
+
+Solution when writing the header and the rest of the file separately
+(don't forget to use `>>` for appending the output of the second line,
+if you use this method!):
+
+```sh
+$ grep "^#" $gtf > pseudogenes.gtf
+$ grep -v "^#" $gtf | \
+      awk '$2 == "pseudogene" && $3 == "gene"' \
+      >> pseudogenes.gtf
+```
+
+Solution with subshells:
+
+```sh
+$ (grep "^#" $gtf; grep -v "^#" $gtf | \
+      awk '$2 == "pseudogene" && $3 == "gene"') \
+      > pseudogenes.gtf
+```
+
+Note: rather than with `grep -v "^#"`, we can also exclude the header using
+`!/^#/` in `awk`:
+
+```sh
+$ (grep "^#" $gtf; \
+      awk '!/^#/ && $2 == "pseudogene" && $3 == "gene"' $gtf) \
+      > pseudogenes.gtf
+```
+
+</p>
+</details>
+
+### Exercise 2: Calculations with `awk`
+
+<details>
+<summary>(1.) How many features are at least 1,000 bp long?</summary>
+<p>
+
+```sh
+$ grep -v "^#" $gtf | \
+      awk '$5 - $4 > 999' | \
+      wc -l
+
+#> 8773
+```
+
+- First, we again exclude the header like in exercise 1 (this can also be
+  done using `awk`: see below).
+  
+- Next we subtract column 4 (`$4`) from column 5 (`$5`) and use as a condition
+  that this difference should be larger than 999.
+  
+```sh
+# Alternative that excludes the header in awk:
+$ awk '!/^#/ && $5 - $4 > 999' $gtf | \
+      wc -l
+
+#> 8773
+```
+</p>
+</details>
+
+<details>
+<summary>(2.) How many genes on the + strand are at least 1,000 bp long?</summary>
+<p>
+```sh
+$ grep -v "^#" $gtf | \
+      awk '$3 == "gene" && $7 == "+" && $5 - $4 > 999' | \
+      wc -l
+
+#> 725
+```
+
+- We chain together different conditions using `&&`.
+  
+- The second line uses `awk` to match `+` in column 7,
+  and to select lines where the difference between column 5 and 4
+  (i.e., the feature length) is larger than 999 bp.
+  
+- The third line simply counts the number of lines we have left.  
+
+</p>
+</details>
+
+<details>
+<summary>(3.) What's the combined size of all genes?</summary>
+<p>
+```sh
+$ grep -v "^#" $gtf | \
+      grep -w "gene" | \
+      awk 'BEGIN { s=0 }; { s += $5 - $4 }; END { print s }'
+  
+#> 78935729    # 78,935,729 => ~79 Mbp
+```
+
+- The first two lines are the same as for the previous question
+  (see the solution there for further details).
+  
+- In the third line, we use a variable in `awk` to compute a sum of the feature
+  lengths (i.e., column 5 minus column 4).
+  With the `BEGIN` statement, we initialize the variable `s` before we start
+  processing lines.
+  Then, for each line, we add the feature length to the value using the `+=`
+  operator (shorthand for `s = s +`).
+  Finally, with the `END` statement, we report the final value of the variable `s`
+  after we have processed all lines.
+
+</p>
+</details>
+
+<details>
+<summary>(4.) What is the mean UTR length?</summary>
+<p>
+
+```sh
+$ grep -v "^#" $gtf | \
+      grep -w "UTR" | \
+      awk 'BEGIN { s=0 }; { s += $5 - $4 }; END { print s/NR }'
+      
+#> 472.665      
+```
+
+This code is very similar to that for the previous question
+(see that solution for more details),
+but now we divide the sum (variable `s`) by `NR`,
+an automatic variable in `awk` that holds the current record (line) number.
+Since the `END` statement is executed after all lines have been processed,
+the record number will be the *total* number of lines in the file.
+
+</p>
+</details>
+
+### Exercise 3: Replacements with `sed`
+
+<details>
+<summary>(1.) In `genotypes.txt`, remove all underscores.</summary>
+<p>
+
+```sh
+$ sed 's/_//g' genotypes.txt > genotypes2.txt
+
+$ cat genotypes2.txt
+#> id      indA    indB    indC    indD
+#> S000    G/G     A/G     A/A     A/G
+#> S001    A/T     A/T     T/T     T/T
+#> S002    C/T     T/T     C/C     C/T
+#> S003    C/T     C/T     C/T     C/C
+#> S004    C/G     G/G     C/C     C/G
+#> S005    A/T     A/T     A/T     T/T
+#> S006    C/G     C/C     C/G     C/G
+#> S007    A/G     G/G     A/A     G/G
+#> S008    G/T     G/T     T/T     G/T
+#> S009    C/C     C/C     A/A     A/C
+```
+Since there are multiple underscores on line 1, you need the `g` modifier.
+</p>
+</details>
+
+<details>
+<summary>(2.) In `genotypes.txt`, replace the `/` delimiter by a colon (`:`).</summary>
+<p>
+
+```sh
+$ sed 's#/#:#g' genotypes.txt > genotypes3.txt
+
+$ cat genotypes3.txt
+#> id      ind_A   ind_B   ind_C   ind_D
+#> S_000   G:G     A:G     A:A     A:G
+#> S_001   A:T     A:T     T:T     T:T
+#> S_002   C:T     T:T     C:C     C:T
+#> S_003   C:T     C:T     C:T     C:C
+#> S_004   C:G     G:G     C:C     C:G
+#> S_005   A:T     A:T     A:T     T:T
+#> S_006   C:G     C:C     C:G     C:G
+#> S_007   A:G     G:G     A:A     G:G
+#> S_008   G:T     G:T     T:T     G:T
+#> S_009   C:C     C:C     A:A     A:C
+```
+
+Because the pattern we want to match is a `/`, we use a different symbol
+in the `sed` syntax: here, I chose a `#`.
+
+</p>
+</details>
+
+### Exercise 4: FASTA
+
+<details>
+<summary>(2.) Write sequences with `AGATCGGAAGA` into a new file.</summary>
+<p>
+
+```sh
+$ grep -B 1 --no-group-separator "AGATCGGAAGA" contaminated.fasta \
+      > contaminated_sel.fasta
+
+$ wc -l < contaminated_sel.fasta
+
+#> 12
+
+# Alternative to `--no-group-separator`;
+# remove the lines with `--` afterwards:
+$ grep -B 1 "AGATCGGAAGA" contaminated.fasta | \
+      grep -v "--" > contaminated_sel.fasta
+```
+
+- Use `B 1` to get the sequence ID line for each match.
+
+- Use `--no-group-separator` (top solution) or pipe into `grep -v "--"` to
+  avoid having a group separator, which grep inserts for multiline output
+  like this, in the output.
+
+</p>
+</details>
+
+<details>
+<summary>(3.) Check how many sequences have one or more undetermined bases.</summary>
+<p>
+
+Make sure you first exclude the header lines, since you only want to match
+"N" in the sequences themselves:
+```sh
+$ grep -v "^>" contaminated.fasta | grep -c "N"
+
+#> 0
+```
+There are no `N`s in the sequence.
+
+</p>
+</details>
+
+<details>
+<summary>(4.) Get the frequency of each base for position 50 in the fasta file.</summary>
+<p>
+```sh
+$ grep -v "^>" contaminated.fasta | cut -c 50 | sort | uniq -c 
+
+#> 2 C
+#> 3 G
+#> 3 T
+```
+</p>
+</details>
+
+
+### Exercise 5: Exons
+
+<details>
+<summary>(1.) Create a tab-delimited file with "exon_id" and "gene_id"</summary>
+<p>
+
+```sh
+$ grep "gene_id.*exon_id" $gtf | \
+      sed -n -E 's/.*gene_id "(\w+)".*exon_id "(\w+).*/\1\t\2/p' | \
+      sort | uniq > exons.txt
+```
+
+- In the first line of code,
+  we select only lines that contain both "gene_id" and "exon_id".
+
+- In the second line, we capture the values for "gene_id" and "exon_id" using
+  backreferences in `sed`.
+
+- Finally, we sort (since we want to sort by the first column, just `sort`
+  will work) and then take only unique rows using `uniq`,
+  and redirect to a new file.
+  
+</p>
+</details>
+
+<details>
+<summary>(2.) On average, how many exons does each gene have?</summary>
+<p>
+
+```sh
+$ n_genes=$(wc -l < exons.txt)
+$ n_exons=$(cut -f 1 exons.txt | uniq | wc -l)
+
+# Divide using `expr`:
+$ expr $(wc -l < exons.txt) / $(cut -f 1 exons.txt | uniq | wc -l)
+
+#> 11
+
+# Alternatively, do the division with Python:
+$ python -c "print($n_genes / $n_exons)"
+
+#> 11.627
+```
+
+- First, we count the number of genes, then the number of exons, and we assign
+  each value to a variable.
+  
+- Then, we divide using `expr` (or Python to get decimals).
+
+</p>
+</details>
+
+<details>
+<summary>(3.) What is the highest number of exons for one gene?</summary>
+<p>
+
+```sh
+$ cut -f 1 exons.txt | uniq -c | sort -rn | head
+
+#>    134 ENSMUSG00000026131
+#>    116 ENSMUSG00000066842
+#>    112 ENSMUSG00000026207
+#>    108 ENSMUSG00000026609
+#>    102 ENSMUSG00000006005
+#>     97 ENSMUSG00000037470
+#>     93 ENSMUSG00000026141
+#>     92 ENSMUSG00000026490
+#>     91 ENSMUSG00000048000
+#>     82 ENSMUSG00000073664
+```
+
+"ENSMUSG00000026131" has as many as 134 exons!!
+
+</p>
+</details>
+
+<details>
+<summary>(4.) Create a count table for the number of exons per gene.</summary>
+<p>
+
+```sh
+$ cut -f 1 exons.txt | uniq -c | \
+      sed 's/^ *//' | cut -d " " -f 1 | \
+      sort -rn | uniq -c | \
+      sort -rn > exon_count_table.txt
+
+$ head exon_count_table.txt     
+#>    646 1   # 646 genes with 1 exon
+#>    186 2   # 186 genes with 2 exons
+#>     94 3   # etc...
+#>     71 5
+#>     71 4
+#>     53 8
+#>     51 7
+#>     51 6
+#>     44 11
+#>     41 10
+```
+
+- In the first line, we get the number of exons for each gene.
+
+- In the second line, we clean up the `uniq -c` output.
+
+- In the third line, we create the count table of the number of exons.
+
+- Finally we sort this and redirect the output to a file.
+
+</p>
+</details>
+
+
+### Exercise 6: Miscellaneous
+
+<details>
+<summary>(1.) Count the number of elements on each strand.</summary>
+<p>
+
+```sh
+$ grep -v "^#" $gtf | cut -f 7 | sort | uniq -c
+
+#> 40574 +
+#> 40652 -
+```
+
+</p>
+</details>
+
+<details>
+<summary>(2.) Count the number of elements for each of the three values for "gene_source".</summary>
+<p>
+
+```sh
+# Capture the gene_source with sed:
+$ sed -n -E 's/.*gene_source "(\w+)".*/\1/p' $gtf | \
+      sort | uniq -c
+
+#> 18209 ensembl
+#> 61089 ensembl_havana
+#> 1928 havana
+
+# Alternatively, capture the gene_source with `grep -o`:
+$ grep -E -o 'gene_source "\w+"' $gtf | \
+      cut -f2 -d" " | sed 's/"//g' | \
+      sort | uniq -c
+      
+#> 18209 ensembl
+#> 61089 ensembl_havana
+#> 1928 havana
+```
+</p>
+</details>
+
+<details>
+<summary>(3.) How many genes have a UTR? Create a list of `gene_id`s for genes with a UTR.</summary>
+<p>
+
+```sh
+$ grep -v "^#" $gtf | grep -w "UTR" | \
+   grep -E -o 'gene_id "\w+"' | sort | uniq | wc -l
+
+#> 1179
+
+# Create the list of genes:
+$ grep -v "^#" $gtf | grep -w "UTR" | \
+      grep -E -o 'gene_id "\w+"' | \
+      cut -f2 -d" " | sed 's/"//g' | \
+      sort | uniq > genes_with_UTR.txt
+
+# Alternative with sed:
+$ grep -v "^#" $gtf | grep -w "UTR" | \
+      sed -n -E 's/.*gene_id "(\w+)".*/\1/p' | \
+      sort | uniq | wc -l > genes_with_UTR.txt
+```
+
+</p>
+</details>

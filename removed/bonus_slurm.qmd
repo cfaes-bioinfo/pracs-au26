@@ -1,0 +1,279 @@
+---
+title: "Advanced Slurm batch jobs"
+subtitle: "Optional self-study content for week 7"
+pagetitle: "Slurm bonus"
+date: 2025-10-03
+author:
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+    affiliation: 
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://mcic.osu.edu/bioinformatics
+editor_options: 
+  chunk_output_type: console
+---
+
+--------------------------------------------------------------------------------
+
+<br>
+
+## Slurm environment variables
+
+Inside a shell script that will be submitted as a batch job,
+you can use a number of Slurm environment variables that will automatically
+be available, such as:
+
++------------------------+--------------------------+--------------------------------------------------------+
+| Variable               | Corresponding option     | Description                                            |
++========================+==========================+========================================================+
+| `$SLURM_JOB_ID`        | *N/A*                    | Job ID assigned by Slurm                               |
++------------------------+--------------------------+--------------------------------------------------------+
+| `$SLURM_JOB_NAME`      | `--job-name`             | Job name                                               |
++------------------------+--------------------------+--------------------------------------------------------+
+| `$SLURM_CPUS_PER_TASK` | `-c` / `--cpus-per-task` | Number of CPUs (\~ cores/threads) available            |
++------------------------+--------------------------+--------------------------------------------------------+
+| `$SLURM_MEM_PER_NODE`  | `--mem`                  | Amount of memory available (per node)                  |
++------------------------+--------------------------+--------------------------------------------------------+
+| `$TMPDIR`              | *N/A*                    | Path to the Compute storage available during the job   |
++------------------------+--------------------------+--------------------------------------------------------+
+| `$SLURM_SUBMIT_DIR`    | *N/A*                    | Path to dir from which job was submitted.              |
++------------------------+--------------------------+--------------------------------------------------------+
+
+<hr style="height:1pt; visibility:hidden;" />
+
+As an example of how these environment variables can be useful,
+the command below uses `$SLURM_CPUS_PER_TASK` in its call to the program STAR
+inside the script:
+
+``` {.sh}
+STAR --runThreadN "$SLURM_CPUS_PER_TASK" --genomeDir ...
+```
+
+With this strategy, you will automatically use the correct (requested) number of
+cores, and don't risk having a mismatch.
+Also, if you need to change the number of cores, you'll only have to modify it
+in one place: in the resource request to Slurm.
+
+## Interactive shell jobs
+
+Interactive shell jobs will grant you interactive shell access on a compute node.
+We've been working in a shell in VS Code Server, which means that we already
+have interactive shell access on a compute node!
+
+However, we only have access to 1 core and 4 GB of memory in this VS Code shell,
+and there is no way of changing this.
+If you want an interactive shell job with more resources,
+you'll have to start one with Slurm commands.
+
+A couple of different commands can be used to start an interactive shell job.
+I prefer the general `srun` command[^1],
+which we can use with `--pty /bin/bash` added to get an interactive Bash shell.
+
+[^1]: Other options: `salloc` works almost identically to `srun`,
+      whereas `sinteractive` is an OSC convenience wrapper but with more limited options.
+     
+```bash
+srun --account=PAS2880 --pty /bin/bash
+```
+```bash-out
+srun: job 12431932 queued and waiting for resources  
+srun: job 12431932 has been allocated resources
+
+[...regular login info, such as quota, not shown...]
+
+[jelmer@a0133 PAS2880]$
+```
+
+There we go! First some Slurm scheduling info was printed to screen ---
+initially, the job was queued, and then it was "allocated resources":
+that is, computing resources such as a compute node were reserved for the job.
+After that:
+
+- The job starts and because we've reserved an _interactive_ shell job,
+  a new Bash shell is initiated:
+  for that reason, we get to see our regular login info once again.
+
+- We have now moved to the **compute node** at which our interactive job is running,
+  so you should have a different number in your prompt after `@`.
+
+## Additional commands to monitor jobs
+
+::: callout-tip
+#### TBA Refer to `scontrol` etc for detailed stats
+:::
+
+#### `sstat` for information about running jobs
+
+To get information about things like memory usage, the `sstat`
+(for running jobs) and `sacct` (for finished jobs) commands are useful.
+The output of these commands is tabular and by default, too many columns are
+printed, so rather verbose calls are unfortunately necessary.
+
+For example, you may want to use an `sstat` call like the following
+**at the end of your script**:
+
+```sh
+sstat -j $SLURM_JOB_ID --format=jobid,avecpu,averss,maxrss,ntasks
+```
+
+Which will give you output like the following printed in your Slurm log file:
+
+```bash-out-solo
+       JobID     AveCPU     MaxRSS   NTasks 
+------------ ---------- ---------- -------- 
+2979576.bat+  01:59.000    244368K        1 
+```
+
+`MaxRSS` is the maximum amount of memory used by the job.
+It can be really good to know how much memory your job is using,
+so you can adjust future requests.
+Insufficient memory is also one of the most common causes of job failure.
+
+### `sacct` for info about finished jobs
+
+Get information about all jobs &ndash; by default those run in the past day:
+
+```sh
+sacct -u $USER \
+  --format=JobID,JobName,NodeList,Elapsed,State,ExitCode,MaxRSS,AllocTRES%32 |
+  grep -v ".extern"
+```
+```bash-out
+               JobID    JobName        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES 
+-------------------- ---------- --------------- ---------- ---------- -------- ---------- -------------------------------- 
+             2978362 fastqc_si+           p0224   00:01:51  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+ 
+       2978362.batch      batch           p0224   00:01:51  COMPLETED      0:0    200004K           cpu=1,mem=4556M,node=1 
+             2978487  fqtest.sh           p0224   00:01:54  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+ 
+       2978487.batch      batch           p0224   00:01:54  COMPLETED      0:0    203332K           cpu=1,mem=4556M,node=1 
+             2978503  fqtest.sh           p0224   00:01:55  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+
+```
+
+To get information about a specific job, by means of example job `2978487`:
+  
+```sh
+sacct -j 2978487 \
+  --format=JobID,JobName,NodeList,Elapsed,State,ExitCode,MaxRSS,AllocTRES%32 |
+  grep -v ".extern"
+```
+```bash-out
+         JobID    JobName        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES 
+------------ ---------- --------------- ---------- ---------- -------- ---------- -------------------------------- 
+2978487       fqtest.sh           p0224   00:01:54  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+ 
+2978487.bat+      batch           p0224   00:01:54  COMPLETED      0:0    203332K           cpu=1,mem=4556M,node=1
+```
+
+::: {.callout-tip collapse="true"}
+### Aliases for long job monitoring commands _(Click to expand)_
+
+Because you won't remember all of these formatting options, and even if you
+do, you don't want to type them out,
+this is a case where aliases are really handy. For instance:
+
+```sh
+alias sact='sacct --format=JobID,JobName,NodeList,Elapsed,State,ExitCode,MaxRSS,AllocTRES%32'
+
+alias stat='sstat --format=jobid,avecpu,averss,maxrss,ntasks'
+```
+
+You can then add other options when you use an alias, for example:
+
+```sh
+sact -j 123456
+```
+
+To make these aliases always available in interactive sessions,
+add lines such as these to your Bash configuration file `~/.bashrc`.
+(Note that this file won't be read by job scripts, so make sure to use the
+full specification in scripts.)
+:::
+
+### `time`
+
+To get statistics on a single command, like a memory-intensive program
+you may be running, use the `time` utility.
+To use it, prepend `/usr/bin/time` to the beginning of a command:
+
+```sh
+/usr/bin/time fastqc "$fastq_file"
+```
+
+If you use this in a script, the result will be printed to the Slurm log file, e.g:
+
+```bash-out-solo
+106.79user 4.10system 1:52.34elapsed 98%CPU (0avgtext+0avgdata 246444maxresident)k
+0inputs+1760outputs (0major+35697minor)pagefaults 0swaps
+```
+
+1. User time (CPU time spent running your program)
+1. System time (CPU time spent by your program in system calls)
+1. Elapsed time (wallclock)
+1. % CPU used
+1. Memory, pagefault and swap statistics
+1. I/O statistics
+
+_Note that you should use the full path `/usr/bin/time` rather than just `time`._
+
+## Slurm Job arrays
+
+As an alternative approach to looping over a script,
+you can also turn a script into a job "array", i.e. a series of jobs.
+  
+Each job in the array gets an ID that you can then use in your script
+for each job to run with a different value of a certain parameter.
+Most commonly, you may have a file with sample names and then use the
+array IDs to subset lines from that file -- for instance, for our FastQC script:
+
+```sh
+#SBATCH --array=1-25
+#SBATCH --output=slurm-fastqc-%A-%a.out
+fastq_file=$(sed -n "${SLURM_ARRAY_TASK_ID}p" fastq_files.txt)
+fastqc "$fastq_file"
+```
+
+- Above, the array was configured using the `--array` option,
+  simply creating 25 jobs with array IDs from 1 to 25 (assuming 25 FASTQ files).
+  
+- Then, the SLURM environment variable `$SLURM_ARRAY_TASK_ID` will contain
+  the task ID for each job in the array, and we use that to pull out a line
+  from a file with FASTQ file names with `sed`.
+  
+- We also use `%A` (master job ID) and `%a`
+  (ID that differs for each job in the array) for the log file name.
+  
+A full script example is below:
+
+```sh
+#!/bin/bash
+#SBATCH --account=PAS0471
+#SBATCH --time=60
+#SBATCH --output=slurm-fastqc-%A-%a.out
+#SBATCH --array=1-25
+set -euo pipefail
+
+module load fastqc/0.12.1
+
+fastq_files_list="$1"
+output_dir="$2" 
+
+fastq_file=$(sed -n "${SLURM_ARRAY_TASK_ID}p" $fastq_files_list)
+
+echo "Running fastqc for file: $fastq_file"
+echo "Output dir: $output_dir"
+
+fastqc --outdir="$output_dir" "$fastq_file"
+```
+
+- The array values can also be a comma separated list like 
+  `SBATCH --array=8,10,15` and can even have a *stride*,
+   with `SBATCH --array=1-7:2` producing array tasks 1, 3, 5, and 7.
+
+- You can also throttle an array of jobs: only run a subset of jobs at a time.
+  This can be done as follows:
+  
+  ```sh
+  sbatch --array [1-100]%10 fastq.sh
+  ```
+
+  The above command would only submit 10 jobs at a time.
+  (This can also be specified inside the script.)

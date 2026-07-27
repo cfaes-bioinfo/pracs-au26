@@ -1,0 +1,582 @@
+---
+title: "R vectors and data types"
+subtitle: "Week 11 -- lecture B"
+pagetitle: "w11b: R data"
+date: 2025-11-01
+author:
+  - name: Menuka Bhandari
+    #orcid: TBA
+    email: bhandari.72@osu.edu
+    affiliation: 
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://mcic.osu.edu/bioinformatics
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+editor_options: 
+  chunk_output_type: console
+other-links:
+  - text: "Week 11 overview"
+    icon: book
+    href: w11_overview.html
+  - text: "w11a: Intro to R and RStudio"
+    icon: bookmarks
+    href: w11a_r-basics.html
+  - text: "w11c: Tabular data in R"
+    icon: bookmarks
+    href: w11c_data-frames.html
+  - text: "Week 11 exercises"
+    icon: pencil
+    href: w11_exercises.html
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+------------------------------------------------------------------------
+
+<br>
+
+## Introduction
+
+### Overview & learning goals
+
+In this lecture, you will learn about some of the nuts and bolts of R,
+which will give you a solid foundation to start doing more exciting
+things like data wrangling, analysis, and visualization.
+
+Specifically, you will learn:
+
+-   Several kinds of **data structures** - vectors (*this lecture*) and
+    data frames and matrices (*next lecture*)
+-   R's main **data types** - `character`, `integer`, `double` and
+    `logical`
+
+### R's data structures and data types
+
+-   **Data structures** are the kinds of objects that R can store data
+    in. Here, you'll learn about one of the most common ones, the
+    *vector*. Next week, you'll learn about another very common data
+    structure: the *data frame*, and a less common one, the *matrix*.
+
+-   **Data types** are how R distinguishes between different kinds of
+    data like numbers versus character strings. Here, we'll talk about
+    the 4 main data types: `character`, `integer`, `double`, and
+    `logical`.
+
+An analogy: If this was about food rather than data, you can think of
+different data types as different food items, and various data
+structures as different types of containers to store food in.
+
+### Setting up
+
+1.  At <https://ondemand.osc.edu>, start an RStudio session like in the
+    previous lecture ([Starting an RStudio Server session at
+    OSC](../week11/w11a_r-basics.html#Working-directory-and-RStudio-Projects))
+2.  Switch to your `week11` RStudio Project created in previous lecture
+    ([Working directory and RStudio
+    Projects](../week11/w11a_r-basics.html#Working-directory-and-RStudio-Projects))
+3.  Open a new R Script and save it as `week11b.R` in your `week11`
+    folder ([R scripts](../week11/w11a_r-basics.html#R-scripts))
+
+## Vectors
+
+The R data structure we will explore in this lecture is the simplest
+one: the vector. A vector in R is essentially **a collection of one or
+more items**. Moving forward, we'll call such individual items
+"elements".
+
+### Single-element vectors (and quoting)
+
+Vectors can consist of just a single element, so each of the two lines
+of code below creates a vector:
+
+```{r}
+vector1 <- 8
+vector2 <- "panda"
+```
+
+In the `"panda"` example, which is a **character string** (*string* for
+short):
+
+-   `"panda"` constitutes *one element*, not 5 (its number of letters).
+-   Unlike when dealing with numbers, we have to *quote the string*.[^1]
+
+[^1]:  Either double quotes (`"..."`) or single quotes (`'...'`) work,
+    but the former are most commonly used by convention.
+
+Character strings need to be quoted because they are otherwise
+interpreted as R objects -- for example, because our vectors `vector1`
+and `vector2` are objects, we refer to them without quotes:
+
+```{r}
+# [Note that R will show auto-complete options after you type 3 characters]
+vector1
+vector2
+```
+
+Meanwhile, the code below doesn't work because there is no *object
+called `panda`*:
+
+```{r, error=TRUE}
+vector_fail <- panda
+```
+
+### Multi-element vectors
+
+A common way to make vectors with **multiple elements** is by using the
+`c` (combine) function:
+
+```{r}
+c(2, 6, 3)
+```
+
+::: {.callout-note appearance="simple"}
+*Unlike in the first couple of vector examples,* *we didn't save the
+above vector to an object:* *now the vector simply printed to the
+console (similar to the standard output in shell) -- but it is created
+all the same.*
+:::
+
+`c()` can also **append** elements to an existing vector:
+
+```{r}
+# First we create a vector:
+vector_to_append <- c("cardinal", "chickadee")
+vector_to_append
+
+# Then we append another element to it:
+c(vector_to_append, "bald eagle")
+```
+
+To create vectors with **series of numbers**, a couple of shortcuts are
+available. First, you can make series of whole numbers (integers) with
+the `:` operator:
+
+```{r}
+1:10
+```
+
+Second, you can use a function like `seq()` and its arguments `from`
+(starting value), `to` (end value), and `by` (step size) for fine
+control over the sequence:
+
+```{r}
+stepwise_vec <- seq(from = 6, to = 8, by = 0.2)
+stepwise_vec
+```
+
+### Vectorization
+
+Consider the output of this command:
+
+```{r}
+stepwise_vec * 2
+```
+
+Above, **every individual element in `stepwise_vec` was multiplied by
+2**. We call this behavior "vectorization" and this is a key feature of
+the R language. (Alternatively, you may have expected this code to
+*repeat* `stepwise_vec` twice, but this did not happen!)
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Vectors
+
+Make a vector `x` with the whole numbers 1 through 26. Then, subtract
+0.5 from each element in `x` and save the result in vector `y`. Check
+your results by printing both vectors.
+
+<details>
+
+<summary>Click for the solution</summary>
+
+```{r}
+x <- 1:26
+x
+
+y <- x - 0.5
+y
+```
+
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+
+------------------------------------------------------------------------
+
+*Bonus:* What do you think the result of the following operation will
+be? We didn't cover this kind of scenario, but go ahead and test your
+intuition! After you've decided on your expectation, run the code and
+check if you were correct.
+
+```{r, eval=FALSE}
+1:5 * 1:5
+```
+
+<details>
+
+<summary>Click for the solution</summary>
+
+```{r}
+1:5 * 1:5
+```
+
+Both vectors are of length 5 which will lead to "element-wise matching":
+the first element in the first vector will be multiplied with the first
+element in the second vector, the second element in the first vector
+will be multiplied with the second element in the second vector, and so
+on.
+
+</details>
+:::
+
+### Exploring vectors
+
+R has many functions that provide information about vectors and other
+types of objects, such as:
+
+-   Get the **number of elements** with `length()`:
+
+    ```{r}
+    length(stepwise_vec)
+    ```
+
+-   See the **first and last few elements**, respectively, with `head()`
+    and `tail()`:
+
+    ```{r}
+    # Print the first 6 elements:
+    head(stepwise_vec)
+
+    # Print the last 6 elements:
+    tail(stepwise_vec)
+
+    # Both head and tail have argument `n` to specify the number of elements:
+    tail(stepwise_vec, n = 2)
+    ```
+
+-   Get **arithmetic summaries** like `mean()` for vectors with numbers:
+
+    ```{r}
+    # mean() will compute the mean (average) across all elements
+    mean(stepwise_vec)
+    ```
+
+### Extracting elements from vectors
+
+Extracting element from objects like vectors is often called
+**"indexing"**. In R, we can do this using "bracket notation" with
+square brackets <kbd>\[ \]</kbd> -- for example:
+
+-   Get the second element with `[2]`[^2]:
+
+    ```{r}
+    stepwise_vec[2]
+    ```
+
+-   Get the second through the fifth elements with `[2:5]`:
+
+    ```{r}
+    stepwise_vec[2:5]
+    ```
+
+-   Get the first and eight elements with `[c(1, 8)]`:
+
+    ```{r}
+    stepwise_vec[c(1, 8)]
+    ```
+
+[^2]:  R uses 1-based indexing, which means it starts counting at 1 like
+    humans do. Index 2 therefore simply corresponds to the second
+    element. Python and several other languages use 0-based indexing,
+    which starts counting at 0 such that the second element corresponds
+    to index 1.
+
+::: {.callout-tip appearance="simple"}
+To put this in a generalized way: we can extract elements from a vector
+by using another vector, whose values are the positional indices of the
+elements in the original vector.
+:::
+
+::: callout-note
+### Changing vector elements using indexing
+
+Above, we saw how you can *extract* elements of a vector using indexing.
+To *change* elements in a vector, simply use the bracket on the other
+side of the arrow -- for example:
+
+-   Change the first element to `30`:
+
+    ```{r}
+    stepwise_vec[1] <- 30
+    stepwise_vec
+    ```
+
+-   Change the last element to `0`:
+
+    ```{r}
+    stepwise_vec[length(stepwise_vec)] <- 0
+    stepwise_vec
+    ```
+
+-   Change the second element to the mean value of the vector:
+
+    ```{r}
+    stepwise_vec[2] <- mean(stepwise_vec)
+    stepwise_vec
+    ```
+:::
+
+## Data types
+
+### R's main data types
+
+R distinguishes between different kinds of data, such as character
+strings and numbers, using several pre-defined "data types". R's
+behavior in various operations depends heavily on the data type -- for
+example, the below fails:
+
+```{r, error=TRUE}
+"valerion" * 5
+```
+
+We can ask what type of data something is in R using the `typeof()`
+function:
+
+```{r}
+typeof("valerion")
+```
+
+R set the data type of `"valerion"` to `character`, i.e. a (character)
+string. The earlier command failed because R can't perform mathematical
+functions ("*binary operator*") on vectors of type `character`
+("*non-numeric argument*").
+
+The `character` data type most commonly contains letters, but anything
+that is placed between quotes (`"..."`) will be interpreted as this data
+type -- even plain numbers:
+
+```{r}
+typeof("5")
+```
+
+Besides `character`, three other **common data types** are:
+
+-   `double` / `numeric` -- numbers that can have decimal points:
+
+    ```{r}
+    typeof(3.14)
+    ```
+
+-   `integer` -- whole numbers only:
+
+    ```{r}
+    typeof(1:3)
+    ```
+
+-   `logical` (either `TRUE` or `FALSE` -- unquoted!):
+
+    ```{r}
+    typeof(TRUE)
+    ```
+
+Here is an overview in table format:
+
+| Data type            | Abbreviation  | Explanation                          |
+|-------------------|-----------------|-------------------------------------|
+| `double` / `numeric` | `dbl` / `num` | Numbers that can have decimal points |
+| `integer`            | `int`         | Whole numbers                        |
+| `character`          | `chr`         | Character strings                    |
+| `logical`            | `lgl`         | `TRUE` or `FALSE`                    |
+
+: {.striped .hover}
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: callout-note
+#### Logicals can be represented as numbers
+
+Consider the following R behavior:
+
+```{r}
+TRUE + TRUE
+```
+
+```{r}
+FALSE + FALSE
+```
+
+```{r}
+FALSE + 12
+```
+
+So, logicals can be used as if they were numbers, where `FALSE`
+represents 0 and `TRUE` represents 1.
+:::
+
+### A vector can only contain one data type
+
+A vector can only **be composed of a single data type**. As we saw
+above, R silently picks the "best-fitting" data type when you create a
+vector.
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Data types
+
+In each line below, what do you think the data type (if any) will be?
+Try it out and see if you were right.
+
+```{r, eval=FALSE}
+typeof("TRUE")
+typeof(banana)
+typeof(c(2, 6, "3"))
+```
+
+<details>
+
+<summary>Click for the solutions</summary>
+
+<hr style="height:1pt; visibility:hidden;" />
+
+1.  `"TRUE"` is `character` (and not `logical`) because of the quotes
+    around it:
+
+    ```{r}
+    typeof("TRUE")
+    ```
+
+------------------------------------------------------------------------
+
+2.  Recall the earlier example: this returns an error because the object
+    `banana` does not exist. Any unquoted string (that is not a special
+    keyword like `TRUE` and `FALSE`) is interpreted as a reference to an
+    object in R.
+
+    ```{r, error=TRUE}
+    typeof(banana)
+    ```
+
+------------------------------------------------------------------------
+
+3.  This produces a `character` vector, and we'll talk about why in the
+    next section:
+
+    ```{r}
+    typeof(c(2, 6, "3"))
+    ```
+
+</details>
+:::
+
+### Type coercion and conversion
+
+R's behavior of returning a character vector for `c(2, 6, "3")` in the
+challenge above is called **type coercion**.
+
+When R encounters a *mix of data types* (here, numbers and characters)
+to be combined into a single vector, it forces them all to be the same
+type. It "must" do this because a vector can consist of only a single
+data type.
+
+Type coercion can be the source of many surprises, and is one reason you
+need to be aware of the basic R data types and how R's behaviour around
+them.
+
+::: callout-note
+### Manual Type Conversion
+
+Luckily, you are not just at the mercy of whatever R decides to do
+automatically, but can convert vectors using the `as.` group of
+functions:
+
+```{r}
+as.integer(c("0", "2"))
+
+as.character(c(0, 2))
+```
+
+As you may have guessed, though, not all type conversions are possible
+--- for example:
+
+```{r}
+as.double("kiwi")
+```
+:::
+
+### Missing values (`NA`)
+
+R has a concept of **missing data**, which is important in statistical
+computing, as not all information/measurements are always available for
+each sample.
+
+In R, missing values are coded as `NA` (like `TRUE`/`FALSE`, this is not
+a character string so it is not quoted):
+
+```{r}
+# This vector will contain one missing value
+vector_NA <- c(1, 3, NA, 7)
+vector_NA
+```
+
+Notably, many functions operating on vectors will return `NA` if **any**
+element in the vector is `NA`:
+
+```{r}
+sum(vector_NA)
+```
+
+You can get around this is by setting `na.rm = TRUE` in such functions,
+for example:
+
+```{r}
+sum(vector_NA, na.rm = TRUE)
+```
+
+### Factors
+
+**Categorical** data, like treatments in an experiment, can be stored as
+"factors" in R. Factors are useful for statistical analyses and for
+plotting, e.g. because they allow you to specify a custom order.
+
+```{r}
+diet_vec <- c("high", "medium", "low", "low", "medium")
+diet_vec
+factor(diet_vec)
+```
+
+In the example above, we turned a character vector into a factor. Its
+"levels" (low, medium, high) are sorted alphabetically by default, but
+we can manually specify an order that makes more sense:
+
+```{r}
+diet_fct <- factor(diet_vec, levels = c("low", "medium", "high"))
+diet_fct
+```
+
+This ordering would be automatically respected in plots and statistical
+analyses.
+
+::: {.callout-warning collapse="true"}
+### Oddly, factors are technically not a data type *(Click to expand)*
+
+For most intents and purposes, it makes sense to think of factors as
+another data type, even though technically, they are a kind of data
+structure build on the `integer` data type:
+
+```{r}
+typeof(diet_fct)
+```
+:::
+
+## Recap
+
+-   Vectors: A one-dimensional array of elements of the same type.
+-   Mixing types in vectors cause automatic coercion.
+-   Elements of vectors can be accessed using `[ ]`.
+-   Data types determines how data is stored, processed, and
+    interpreted. For instance, treatments (factors), gene expression
+    (double), gene names (character).
+
+<br>

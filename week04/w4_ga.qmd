@@ -1,0 +1,239 @@
+---
+title: "Graded Assignment 2:<br>Unix shell data tools and version control"
+subtitle: "Week 4 graded assignment -- due Sunday Sep 21 at 11:59 pm"
+pagetitle: "GA2"
+date: 2025-09-12
+author:
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+    affiliation: 
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://mcic.osu.edu/bioinformatics
+other-links:
+  - text: "w4-1: Version control with Git"
+    icon: bookmarks
+    href: w4a_git.html
+  - text: "w4-2: Remotes with GitHub"
+    icon: bookmarks
+    href: w4b_github.html
+  - text: "Week 4 ungraded assignment: GitHub account"
+    icon: pencil
+    href: w4_ua_github-account.html
+  - text: "Bonus: Advanced Git"
+    icon: book
+    href: ../bonus/git.html
+number-sections: false
+bibliography: ../references.bib
+---
+
+------
+
+<hr style="height:1pt; visibility:hidden;" />
+
+## Overview
+
+This graded assignment is worth 10 points and is due on Sunday Sep 21^st^.
+You will practice with Unix shell commands, especially the "data tools" commands,
+and with Git commands.
+
+## Directions and grading
+
+### Submission expectations
+
+- **Deadline**: Sunday September 21^st^ at 11:59 pm.
+- **Submission**: You don't need to submit anything or notify the instructors:
+  we will simply look for these files in the appropriate location at OSC.
+  (We will also be able to see when the files were last modified.)
+- **When to start**: We recommend that you only get started with this assignment
+   "for real" after Thursday's class.
+   Many of the questions revolve around commands you'll have learned by Tuesday,
+   so you could do a partial practice run after that lecture.
+   
+### Academic integrity
+
+|    |  | 
+|--|-------------------------|
+| ![](../img/icons/AI-Permitted_No.png){width="80%"} | Use of generative AI Tools (e.g. ChatGPT, Microsoft Copilot, Google Gemini) is not permitted. |
+| ![](../img/icons/GetHelp_No.png){width="80%"} | Getting help on the assignment is not permitted |
+| ![](../img/icons/Collaborate_No.png){width="80%"} | Collaborating, or completing the assignment with others, is not permitted |
+| ![](../img/icons/CopyPreviousWork_No.png){width="80%"} | Copying or reusing previous work is not permitted |
+| ![](../img/icons/OpenBookResearch_Yes.png){width="80%"} | Open-book research for the assignment is permitted |
+| ![](../img/icons/CitationsRequired_No.png){width="80%"} | APA Citations and/or formatting for this assignment are not required |
+
+: {.striped}
+
+### Rubric
+
+You can earn a maximum of 0.5 points for each of the numbered 20 questions/items below.
+There is a bonus 21^st^ question that can earn you 1 point if you dropped points elsewhere.
+
+## Detailed steps
+
+### General
+
+- Work in VS Code at OSC as per usual.
+- Use Unix shell and Git commands to answer all questions unless explicitly
+  instructed not to do so.
+- In the Markdown file with your answers (see below),
+  copy each of the numbered instructions/questions into your document,
+  and insert your answers in between.
+  The code parts of your answers should be entered in Markdown code blocks,
+  and that code's output should also be part of your answer. For example:
+
+  ````bash-in-nocolor
+  1. List the files in your current working dir
+
+     I used the following command:
+     
+     ```bash
+     ls
+     ```
+     
+     The output was:
+     
+     ```
+     file1.txt   file2.txt   annot.gtf
+     ```
+
+  ````
+
+### Setting up
+
+- Create a new dir for this assignment, `/fs/ess/PAS2880/users/$USER/GA2`,
+  and navigate there. ***This will be your working dir for the entire assignment.***
+  Inside it, also create a dir `data` and a dir `results`.
+
+- In your working dir, create a `README.md` file and open it in the VS Code editor.
+  ***Use this file throughout the assigment to add your answers.***
+   
+### Part A: Starting a Git repository
+
+01. Add a header to your README file to indicate that this file (and dir) is for
+    your assignment.
+
+02. Initialize a Git repository inside your new directory.
+
+03. Add & stage and then commit the README file with an appropriate commit message.
+
+### Part B: Exploring the GTF file with Unix data tools
+
+04. Copy the genome annotation GTF file `GCF_016801865.2.gtf.gz` that is in your
+    copy of the @garrigós2025 data to a file `data/annot.gtf.gz`
+    (i.e., into the `data` dir you just created).
+   
+05. Check the file size of `annot.gtf.gz`.
+    Then, decompress the GTF file with the `gunzip` command below.
+    Finally, check the size of the resulting `annot.gtf` file.
+    How large is the size difference between the compressed and uncompressed files?
+
+    ```bash
+    gunzip data/annot.gtf.gz
+    ```
+   
+06. The total number of "genomic features" (genes, exons, etc.)
+    listed in a GTF file is simply the number of lines in its main/table section.
+   
+    - Count the total number of lines in `annot.gtf`.
+    - Take a look at the contents of the file and count the number of header
+      lines by eye.
+    - Based on your knowledge of what the GTF header lines look like,
+      combine `grep -v` and `wc -l` to count the number of genomic features in the file.
+
+07. Does the difference between the two line counts you just performed correspond
+    to the number of header lines you counted visually?
+    If not, can you figure out which other line(s) than the header lines
+    contain the pattern you used with `grep` above?
+   
+    <details><summary>_Click here for a hint_</summary>
+    Review the "Additional `grep` tips" box in
+    [the section on `grep`](../week03/w3c_shellfiles.html#grep-to-print-lines-that-match-a-pattern)
+    to find an option that might help you make sense of that.
+    </details>
+
+08. How many distinct "sequences" (chromosome/scaffolds/contigs) are represented
+    in the annotation file?
+    Store a list of these distinct sequences in a file `results/scaffolds.txt`.
+    
+    <details><summary>_Click here for a hint_</summary>
+    In this and all following questions, you'll only want to consider the table
+    part of the file, so you should start your commands with `grep -v` as above.
+    </details>
+
+09. Print a "count table" (like we did towards the end of
+    [this section](../week03/w3c_shellfiles.html#combining-cut-sort-and-uniq-to-create-a-list))
+    of feature types in the annotation:
+    this should have a count of the number of times each feature type occurs.
+    _(Such a table will for example show how many genes have been annotated in this genome_
+    _-- quite useful!)_
+
+10. Check the status of your Git repository.
+    You should see that your `README` has changed but also that Git has detected
+    the files in the `data` and `results` dirs.
+    You don't want to commit any files in the `data` and `results` dirs,
+    so create a `.gitignore` file that makes Git ignore them.
+    Check the status of your repository again --
+    is your `.gitignore` file working as intended?
+    
+11. Stage and commit the `.gitignore` file.
+
+12. Stage and commit the `README.md` file again.
+
+### Part C: Exploring the FASTQ files with Unix data tools
+
+13. Copy the FASTQ file `ERR10802863_R1.fastq.gz` of the @garrigós2025 data
+    to a file of the same name inside the same `data` dir you copied the GTF
+    file into.
+
+14. Check the status of your Git repository.
+    Does the FASTQ file show up? Why/why not?
+
+15. How many reads does the FASTQ file contain?
+
+    <details><summary>_Click here for hints_</summary>
+    Recall from last week's exercises that a direct linecount of the compressed file
+    will **not** give you the correct answer.
+   
+    Also, don't forget to convert the number of lines to the number of reads.
+    </details>
+
+16. How many reads in the FASTQ file contain the sequence `ACGT`?
+    _(You can assume this string does not occur outside of the lines with sequences.)_
+
+17. How many reads contain at least 10 consecutive `N`s (uncalled bases)?
+    _(You can assume that stretches of N's do not occur in the sequence quality lines.)_
+   
+18. Using the read length information in the FASTQ read header lines,
+    print a count table of read lengths.
+   
+    <details><summary>_Click here for hints_</summary>
+   
+    - First, select only the read header lines.
+      When doing so, you can assume that `@`s do not occur in other lines.
+   
+    - Next, extract the read length numbers in these header lines,
+      which are in the format `length=74`.
+      One way to do this is with a fun trick:
+      by using `=` as the delimiter to `cut` (`-d =`)!
+    </details>
+   
+19. Compare the number you got in the previous question
+    with the number of 35-bp reads from the question before that.
+    What does this seem to tell you?
+    To confirm, can you check what a sample of 35-bp reads look like?
+   
+    <details><summary>_Click here for hints_</summary>
+    To see the sequences in the 35-bp reads,
+    use a `grep` option that allows you to see the line after each match along
+    with the matching line.
+    Also, pipe `grep`'s output to `less` or `head` to avoid having thousands of
+    lines printed to screen.
+    </details>
+
+20. Stage and commit the `README.md` file again.
+
+### Bonus
+
+21. Name at least two concepts or commands that we have gone over in the course
+    so far, but which you feel you do not (fully) understand.
+    It helps to be specific about what you struggle with.

@@ -1,0 +1,978 @@
+---
+title: "Working with files in the Unix shell I:<br>The shell as a file browser"
+subtitle: "Week 3 -- lecture A"
+pagetitle: "w3b: Shell files I"
+date: 2025-09-05
+author:
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+    affiliation: 
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://mcic.osu.edu/bioinformatics
+other-links:
+  - text: "Week 3 overview"
+    icon: book
+    href: w3_overview.html
+  - text: "w3a: Sequence file types"
+    icon: bookmarks
+    href: w3a_file-overview.html
+  - text: "w3c: Shell files II"
+    icon: bookmarks
+    href: w3c_shellfiles.html
+  - text: "Week 3 exercises"
+    icon: pencil
+    href: w3_exercises.html
+editor_options: 
+  chunk_output_type: console
+---
+
+--------------------------------------------------------------------------------
+
+<br>
+
+## Introduction
+
+### Overview & learning goals for the rest of the week
+
+We'll pick up where we left off last week,
+continuing with basic Unix shell commands.
+We will focus on commands that operate on files and dirs.
+Specifically, you will learn to use the Unix shell to:
+
+- Create, copy, move, rename and delete directories and files (**this lecture**)
+- Select multiple files with a shell wildcard (**this lecture**)
+- View the contents of text files in various ways ([next lecture](./w3c_shellfiles.qmd))
+- Use redirection and the pipe to flexibly process the output of commands
+  ([next lecture](./w3c_shellfiles.qmd))
+- Search within, manipulate, and extract information from text files
+  ([next lecture](./w3c_shellfiles.qmd))
+
+### Lecture context & overview
+
+GUI-based file browsers
+(such as "Finder" on Mac, "File Explorer" on Windows,
+and the interface we saw in OSC OnDemand's File menu)
+can perform operations like listing, creating, moving, renaming, copying and
+removing files and folders.
+Here, you will learn to use Unix shell commands that can perform these actions.
+
+**Why do I need to learn to do these relatively trivial tasks in the shell?** 🤨
+
+- This will help you to get more comfortable with working in the shell.
+- These commands are useful to learn how the shell works generally,
+  and how commands are structured.
+- ***With practice, using the shell is faster and more powerful than a GUI file***
+  ***browser*** (certainly at OSU).
+- You may eventually run into situations where a GUI file browser is not available.
+
+### Getting ready
+
+#### Start a VS Code session
+
+1. Log in to OSC's OnDemand portal at <https://ondemand.osc.edu>
+2. In the blue top bar, select `Interactive Apps` and near the bottom,
+   click `Code Server`
+3. Fill out the form as follows:
+   - **Cluster**: `pitzer`
+   - **Account**: `PAS2880`
+   - **Number of hours**: `2`
+   - **Working Directory**: `/fs/ess/PAS2880/user/<username>`
+    (replace `<username>` with your user name)
+   - **App Code Server version**: `4.8.3`
+4. Click `Launch`
+5. Click the `Connect to VS Code` button once it appears
+6. In VS Code, open a terminal by 
+   clicking   {{< fa bars >}}   =\> `Terminal` =\> `New Terminal` ^[
+   Or use the keyboard shortcut <kbd>Ctrl</kbd>+<kbd>`</kbd>.]
+7. Check that your are in `/fs/ess/PAS2880/users/$USER`
+   by typing `pwd` in the terminal.\
+   _(Recall that `$USER` is a variable that represents your username._
+   _If you're not in that dir, it may be listed under `Recents` in the_
+   _`Get Started` document -- if so, click on that entry._
+   _Otherwise, click `File` > `Open Folder` and type/select_
+   _`/fs/ess/PAS2880/users/$USER`.)_
+     
+#### Open a Markdown file for notes
+
+I recommend that you create and open a Markdown file to keep
+notes on what we're doing in this session:
+
+1. Click <i class="fa fa-bars"></i> > `File` > `New File`
+2. Save the file inside `/fs/ess/PAS2880/users/$USER/week03`,
+   e.g. as `lectureB.md`
+
+## Additional VS Code functionality and setup
+
+#### Try a few color themes
+
+1. Access the "Color Themes" option by clicking
+   <i class="fa fa-cog"></i> (bottom left) > `Color Theme`.
+2. Try out a color few themes and see pick one you like!
+
+#### Options for the Side Bar
+
+The narrow side bar (Activity Bar) contains the following icons
+to toggle **(wide/Primary) Side Bar** options:
+
+- ***Explorer***: File browser & outline for the active file
+- ***Search***: For recursive searches across all files in the active folder
+- ***Source Control***: To work with version control (Git; *next week*)
+- ***Debugger*** (we won't work with this)
+- ***Extensions***: To install extensions (*up next!*)
+
+#### Install two VS Code extensions
+
+In the narrow side bar, click the `Extensions` icon.
+In the Extensions pane that now makes up the wide side bar,
+search for and then install the following two extensions:
+
+- **shellcheck** (by *simonwong*) --- this will check your shell scripts later on!
+- **Rainbow CSV** (by *mechatroner*) ---
+  make CSV/TSV files easier to view with column-based colors
+  
+:::{.callout-note collapse="true"}
+### Some more VS Code tips and tricks _(Click to expand)_
+
+- **Downloading files**\
+  In the Explorer in the side bar, you can right click on any file,
+  and among the options shown, you should see "**Download...**".
+  Click on that to download the file to your computer!
+
+- **Auto Save**\
+  To turn on the auto-saving of documents in the editor,
+  click {{< fa bars >}} > `File` => "Auto Save"
+  (shows a checkmark when activated).
+
+- **The Command Palette**\
+  To access any menu option that is available in VS Code,
+  the so-called "Command Palette" can be handy.
+  To access the Command Palette, click   <i class="fa fa-cog"></i>   and then
+  `Command Palette` (or press <kbd>F1</kbd> or <kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>).
+  To use it, start typing something to search for an option.
+    
+- **Toggling (hiding/showing) the side bars**\
+  If you want to save some screen space while coding along in class,
+  you may want to occasionally hide the side bars:
+  - In {{< fa bars >}} > `View` > `Appearance` you can toggle both the `Activity Bar`
+    and the `Primary Side Bar`.
+  - Or use keyboard shortcuts:
+    - <kbd>Ctrl/⌘</kbd>+<kbd>B</kbd> for the primary/wide side bar
+    - <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> for the activity/narrow side bar
+
+- **Keyboard shortcuts**\
+  For a single-page PDF overview of keyboard shortcuts for your operating system:
+  {{< fa bars >}}   =\>   `Help`   =\>   `Keyboard Shortcut Reference`.
+  (Or for direct links to these PDFs:
+  [Windows](https://code.visualstudio.com/shortcuts/keyboard-shortcuts-windows.pdf) /
+  [Mac](https://code.visualstudio.com/shortcuts/keyboard-shortcuts-macos.pdf) /
+  [Linux](https://code.visualstudio.com/shortcuts/keyboard-shortcuts-linux.pdf).)
+:::
+
+## Download the practice dataset
+
+You will now download the practice/example dataset from @garrigós2025
+we've discussed.
+First, make sure you are in `/fs/ess/PAS2880/users/$USER`
+(recall: `$USER` is an environment variable whose value is your user name).
+
+```bash
+pwd
+```
+```bash-out
+/fs/ess/PAS2880/users/jelmer
+```
+
+Then, use the `git clone` command (there is a space between `git` and `clone`^[
+`git` is a type of command that has "subcommands",
+such as `clone` and many others. You will learn much more about Git next week.
+])
+to download a repository on GitHub that has our practice dataset:
+
+```bash
+git clone https://github.com/jelmerp/garrigos-data
+```
+```bash-out
+Cloning into 'garrigos-data'...
+remote: Enumerating objects: 52, done.
+remote: Total 52 (delta 0), reused 0 (delta 0), pack-reused 52 (from 1)
+Receiving objects: 100% (52/52), 945.76 MiB | 132.14 MiB/s, done.
+Updating files: 100% (47/47), done.
+```
+
+This may take 10 or so seconds, since it will download almost 1 GB of data.
+
+Finally, move into the dir that was just downloaded:
+
+```bash
+cd garrigos-data
+```
+
+## `ls` and `tree` to list
+
+### `ls`
+
+The `ls` command, short for **list**, will list files and directories ---
+by default those in your current working dir:
+
+``` bash
+ls
+```
+``` bash-out
+fastq  meta  README.md  ref
+```
+
+::: {.callout-tip collapse="false"}
+#### `ls` output colors
+
+The `ls` output above does not show the different colors you should see in your
+shell — the most common ones are:
+
+- Entries in **[blue]{style="color: #0328fc"}** are directories
+  (`fastq`, `meta`, and `ref` above)
+- Entries in **black** are regular files (`README.md` above)
+- Entries in **[red]{style="color: #d92118"}** are compressed files
+  (we'll see examples of this soon).
+
+_(Some of these depend on the color scheme of your terminal / VS Code._
+_E.g., in dark themes, regular text files are in white.)_
+:::
+
+You can use an **argument** to change the dir (or file) that `ls` operates on, 
+and you can use **options** to change how it shows the output.
+Let's start with an option, **`-l`** (lowercase L):
+
+``` bash
+ls -l 
+```
+``` bash-out
+total 2
+drwxr-x---+ 2 jelmer PAS0471 4096 Nov 24  2024 fastq
+drwxr-x---+ 2 jelmer PAS0471 4096 Nov 13  2024 meta
+-rw-rw----+ 1 jelmer PAS0471 1539 Nov 13  2024 README.md
+drwxr-x---+ 2 jelmer PAS0471 4096 Jul  4 20:52 ref
+```
+
+The same items as before were printed, but now **in a different format**:
+one item per line,
+with additional information such as the date and time that each file was last
+modified, and the file sizes in bytes directly to the left of the date.
+
+Let's add another option, **`-h`**:
+
+``` bash
+ls -lh
+```
+``` bash-out
+total 2.0K
+drwxr-x---+ 2 jelmer PAS0471 4.0K Nov 24  2024 fastq
+drwxr-x---+ 2 jelmer PAS0471 4.0K Nov 13  2024 meta
+-rw-rw----+ 1 jelmer PAS0471 1.6K Nov 13  2024 README.md
+drwxr-x---+ 2 jelmer PAS0471 4.0K Jul  4 20:52 ref
+```
+
+<details><summary>How does the output differ after adding `-h`, and what do you think that means? *(Click to see the answer)*</summary>
+  The only difference is in the format of the column reporting the sizes of the
+  items listed.
+  
+  We now have "Human-readable filesizes" (hence `-h`),
+  where sizes on the scale of kilobytes will be shown  with `K`s,
+  of megabytes with `M`s, and of gigabytes with `G`s.
+  That can be useful especially for large files.
+</details>
+
+::: {.callout-note collapse="true"}
+#### More info about the columns in long-format `ls` output _(Click to expand)_
+
+The following image shows what each column in long-format `ls` represents:
+
+![](../img/long-ls2.png){fig-align="center" width="90%" fig-alt="An annotated screenshot of long-format ls output." .lightbox}
+
+Some notes about the above:
+
+- We will talk about file "permissions" in week 5 of the course.
+- You can ignore the column with the "number of links",
+  as this is not informative for regular users.
+- Sizes shown for _directories_ do (unfortunately) not correspond to the total
+  size of the dir and its contents.
+  Basically, you should only pay attention to sizes of _files_ when looking at
+  long-format `ls` output (see the next box to get dir sizes).
+
+Finally, the first line of long-format `ls` output (`total 2` / `total 2k` in
+the examples above) gives an indication of the total size of files
+that are directly located in this folder, i.e. not including those in subdirs.
+:::
+
+Moving on to **argument(s)** --
+we can list the contents of dirs other than our working dir
+by specifying one or more as arguments:
+
+``` bash
+# [Your output should show file names in red]
+ls fastq
+```
+``` bash-out
+ERR10802863_R1.fastq.gz  ERR10802867_R1.fastq.gz  ERR10802871_R1.fastq.gz  ERR10802877_R1.fastq.gz  ERR10802881_R1.fastq.gz  ERR10802885_R1.fastq.gz
+ERR10802863_R2.fastq.gz  ERR10802867_R2.fastq.gz  ERR10802871_R2.fastq.gz  ERR10802877_R2.fastq.gz  ERR10802881_R2.fastq.gz  ERR10802885_R2.fastq.gz
+ERR10802864_R1.fastq.gz  ERR10802868_R1.fastq.gz  ERR10802874_R1.fastq.gz  ERR10802878_R1.fastq.gz  ERR10802882_R1.fastq.gz  ERR10802886_R1.fastq.gz
+ERR10802864_R2.fastq.gz  ERR10802868_R2.fastq.gz  ERR10802874_R2.fastq.gz  ERR10802878_R2.fastq.gz  ERR10802882_R2.fastq.gz  ERR10802886_R2.fastq.gz
+ERR10802865_R1.fastq.gz  ERR10802869_R1.fastq.gz  ERR10802875_R1.fastq.gz  ERR10802879_R1.fastq.gz  ERR10802883_R1.fastq.gz
+ERR10802865_R2.fastq.gz  ERR10802869_R2.fastq.gz  ERR10802875_R2.fastq.gz  ERR10802879_R2.fastq.gz  ERR10802883_R2.fastq.gz
+ERR10802866_R1.fastq.gz  ERR10802870_R1.fastq.gz  ERR10802876_R1.fastq.gz  ERR10802880_R1.fastq.gz  ERR10802884_R1.fastq.gz
+ERR10802866_R2.fastq.gz  ERR10802870_R2.fastq.gz  ERR10802876_R2.fastq.gz  ERR10802880_R2.fastq.gz  ERR10802884_R2.fastq.gz
+```
+
+And like you saw last week with `cal`, options and arguments can be combined:
+
+``` bash
+ls -lh fastq
+```
+``` bash-out
+total 941M
+-rw-r-----+ 1 jelmer PAS0471 21M Nov 13  2024 ERR10802863_R1.fastq.gz
+-rw-r-----+ 1 jelmer PAS0471 22M Nov 13  2024 ERR10802863_R2.fastq.gz
+-rw-r-----+ 1 jelmer PAS0471 21M Nov 13  2024 ERR10802864_R1.fastq.gz
+-rw-r-----+ 1 jelmer PAS0471 22M Nov 13  2024 ERR10802864_R2.fastq.gz
+-rw-r-----+ 1 jelmer PAS0471 22M Nov 13  2024 ERR10802865_R1.fastq.gz
+-rw-r-----+ 1 jelmer PAS0471 22M Nov 13  2024 ERR10802865_R2.fastq.gz
+# [...output truncated...]
+```
+
+Some notes about these FASTQ files:
+
+- The files have a `.gz` extension and should for you be printed in
+  **[red]{style="color:#bb0000"}**, which indicates they have been _compressed_
+  with the `gzip` command.
+- There are two files per sample: `_R1` (forward reads) and `_R2` (reverse reads).
+- The files are ~21-22 Mb in size ---
+  considerably smaller than the original file sizes
+  (~1-2 Gb) because they were subsampled.
+  
+::: exercise
+#### {{< fa user-edit >}} **Exercise**: Listing a single file
+
+Say you want to check the size of a single file.
+Then, it may be always not be convenient to list an entire dir's contents.
+Can you figure out how to use `ls` to show you the file size **only** for the 
+`fastq/ERR10802865_R2.fastq.gz` file?
+
+<details><summary>*Click to see the solution*</summary>
+
+The argument to `ls` can be a path of any kind,
+including to a file rather than to a dir:
+
+```bash
+ls -lh fastq/ERR10802865_R2.fastq.gz
+```
+``` bash-out
+-rw-r-----+ 1 jelmer PAS0471 22M Nov 13  2024 fastq/ERR10802865_R2.fastq.gz
+```
+</details>
+:::
+
+### `tree` to recursively list files in tree-like format
+
+By default, `ls` is **not recursive**,
+**which means that it only shows results for one directory level**.
+Compare that with the output of the `tree` command,
+which gives a nice recursive overview in a simple tree-like format
+(with the `-C` option additionally adding colors):
+
+```bash
+tree -C
+```
+```bash-out
+# [colors not shown in this output]
+.
+├── fastq
+│   ├── ERR10802863_R1.fastq.gz
+│   ├── ERR10802863_R2.fastq.gz
+│   ├── ERR10802864_R1.fastq.gz
+│   ├── ERR10802864_R2.fastq.gz
+│   ├── ERR10802865_R1.fastq.gz
+│   ├── ERR10802865_R2.fastq.gz
+├── [...other FASTQ files not shown...]
+├── meta
+│   └── metadata.tsv
+├── README.md
+└── ref
+    └── GCF_016801865.2.gtf.gz
+
+3 directories, 47 files
+```
+
+Let's take a step back and consider what's in our dataset:
+
+- A `README.md` Markdown file
+- 44 FASTQ files with RNA-Seq reads for 22 samples (in the `fastq` dir)
+- A metadata file with treatment group info for each sample (in the `meta` dir)
+- A GTF annotation file for the reference genome (in the `ref` dir)
+
+We will take a closer look at these files today and in the weeks to come.
+
+## `mkdir` and `touch` to create
+
+First, navigate to your directory for this week:
+
+```bash
+cd ../week03
+```
+
+### `mkdir` to create new directories
+
+The `mkdir` command creates one or more new directories,
+and the `-p` option is needed to enable recursive behavior:
+
+```bash
+mkdir -p sandbox/testdir1
+```
+
+This command was recursive because both the `sandbox` dir and the
+`testdir1` dir within it had to be created at once.
+
+The name `sandbox` is common for dirs meant for experimentation and testing.
+Now, move into the `sandbox` dir you just created:
+
+```bash
+cd sandbox
+ls
+```
+```bash-out
+testdir1
+```
+
+::: exercise
+#### {{< fa user-edit >}} **Exercise**: `mkdir` and recursiveness
+
+1. What do you think the following command does?
+   Would you consider that recursive? Run the command and see what it did.
+
+   ```bash
+   mkdir testdir2 testdir3
+   ```
+
+   <details><summary>*Click to see the solution*</summary>
+   This command created two dirs at once.
+   It is **not** recursive but it only operated on one "dir level",
+   i.e. it did not need to create two dir levels
+   (or put another way, it did not create a dir within a dir).
+
+   ```bash
+   ls
+   ```
+   ```bash-out
+   testdir1 testdir2 testdir3
+   ```
+   </details>
+
+2. Run the below two commands one by one,
+   and read any output the commands print the screen.
+   Why does the first command fail?
+   What can you conclude about the `-p` other than that it enables recursiveness?
+
+   ```bash
+   mkdir testdir1
+   mkdir -p testdir1
+   ```
+   
+   <details><summary>*Click to see the solution*</summary>
+
+   - `mkdir testdir1` produces an error,
+     because you're trying to create a dir that already exists:
+     
+     ```bash
+     mkdir testdir1
+     ```
+     ```bash-out
+     mkdir: cannot create directory ‘testdir1’: File exists
+     ```
+   
+   - While `mkdir -p testdir1` doesn't print anything:
+   
+     ```bash
+     mkdir -p testdir1
+     ```
+  
+   - The latter may either mean that `mkdir -p` recreated the dir,
+     or that it did nothing but also didn't complain.
+     Looking at the `ls -l` timestamp would be one way to distinguish between
+     possibilities.
+     Or you could create a file inside the dir and see whether that's removed
+     by when you (re)run `mkdir -p`.
+     Here, I'll just give you the answer: `mkdir -p` doesn't do anything when
+     the dir already exists, and won't produce an error either.
+     This can be useful in non-interactive contexts.
+   
+   </details>
+:::
+
+### `touch` to create a new file
+
+To create new, empty files, use the `touch` command,
+specifiying the file name(s) as the argument(s):
+
+```bash
+# Create a single new file called newfile1.txt
+touch newfile1.txt
+
+# Create two additional files:
+touch newfile2.txt newfile3.txt
+```
+
+::: callout-tip
+#### Operating on multiple files
+As you just saw, both `mkdir` and `touch` can take multiple arguments.
+Notably, almost all Unix commands that operate on files and/or dirs
+can operate on multiple (many!) files at a time,
+which is one reason that using these commands can be highly efficient.
+
+That's especially true once you know how to select/specify many files at once
+using shortcuts known as wildcards: we will look at that later in this lecture.
+:::
+
+::: exercise
+#### {{< fa user-edit >}} **Exercise**: File locations
+
+1. Can you check the sizes of the `newfile` files you just created?
+
+   <details><summary>*Click to see the solution*</summary>
+  
+   ```bash
+   ls -lh
+   ```
+   ```bash-out
+   total 0
+   -rw-rw----+ 1 jelmer PAS0471 0 Jul  3 12:38 newfile1.txt
+   -rw-rw----+ 1 jelmer PAS0471 0 Jul  3 12:38 newfile2.txt
+   -rw-rw----+ 1 jelmer PAS0471 0 Jul  3 12:38 newfile3.txt
+   ```
+   </details>
+
+2. Create a create a new file `monarch.txt` inside a new dir `butterflies`.
+   Don't change your working dir while you're doing this.
+
+   <details><summary>*Click to see the solution*</summary>
+
+   To make a new dir and create a file in there,
+   you can't just use the `touch` command,
+   as it cannot create the directory for you
+   (pay attention to the error, which may seem a bit confusing):
+  
+   ```bash
+   touch butterflies/monarch.txt
+   ```
+   ```bash-out
+   touch: butterflies/monarch.txt: No such file or directory
+   ```
+  
+   Instead, you first have create the new dir with `mkdir`,
+   and _then_ create the new file in there:
+  
+   ```bash
+   mkdir butterflies
+   touch butterflies/monarch.txt
+   ```
+   </details>
+:::
+
+## `cp` to copy
+
+The `cp` command copies files and/or dirs from one location to another.
+Just like when copying files in a GUI file browser,
+the new copy can have a different name than the original.
+It can also have the same name, as long as it's copied to a different dir.
+
+`cp` has two **required arguments** in the following order:
+
+1. What you want to copy (_source_ path)
+2. Where you want to copy it to (_destination_ path).
+
+That is, its basic syntax is `cp <source path> <destination path>`.
+
+::: callout-tip
+### Recap: The meaning of `<...>` notation
+Recall that when I use `< >` around text in a line of code,
+that text is **descriptive** rather than literal, and has to be replaced.
+In this example, `<source>` should be replaced in an actual line of code by
+whatever "source" you want to use, and likewise for the `<destination>`.
+:::
+
+#### Basic examples
+
+Make a copy of one of the files you created above:
+
+```bash
+cp newfile3.txt newfile3_copy.txt
+```
+
+Importantly, _like with any Unix command_, 
+you can always refer to files and dirs that aren't in your current working dir --
+for example:
+
+```bash
+cp ../../garrigos-data/meta/metadata.tsv meta2.tsv
+```
+
+That command copied `metadata.tsv`, which was not in your working dir,
+to a new file `meta2.tsv` in your working dir.
+
+:::callout-tip
+#### Make sure to use Tab completion when looking for existing files in case like above!
+For example, you may get confused about how many levels you need to go up,
+and pressing <kbd>Tab</kbd> after the `/` will help you to orient.
+Additionally, you will be much faster and less likely to have typos in your paths
+when you consistently use Tab completion!
+:::
+
+#### Copying into your working dir without changing the name
+
+When copying something into your working dir, like above,
+you may not actually want to change the file name.
+To accomplish this,
+you could just repeat the original file name in the destination path:
+
+```bash
+cp ../../garrigos-data/meta/metadata.tsv metadata.tsv
+```
+
+But do you really need to repeat the filename --
+which is not just more typing, but can be error-prone as well? No!
+
+If the destination path is simply the `.` shortcut that indicates your current
+working dir,
+then the file name of the copy will not be changed:
+
+```bash
+cp ../../garrigos-data/meta/metadata.tsv .
+```
+
+#### Copying dirs and their contents
+
+Finally, `cp` will by default refuse to copy directories and their contents ---
+that is, like `mkdir`, it is not **recursive**^[
+For better or worse, non-recursiveness in Unix commands is meant as a sort of safety mechanism,
+as you may otherwise more easily operate on very large amounts of data accidentally.].
+The `-r` option is needed for recursive copying:
+
+```bash
+cp -r ../../garrigos-data/meta .
+```
+
+Check the contents of the `sandbox` dir again now that you've copied several items
+there:
+
+```bash
+ls
+```
+```bash-out
+butterflies  meta2.tsv  metadata.tsv  newfile1.txt  newfile2.txt  newfile3.txt  meta
+```
+
+## `mv` to move and rename
+
+First off, recall from last week that a mere file name like `monarch.txt` can
+represent a path, implying that the file is in your current working dir.
+More generally, both a file's name (e.g. `monarch.txt`) and the dir it is inside
+(`butterflies/`) are part of the path (`butterflies/monarch.txt`).
+
+With that in mind, it becomes apparent that _moving_ a file versus _renaming_ it
+is fundamentally the same operation: you are **changing the path** to the file.
+
+As such, the **`mv`** command can be used to move files, rename them,
+or do both at the same time:
+
+- Same directory, different file name ("renaming"):
+
+  ```bash
+  mv meta2.tsv meta_copy.tsv
+  ```
+
+- Different directory, same file name ("moving"):
+
+  ```bash
+  # (You don't need the trailing slash to data/, but this can be clearer.)
+  mv meta_copy.tsv meta/
+  ```
+
+- Different directory, different file name ("moving + renaming"):
+
+  ```bash
+  mv metadata.tsv meta/metadata_old.tsv
+  ```
+
+Finally, note that unlike `cp`, the `mv` command is recursive by default!
+
+::: callout-note
+#### Operating on multiple files with `mv` and `cp`
+
+You can move or copy multiple files at once with `mv` and `cp`.
+If you give these commands three or more arguments,
+only the **last argument is interpreted as the destination** --- for example:
+
+```bash
+cp <source1> <source2> <destination>
+mv <source1> <source2> <source3> <source4> <destination>
+```
+:::
+
+::: callout-tip
+#### Both the `mv` and `cp` commands will by default:
+
+- Not report what they do: no output = success
+  (use the **`-v` option for _verbose_** to make them report what they do).
+- Overwrite existing files without reporting this
+  (use the **`-i` option for _interactive_** to make them ask before overwriting).
+:::
+
+## `rm` to remove
+
+The **`rm`** command removes files and optionally dirs -- here,
+remove the file copy you made above: 
+
+```bash
+rm newfile1.txt
+```
+
+Like with `cp`, the **`-r`** option is needed to make the command work recursively:
+
+```bash
+rm butterflies
+```
+```bash-out
+rm: cannot remove ‘butterflies’: Is a directory
+```
+
+```bash
+# (This produces no output if it works) 
+rm -r butterflies
+```
+
+::: {.callout-warning collapse="true"}
+#### There is no thrash bin when deleting files in the shell, so use `rm` with caution! _(Click to expand)_
+
+`rm -r` can be very dangerous ---
+for example, the command `rm -r /` would attempt to remove the entire contents
+of the computer, including the operating system.
+A couple ways to take precautions:
+
+- You can add the `-i` option,
+  which will make you confirm each individual removal (can be tedious)
+- When you intend to remove an _empty_ dir, you can use the `rmdir` command.
+  This command fails on non-empty dirs.
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: exercise
+#### {{< fa user-edit >}} **Exercise:** Spaces in file names --- what could go wrong?
+
+- Say, you have a dir called `raw` that has important raw data:
+
+  ```bash
+  # [Hypothetical - don't run]
+  ls
+  ```
+  ```bash-out
+  raw
+  ```
+
+- Next, you create a dir for sequences, with a space in the file name
+  (this is possible by quoting the full name as shown below):
+
+  ```bash
+  # [Hypothetical - don't run]
+  mkdir "raw sequences"
+  ```
+
+- Finally, you don't need this dir after all, and carelessly try to remove it:
+  
+  ```bash
+  # [Hypothetical - don't run]
+  rm -r raw sequences
+  ```
+
+<hr style="height:1pt; visibility:hidden;" />
+
+<details><summary>What would happen when that last command is run? _(Click for the answer)_</summary>
+Because the `"..."` quotes were omitted with the `rm` command,
+it will interpret `raw` and `sequences` as two separate arguments,
+i.e. as two separate files/dirs to remove.
+
+Therefore, the `rm` command will not remove the `raw sequences` dir,
+but it will remove the "earlier" `raw` dir ---
+now your project's data has been erased! 😳
+
+(Additionally, it will produce an error because it cannot find the `sequences` dir.)
+</details>
+:::
+
+## Wildcard expansion (globbing)
+
+Shell wildcard expansion is a very useful technique to select multiple files,
+where **wildcards** are _characters that have a special meaning_.
+
+To practice with this, 
+start by creating some dummy FASTQ files in your `sandbox` dir:
+
+```sh
+# (Copy-and-paste this into the shell rather than typing it out) 
+touch sample1_R1.fastq sample1_R2.fastq
+touch sample2_R1.fastq sample2_R2.fastq
+touch sample3_R1.fastq sample3_R2.fastq
+```
+
+By far the most commonly used wildcard is `*`,
+which matches **any number of any combination of characters**
+(including "nothing" -- the absence of any characters).
+For example, you can match only the two `sample1` files with a `*` using:
+
+```bash
+# This matches files that start with "sample1"
+ls sample1*
+```
+```bash-out
+sample1_R1.fastq  sample1_R2.fastq
+```
+
+Selecting files with wildcard expansion is also called **globbing**.
+When globbing, the pattern has to match the entire file name --
+therefore, the following doesn't match anything:
+
+```bash
+# This matches files that _end in_ R1, but there are no such files:
+ls *R1
+```
+```bash-out
+ls: cannot access *R1: No such file or directory
+```
+
+So, if the string (text) that we use for matching is in the middle of the filename,
+like `R1`, **we need a `*` on both sides of it**:
+
+```bash
+# This matches files that contain, anywhere in their names, "R1":
+ls *R1*
+```
+```bash-out
+sample1_R1.fastq  sample2_R1.fastq  sample3_R1.fastq
+```
+
+In summary:
+
+| Pattern        | Matches files whose names... 
+|----------------|---------------------------|
+| `sample1*`     | [Start with]{.underline} "sample1"
+| `*fastq`       | [End with]{.underline} ".fastq"
+| `*_R1*`        | [Contain]{.underline} "\_R1"
+| `*`            | _(matches all files in the working dir)_^[Except so-called hidden files.]
+
+: {.striped .hover}
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: exercise
+#### {{< fa user-edit >}} **Exercise**: File matching
+
+1. List only the FASTQ files for sample 3.
+
+   <details><summary>Click for the solution</summary>
+  
+   ```bash
+   ls sample3*
+   ```
+   ```bash-out
+   sample3_R1.fastq  sample3_R2.fastq
+   ```
+   </details>
+
+2. Which files does `ls *samp*le*` match? Make a prediction before you test it.
+
+   <details><summary>Click for the solution</summary>
+   It matches all the FASTQ files, because:
+  
+   - All file names start with `sample`,
+   - Since `*` also matches "zero characters", there is no requirement for the
+     presence of characters at the locations of the "unnecessary" `*`s.
+   </details>
+
+3. Create 2 new files called `sample1.txt` and `sample2.txt` in the current working dir.
+   Then, only match the 2 FASTQ files for sample1.
+
+   <details><summary>Click for the solution</summary>
+  
+   First we create the files:
+  
+   ```bash
+   touch sample1.txt sample2.txt
+   ```
+  
+   Then we match them -- the below code means
+   any file that starts with "sample1" and end with "fastq":
+  
+   ```bash
+   ls sample1*fastq
+   ```
+   ```bash-out
+   sample1_R1.fastq  sample1_R2.fastq
+   ```
+   </details>
+
+:::
+
+#### Expansion is done by the shell itself
+
+While it may seem like a trivial or odd distinction,
+it is important to realize that the "expansion"
+--of a wildcard to matching file names-- is done by the shell itself
+instead of by `ls` or another command you might be using wildcards with.
+**This means that a command like `ls` will "see"/"receive" the list of files _after_**
+**the expansion has already happened.**
+
+So, when you type...
+
+```bash
+ls sample1*fastq
+```
+
+...the shell will _first_ do wildcard expansion.
+That means that what it really ends up running, in this particular case, is:
+
+```bash
+ls sample1_R1.fastq sample1_R1.fastq
+```
+
+#### Practical examples
+
+Because the expansion is done by the shell,
+wildcard expansion works with any command that accepts multiple paths as arguments,
+such as _copy_ (`cp` command), *move* (`mv`) or *delete* (`rm`).
+For example, we can:
+
+- Remove any stray `.txt` files using:
+
+  ```bash
+  # (The -v option will make rm report what it's removing)
+  rm -v *.txt
+  ```
+  ```bash-out
+  removed 'newfile2.txt'
+  removed 'newfile3_copy.txt'
+  removed 'newfile3.txt'
+  removed 'sample1.txt'
+  removed 'sample2.txt'
+  ```
+
+- Move all FASTQ files using:
+
+  ```bash
+  mkdir fastq_files
+  mv -v *fastq fastq_files/
+  ```
+  ```bash-out
+  renamed 'sample1_R1.fastq' -> 'fastq_files/sample1_R1.fastq'
+  renamed 'sample1_R2.fastq' -> 'fastq_files/sample1_R2.fastq'
+  renamed 'sample2_R1.fastq' -> 'fastq_files/sample2_R1.fastq'
+  renamed 'sample2_R2.fastq' -> 'fastq_files/sample2_R2.fastq'
+  renamed 'sample3_R1.fastq' -> 'fastq_files/sample3_R1.fastq'
+  renamed 'sample3_R2.fastq' -> 'fastq_files/sample3_R2.fastq'
+  ```
