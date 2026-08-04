@@ -1,0 +1,849 @@
+---
+title: "Week 10 exercises: A longer workflow"
+pagetitle: "Week 10 Exercises"
+date: 2026-10-17
+author:
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+    affiliation: 
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://go.osu.edu/bioinformatics-core
+      - name: Dept. of Plant Pathology, Ohio State University
+        url: https://plantpath.osu.edu
+bibliography: ../references.bib       
+number-sections: false
+editor_options: 
+  chunk_output_type: console
+other-links:
+  - text: "Week 10 overview"
+    icon: book
+    href: w10_overview.html
+  - text: "w10a: Workflow management"
+    icon: bookmarks
+    href: w10a_workflow.html
+  - text: "w10b: Data management"
+    icon: bookmarks
+    href: w10b_data.html
+language:
+  other-links-title: "Also this week"
+---
+
+-----------
+
+<br>
+
+## Introduction 
+
+These exercises mainly serve to practice more with organizing your scripts
+according to the strategy of using:
+
+- Shell scripts that typically run a single bioinformatics tool for a
+  single file or sample,
+  and that accept arguments such as input and output dirs or files.
+- A Markdown document with a "protocol" for your workflow:
+  it mainly contains code to run the shell scripts,
+  typically submitting those as batch jobs, and often using loops to do so.
+
+In the exercises and assignments of the past weeks,
+you created such files to run FastQC and TrimGalore,
+using these to pre-process the @garrigós2025 RNA-Seq reads.
+Here, you'll add a few steps to this RNA-Seq analysis:
+summarizing FastQC results with MultiQC,
+and aligning the trimmed reads to the reference genome.
+
+After doing this, your protocol Markdown will more closely resemble something you
+might use in this course's final project and/or in your research projects:
+it will contain more steps including _consecutive_ ones,
+where the input of one step is the output of a previous step.
+
+## Setting up
+
+- Create and move into a dir for these exercises:
+
+  ```bash
+  # You should be in /fs/ess/PAS2880/users/$USER
+  mkdir week10/exercises
+  cd week10/exercises
+  ```
+
+- Create dirs for scripts and results,
+  then create the Markdown file and open it:
+
+  ```bash
+  mkdir scripts results
+  touch README.md
+  ```
+
+- We've already made the shell scripts to run indival steps.
+  Copy them into your `scripts` dir:
+
+  ```bash
+  cp -v /fs/ess/PAS2880/share/scripts/w9_ex/* scripts/
+  ```
+  ```bash-out
+  '/fs/ess/PAS2880/share/scripts/w9_ex/fastqc.sh' -> 'scripts/fastqc.sh'
+  '/fs/ess/PAS2880/share/scripts/w9_ex/multiqc.sh' -> 'scripts/multiqc.sh'
+  '/fs/ess/PAS2880/share/scripts/w9_ex/star_align.sh' -> 'scripts/star_align.sh'
+  '/fs/ess/PAS2880/share/scripts/w9_ex/star_index.sh' -> 'scripts/star_index.sh'
+  '/fs/ess/PAS2880/share/scripts/w9_ex/trimgalore.sh' -> 'scripts/trimgalore.sh'
+  ```
+
+- Copy the following into your `README.md`:
+
+  ````markdown
+  # RNA-Seq analysis of _Culex pipiens_
+  
+  - Author: <???>
+  - Date: <???>
+  - GitHub repository: <???>
+  - This was run at the <???> cluster of the Ohio Supercomputer Center (<www.osc.edu>)
+  - OSC working dir: <???>
+  
+  ## Prerequisites
+  
+  - **Input files**:
+    - The input files are:
+      - Paired-end FASTQ files
+      - Reference genomes files (assembly and annotation)
+  
+  - **Software**:
+    - The scripts will run programs using Singularity/Apptainer containers
+      available online, with links contained inside the scripts
+    - If running at OSC, no software installations are needed
+    - If you're not at OSC, you need to have `apptainer` and `Slurm` installed.
+  
+  - You don't need to create the output dirs because the scripts will do so.
+  
+  ## Set up: Get the input files
+  
+  1. Download the input FASTQ files and the reference genome annotation GTF
+     from a GitHub repo as follows:
+    
+     ```bash
+     git clone https://github.com/jelmerp/garrigos-data
+     ```
+  
+  2. Download the reference genome assembly FASTQ from NCBI as follows:
+  
+     ```bash
+     URL=https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_genomic.fna.gz
+     wget -P garrigos-data/ref "$URL"
+     ```
+  
+  3. Unzip the reference genome files:
+  
+     ```bash
+     gunzip -v garrigos-data/ref/*
+     ```
+  
+  ## Set up: Set file paths
+  
+  ```bash
+  # Inputs:
+  fastq_dir=<???>
+  ref_assembly=<???>
+  ref_annotation=<???>
+  
+  # Base output dir:
+  outdir=results
+  ```
+  
+  ## Step 1: Read QC with FastQC
+  
+  The `fastqc.sh` script runs on 1 FASTQ file at a time and takes 2 arguments -
+  the input FASTQ file and output dir:
+  
+  ```bash
+  for fastq in "$fastq_dir"/*fastq.gz; do
+      sbatch scripts/fastqc.sh <???> "$outdir"/fastqc
+  done
+  ```
+  
+  ## Step 2: FastQC summaries with MultiQC
+  
+  <???>
+  
+  ## Step 3: Read trimming with TrimGalore
+  
+  <???>
+  
+  ## Step 4: Creating a reference genome index with STAR
+  
+  <???>
+  
+  ## Step 5: Trimmed read alignment to the reference genome index with STAR
+  
+  <???>
+  ````
+
+### General instructions
+
+For all steps below where you are supposed to run a shell script one or more times,
+you should:
+  
+1. Submit the shell script as (a) batch job(s)
+2. Monitor the progress of the job(s)
+3. When they are done, check the Slurm logs and output files
+4. If you detect failures, try to figure out what went wrong and rerun
+5. Move the Slurm log files of the succeeded run(s) into a `logs` dir within
+   the script's output dir
+
+The input files will be the `garrigos-data` ones --
+you can copy those into your working dir or use your copy at their current location.
+Either way, just make sure you also have the assembly FASTA file
+[we downloaded earlier](./w10b_data.html#wget).
+
+::: {.callout-tip appearance="simple"}
+There is one very small addition to these shell scripts that you haven't seen so far.
+They will create a `logs` dir within the output dir,
+that you can later move Slurm log files into.
+:::
+
+::: {.callout-warning appearance="simple"}
+The workflow is very similar to
+[the one laid out in this week's first lecture](./w10a_workflow.html#structuring-your-analysis-workflow),
+but not identical!
+Both so you can get some genuine practice,
+but also to avoid assuming/copying the wrong things,
+I would recommend not to copy-paste any code from that lecture page.
+:::
+
+## Part A: Work on the README file and get the input files
+
+01. Carefully read the README file.
+    It contains the general structure of your workflow protocol,
+    with some parts (marked as `<???>`) that you need to fill in.
+    
+02. Fill in the blanks (`<???>`) in the introductory and setup parts of the README
+    file, i.e. until step 1.
+
+03. Run the code in the "Set up: Get the input files" section to get (another)
+    copy of all the input files, and to unzip the reference genome files.
+
+## Part B: Read QC and processing
+
+04. Using the code in your README, run the FastQC script for all FASTQ files.
+    (You'll have to fill in one blank in the loop.)
+
+05. Take a look at the `multiqc.sh` script,
+    paying attention especially to the arguments it takes.
+    This script is intended to run the program MultiQC,
+    and you will do so here using the FastQC results as input:
+    the script's input dir should therefore be the FastQC output dir.
+    It should only be run once, for all FastQC output files.
+    
+06. Add code to your README to run the MultiQC step, and run it.
+    
+07. Download the MultiQC output HTML file and take a look at it.
+    Can you make sense of the table and the visualizations? 
+    
+08. Add code to your README to run the read trimming step.
+    You should run this like you have done before,
+    looping over the R1 FASTQ files, and running the script once per sample.
+
+## Part C: Read alignment with STAR
+
+You will align the trimmed reads to the reference genome with the program
+STAR, which is an aligner specifically designed for RNA-Seq data^[
+Dedicated RNA-Seq aligners are needed because RNA-Seq read alignment needs to be
+"splice-aware": when reads are mapped to the genome,
+introns are included in the reference but are (mostly) not present in the reads,
+because the reads are mostly mature mRNAs where the introns have been spliced out.
+Therefore, a read can align as several disjunct fragments across introns!].
+This part contains two steps.
+When aligning reads, you generally first need to create an "index" of the
+reference genome^[The aligner will then align the reads to this index rather
+than the genome itself, which is much more efficient. Note that these indices are
+aligner-specific, and can even differ among versions of the same aligner.],
+and then you can do the actual alignment of the reads against this index.
+
+09. Similar to what you did for the MultiQC script,
+    figure out how you should run the `star_index.sh` script,
+    add the code to do so to the README, and run the script.
+    (Only a single index needs to be created,
+    so the index script is run just once.)
+    
+10. Now you can align the trimmed reads to the reference genome,
+    or rather to its newly-created index.
+    The script `scripts/star_align.sh` does this for _one sample_ at a time,
+    producing alignment files in the BAM format, and taking 5 arguments:
+
+    1. An R1 FASTQ file
+    2. The matching R2 FASTQ file
+    3. The reference genome index **directory** (not a specific file)
+    4. The reference genome annotation GTF file
+    5. An output dir
+    
+    Read the script,
+    add code to your README to run this script for all samples, and run it.
+
+## Solutions
+
+### Part A
+
+<details><summary>**2.** An example README _(click to expand)_</summary>
+
+````markdown
+# RNA-Seq analysis of _Culex pipiens_
+  
+- Author: Jelmer Poelstra
+- Date: 2026-10-23
+- GitHub repository: TBA
+- This was run at the Pitzer cluster of the Ohio Supercomputer Center (<www.osc.edu>)
+- OSC working dir: /fs/ess/PAS2880/users/jelmer/week10/exercises
+  
+## Prerequisites
+  
+- **Input files**:
+  - The input files are:
+    - Paired-end FASTQ files
+    - Reference genomes files (assembly and annotation)
+  
+- **Software**:
+  - The scripts will run programs using Singularity/Apptainer containers
+    available online, with links contained inside the scripts
+  - If running at OSC, no software installations are needed
+  - If you're not at OSC, you need to have `apptainer` and `Slurm` installed.
+  
+- You don't need to create the output dirs because the scripts will do so.
+  
+## Set up: Set file paths
+  
+```bash
+# Inputs:
+fastq_dir=garrigos-data/fastq
+ref_assembly=garrigos-data/ref/GCF_016801865.2_TS_CPP_V2_genomic.fna
+ref_annotation=garrigos-data/ref/GCF_016801865.2.gtf
+  
+# Base output dir:
+outdir=results
+```
+````
+</details>
+
+### Part B
+
+<details><summary>**4.** Run the FastQC script for all FASTQ files _(click to expand)_</summary>
+
+- Code to submit the batch jobs:
+
+  ```bash
+  for fastq in "$fastq_dir"/*fastq.gz; do
+      sbatch scripts/fastqc.sh "$fastq" "$outdir"/fastqc
+  done
+  ```
+
+- Monitor the jobs:
+  1. `squeue -u $USER -l` until all jobs are out of the list i.e. are done
+  2. `less slurm-fastqc*` to read over at least on Slurm log file
+  3. Check your email and/or run `tail slurm-fastqc*` to make sure no job has failed
+  4. Check the main output files with `ls -lh results/fastqc`
+  
+- NOTE: The code to run the above steps does not need to be stored in your README,
+  as this is the kind of code you repeatedly run and which does not produce results.
+  You're best off typing this directly in the terminal.
+
+- Move the Slurm log files with `mv -v slurm-fastqc* results/fastqc/logs/`.
+  **It can be good to store this line in your README.**
+
+</details>
+
+<details><summary>**6.** Add code to your README to run `multiqc.sh`, and run it _(click to expand)_</summary>
+
+- The code to run the script:
+  
+  ```bash
+  sbatch scripts/multiqc.sh "$outdir"/fastqc "$outdir"/multiqc
+  ```
+  
+- Expected/example Slurm log file contents:
+  
+  ```bash-out-solo
+  # Starting script multiqc.sh
+  Thu Oct 23 11:43:33 AM EDT 2025
+  # Input dir:                      results/fastqc
+  # Output file:                    results/multiqc
+  
+  INFO:    Using cached SIF image
+  INFO:    gocryptfs not found, will not be able to use gocryptfs
+  
+  /// MultiQC 🔍 v1.31
+  
+         file_search | Search path: /fs/ess/PAS2880/users/jelmer/week10/exercises/results/fastqc
+  
+              fastqc | Found 44 reports
+  
+       write_results | Data        : results/multiqc/multiqc_data
+       write_results | Report      : results/multiqc/multiqc_report.html
+             multiqc | MultiQC complete
+  
+  # Used MultiQC version:
+  INFO:    Using cached SIF image
+  INFO:    gocryptfs not found, will not be able to use gocryptfs
+  multiqc, version 1.31
+  # Successfully finished script multiqc.sh
+  Thu Oct 23 11:43:45 AM EDT 2025
+  ```
+
+- Expected output files:
+
+  ```bash
+  ls -lh results/multiqc/
+  ```
+  ```bash-out
+  total 5.7M
+  drwxrwx---+ 2 jelmer PAS0471 4.0K Oct 23 11:43 logs
+  drwxr-xr-x+ 2 jelmer PAS0471 4.0K Oct 23 11:43 multiqc_data
+  -rw-rw----+ 1 jelmer PAS0471 5.7M Oct 23 11:43 multiqc_report.html
+  ```
+
+- Move the Slurm log file:
+
+  ```bash
+  mv slurm-multiqc* results/multiqc/logs/
+  ```
+</details>
+
+<details><summary>**7.** The expected MultiQC output file _(click to expand)_</summary>
+
+[Link to my MultiQC report file](./multiqc_report.html) 
+
+</details>
+
+<details><summary>**8.** Add code to your README to run `trimgalore.sh`, and run it _(click to expand)_</summary>
+
+- The code to run the script:
+
+  ```bash
+  for R1 in "$fastq_dir"/*_R1.fastq.gz; do
+      R2="${R1/_R1/_R2}"
+      sbatch scripts/trimgalore.sh "$R1" "$R2" "$outdir"/trimgalore
+  done
+  ```
+  
+- You've seen the TrimGalore logs and output files before.
+  Note that this script does do the output FASTQ file renaming that was a bonus
+  part of the previous assignment, so the FASTQ files will have names like these:
+  
+  ```bash-out-solo
+  ERR10802886_R1.fastq.gz   ERR10802886_R2.fastq.gz
+  ```
+  
+- Move the Slurm log files:
+
+  ```bash
+  mv slurm-trimgalore* results/trimgalore/logs
+  ```
+
+</details>
+
+### Part C: Read alignment with STAR
+
+<details><summary>**9.** Add code to your README to run `star_index.sh`, and run it _(click to expand)_</summary>
+
+- The code to run the script:
+
+  ```bash
+  sbatch scripts/star_index.sh "$ref_assembly" "$ref_annotation" results/star/index
+  ```
+
+- Expected Slurm log file contents:
+
+  ```bash-out-solo
+  # Starting script star_index.sh
+  Thu Oct 23 11:56:07 AM EDT 2025
+  # Input assembly FASTA file:      garrigos-data/ref/GCF_016801865.2_TS_CPP_V2_genomic.fna
+  # Input annotation GTF file:      garrigos-data/ref/GCF_016801865.2.gtf
+  # Output dir:                     results/star/index
+  
+  INFO:    Using cached SIF image
+  INFO:    gocryptfs not found, will not be able to use gocryptfs
+  	/opt/conda/bin/STAR-avx2 --runMode genomeGenerate --genomeFastaFiles garrigos-data/ref/GCF_016801865.2_TS_CPP_V2_genomic.fna --sjdbGTFfile garrigos-data/ref/GCF_016801865.2.gtf --genomeDir results/star/index --runThreadN 16
+  	STAR version: 2.7.11b   compiled: 2024-07-03T14:39:20+0000 :/opt/conda/conda-bld/star_1720017372352/work/source
+  Oct 23 11:56:08 ..... started STAR run
+  Oct 23 11:56:08 ... starting to generate Genome files
+  Oct 23 11:56:16 ..... processing annotations GTF
+  !!!!! WARNING: --genomeSAindexNbases 14 is too large for the genome size=566354144, which may cause seg-fault at the mapping step. Re-run genome generation with recommended --genomeSAindexNbases 13
+  Oct 23 11:56:21 ... starting to sort Suffix Array. This may take a long time...
+  Oct 23 11:56:23 ... sorting Suffix Array chunks and saving them to disk...
+  Oct 23 11:57:35 ... loading chunks from disk, packing SA...
+  Oct 23 11:57:49 ... finished generating suffix array
+  Oct 23 11:57:49 ... generating Suffix Array index
+  Oct 23 11:59:17 ... completed Suffix Array index
+  Oct 23 11:59:17 ..... inserting junctions into the genome indices
+  Oct 23 11:59:54 ... writing Genome to disk ...
+  Oct 23 11:59:54 ... writing Suffix Array to disk ...
+  Oct 23 11:59:56 ... writing SAindex to disk
+  Oct 23 11:59:57 ..... finished successfully
+  
+  # Used STAR version:
+  INFO:    Using cached SIF image
+  INFO:    gocryptfs not found, will not be able to use gocryptfs
+  2.7.11b
+  # Successfully finished script star_index.sh
+  Thu Oct 23 11:59:58 AM EDT 2025
+  ```
+
+- Expected output files:
+
+  ```bash
+  ls -lh results/star/index
+  ```
+  ```bash-out
+  total 6.6G
+  -rw-rw----+ 1 jelmer PAS0471 1.8K Oct 23 11:56 chrLength.txt
+  -rw-rw----+ 1 jelmer PAS0471 6.0K Oct 23 11:56 chrNameLength.txt
+  -rw-rw----+ 1 jelmer PAS0471 4.3K Oct 23 11:56 chrName.txt
+  -rw-rw----+ 1 jelmer PAS0471 2.9K Oct 23 11:56 chrStart.txt
+  -rw-rw----+ 1 jelmer PAS0471 5.2M Oct 23 11:56 exonGeTrInfo.tab
+  -rw-rw----+ 1 jelmer PAS0471 2.4M Oct 23 11:56 exonInfo.tab
+  -rw-rw----+ 1 jelmer PAS0471 773K Oct 23 11:56 geneInfo.tab
+  -rw-rw----+ 1 jelmer PAS0471 616M Oct 23 11:59 Genome
+  -rw-rw----+ 1 jelmer PAS0471  774 Oct 23 11:59 genomeParameters.txt
+  -rw-rw----+ 1 jelmer PAS0471  44K Oct 23 11:59 Log.out
+  drwxrwx---+ 2 jelmer PAS0471 4.0K Oct 23 11:53 logs
+  -rw-rw----+ 1 jelmer PAS0471 4.5G Oct 23 11:59 SA
+  -rw-rw----+ 1 jelmer PAS0471 1.5G Oct 23 11:59 SAindex
+  -rw-rw----+ 1 jelmer PAS0471 1.8M Oct 23 11:59 sjdbInfo.txt
+  -rw-rw----+ 1 jelmer PAS0471 2.4M Oct 23 11:56 sjdbList.fromGTF.out.tab
+  -rw-rw----+ 1 jelmer PAS0471 2.1M Oct 23 11:59 sjdbList.out.tab
+  -rw-rw----+ 1 jelmer PAS0471 1.7M Oct 23 11:56 transcriptInfo.tab
+  ```
+
+- Move the Slurm log file:
+
+  ```bash
+  mv slurm-star* results/star/index/logs/
+  ```
+
+</details>
+
+<details><summary>**9.** Add code to your README to run `star_align.sh`, and run it _(click to expand)_</summary>
+
+- The code to run the script:
+
+  ```bash
+  for R1 in results/trimgalore/*R1.fastq.gz; do
+      R2="${R1/_R1/_R2}"
+      sbatch scripts/star_align.sh "$R1" "$R2" results/star/index "$ref_annotation" results/star
+  done
+  ```
+
+- Expected Slurm log file contents (one file):
+
+  ```bash-out-solo
+  # Starting script star_align.sh
+  Thu Oct 23 12:13:05 PM EDT 2025
+  # Input R1 FASTQ file:            results/trimgalore/ERR10802863_R1.fastq.gz
+  # Input R2 FASTQ file:            results/trimgalore/ERR10802863_R1.fastq.gz
+  # Input genome index:             results/star/index
+  # Input annotation GTF:           garrigos-data/ref/GCF_016801865.2.gtf
+  # Output dir:                     results/star
+  
+  INFO:    Using cached SIF image
+  INFO:    gocryptfs not found, will not be able to use gocryptfs
+  	/opt/conda/bin/STAR-avx2 --readFilesIn results/trimgalore/ERR10802863_R1.fastq.gz results/trimgalore/ERR10802863_R1.fastq.gz --genomeDir results/star/index --sjdbGTFfile garrigos-data/ref/GCF_016801865.2.gtf --runThreadN 8 --readFilesCommand zcat --outFileNamePrefix results/star/ERR10802863_ --outSAMtype BAM SortedByCoordinate
+  	STAR version: 2.7.11b   compiled: 2024-07-03T14:39:20+0000 :/opt/conda/conda-bld/star_1720017372352/work/source
+  Oct 23 12:13:06 ..... started STAR run
+  Oct 23 12:13:07 ..... loading genome
+  Oct 23 12:13:10 ..... processing annotations GTF
+  Oct 23 12:13:11 ..... inserting junctions into the genome indices
+  Oct 23 12:13:30 ..... started mapping
+  Oct 23 12:13:44 ..... finished mapping
+  Oct 23 12:13:44 ..... started sorting BAM
+  Oct 23 12:13:44 ..... finished successfully
+  
+  # Used STAR version:
+  INFO:    Using cached SIF image
+  INFO:    gocryptfs not found, will not be able to use gocryptfs
+  2.7.11b
+  # Successfully finished script star_align.sh
+  Thu Oct 23 12:13:46 PM EDT 2025
+  ```
+
+- Expected output files:
+
+  ```bash
+  ls -lh results/star/
+  ```
+  ```bash-out
+  total 21M
+  -rw-rw----+ 1 jelmer PAS0471 1.4M Oct 23 12:13 ERR10802863_Aligned.sortedByCoord.out.bam
+  -rw-rw----+ 1 jelmer PAS0471 2.0K Oct 23 12:13 ERR10802863_Log.final.out
+  -rw-rw----+ 1 jelmer PAS0471  18K Oct 23 12:13 ERR10802863_Log.out
+  -rw-rw----+ 1 jelmer PAS0471  246 Oct 23 12:13 ERR10802863_Log.progress.out
+  -rw-rw----+ 1 jelmer PAS0471 3.5K Oct 23 12:13 ERR10802863_SJ.out.tab
+  drwx------+ 2 jelmer PAS0471 4.0K Oct 23 12:13 ERR10802863__STARgenome
+  -rw-rw----+ 1 jelmer PAS0471 1.8M Oct 23 12:13 ERR10802864_Aligned.sortedByCoord.out.bam
+  -rw-rw----+ 1 jelmer PAS0471 2.0K Oct 23 12:13 ERR10802864_Log.final.out
+  -rw-rw----+ 1 jelmer PAS0471  18K Oct 23 12:13 ERR10802864_Log.out
+  -rw-rw----+ 1 jelmer PAS0471  246 Oct 23 12:13 ERR10802864_Log.progress.out
+  -rw-rw----+ 1 jelmer PAS0471 5.4K Oct 23 12:13 ERR10802864_SJ.out.tab
+  drwx------+ 2 jelmer PAS0471 4.0K Oct 23 12:13 ERR10802864__STARgenome
+  -rw-rw----+ 1 jelmer PAS0471 1.2M Oct 23 12:13 ERR10802865_Aligned.sortedByCoord.out.bam
+  # [...output truncated...]
+  ```
+
+- Move the Slurm log file:
+
+  ```bash
+  mv slurm-star* results/star/logs/
+  ```
+</details>
+
+## The code of the shell scripts
+
+<details><summary>Click to see the code of the `fastqc.sh` script</summary>
+```bash
+#!/bin/bash
+#SBATCH --account=PAS2880
+#SBATCH --cpus-per-task=4
+#SBATCH --mail-type=FAIL
+#SBATCH --output=slurm-fastqc-%j.out
+set -euo pipefail
+
+# Load the OSC module for FastQC
+module load fastqc/0.12.1
+
+# Copy the placeholder variables
+fastq="$1"
+outdir="$2"
+
+# Initial logging
+echo "# Starting script fastqc.sh"
+date
+echo "# Input FASTQ file:   $fastq"
+echo "# Output dir:         $outdir"
+echo
+
+# Create the output dir (with a subdir for Slurm logs)
+mkdir -p "$outdir"/logs
+
+# Run FastQC
+fastqc \
+    --threads 4 \
+    --outdir "$outdir" \
+    "$fastq"
+
+# Final logging
+echo
+echo "# Used FastQC version:"
+fastqc --version
+echo
+echo "# Successfully finished script fastqc.sh"
+date
+```
+</details>
+
+<details><summary>Click to see the code of the `multiqc.sh` script</summary>
+```bash
+#!/bin/bash
+#SBATCH --account=PAS2880
+#SBATCH --mail-type=FAIL
+#SBATCH --output=slurm-multiqc-%j.out
+set -euo pipefail
+
+# Constants
+MULTIQC_CONTAINER=oras://community.wave.seqera.io/library/multiqc:1.31--e111a2e953475c51
+
+# Copy the placeholder variables
+indir="$1"
+outdir="$2"
+
+# Initial logging
+echo "# Starting script multiqc.sh"
+date
+echo "# Input dir:                      $indir"
+echo "# Output file:                    $outdir"
+echo
+
+# Create the output dir (with a subdir for Slurm logs)
+mkdir -p "$outdir"/logs
+
+# Run MultiQC
+apptainer exec "$MULTIQC_CONTAINER" multiqc \
+    --outdir "$outdir" \
+    "$indir"
+
+# Final logging
+echo
+echo "# Used MultiQC version:"
+apptainer exec "$MULTIQC_CONTAINER" multiqc --version
+echo "# Successfully finished script multiqc.sh"
+date
+```
+</details>
+
+<details><summary>Click to see the code of the `trimgalore.sh` script</summary>
+```bash
+#!/bin/bash
+#SBATCH --account=PAS2880
+#SBATCH --cpus-per-task=8
+#SBATCH --time=30
+#SBATCH --output=slurm-trimgalore-%j.out
+#SBATCH --mail-type=FAIL
+set -euo pipefail
+   
+# Constants
+TRIMGALORE_CONTAINER=oras://community.wave.seqera.io/library/trim-galore:0.6.10--bc38c9238980c80e
+   
+# Copy the placeholder variables
+R1="$1"
+R2="$2"
+outdir="$3"
+   
+# Initial logging
+echo "# Starting script trimgalore.sh"
+date
+echo "# Input R1 FASTQ file:      $R1"
+echo "# Input R2 FASTQ file:      $R2"
+echo "# Output dir:               $outdir"
+echo
+   
+# Create the output dir (with a subdir for Slurm logs)
+mkdir -p "$outdir"/logs
+   
+# Run TrimGalore
+apptainer exec "$TRIMGALORE_CONTAINER" trim_galore \
+    --2colour 20 \
+    --cores 8 \
+    --paired \
+    --fastqc \
+    --output_dir "$outdir" \
+    "$R1" \
+    "$R2"
+
+# Build the output file names:
+sample_id=$(basename "$R1" _R1.fastq.gz)
+R1_out_init="$outdir"/"$sample_id"_R1_val_1.fq.gz
+R2_out_init="$outdir"/"$sample_id"_R2_val_2.fq.gz
+R1_out_final="$outdir"/"$sample_id"_R1.fastq.gz
+R2_out_final="$outdir"/"$sample_id"_R2.fastq.gz
+  
+# Rename the output files:
+echo
+echo "# Renaming the output files:"
+mv -v "$R1_out_init" "$R1_out_final"
+mv -v "$R2_out_init" "$R2_out_final"
+  
+# Final logging
+echo
+echo "# TrimGalore version:"
+apptainer exec "$TRIMGALORE_CONTAINER" trim_galore -v
+echo "# Successfully finished script trimgalore.sh"
+date
+```
+</details>
+
+<details><summary>Click to see the code of the `star_index.sh` script</summary>
+```bash
+#!/bin/bash
+#SBATCH --account=PAS2880
+#SBATCH --cpus-per-task=16
+#SBATCH --mail-type=FAIL
+#SBATCH --output=slurm-star_index-%j.out
+set -euo pipefail
+
+# Constants
+STAR_CONTAINER=oras://community.wave.seqera.io/library/star:2.7.11b--84fcc19fdfab53a4
+
+# Copy the placeholder variables
+fasta="$1"
+gtf="$2"
+outdir="$3"
+
+# Initial logging
+echo "# Starting script star_index.sh"
+date
+echo "# Input assembly FASTA file:      $fasta"
+echo "# Input annotation GTF file:      $gtf"
+echo "# Output dir:                     $outdir"
+echo
+
+# Create the output dir (with a subdir for Slurm logs)
+mkdir -p "$outdir"/logs
+
+# Run STAR
+apptainer exec "$STAR_CONTAINER" STAR \
+    --runMode genomeGenerate \
+    --genomeFastaFiles "$fasta" \
+    --sjdbGTFfile "$gtf" \
+    --genomeDir "$outdir" \
+    --runThreadN 16
+
+#? - Note: This command was kept as simple as possible - if using STAR in your research,
+#?   then look into the --sjdbOverhang and --genomeSAindexNbases options as well.
+#? - Explanation of some of the options used:
+#?   --runMode genomeGenerate  => Instead of aligning, this "run mode" generates a genome index
+
+# Final logging
+echo
+echo "# Used STAR version:"
+apptainer exec "$STAR_CONTAINER" STAR --version
+echo "# Successfully finished script star_index.sh"
+date
+```
+</details>
+
+<details><summary>Click to see the code of the `star_align.sh` script</summary>
+```bash
+#!/bin/bash
+#SBATCH --account=PAS2880
+#SBATCH --cpus-per-task=8
+#SBATCH --mail-type=FAIL
+#SBATCH --output=slurm-star_align-%j.out
+set -euo pipefail
+
+# Constants
+STAR_CONTAINER=oras://community.wave.seqera.io/library/star:2.7.11b--84fcc19fdfab53a4
+
+# Copy the placeholder variables
+R1="$1"
+R2="$2"
+index_dir="$3"
+gtf="$4"
+outdir="$5"
+
+# Infer the "sample ID" - we need this for the output file specification
+sample_id=$(basename "$R1" _R1.fastq.gz)
+
+# Report start of script and variables
+echo "# Starting script star_align.sh"
+date
+echo "# Input R1 FASTQ file:            $R1"
+echo "# Input R2 FASTQ file:            $R2"
+echo "# Input genome index:             $index_dir"
+echo "# Input annotation GTF:           $gtf"
+echo "# Output dir:                     $outdir"
+echo
+
+# Create the output dir (with a subdir for Slurm logs)
+mkdir -p "$outdir"/logs
+
+# Run STAR
+apptainer exec "$STAR_CONTAINER" STAR \
+    --readFilesIn "$R1" "$R2" \
+    --genomeDir "$index_dir" \
+    --sjdbGTFfile "$gtf" \
+    --runThreadN 8 \
+    --readFilesCommand zcat \
+    --outFileNamePrefix "$outdir"/"$sample_id"_ \
+    --outSAMtype BAM SortedByCoordinate
+
+#? - Note: keeping this command as simple as possible -
+#?   if using STAR in your research, then look into, e.g., the --alignIntronMin,
+#?   --alignIntronMax and --outFilterMultimapNmax options as well.
+#? - Explanation of some of the options used:
+#?   --readFilesCommand zcat                => Tell STAR that the FASTQ files are gzipped
+#?   --outSAMtype BAM SortedByCoordinate    => Request a sorted BAM file as output (instead of unsorted SAM)
+#?   --outFileNamePrefix "$outdir"/"$sample_id"_ => Specify not just an outdir but a "sample ID" prefix
+
+# Final logging
+echo
+echo "# Used STAR version:"
+apptainer exec "$STAR_CONTAINER" STAR --version
+echo "# Successfully finished script star_align.sh"
+date
+```
+</details>

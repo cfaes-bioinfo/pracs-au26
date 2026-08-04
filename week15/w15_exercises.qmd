@@ -1,0 +1,141 @@
+---
+title: "Week 15 exercises: Additional gene expression analysis in R"
+pagetitle: "Week 15 exercises"
+date: 2026-11-22
+author:
+  - name: Menuka Bhandari
+    #orcid: 0000-0002-3514-7462
+    email: bhandari.72@osu.edu
+    affiliation: 
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://go.osu.edu/bioinformatics-core
+      - name: Dept. of Plant Pathology, Ohio State University
+        url: https://plantpath.osu.edu
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+editor_options: 
+  chunk_output_type: console
+other-links:
+  - text: "Week 15 overview"
+    icon: book
+    href: w15_overview.html
+  - text: "w15b: RNA-Seq count data analysis in R"
+    icon: bookmarks
+    href: w15b_deseq.html
+language:
+  other-links-title: "Also this week"
+execute:
+  eval: false
+---
+
+--------------------------------------------------------------------------------
+
+<br>
+
+## Setting up
+
+```{r}
+library(tidyverse)          # Misc. data manipulation and plotting
+library(pheatmap)           # Heatmap plot
+library(DESeq2)             # Differential expression analysis
+```
+
+```{r, echo=FALSE}
+dds <- readRDS(here::here("data/dds.rds"))
+
+```
+
+## Heatmaps
+
+Rather than plotting expression levels for many individual genes,
+we can create "heatmap" plots to plot dozens (possibly even hundreds) of genes at once.
+
+We will create heatmaps with the `pheatmap` function,
+and let's make a heatmap for the top-25 most highly significant DEGs for our focal contrast.
+
+Unlike with some of the functions we used before,
+we unfortunately can't directly use our DESeq2 object,
+but we have to extract and subset the count matrix,
+and also pass the metadata to the heatmap function:
+
+```{r}
+dds_vst <- varianceStabilizingTransformation(dds)
+```
+
+```{r}
+# We need a normalized count matrix, like for the PCA
+# We can simply extract the matrix from the normalized dds object we created for the PCA
+norm_mat <- assay(dds_vst)
+
+# In the normalized count matrix, select only the genes of interest
+# We'll reuse the 'top25_DE' vector that we created for the individual gene plots
+norm_mat_sel <- norm_mat[match(top25_DE, rownames(norm_mat)), ]
+
+# Sort the metadata
+meta_sort <- meta |>
+  arrange(treatment, time) |>
+  select(treatment, time)
+```
+
+Now we can create the plot:
+
+```{r}
+pheatmap(
+  norm_mat_sel,
+  annotation_col = meta_sort,  # Add the metadata
+  cluster_cols = FALSE,        # Don't cluster samples (=columns, cols)
+  show_rownames = FALSE,       # Don't show gene names
+  scale = "row",               # Perform z-scaling for each gene
+  )
+```
+
+Notes on the code and plot above:
+
+- The z-scaling with `scale =` will make sure we can compare genes with very different
+  expression levels: after all, we're interested in relative expression levels across
+  samples/sample groups.
+
+- `pheatmap` will by default perform hierarchical clustering both at the sample (`col`)
+  and gene (`row`) level, such that more similar samples and genes will appear closer to
+  each other.
+  Above, we turned clustering off for samples, since we want to keep them in their by-group order.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: exercise
+#### {{< fa user-edit >}} Bonus exercise: heatmaps
+
+Make a heatmap with the top-25 **most-highly expressed** genes
+(i.e., genes with the highest mean expression levels across all samples).
+
+<details><summary>*Click for a hint: how to get that top-25*</summary>
+
+```{r}
+top25_hi <- names(sort(rowMeans(norm_mat), decreasing = TRUE)[1:25])
+```
+
+</details>
+
+<details><summary>*Click for the solution*</summary>
+
+```{r}
+# In the normalized count matrix, select only the genes of interest
+norm_mat_sel <- norm_mat[match(top25_hi, rownames(norm_mat)), ]
+
+# Sort the metadata
+meta_sort <- meta |>
+  arrange(treatment, time) |>
+  select(treatment, time)
+
+# Create the heatmap
+pheatmap(
+  norm_mat_sel,
+  annotation_col = meta_sort,
+  cluster_cols = FALSE,
+  show_rownames = FALSE,
+  scale = "row"
+  )
+```
+</details>
+:::

@@ -1,7 +1,7 @@
 ---
 title: "RNA-Seq count data analysis in R"
-subtitle: "Week 14 -- lecture A"
-pagetitle: "w14a: RNA-Seq"
+subtitle: "Week 15 -- Lecture B"
+pagetitle: "w15b: RNA-Seq"
 date: 2026-11-22
 author:
   - name: Menuka Bhandari
@@ -20,12 +20,12 @@ editor_options:
 execute:
   eval: true
 other-links:
-  - text: "Week 14 overview"
+  - text: "Week 15 overview"
     icon: book
-    href: w14_overview.html
-  - text: "Week 14 Exercise"
+    href: w15_overview.html
+  - text: "Week 15 Exercise"
     icon: pencil
-    href: w14_exercises.html
+    href: w15_exercises.html
 language:
   other-links-title: "Also this week"
 ---
@@ -54,25 +54,33 @@ Today, with that gene count table, you will:
    start an RStudio session like in the previous lecture 
    ([Starting an RStudio Server session at OSC](../week11/w11a_r-basics.html#Working-directory-and-RStudio-Projects)) and open your RStudio Project
    
-  2. Open a new folder for `week14` by clicking the `New Folder` icon in the `Output` pane
+  2. Open a new folder for `week15` by clicking the `New Folder` icon in the `Output` pane
   3. Create a new Quarto document by  clicking `File` \> `New File` \>
-`Quarto Document` and save it inside the `week14` directory.
+`Quarto Document` and save it inside the `week15` directory.
 
 ## Install and load R packages
 
 ```{r, eval=FALSE}
-if (!require("BiocManager")) install.packages("BiocManager")
-if (!require("DESeq2")) BiocManager::install("DESeq2")
-if (!require("EnhancedVolcano")) BiocManager::install("EnhancedVolcano")
-if (!require("pheatmap")) install.packages("pheatmap")
+if (!require("BiocManager")) {
+  install.packages("BiocManager")
+}
+if (!require("DESeq2")) {
+  BiocManager::install("DESeq2")
+}
+if (!require("EnhancedVolcano")) {
+  BiocManager::install("EnhancedVolcano")
+}
+if (!require("pheatmap")) {
+  install.packages("pheatmap")
+}
 ```
 
 ```{r warning: FALSE}
-library(tidyverse)          # Misc. data manipulation and plotting
-library(pheatmap)           # Heatmap plot
-library(EnhancedVolcano)    # Volcano plot
-library(DESeq2)             # Differential expression analysis
-library(here)               # File referencing
+library(tidyverse) # Misc. data manipulation and plotting
+library(pheatmap) # Heatmap plot
+library(EnhancedVolcano) # Volcano plot
+library(DESeq2) # Differential expression analysis
+library(here) # File referencing
 ```
 
 
@@ -92,7 +100,9 @@ metadata_file <- "../garrigos-data/meta/metadata.tsv"
 ```
 
 ```{r, echo=FALSE}
-count_table_file <- here::here("data/salmon.merged.gene_counts_length_scaled.tsv")
+count_table_file <- here::here(
+  "data/salmon.merged.gene_counts_length_scaled.tsv"
+)
 metadata_file <- here::here("data/metadata.tsv")
 ```
 
@@ -142,8 +152,13 @@ meta <- meta_raw |>
   # 2. Turn the 'sample_id' column into row names:
   column_to_rownames("sample_id") |>
   # 3. Turn the 'time' and 'treatment' columns into "factors":
-  mutate(time = factor(time, levels = c("24hpi", "10dpi")),
-         treatment = factor(treatment, levels = c("control", "cathemerium", "relictum")))
+  mutate(
+    time = factor(time, levels = c("24hpi", "10dpi")),
+    treatment = factor(
+      treatment,
+      levels = c("control", "cathemerium", "relictum")
+    )
+  )
 ```
 
 ```{r}
@@ -218,8 +233,8 @@ will provide with three arguments corresponding to the components discussed abov
 dds <- DESeqDataSetFromMatrix(
   colData = meta,
   countData = count_mat,
-  design = ~ 1
-  )
+  design = ~1
+)
 ```
 
 Before we will run the differential expression analysis, though,
@@ -387,7 +402,7 @@ pca_df <- plotPCA(
   ntop = 500,
   intgroup = c("time", "treatment"),
   returnData = TRUE
-  )
+)
 ```
 
 With that `pca_df` dataframe in hand,
@@ -404,7 +419,7 @@ pca_df <- plotPCA(
   ntop = 500,
   intgroup = c("time", "treatment"),
   returnData = TRUE
-  )
+)
 ```
 
 Second, extract and store the percentage of variance explained by different
@@ -424,7 +439,7 @@ pca_df |>
   labs(
     x = paste0("PC1 (", pct_var[1], "%)"),
     y = paste0("PC2 (", pct_var[2], "%)")
-    ) +
+  ) +
   scale_color_brewer(palette = "Dark2", name = "Infection status") +
   scale_shape(name = "Time points") +
   theme_bw() +
@@ -504,7 +519,7 @@ Next, we set the analysis design:
 
 ```{r}
 # Set the statistical design (Note: the symbol before 'group' is a tilde, ~ )
-design(dds) <- ~ group
+design(dds) <- ~group
 ```
 
 Now we're ready to run the DE analysis!
@@ -770,13 +785,13 @@ For a nice overview of the results, we can create a so-called "volcano plot" usi
 
 ```{r, fig.height=6.5}
 EnhancedVolcano(
-  toptable = res_rc24,      # DESeq2 results to plot   
+  toptable = res_rc24, # DESeq2 results to plot
   title = "relictum vs. control at 24 hpi",
-  x = "log2FoldChange",     # Plot the log2-fold change along the x-axis
-  y = "padj",               # Plot the p-value along the y-axis
+  x = "log2FoldChange", # Plot the log2-fold change along the x-axis
+  y = "padj", # Plot the p-value along the y-axis
   lab = rownames(res_rc24), # Use the rownames for the gene labels (though see below)
-  labSize = 0               # Omit gene labels for now
-  )
+  labSize = 0 # Omit gene labels for now
+)
 ```
 
 ::: exercise
@@ -796,16 +811,16 @@ We might want to try a plot with a stricter p-value cut-off that does show the g
 
 ```{r, fig.height=6.5}
 EnhancedVolcano(
-  toptable = res_rc24,      
+  toptable = res_rc24,
   title = "relictum vs. control at 24 hpi",
-  x = "log2FoldChange",     
-  y = "padj",             
-  lab = rownames(res_rc24), 
-  labSize = 4,               # Now we will show the gene labels
-  pCutoff = 10e-10,          # Modify the p-value cut-off
-  subtitle = NULL,           # I'll also remove the silly subtitle
-  caption = NULL,            # ... and the caption
-  )
+  x = "log2FoldChange",
+  y = "padj",
+  lab = rownames(res_rc24),
+  labSize = 4, # Now we will show the gene labels
+  pCutoff = 10e-10, # Modify the p-value cut-off
+  subtitle = NULL, # I'll also remove the silly subtitle
+  caption = NULL, # ... and the caption
+)
 ```
 
 </details>
@@ -819,15 +834,15 @@ EnhancedVolcano(
 ```{r}
 #fig.height=6.5
 EnhancedVolcano(
-  toptable = res_rc24,      
+  toptable = res_rc24,
   title = "relictum vs. control at 24 hpi",
-  x = "log2FoldChange",     
-  y = "padj",             
-  lab = rownames(res_rc24), 
-  labSize = 4,               
-  pCutoff = 0.05,            # Modify the p-value cut-off
-  FCcutoff = 20,             # Modify the LFC cut-off
-  )
+  x = "log2FoldChange",
+  y = "padj",
+  lab = rownames(res_rc24),
+  labSize = 4,
+  pCutoff = 0.05, # Modify the p-value cut-off
+  FCcutoff = 20, # Modify the LFC cut-off
+)
 ```
 </details>
 
@@ -871,7 +886,7 @@ focal_gene_counts <- plotCounts(
   gene = top25_DE[1],
   intgroup = c("time", "treatment"),
   returnData = TRUE
-  )
+)
 
 head(focal_gene_counts)
 ```
@@ -922,7 +937,7 @@ focal_gene_counts <- plotCounts(
   gene = "LOC120431476",
   intgroup = c("time", "treatment"),
   returnData = TRUE
-  )
+)
 
 focal_gene_counts |>
   ggplot(aes(x = treatment, y = count, fill = treatment)) +
@@ -968,7 +983,7 @@ You could open the resulting file in Excel for further exploration.
 # Create the output directory, if necessary:
 dir.create("results/DE", recursive = TRUE, showWarnings = FALSE)
 
-# Write the 
+# Write the
 write_tsv(as.data.frame(res_rc24), "results/DE/resultsres_rc24.tsv")
 
 dds_file <- "TBA"
@@ -990,7 +1005,7 @@ Typical next steps in such an analysis include:
 
 - Another very common type of plot used for gene expression data (and omics data
   more generally) is a heatmap.
-  You'll create heatmaps in [this week's exercises](./w14_exercises.qmd).
+  You'll create heatmaps in [this week's exercises](./w15_exercises.qmd).
 
 - Extracting, comparing, and synthesizing DE results across **all pairwise comparisons**
   (this would for example allow us to make the upset plot in *Figure 2 of the paper*)

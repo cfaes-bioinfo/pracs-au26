@@ -1,141 +1,140 @@
 ---
-title: "Week 14 exercises: Additional gene expression analysis in R"
-pagetitle: "Week 14 exercises"
-date: 2026-11-22
+title: "Week 14 Exercises: Quarto document"
+pagetitle: "Week 14 Exercises"
+date: 2026-11-10
 author:
-  - name: Menuka Bhandari
-    #orcid: 0000-0002-3514-7462
-    email: bhandari.72@osu.edu
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
     affiliation: 
       - name: CFAES Bioinformatics Core, Ohio State University
         url: https://go.osu.edu/bioinformatics-core
       - name: Dept. of Plant Pathology, Ohio State University
         url: https://plantpath.osu.edu
-  - name: Jelmer Poelstra
-    orcid: 0000-0002-3514-7462
-    email: poelstra.1@osu.edu
 editor_options: 
   chunk_output_type: console
-other-links:
-  - text: "Week 14 overview"
-    icon: book
-    href: w14_overview.html
-  - text: "w14a: RNA-Seq count data analysis in R"
-    icon: bookmarks
-    href: w14a_deseq.html
-language:
-  other-links-title: "Also this week"
-execute:
-  eval: false
 ---
 
---------------------------------------------------------------------------------
+------------------------------------------------------------------------
 
 <br>
 
 ## Setting up
 
-```{r}
-library(tidyverse)          # Misc. data manipulation and plotting
-library(pheatmap)           # Heatmap plot
-library(DESeq2)             # Differential expression analysis
+- At <https://ondemand.osc.edu>, start a new RStudio session
+  ([Starting an RStudio Server session at OSC](../week11/w11a_r-basics.html#starting-an-rstudio-server-session-at-osc)).
+
+- Switch to your RStudio Project
+  ([Working directory and RStudio Projects](../week11/w11a_r-basics.html#Working-directory-and-RStudio-Projects))
+
+- Create a new directory `week14` in your home directory using function
+  `dir.create("week14")`
+
+- Open a new `Quarto file` in RStudio:
+  `File` -> `New File` -> `Quarto Documents` and save the file as
+  `w14_exercises.qmd` (inside `week14` directory). You will write your answers
+  to the questions below in this Quarto file
+
+## Exercise
+
+### YAML header
+
+1. Save your Quarto (.qmd) file that contains your script in HTML format.
+
+2. Add the following key–value pairs to the YAML header of your Quarto document:
+
+- Author name
+- Date
+- Table of contents
+
+3. Create nested format options in the YAML header using `format:` `html:` and set the `theme to cyborg`.
+
+### Code Chunks
+
+4. Install the `palmerpenguins` package in the Console, and load the package in a code chunk of your Quarto document. Save the penguins dataset in an object called `penguin_data`.
+
+5. Open the second code chunk, select the columns `flipper_length_mm`, `island` , `year` and save them as `new_penguins` object. Add a code chunk option to hide the code in the rendered file.
+
+6. Use `penguin_data` to create a scatter plot with the `ggplot2` package of `tidyverse`. Set 
+`flipper_length_mm` as the **x-axis** and `body_mass_g` as the **y-axis**. Refer to the `ggplot2` 
+documentation to understand the syntax of scatter plot. We will discuss `ggplot` in `Week 13`.
+
+7. Customize your figure by:
+- Adding a figure caption
+- Changing the figure dimensions (height and width)
+- Aligning the figure to the center using chunk options
+
+8. Render your document, download the output, and verify that it includes the scatter plot.
+
+9. If document does not contain scatter plot, add the appropriate option in the YAML header to include figures in the HTML output.
+
+10. Render the document again and confirm that the scatter plot is now included.
+
+### Text
+
+11. Add headers of different levels above your code chunks.
+
+12. Write a short text section describing the scatter plot you created in question 9.
+
+## Solutions
+
+### YAML header
+
+<details><summary>**1-3.** YAML header</summary>
+
+```{r eval=FALSE}
+##The solution of these questions are provided in the exercise of week14 lecture.
 ```
+</details>
 
-```{r, echo=FALSE}
-dds <- readRDS(here::here("data/dds.rds"))
+### Code chunks
 
-```
-
-## Heatmaps
-
-Rather than plotting expression levels for many individual genes,
-we can create "heatmap" plots to plot dozens (possibly even hundreds) of genes at once.
-
-We will create heatmaps with the `pheatmap` function,
-and let's make a heatmap for the top-25 most highly significant DEGs for our focal contrast.
-
-Unlike with some of the functions we used before,
-we unfortunately can't directly use our DESeq2 object,
-but we have to extract and subset the count matrix,
-and also pass the metadata to the heatmap function:
-
-```{r}
-dds_vst <- varianceStabilizingTransformation(dds)
-```
-
-```{r}
-# We need a normalized count matrix, like for the PCA
-# We can simply extract the matrix from the normalized dds object we created for the PCA
-norm_mat <- assay(dds_vst)
-
-# In the normalized count matrix, select only the genes of interest
-# We'll reuse the 'top25_DE' vector that we created for the individual gene plots
-norm_mat_sel <- norm_mat[match(top25_DE, rownames(norm_mat)), ]
-
-# Sort the metadata
-meta_sort <- meta |>
-  arrange(treatment, time) |>
-  select(treatment, time)
-```
-
-Now we can create the plot:
-
-```{r}
-pheatmap(
-  norm_mat_sel,
-  annotation_col = meta_sort,  # Add the metadata
-  cluster_cols = FALSE,        # Don't cluster samples (=columns, cols)
-  show_rownames = FALSE,       # Don't show gene names
-  scale = "row",               # Perform z-scaling for each gene
-  )
-```
-
-Notes on the code and plot above:
-
-- The z-scaling with `scale =` will make sure we can compare genes with very different
-  expression levels: after all, we're interested in relative expression levels across
-  samples/sample groups.
-
-- `pheatmap` will by default perform hierarchical clustering both at the sample (`col`)
-  and gene (`row`) level, such that more similar samples and genes will appear closer to
-  each other.
-  Above, we turned clustering off for samples, since we want to keep them in their by-group order.
-
-<hr style="height:1pt; visibility:hidden;" />
-
-::: exercise
-#### {{< fa user-edit >}} Bonus exercise: heatmaps
-
-Make a heatmap with the top-25 **most-highly expressed** genes
-(i.e., genes with the highest mean expression levels across all samples).
-
-<details><summary>*Click for a hint: how to get that top-25*</summary>
+<details><summary>**4.** install `palmerpenguins` package and save object </summary>
 
 ```{r}
-top25_hi <- names(sort(rowMeans(norm_mat), decreasing = TRUE)[1:25])
+library(palmerpenguins)
+penguin_data <- penguins
 ```
+</details>
+
+<details><summary>**5.** Select columns </summary>
+   
+```{r}
+## First load tidyverse to use select function
+library(tidyverse)
+new_penguins <- penguin_data |> 
+  select( flipper_length_mm, island , year)
+```
+</details>
+
+
+<details><summary>**6.** Scatter plot </summary>
+
+```{r}
+library(ggplot2)
+penguin_data |> 
+  ggplot(aes(flipper_length_mm, body_mass_g)) +
+  geom_point()
+```
+</details>
+
+<details><summary>**7.** Customize your plot </summary>
+
+```{r}
+#| fig-cap: "Scatter plot of palmerpenguins datasets"
+#| fig-width: 5
+#| fig-height: 4
+#| fig-align: center
+#| echo: fenced
+penguin_data |> 
+  ggplot(aes(flipper_length_mm, body_mass_g)) +
+  geom_point()
+```
+</details>
+
+<details><summary>**8.** Include your plot in HTML </summary>
+
+**`embed-resources: true` in your YAML header to make your document self-contained**
 
 </details>
 
-<details><summary>*Click for the solution*</summary>
-
-```{r}
-# In the normalized count matrix, select only the genes of interest
-norm_mat_sel <- norm_mat[match(top25_hi, rownames(norm_mat)), ]
-
-# Sort the metadata
-meta_sort <- meta |>
-  arrange(treatment, time) |>
-  select(treatment, time)
-
-# Create the heatmap
-pheatmap(
-  norm_mat_sel,
-  annotation_col = meta_sort,
-  cluster_cols = FALSE,
-  show_rownames = FALSE,
-  scale = "row"
-  )
-```
-</details>
-:::
