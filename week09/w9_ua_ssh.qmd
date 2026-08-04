@@ -1,0 +1,195 @@
+---
+title: "Ungraded Assignment 4: Local VS Code installation"
+subtitle: "Week 9 (deadline: Monday Oct 27 at noon)"
+pagetitle: "Week 9 ungraded assignment"
+number-sections: true
+date: 2026-10-17
+author:
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+    affiliation: 
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://go.osu.edu/bioinformatics-core
+      - name: Dept. of Plant Pathology, Ohio State University
+        url: https://plantpath.osu.edu
+bibliography: ../references.bib
+other-links:
+  - text: "Bonus: SSH connections"
+    icon: bookmarks
+    href: ../bonus/ssh.html
+language:
+  other-links-title: "Also this week"
+---
+
+---------
+
+<hr style="height:1pt; visibility:hidden;" />
+
+## Overview
+
+So far, you've been connecting to OSC through the OnDemand webportal.
+However, there is another more basic and universal method to connect to
+remote computers: SSH, which is short for Secure Shell.
+An [optional self-study page on SSH](../bonus/ssh.qmd) shows you how to directly
+use the `ssh` command in a terminal on your own computer to "move" to OSC within
+that terminal.
+
+Here, on the other hand, you'll do some setup that allows you to connect a
+VS Code installation on your computer to OSC using a process called "SSH-tunneling".
+**Being able to use your own VS Code installation at OSC**
+has several advantages over using VS Code Server through OnDemand, such as:
+
+1. You won't have to start a VS Code Server job every time
+2. Your connection will not have a time limit unlike VS Code Server jobs
+3. You can use VS Code "proper" rather than the Server version which has slightly
+   reduced functionality^[especially the older versions that are installed at OSC]
+   -- for example, you can use integrated generative AI with GitHub Copilot this way
+
+::: callout-important
+### Make sure to have this set up before next week's class!
+Please complete this assignment by noon on Monday, October 27^th^.
+If you struggle, you can come to Monday's recitation session to troubleshoot.
+If you can't make that session, please contact us on or before Monday so we can
+find anoteyr way to troubleshoot this.
+We will start using this functionality in class on Monday, October 28^th^. 
+:::
+
+## Set up your local VS Code to SSH tunnel into OSC
+
+### Setting up the connection
+
+1. **Install VS Code** on your own computer:
+
+   - "Regular" installation instructions for
+     [Windows](https://code.visualstudio.com/docs/setup/windows) /
+     [Mac](https://code.visualstudio.com/docs/setup/mac) /
+     [Linux](https://code.visualstudio.com/docs/setup/linux)
+
+   - If you are using an OSU computer, you may not have the required
+     "administrative privileges" to install software on your computer the regular way.
+     However, you should in that case have an OSU application on your computer that
+     allows you to install a selection of approved software,
+     and that selection should include VS Code.
+     On Windows, this app seems to be simply called "Software Center",
+     whereas on Mac, it is called "Ohio State Application Self Service"
+     (names likely vary).
+
+2. Open VS Code and install the
+   "[**Remote Development extension pack**](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)":
+   open the Extensions side bar and search for it there.
+   Once you found it, click on its `Install` button like you've done previously
+   with other extensions.
+
+3. Open the VS Code Command Palette
+   (e.g. with <kbd>F1</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>)
+   and start typing "_Remote SSH_":
+   
+   - Among the options that pop up, select "**Remote-SSH: Add New SSH Host...**"
+     and specify your SSH connection:
+     `ssh <osc-username>@pitzer.osc.edu`, e.g. `ssh jelmer@pitzer.osc.edu`
+     ^[You'll have to do this separately for Cardinal if you want to be able to connect
+     to both clusters this way.]
+   
+   - In the "Select SSH configuration file to update" dialog that should pop up,
+     just select the first (top) option that shows up
+
+4. You'll get a "Host Added!" pop-up in the bottom-right of your screen:
+   in that pop-up, click "**Connect**", and:
+
+   - When you get a message like that shown below, click "Continue":
+   
+     > "pitzer.osc.edu" has fingerprint <...>   
+     > Are you sure you want to continue?
+   
+   - Enter your password when you're prompted for it
+   - If you're asked about the operating system of the host, select **Linux**
+
+5. Now, you're connected, and VS Code may give you some more pop-ups:
+
+   - If you're asked whether you "Trust the Authors" of such-and-such directory,
+     click "Yes".
+   - If there is a pop-up in the bottom-right asking you to update Git,
+     click "No" and check "Don't show again".
+
+### Connecting from now on
+
+With the above one-time setup done,
+connecting to OSC with your local VS Code installation will be quick:
+
+1. Open the VS Code Command Palette
+   (e.g. with <kbd>F1</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>)
+   and start typing "_SSH Connect_"
+   
+2. Click on "SSH: Connect to Host" and then select your Pitzer connection
+
+3. Enter your password
+   _(but this won't be necessary anymore after you do the below setup!)_
+
+4. Like you've seen with VS Code Server, the program's default location is your Home dir,
+   and it is best to change this using the "File" > "Open Folder" option:
+   go to your `/fs/ess/PAS2880/users/$USER` dir.
+
+### Connecting from now on to previously opened folders
+ 
+Conveniently, VS Code will remember folders that you've opened this way,
+and show them on the "Welcome" tab that is always displayed when you open the program.
+Test this:
+
+1. Completely quit VS Code
+2. Open it again, and under "Recents" on the Welcome tab,
+   look for your folder in `/fs/ess/PAS2880/`,
+   and click on that to connect to OSC and open that folder!
+
+::: {.callout-warning}
+#### You are now on a login node!
+Just be aware that you'll now be on a Login node
+(and not on a Compute node like when you use VS Code through OnDemand),
+so avoid running analyses directly in the terminal, and so on. 
+:::
+
+## Avoid being prompted for your OSC password
+
+If you take the following steps,
+you will no longer be prompted for your OSC password every time you connect to OSC
+with the above method (or with any other SSH-based method).
+
+1. On your own computer, open a terminal application.
+   - On a Mac, you should have an app called "Terminal" and potentially other
+     options like "iTerm": any of these fill work
+   - On Windows 11+, this should be called the "Windows Terminal"
+
+2.  Generate a public-private SSH key-pair:
+
+    ``` {.bash}
+    ssh-keygen -t rsa
+    ```
+
+    You'll get some output and will then be asked several questions,
+    but in each case, you can just press <kbd>Enter</kbd> to select the default answer.
+
+3. Transfer the public key to OSC's Pitzer cluster:
+
+   ::: {.panel-tabset}
+   ### Windows
+  
+   ```bash
+   cat ~/.ssh/id_rsa.pub | ssh <user>@pitzer.osc.edu 'mkdir -p .ssh && cat >> .ssh/authorized_keys'
+   ```
+  
+   ### Mac
+   ```bash
+   # Replace <user> by your username, e.g. "ssh-copy-id jelmer@pitzer.osc.edu"
+   ssh-copy-id <user>@pitzer.osc.edu
+   ```
+   :::
+
+4. All done! Test if it works by connecting
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-tip appearance="minimal"}
+The same commands work for Cardinal, just replace `pitzer` with `cardinal` in the commands above
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
