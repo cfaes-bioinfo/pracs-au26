@@ -10,6 +10,10 @@
   Most students are grad students but the course can be taken by undergraduates
   as well. It has no prerequisites. 
 
-- Theming for the website pages are defined in styles.css and theme_web.scss
-- Theming for Quarto slides are defined in slides.css and theme_slides.scss
-- Website settings are in _quarto.yml
+- Theming for the website pages are defined in `styles.css` and `theme_web.scss`
+- Theming for Quarto slides are defined in `slides.css` and `theme_slides.scss`
+- Website settings are in `_quarto.yml`
+
+- Do's and don'ts:
+  - Don't open separately rendered HTML files that you ask me to check.
+    I will always have a preview server running.
