@@ -1,0 +1,121 @@
+<script>
+(function () {
+  // Site-wide "Previous / Next page" navigation, injected before the
+  // page footer on every rendered page (see format.html.include-after-body
+  // in _quarto.yml). Edit the array below to add, remove, or reorder
+  // pages -- href paths are relative to the project root (same layout as
+  // the rendered .html output) and must be unique path suffixes.
+  //
+  // Revealjs slide decks ARE included here, so that the regular pages
+  // right before/after one link to it correctly (its title is marked
+  // "(slides)" so it's clear the link leaves the article format) -- but
+  // slide decks use format.revealjs, not format.html, so this script
+  // (wired in via format.html.include-after-body) never loads on a slide
+  // deck itself. In other words: pages link into and out of slide decks,
+  // but a slide deck has no Previous/Next of its own.
+  var pageNavOrder = [
+    { href: "index.html", title: "Home" },
+    { href: "week01/w1_overview.html", title: "Week 1: Overview" },
+    { href: "week01/w1a_course-intro.html", title: "Introduction to the course (slides)" },
+    { href: "week01/w1b_omics-data.html", title: "An overview of omics data (slides)" },
+    { href: "UA/UA2.html", title: "UA2: OSC account setup" },
+    { href: "week02/w2_overview.html", title: "Week 2: Overview" },
+    { href: "week02/w2a_project-org.html", title: "Project file organization (slides)" },
+    { href: "week02/w2b_osc.html", title: "The Ohio Supercomputer Center (slides)" },
+    { href: "week02/w2c_vscode.html", title: "VS Code" },
+    { href: "week02/w2d_markdown.html", title: "Markdown (slides)" },
+    { href: "week02/w2d_markdown_notes.html", title: "Markdown (notes)" },
+    { href: "week02/w2_exercises.html", title: "Week 2: Exercises" },
+    { href: "week03/w3_overview.html", title: "Week 3: Overview" },
+    { href: "week03/w3a_shell-basics.html", title: "Unix shell basics" },
+    { href: "GA/GA1.html", title: "GA1: Markdown and Unix shell basics" },
+    { href: "week04/w4_overview.html", title: "Week 4: Overview" },
+    { href: "week04/w4a_genomics-files.html", title: "Genomics file types (slides)" },
+    { href: "week04/w4b_shell-files1.html", title: "Shell files I" },
+    { href: "week04/w4c_shell-files2.html", title: "Shell files II" },
+    { href: "week04/w4_exercises.html", title: "Week 4: Exercises" },
+    { href: "week05/w5_overview.html", title: "Week 5: Overview" },
+    { href: "week05/w5a_git.html", title: "Git" },
+    { href: "week05/w5b_github.html", title: "GitHub" },
+    { href: "UA/UA3.html", title: "UA3: Create a GitHub account" },
+    { href: "GA/GA2.html", title: "GA2: Unix shell data tools & version control" },
+    { href: "week06/w6_overview.html", title: "Week 6: Overview" },
+    { href: "week06/w6a_osc.html", title: "A closer look at OSC" },
+    { href: "week06/w6b_software.html", title: "Software management at OSC" },
+    { href: "week06/w6_exercises.html", title: "Week 6: Exercises" },
+    { href: "week07/w7_overview.html", title: "Week 7: Overview" },
+    { href: "week07/w7a_scripts.html", title: "Shell scripting I" },
+    { href: "week07/w7b_cli-tools.html", title: "Shell scripting II" },
+    { href: "week07/w7c_tricks.html", title: "Shell scripting III" },
+    { href: "GA/GA3.html", title: "GA3: Software and shell scripts" }
+  ];
+
+  // Builds a relative href from one manifest entry to another, based on
+  // path depth alone -- deliberately avoids assuming anything about the
+  // site's domain or deployment subpath (e.g. GitHub Pages project sites).
+  function relativeHref(fromHref, toHref) {
+    var depth = fromHref.split("/").length - 1;
+    var prefix = "";
+    for (var i = 0; i < depth; i++) prefix += "../";
+    return prefix + toHref;
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var path = window.location.pathname;
+    var index = pageNavOrder.findIndex(function (entry) {
+      if (entry.href === "index.html") {
+        return path.endsWith("/index.html") || path.endsWith("/");
+      }
+      return path.endsWith("/" + entry.href);
+    });
+    if (index === -1) return;
+
+    var current = pageNavOrder[index];
+    var prev = pageNavOrder[index - 1];
+    // The homepage has its own full course table right there on the page,
+    // so a "Next" link to Week 1 would just be redundant -- suppress it.
+    var next = current.href === "index.html" ? null : pageNavOrder[index + 1];
+    if (!prev && !next) return;
+
+    var nav = document.createElement("div");
+    nav.id = "page-nav";
+
+    if (prev) {
+      var prevLink = document.createElement("a");
+      prevLink.href = relativeHref(current.href, prev.href);
+      prevLink.className = "page-nav-prev";
+      prevLink.innerHTML =
+        '<span class="page-nav-label">← Previous</span>' +
+        '<span class="page-nav-title">' + prev.title + "</span>";
+      nav.appendChild(prevLink);
+    } else {
+      nav.appendChild(document.createElement("span"));
+    }
+
+    if (next) {
+      var nextLink = document.createElement("a");
+      nextLink.href = relativeHref(current.href, next.href);
+      nextLink.className = "page-nav-next";
+      nextLink.innerHTML =
+        '<span class="page-nav-label">Next →</span>' +
+        '<span class="page-nav-title">' + next.title + "</span>";
+      nav.appendChild(nextLink);
+    }
+
+    // Append inside the article content column (not as a sibling of
+    // #quarto-content before the full-bleed footer) so the nav bar
+    // inherits the same centered width/padding as the page text above it.
+    var content = document.getElementById("quarto-document-content");
+    if (content) {
+      content.appendChild(nav);
+    } else {
+      var footer = document.querySelector("footer.footer");
+      if (footer && footer.parentNode) {
+        footer.parentNode.insertBefore(nav, footer);
+      } else {
+        document.body.appendChild(nav);
+      }
+    }
+  });
+})();
+</script>
