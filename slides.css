@@ -90,33 +90,37 @@ p.caption {
 /* details sections */
 
 details>summary {
-  padding: 10px 10px;
+  display: block;
+  position: relative;
+  padding: 10px 30px 10px 10px;
   background-color: #d9e4d9;
   border: none;
   border-radius: 25px;
-  display: flex;
-  align-items: center;
   /*box-shadow: 3px 3px 4px black;*/
 }
 
-/* display:flex on summary suppresses the browser's native disclosure
-   triangle (which needs display:list-item), so redraw it as a chevron
-   that rotates on open, matching details.details-quiz below */
+/* A summary's native disclosure triangle only shows when its computed
+   display is list-item (the default), so display:block already suppresses
+   it -- no need for display:flex, which used to split summary's text and
+   any inline elements (e.g. `` `code` ``) into separate side-by-side flex
+   items instead of one flowing, wrapping paragraph. The chevron is redrawn
+   via ::after and absolutely positioned so it stays out of that flow,
+   matching details.details-quiz below */
 details>summary::after {
   content: "";
-  display: inline-block;
-  flex-shrink: 0;
+  position: absolute;
+  top: 50%;
+  right: 12px;
   width: 0.6em;
   height: 0.6em;
-  margin-left: auto;
   border-right: 2px solid #6b7a6b;
   border-bottom: 2px solid #6b7a6b;
-  transform: rotate(-45deg);
+  transform: translateY(-50%) rotate(-45deg);
   transition: transform 0.2s ease;
 }
 
 details[open]>summary::after {
-  transform: rotate(45deg);
+  transform: translateY(-50%) rotate(45deg);
 }
 
 details {
@@ -139,24 +143,41 @@ details {
 }
 
 /* --------------------------------------------------------------------------/*
+/* Markdown code blocks: image syntax */
+
+/* Pandoc's markdown grammar tags an image, ![alt](src), as an "Alert" token
+   (span.al), which the atom-one theme paints bold green on a dark red
+   background -- so an image example looks like an error next to the plainly
+   highlighted link examples. Reset it to the default code text. The theme's
+   own rule is just `code span.al`, so this wins on specificity alone. */
+.reveal pre.sourceCode.markdown code span.al,
+.reveal div.sourceCode code.markdown span.al {
+  color: inherit;
+  background-color: transparent;
+  font-weight: inherit;
+}
+
+/* --------------------------------------------------------------------------/*
 /* Callouts */
+/* Border colors matched to the .blue/.amber/.teal highlight classes
+   below, so callouts and inline highlights read as one palette */
 .callout-warning {
-  border: 2.5px solid #e89b2a !important;
-  border-left: 5px solid #e89b2a !important;
+  border: 2.5px solid var(--color-amber) !important;
+  border-left: 5px solid var(--color-amber) !important;
   border-radius: 12px !important;
   overflow: hidden !important;
 }
 
 .callout-tip {
-  border: 2.5px solid #28a745 !important;
-  border-left: 5px solid #28a745 !important;
+  border: 2.5px solid var(--color-teal) !important;
+  border-left: 5px solid var(--color-teal) !important;
   border-radius: 12px !important;
   overflow: hidden !important;
 }
 
 .callout-note {
-  border: 2.5px solid #0d6efd !important;
-  border-left: 5px solid #0d6efd !important;
+  border: 2.5px solid var(--color-blue) !important;
+  border-left: 5px solid var(--color-blue) !important;
   border-radius: 12px !important;
   overflow: hidden !important;
 }
@@ -255,9 +276,9 @@ details.details-quiz {
 
 details.details-quiz>summary {
   background-color: rgba(111, 66, 193, 0.1) !important;
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
+  display: block !important;
+  position: relative;
+  padding: 0.75em 2em 0.75em 2.5em !important;
   margin: 0 !important;
   border-radius: 0 !important;
 }
@@ -287,8 +308,10 @@ details.details-quiz> :last-child {
 
 details.details-quiz>summary::before {
   content: "";
-  display: inline-block;
-  flex-shrink: 0;
+  position: absolute;
+  left: 0.75em;
+  top: 50%;
+  transform: translateY(-50%);
   width: 1.25em;
   height: 1.25em;
   background-repeat: no-repeat;
@@ -296,24 +319,23 @@ details.details-quiz>summary::before {
   background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" style="fill: rgb(111, 66, 193)" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.496 6.033h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.187a.237.237 0 0 0 .241.247zm2.325 6.443c.61 0 1.029-.394 1.029-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94 0 .533.425.927 1.01.927z"/></svg>');
 }
 
-/* display:flex on summary suppresses the browser's native disclosure
-   triangle (which needs display:list-item), so redraw it as a chevron
-   that rotates on open */
+/* Absolutely positioned (not flex) so it stays out of summary's normal
+   text flow -- see details>summary::after above for why */
 details.details-quiz>summary::after {
   content: "";
-  display: inline-block;
-  flex-shrink: 0;
+  position: absolute;
+  right: 0.9em;
+  top: 50%;
   width: 0.6em;
   height: 0.6em;
-  margin-left: auto;
   border-right: 2px solid #6f42c1;
   border-bottom: 2px solid #6f42c1;
-  transform: rotate(-45deg);
+  transform: translateY(-50%) rotate(-45deg);
   transition: transform 0.2s ease;
 }
 
 details.details-quiz[open]>summary::after {
-  transform: rotate(45deg);
+  transform: translateY(-50%) rotate(45deg);
 }
 
 /* --------------------------------------------------------------------------/*
@@ -406,19 +428,19 @@ kbd {
 }
 
 /* --------------------------------------------------------------------------/*
-/* Accent colors for highlighting -- see theme_web.scss for brand colors */
+/* Accent colors for highlighting -- see theme_slides.scss for brand colors */
 .blue {
-  color: #0072B2;
+  color: var(--color-blue);
   font-weight: 600;
 }
 
 .amber {
-  color: #CC7A00;
+  color: var(--color-amber);
   font-weight: 600;
 }
 
 .teal {
-  color: #009E73;
+  color: var(--color-teal);
   font-weight: 600;
 }
 
