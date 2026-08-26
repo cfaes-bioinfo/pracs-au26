@@ -115,29 +115,35 @@ document.addEventListener("DOMContentLoaded", function () {
   );
 
   // Fragment-based annotation: show on fragment reveal
+  // Note: when multiple fragments share the same step (e.g. same
+  // data-fragment-index), Reveal fires a single "fragmentshown" event whose
+  // `fragment` property is only the first of them. The full set is in
+  // `fragments`, so we must check all of them, not just `event.fragment`.
   Reveal.on("fragmentshown", (event) => {
-    const fragment = event.fragment;
-    if (!fragment.classList.contains("rn-fragment")) return;
+    (event.fragments || [event.fragment]).forEach((fragment) => {
+      if (!fragment.classList.contains("rn-fragment")) return;
 
-    // Create annotation if not already created
-    if (!fragmentAnnotations.has(fragment)) {
-      const annotation = RoughNotation.annotate(fragment, getAnnotationOptions(fragment));
-      fragmentAnnotations.set(fragment, annotation);
-    }
+      // Create annotation if not already created
+      if (!fragmentAnnotations.has(fragment)) {
+        const annotation = RoughNotation.annotate(fragment, getAnnotationOptions(fragment));
+        fragmentAnnotations.set(fragment, annotation);
+      }
 
-    const annotation = fragmentAnnotations.get(fragment);
-    annotation.show();
-    applyInverseScale(annotation);
+      const annotation = fragmentAnnotations.get(fragment);
+      annotation.show();
+      applyInverseScale(annotation);
+    });
   });
 
   // Fragment-based annotation: hide on fragment hide
   Reveal.on("fragmenthidden", (event) => {
-    const fragment = event.fragment;
-    if (!fragment.classList.contains("rn-fragment")) return;
-    if (!fragmentAnnotations.has(fragment)) return;
+    (event.fragments || [event.fragment]).forEach((fragment) => {
+      if (!fragment.classList.contains("rn-fragment")) return;
+      if (!fragmentAnnotations.has(fragment)) return;
 
-    const annotation = fragmentAnnotations.get(fragment);
-    annotation.hide();
+      const annotation = fragmentAnnotations.get(fragment);
+      annotation.hide();
+    });
   });
 
   // Update annotation positions when presentation is resized
