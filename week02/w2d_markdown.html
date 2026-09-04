@@ -1318,6 +1318,69 @@ you’ll have to resort to an HTML tag — each <strong><code>&lt;br&gt;</code><
         ]
       });
     </script>
+    <script>
+    /* ---------------------------------------------------------------------------
+       Make Reveal decks usable in a narrow ("split-screen") browser window.
+
+       Reveal renders every slide at a fixed logical size (the `width`/`height`
+       in the deck's YAML) and then scales that box to fit the window:
+
+           scale = min(winW * (1-margin) / width, winH * (1-margin) / height)
+
+       In a narrow-but-tall window the width term wins, so the text shrinks and
+       the unused vertical space shows up as big empty bands above and below the
+       slide. The wider the deck (this is worse at 1280x720 than at 1050x700),
+       the stronger the effect.
+
+       Fix: on load and on resize, adjust the *logical* slide size to the window's
+       aspect ratio --- shrink the logical width (which makes the scale, and thus
+       the text, larger) and grow the logical height so the slide fills the window
+       instead of being letterboxed. The width is only allowed to shrink to
+       MIN_WIDTH_FRAC of the authored width, so column layouts and code blocks
+       don't get squeezed; lower it for bigger text, raise it for safer layouts.
+
+       In a full-screen 16:9 window this is a no-op apart from the smaller margin.
+    --------------------------------------------------------------------------- */
+    (function () {
+      const MIN_WIDTH_FRAC = 0.85;  // narrowest logical width, as a fraction of the authored width
+      const MARGIN = 0.04;          // Reveal's default is 0.1, i.e. 10% of the window wasted
+
+      if (/print-pdf/gi.test(window.location.search)) return;  // leave PDF export alone
+
+      let design = null;  // the deck's authored size, captured before we touch it
+
+      function fit() {
+        const R = window.Reveal;
+        if (!R || !R.isReady || !R.isReady()) return;
+        const cfg = R.getConfig();
+        if (!design) {
+          if (typeof cfg.width !== "number" || typeof cfg.height !== "number") return;
+          design = { w: cfg.width, h: cfg.height };
+        }
+        const aspect = window.innerWidth / window.innerHeight;
+        const w = Math.round(Math.max(design.w * MIN_WIDTH_FRAC,
+                                      Math.min(design.w, design.h * aspect)));
+        const h = Math.round(Math.max(design.h, w / aspect));
+        if (cfg.width !== w || cfg.height !== h || cfg.margin !== MARGIN) {
+          R.configure({ width: w, height: h, margin: MARGIN });
+        }
+      }
+
+      let timer = null;
+      function fitSoon() { clearTimeout(timer); timer = setTimeout(fit, 100); }
+
+      let tries = 0;
+      (function waitForReveal() {
+        if (window.Reveal && window.Reveal.isReady && window.Reveal.isReady()) {
+          fit();
+          window.addEventListener("resize", fitSoon);
+          window.addEventListener("orientationchange", fitSoon);
+        } else if (tries++ < 200) {
+          setTimeout(waitForReveal, 50);
+        }
+      })();
+    })();
+    </script>
     <script id="quarto-html-after-body" type="application/javascript">
       window.document.addEventListener("DOMContentLoaded", function (event) {
         const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
