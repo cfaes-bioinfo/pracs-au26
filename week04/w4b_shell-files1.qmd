@@ -17,7 +17,7 @@ other-links:
   - text: "Week 4 overview"
     icon: check2-all
     href: w4_overview.html
-  - text: "w4a: Sequence file types"
+  - text: "w4a: Genomics file types"
     icon: book
     href: w4a_genomics-files.html
   - text: "w4c: Shell files II"
@@ -91,7 +91,7 @@ Here, you will learn to use Unix shell commands that can perform these actions.
 6. In VS Code, open a terminal by
    clicking   {{< fa bars >}}   =\> `Terminal` =\> `New Terminal` ^[
    Or use the keyboard shortcut <kbd>Ctrl</kbd>+<kbd>`</kbd>.]
-7. Check that your are in `/fs/ess/PAS3493/people/$USER`
+7. Check that you are in `/fs/ess/PAS3493/people/$USER`
    by typing `pwd` in the terminal.\
    _(Recall that `$USER` is a variable that represents your username._
    _If you're not in that dir, it may be listed under `Recents` in the_
@@ -102,7 +102,15 @@ Here, you will learn to use Unix shell commands that can perform these actions.
 #### Open a Markdown file for notes
 
 I recommend that you create and open a Markdown file to keep
-notes on what we're doing in this session:
+notes on what we're doing in this session.
+First, create a dir for this week
+(we'll talk about the `mkdir` command later today):
+
+```bash
+mkdir week04
+```
+
+Then create the file itself:
 
 1. Click <i class="fa fa-bars"></i> > `File` > `New File`
 2. Save the file inside `/fs/ess/PAS3493/people/$USER/week04`,
@@ -127,7 +135,7 @@ In the narrow side bar, click the `Extensions` icon.
 In the Extensions pane that now makes up the wide side bar,
 search for and then install the following two extensions:
 
-- **shellcheck** (by *simonwong*) --- this will check your shell scripts later on!
+- **shellcheck** (by *timonwong*) --- this will check your shell scripts later on!
 - **Rainbow CSV** (by *mechatroner*) ---
   make CSV/TSV files easier to view with column-based colors
 
@@ -366,15 +374,15 @@ Some notes about these FASTQ files:
   **[red]{style="color:#bb0000"}**, which indicates they have been _compressed_
   with the `gzip` command.
 - There are two files per sample: `_R1` (forward reads) and `_R2` (reverse reads).
-- The files are ~21-22 Mb in size ---
+- The files are ~21-22 MB in size ---
   considerably smaller than the original file sizes
-  (~1-2 Gb) because they were subsampled.
+  (~1-2 GB) because they were subsampled.
 
 ::: exercise
 #### {{< fa user-edit >}} **Exercise**: Listing a single file
 
 Say you want to check the size of a single file.
-Then, it may be always not be convenient to list an entire dir's contents.
+Then, it may not always be convenient to list an entire dir's contents.
 Can you figure out how to use `ls` to show you the file size **only** for the
 `fastq/ERR10802865_R2.fastq.gz` file?
 
@@ -413,7 +421,7 @@ tree -C
 │   ├── ERR10802864_R2.fastq.gz
 │   ├── ERR10802865_R1.fastq.gz
 │   ├── ERR10802865_R2.fastq.gz
-├── [...other FASTQ files not shown...]
+│   └── [...other FASTQ files not shown...]
 ├── meta
 │   └── metadata.tsv
 ├── README.md
@@ -488,9 +496,9 @@ testdir1
    </details>
 
 2. Run the below two commands one by one,
-   and read any output the commands print the screen.
+   and read any output the commands print to the screen.
    Why does the first command fail?
-   What can you conclude about the `-p` other than that it enables recursiveness?
+   What can you conclude about the `-p` option other than that it enables recursiveness?
 
    ```bash
    mkdir testdir1
@@ -520,7 +528,7 @@ testdir1
      Looking at the `ls -l` timestamp would be one way to distinguish between
      possibilities.
      Or you could create a file inside the dir and see whether that's removed
-     by when you (re)run `mkdir -p`.
+     when you (re)run `mkdir -p`.
      Here, I'll just give you the answer: `mkdir -p` doesn't do anything when
      the dir already exists, and won't produce an error either.
      This can be useful in non-interactive contexts.
@@ -531,7 +539,7 @@ testdir1
 ### `touch` to create a new file
 
 To create new, empty files, use the `touch` command,
-specifiying the file name(s) as the argument(s):
+specifying the file name(s) as the argument(s):
 
 ```bash
 # Create a single new file called newfile1.txt
@@ -570,7 +578,7 @@ using shortcuts known as wildcards: we will look at that later in this lecture.
    ```
    </details>
 
-2. Create a create a new file `monarch.txt` inside a new dir `butterflies`.
+2. Create a new file `monarch.txt` inside a new dir `butterflies`.
    Don't change your working dir while you're doing this.
 
    <details><summary>*Click to see the solution*</summary>
@@ -584,10 +592,10 @@ using shortcuts known as wildcards: we will look at that later in this lecture.
    touch butterflies/monarch.txt
    ```
    ```bash-out
-   touch: butterflies/monarch.txt: No such file or directory
+   touch: cannot touch 'butterflies/monarch.txt': No such file or directory
    ```
 
-   Instead, you first have create the new dir with `mkdir`,
+   Instead, you first have to create the new dir with `mkdir`,
    and _then_ create the new file in there:
 
    ```bash
@@ -639,7 +647,7 @@ That command copied `metadata.tsv`, which was not in your working dir,
 to a new file `meta2.tsv` in your working dir.
 
 :::callout-tip
-#### Make sure to use Tab completion when looking for existing files in case like above!
+#### Make sure to use Tab completion when looking for existing files in cases like the one above!
 For example, you may get confused about how many levels you need to go up,
 and pressing <kbd>Tab</kbd> after the `/` will help you to orient.
 Additionally, you will be much faster and less likely to have typos in your paths
@@ -687,7 +695,8 @@ there:
 ls
 ```
 ```bash-out
-butterflies  meta2.tsv  metadata.tsv  newfile1.txt  newfile2.txt  newfile3.txt  meta
+butterflies  meta  meta2.tsv  metadata.tsv  newfile1.txt  newfile2.txt
+newfile3.txt  newfile3_copy.txt  testdir1  testdir2  testdir3
 ```
 
 ## `mv` to move and rename
@@ -712,7 +721,7 @@ or do both at the same time:
 - Different directory, same file name ("moving"):
 
   ```bash
-  # (You don't need the trailing slash to data/, but this can be clearer.)
+  # (You don't need the trailing slash to meta/, but this can be clearer.)
   mv meta_copy.tsv meta/
   ```
 
@@ -749,7 +758,7 @@ mv <source1> <source2> <source3> <source4> <destination>
 ## `rm` to remove
 
 The **`rm`** command removes files and optionally dirs -- here,
-remove the file copy you made above:
+remove one of the files you created above:
 
 ```bash
 rm newfile1.txt
@@ -770,7 +779,7 @@ rm -r butterflies
 ```
 
 ::: {.callout-warning collapse="true"}
-#### There is no thrash bin when deleting files in the shell, so use `rm` with caution! _(Click to expand)_
+#### There is no trash bin when deleting files in the shell, so use `rm` with caution! _(Click to expand)_
 
 `rm -r` can be very dangerous ---
 for example, the command `rm -r /` would attempt to remove the entire contents
@@ -836,7 +845,7 @@ where **wildcards** are _characters that have a special meaning_.
 To practice with this,
 start by creating some dummy FASTQ files in your `sandbox` dir:
 
-```sh
+```bash
 # (Copy-and-paste this into the shell rather than typing it out)
 touch sample1_R1.fastq sample1_R2.fastq
 touch sample2_R1.fastq sample2_R2.fastq
@@ -865,7 +874,7 @@ therefore, the following doesn't match anything:
 ls *R1
 ```
 ```bash-out
-ls: cannot access *R1: No such file or directory
+ls: cannot access '*R1': No such file or directory
 ```
 
 So, if the string (text) that we use for matching is in the middle of the filename,
@@ -884,7 +893,7 @@ In summary:
 | Pattern        | Matches files whose names...
 |----------------|---------------------------|
 | `sample1*`     | [Start with]{.underline} "sample1"
-| `*fastq`       | [End with]{.underline} ".fastq"
+| `*.fastq`      | [End with]{.underline} ".fastq"
 | `*_R1*`        | [Contain]{.underline} "\_R1"
 | `*`            | _(matches all files in the working dir)_^[Except so-called hidden files.]
 
@@ -960,7 +969,7 @@ ls sample1*fastq
 That means that what it really ends up running, in this particular case, is:
 
 ```bash
-ls sample1_R1.fastq sample1_R1.fastq
+ls sample1_R1.fastq sample1_R2.fastq
 ```
 
 #### Practical examples

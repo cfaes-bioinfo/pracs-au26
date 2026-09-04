@@ -17,7 +17,7 @@ other-links:
   - text: "Week 4 overview"
     icon: check2-all
     href: w4_overview.html
-  - text: "w4a: Sequence file types"
+  - text: "w4a: Genomics file types"
     icon: book
     href: w4a_genomics-files.html
   - text: "w4b: Shell files I"
@@ -41,7 +41,7 @@ bibliography: ../references.bib
 
 ### Context & overview
 
-The Unix shell is great for many other tasks that the file browser-like ones
+The Unix shell is great for many other tasks than the file browser-like ones
 you learned about in the previous lecture.
 One of those is performing basic viewing, querying, and editing operations on
 text files.
@@ -50,7 +50,7 @@ Recall from the [Project File Organization lecture](../week02/w2a_project-org.qm
 that you'll work almost exclusively with so-called "**plain-text**" files in this course,
 such as:
 
-- Sequence file formats such as FASTA, FASTQ, and GTF
+- Sequence and annotation file formats such as FASTA, FASTQ, and GTF
 - Spreadsheet-like/tabular files stored as TSV/CSV
 - Scripts and code notebooks
 - Documentation files such as Markdown
@@ -63,7 +63,8 @@ The commands we'll discuss here can be used with plain-text files but not with
 In this lecture, you will learn to use the Unix shell to:
 
 - View the contents of text files in various ways
-- Search within, extract information from, and manipulate text files
+- Use redirection and the pipe to flexibly process the output of commands
+- Search within, manipulate, and extract information from text files
 
 ### Getting ready
 
@@ -86,7 +87,7 @@ In this lecture, you will learn to use the Unix shell to:
   6. In VS Code, open a terminal by
      clicking   {{< fa bars >}}   =\> `Terminal` =\> `New Terminal` ^[
      Or use the keyboard shortcut <kbd>Ctrl</kbd>+<kbd>`</kbd>.]
-  7. Check that your are in `/fs/ess/PAS3493/people/$USER`
+  7. Check that you are in `/fs/ess/PAS3493/people/$USER`
      by typing `pwd` in the terminal.\
      _(Recall that `$USER` is a variable that represents your username._
      _If you're not in that dir, it may be listed under `Recents` in the_
@@ -262,7 +263,7 @@ ERR10802878     10dpi   control
 
 -----
 
-Next, let's try to take a peak inside a FASTQ file.
+Next, let's try to take a peek inside a FASTQ file.
 To print the first 8 lines, corresponding to 2 reads,
 use `-n 8` with `head`:
 
@@ -317,7 +318,7 @@ Also, `less` will automatically display gzip-compressed files in
 human-readable form: 🥳
 
 ``` bash
-less garrigos-data/fastq/ERR10802863_R1.fastq.gz
+less fastq/ERR10802863_R1.fastq.gz
 ```
 ```bash-out
 @ERR10802863.8435456 8435456 length=74
@@ -349,7 +350,7 @@ With the `-S` option to `less`, lines will not be wrapped but will
 (press the rightward arrow <kbd>→</kbd> to see that part):
 
 ``` bash
-less -S garrigos-data/fastq/ERR10802863_R1.fastq.gz
+less -S fastq/ERR10802863_R1.fastq.gz
 # [output not shown]
 ```
 :::
@@ -410,11 +411,13 @@ as the number of lines in many file types reflects the number of entries.
 
 ## Redirection and the pipe
 
-First create and move into a `sandbox` dir within `garrigos-data`:
+First create and move into a `sandbox2` dir within `garrigos-data`.
+(This is a _different_ sandbox than the one from the previous lecture --
+having it inside `garrigos-data` lets us use short paths like `../fastq`.)
 
 ```bash
-mkdir sandbox
-cd sandbox
+mkdir sandbox2
+cd sandbox2
 ```
 
 ### Redirection
@@ -525,7 +528,7 @@ We'll see pipes in action a bunch more in the next section.
 ::: exercise
 #### {{< fa user-edit >}} Exercise: the pipe
 
-What do you think the command below does? What will the resuling count represent?
+What do you think the command below does? What will the resulting count represent?
 
 ```bash
 cat ../fastq/ERR10802863_R1.fastq.gz ../fastq/ERR10802863_R2.fastq.gz | wc -l
@@ -549,7 +552,7 @@ cat ../fastq/ERR10802863_R1.fastq.gz ../fastq/ERR10802863_R2.fastq.gz | wc -l
 Thinking one step further: can we get the total number of reads for sample
 `ERR10802863` across its two FASTQ files, by dividing the result by 4?
 (Recall: one FASTQ read covers 4 lines.)
-No, it doesn't, since the file is compressed:
+No, we can't, since the file is compressed:
 compressed and uncompressed line counts for a file are not the same.
 
 </details>
@@ -574,7 +577,7 @@ and discussing tabular plain-text files.
 
 ### Tabular plain-text files and file extensions
 
-The examples below will use the file `meta/metadata.tsv`,
+The examples below will use the file `../meta/metadata.tsv`,
 so we'll first make a copy of that file and take another look at its first lines:
 
 ```bash
@@ -612,7 +615,7 @@ Most commonly, these are:
   Comma-Separated Values ("**CSV** file").
 
 ::: callout-important
-#### Plain-text file _extensions_ are flexible and mostly for human-readibility
+#### Plain-text file _extensions_ are flexible and mostly for human-readability
 
 A side note on plain-text file extensions like `.txt`, `.csv`, and `.tsv`,
 but also those for sequence files like `.fastq` as well as script files like `.R` or `.sh`:
@@ -760,7 +763,7 @@ You always have to use its **`-f`** ("field") option to specify the
 
 ```bash
 # Select the second column of the file:
-cut -f 1 metadata.tsv
+cut -f 2 metadata.tsv
 ```
 ```bash-out
 time
@@ -819,7 +822,7 @@ use the `-d` option -- e.g. `-d ,` for a CSV file:
 ```bash
 # [Don't run this, hypothetical example]
 # Select the second column in a comma-delimited (CSV) file:
-cut -d , 2 my-data.csv
+cut -d , -f 2 my-data.csv
 ```
 :::
 
@@ -835,7 +838,7 @@ annotation file, as you'll do later.)
 To do this, you'll need to learn about two new commands:
 
 - **`sort`** to sort/order/arrange rows, by default in alphanumeric order.
-- **`uniq`** to remove duplicates (i.e., keep all distinct/unique) entries
+- **`uniq`** to remove duplicates (i.e., keep all distinct/unique entries)
   _from a sorted file/list_.
 
 We'll build up a small "pipeline" to do this, step-by-step,
@@ -963,7 +966,7 @@ tail -n +2 metadata.tsv | sort -k3,3
 To sort first by one column and _then_ by another, use `-k` multiple times:
 
 ```bash
-# Sort first by the first column, then break ties using the second column:
+# Sort first by the third column, then break ties using the second column:
 tail -n +2 metadata.tsv | sort -k3,3 -k2,2
 ```
 :::
@@ -973,7 +976,7 @@ tail -n +2 metadata.tsv | sort -k3,3 -k2,2
 
 Using commands similar to the last examples above, check whether:
 
-- The `10dpi` and `24hpi` treatments have the same number of samples
+- The `10dpi` and `24hpi` time points have the same number of samples
 
 <details><summary>_Click for the solution_ </summary>
 
@@ -999,10 +1002,10 @@ The most elegant way to see this is by using `sort -nr | head -n1` at the end:
 if the single sample shown has a count of 1, this means there are no duplicates.
 
 ```bash
-tail -n +2 metadata.tsv | cut -f 2 | sort | uniq -c | sort -nr | head -n 1
+tail -n +2 metadata.tsv | cut -f 1 | sort | uniq -c | sort -nr | head -n 1
 ```
 ```bash-out
-1 ERR10802886
+      1 ERR10802886
 ```
 
 Omitting the `head -n1` or even the `sort -nr` would also work in this case.
@@ -1017,7 +1020,7 @@ we saw the Unix philosophy in action:
 
 > *This is the Unix philosophy: Write programs that do one thing and do it
 > well.* *Write programs to work together. Write programs to handle text
-> **streams**,* *because that is a universal interface.*<br> — Doug McIlory
+> **streams**,* *because that is a universal interface.*<br> — Doug McIlroy
 
 Some advantages of a modular approach are that it's easier to spot errors,
 to swap out components, and to learn.
@@ -1032,7 +1035,7 @@ This is very useful when working with large files in particular!
 For example,
 _`head` will print results instantly even for a 10 TB file_
 that could never be loaded into memory.
-By contrast, try to take a peak at such a file with a GUI text editor,
+By contrast, try to take a peek at such a file with a GUI text editor,
 and your computer will crash.
 
 Here is one other example,
@@ -1043,7 +1046,7 @@ and will run quickly and without using much computer memory!
 
 ```bash
 # [Don't run this - for illustration purposes only]
-cat fastq/*R1.fastq.gz > all_R1.fastq.gz
+cat ../fastq/*R1.fastq.gz > all_R1.fastq.gz
 ```
 
 ::: {.callout-tip collapse="false"}
@@ -1051,7 +1054,7 @@ cat fastq/*R1.fastq.gz > all_R1.fastq.gz
 
 - FASTQ files can (in principle) be concatenated freely since every read is a
   "stand-alone" unit of 4 lines.
-- Gzipped (`.gz`) files can also be concatened freely!
+- Gzipped (`.gz`) files can also be concatenated freely!
 :::
 
 #### Don't redirect back to the input file!
@@ -1070,7 +1073,7 @@ sort metadata.tsv > metadata.tsv
 #### Changing the original file
 
 Therefore, if you really want to edit the original file instead of creating a
-separate edited copy, you will two multiple steps:
+separate edited copy, you will need two steps:
 
 1. Redirect to a new, edited copy of the input file
 2. Rename the copy to overwrite the original file
