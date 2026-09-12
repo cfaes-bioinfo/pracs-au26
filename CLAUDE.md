@@ -7,7 +7,7 @@
   the Ohio Supercomputer Center, shell scripts, Slurm batch jobs,
   Apptainer containers, R, Quarto, running Nextflow/nf-core pipelines,
   version control with Git and GitHub, and code and research project documentation.
-  All students are grad students. The course has no prerequisites. 
+  All students are grad students. The course has no prerequisites.
 
 - Theming for the website pages are defined in `styles.css` and `theme_web.scss`
 - Theming for Quarto slides are defined in `slides.css` and `theme_slides.scss`
@@ -18,3 +18,9 @@
     I will always have a preview server running.
   - When I ask to **proofread** a document, use the `proofread` skill
     (`.claude/skills/proofread/`).
+
+- Each week's material is a `week01`, `week02`, etc. folder, but some material
+  is kept in separate folder:
+  - Graded Assignments are in a folder `GA`
+  - Ungraded Assignments are in a folder `UA`
+  - Final Project related assignments are in a folder `FP`

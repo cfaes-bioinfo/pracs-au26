@@ -40,30 +40,50 @@ DNA and protein (amino acid) sequences and sequence annotations are mostly
 stored in **plain-text** formats.
 Some of the most common types, which you'll work with in this course, are:
 
-- **FASTA**\
-  Simple sequence files, where each entry contains a header and a sequence.\
-  Versatile: may contain a few short sequences, entire genome assemblies, proteomes, ...
+
+::: {.columns}
+::: {.column width="31%" .box-teal .fragment data-fragment-index="1"}
+
+**FASTA**
+
+- Simple sequence files, where each entry contains a header and a sequence.
+
+- Versatile: may contain a few short sequences, entire genome assemblies,
+  proteomes, ...
+
+:::
+::: {.column width="2%"}
+:::
+::: {.column width="31%" .box-amber .fragment data-fragment-index="2"}
+
+**FASTQ**
+
+- The standard format for **HTS reads**.
+
+- Includes a quality score for each nucleotide.
+
+:::
+::: {.column width="2%"}
+:::
+::: {.column width="31%" .box-blue .fragment data-fragment-index="3"}
+
+**GTF**/**GFF**
+
+- A **(genome) annotation** format.
+
+- Table with e.g. coordinates of genes and exons.
+
+:::
+:::
 
 <hr style="height:1pt; visibility:hidden;" />
 
 . . .
 
-- **FASTQ**\
-  The standard format for **HTS reads** — includes a quality score for each nucleotide.
-
-<hr style="height:1pt; visibility:hidden;" />
-
-- **SAM/BAM** _[(not further discussed today)]{style="color:#969696"}_\
-  An alignment format for **HTS reads**.
-  E.g. produced when you align reads to a genome.
-
-<hr style="height:1pt; visibility:hidden;" />
-
-. . .
-
-- **GTF**/**GFF**\
-  A **(genome) annotation** format:
-  table with information such as coordinates of genes and exons.
+::: {.callout-note appearance="simple"}
+Two other common formats are **SAM** and its binary equivalent **BAM**,
+which are produced e.g. when you align reads to a genome.
+:::
 
 ## FASTA files
 
@@ -86,7 +106,8 @@ ATTCATTAAAGCAGTTTATTGGCTTAATGTACATCAGTGAAATCATAAATGCTAAATG
 Each entry contains a **header** and the **sequence** itself, where:
 
 - **Header lines** start with a "`>`" and provide identifying information (metadata) for the sequence
-- The **sequence** is often spread across multiple lines (with a fixed line width like 50 characters)
+- The **sequence** is often spread across multiple lines
+  (with a fixed line width, e.g. 60 or 80 characters)
 
 . . .
 
@@ -101,7 +122,7 @@ nucleotide (`.fna`) or amino acid sequences (`.faa`).
 ## FASTQ files
 
 FASTQ is the standard format for HTS reads.
-**Each** **read forms** **one FASTQ entry** and is represented by four lines,
+**Each read forms one FASTQ entry** and is represented by four lines,
 which contain, respectively:
 
 . . .
@@ -117,90 +138,65 @@ which contain, respectively:
 
 ## FASTQ quality scores
 
-The quality scores in the reads represent an estimate of the error probability of
-the base call.
+The quality scores represent an estimate of the
+**error probability of the base call**.
 
 Specifically, they correspond to a numeric "Phred" quality score ($Q$),
 which is a function of the estimated probability that a base call is erroneous ($P$):
 
 $$
-Q = -10 * log_{10}(P)
+Q = -10 \log_{10}(P)
 $$
+<hr style="height:1pt; visibility:hidden;" />
 
 . . .
-
-For example:
-
-$$
-10 = -10 * log_{10}(0.1)
-$$
-
-$$
-20 = -10 * log_{10}(0.01)
-$$
-
-## FASTQ quality scores
-
-The quality scores in the reads represent an estimate of the error probability of
-the base call.
-
-Specifically, they correspond to a numeric "Phred" quality score ($Q$),
-which is a function of the estimated probability that a base call is erroneous ($P$):
-
-$$
-Q = -10 * log_{10}(P)
-$$
-
-<br>
 
 Some specific probabilities and their rough qualitative interpretation for Illumina data:
 
-| Phred quality score | Error probability | Rough interpretation |
-|:---------------------:|-------------------|----------------------|
-| **10**              | 1 in 10           | terrible             |
-| **20**              | 1 in 100          | bad                  |
-| **30**              | 1 in 1,000        | good                 |
-| **40**              | 1 in 10,000       | excellent            |
+| Phred score | Error probability | Rough interpretation |  [ASCII character]{style="color:white;"}   |
+| :-----------------: | ----------------- | -------------------- | --- |
+|       **10**        | 1 in 10           | terrible             |     |
+|       **20**        | 1 in 100          | bad                  |     |
+|       **30**        | 1 in 1,000        | good                 |     |
+|       **40**        | 1 in 10,000       | excellent            |     |
 
-: {.striped}
+: {.striped tbl-colwidths="[25, 25, 30, 20]"}
 
 ## FASTQ quality scores
 
-To make things a little more complicated:
-the numeric Phred quality score is represented in FASTQ files
+The numeric Phred quality score is represented in FASTQ files
 *not by the number itself*,
 but by a corresponding "ASCII character".
 
 This allows for a single-character representation of each possible score —
 therefore,
-**each quality score character can conveniently correspond to (& line up with) a base character**
+**each quality score character can correspond to (and line up with) a base character**
 in the read.
-
-. . .
 
 <hr style="height:1pt; visibility:hidden;" />
 
+. . .
+
 For example:
 
-| Phred quality score | Error probability | ASCII character |
-|:----:|--------------|:----:|
-| **10**              | 1 in 10           | `+`             |
-| **20**              | 1 in 100          | `5`             |
-| **30**              | 1 in 1,000        | `?`             |
-| **40**              | 1 in 10,000       | `I`             |
+| Phred score | Error probability | Rough interpretation |  ASCII character |
+|:---------------------:|-------------------|----------------------| ---|
+| **10**              | 1 in 10           | terrible             | `+`             |
+| **20**              | 1 in 100          | bad                  | `5`             |
+| **30**              | 1 in 1,000        | good                 | `?`             |
+| **40**              | 1 in 10,000       | excellent            | `I`             |
 
-: {.striped}
+: {.striped tbl-colwidths="[25, 25, 30, 20]"}
 
 ## FASTQ quality scores
 
-To make things a little more complicated:
-the numeric Phred quality score is represented in FASTQ files
+The numeric Phred quality score is represented in FASTQ files
 *not by the number itself*,
 but by a corresponding "ASCII character".
 
 This allows for a single-character representation of each possible score —
 therefore,
-**each quality score character can conveniently correspond to (& line up with) a base character**
+**each quality score character can correspond to (and line up with) a base character**
 in the read.
 
 <hr style="height:1pt; visibility:hidden;" />
@@ -211,35 +207,63 @@ in the read.
 
 While FASTQ files can be any size, separate files are typically used for:
 
-- **Each read direction** (with paired-end sequences)\
+::: {.columns}
+::: {.column width="48%"}
+
+- **Each read direction**\
+  For paired-end data
 
   | Read direction | File name identifier |
-  |----|--------------|
-  | Forward | `_R1` |
-  | Reverse | `_R2` |
+  | -------------- | -------------------- |
+  | Forward        | `_R1`                |
+  | Reverse        | `_R2`                |
 
   : {.striped .hover}
+
+:::
+::: {.column width="4%"}
+:::
+::: {.column width="48%"}
 
 - **Each sample**\
   Reads are normally "demultiplexed" into separate files for each sample.
 
+:::
+:::
+
 . . .
 
+<hr style="height:1pt; visibility:hidden;" />
+
 Therefore,
-paired-end FASTQ filenames for 2 samples usually look something like this:
+paired-end FASTQ files for 2 samples usually look something like this:
+
+::: {.columns}
+::: {.column width="48%"}
 
 ``` bash
-# (The FASTQ file extension is most often '.fastq' but sometimes '.fq')
 sample1_R1.fastq
 sample1_R2.fastq
 sample2_R1.fastq
 sample2_R2.fastq
 ```
 
+:::
+::: {.column width="4%"}
+:::
+::: {.column width="48%"}
+
+::: {.callout-tip appearance="simple"}
+FASTQ files most commonly have a `.fastq` extension, and sometimes `.fq`.
+:::
+
+:::
+:::
+
 ## GTF/GFF files
 
-The highly similar GTF (`.gtf`) and GFF (`.gff`) formats are **tabular**
-annotation files with:
+Genome annotations go in the highly similar, **tabular** GTF (`.gtf`) and GFF
+(`.gff`) formats, with:
 
 - One row for each annotated "**genomic feature**" (gene, exon, etc.)
 - Columns with information like the genomic coordinates of the features
@@ -247,14 +271,14 @@ annotation files with:
 . . .
 
 After a metadata header, the tabular part looks like this
-(column names added for clarity):
+(*column names added for clarity*):
 
 ```bash-out
-#seqname      source  feature     start   end     score  strand  frame    attributes
-NC_068937.1   Gnomon  gene        2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id ""; db_xref "GeneID:120427725"; description "homeotic protein deformed"; gbkey "Gene"; gene "LOC120427725"; gene_biotype "protein_coding";
-NC_068937.1   Gnomon  transcript  2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gbkey "mRNA"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA";
-NC_068937.1   Gnomon  exon        2046    2531    .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "1";
-NC_068937.1   Gnomon  exon        52113   52136   .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "2";
+seqname      source  feature     start   end     score  strand  frame    attributes
+NC_068937.1  Gnomon  gene        2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id ""; db_xref "GeneID:120427725"; description "homeotic protein deformed"; gbkey "Gene"; gene "LOC120427725"; gene_biotype "protein_coding";
+NC_068937.1  Gnomon  transcript  2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gbkey "mRNA"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA";
+NC_068937.1  Gnomon  exon        2046    2531    .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "1";
+NC_068937.1  Gnomon  exon        52113   52136   .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "2";
 ```
 
 . . .
@@ -262,9 +286,9 @@ NC_068937.1   Gnomon  exon        52113   52136   .       +       .       gene_i
 ::: callout-note
 #### Details for a few columns:
 
-- _seqname_ --- Name of the chromosome, scaffold, or contig
-- _source_ --- Name of the program that generated this feature, or the data source (e.g. database)
-- _attributes_ --- A semicolon-separated list of tag-value pairs with additional information
+- **_seqname_** --- Name of the chromosome, scaffold, or contig
+- **_source_** --- Name of the program that generated this feature, or the data source (e.g. database)
+- **_attributes_** --- A semicolon-separated list of key-value pairs with additional information
 :::
 
 ::: footer
@@ -292,7 +316,7 @@ specifically, it compares mosquitoes according to:
 
 <hr style="height:1pt; visibility:hidden;" />
 
-The following numbers of samples (biological replicates) were used for each
+The following numbers of biological replicates were used for each
 treatment combination:
 
 |        | Control | _P. cathemerium_ | _P. relictum_ |
@@ -317,34 +341,39 @@ All in all, the set of files,
 [available through GitHub](https://github.com/jelmerp/garrigos-data),
 consists of:
 
-- **Reads** --- 44 paired-end, 75-bp Illumina FASTQ files for 22 samples
-- **Reference genome annotation** -- _Culex pipiens_ GTF file
+- **Reads** --- 44 paired-end, ~75-bp Illumina FASTQ files for 22 samples
+- **Reference genome annotation** --- _Culex pipiens_ GTF file
 - **Metadata** (sample data) --- A table with e.g. treatment info for each sample
 - **README** --- A Markdown file describing the data set
 
 <hr style="height:1pt; visibility:hidden;" />
 
+. . .
+
 ::: {.callout-tip appearance="simple"}
-We'll download the **reference genome assembly** FASTA file separately
-(it's too large to fit in the GitHub repository).
+We'll download the **reference genome assembly** FASTA file separately.
 :::
 
-## RNA-Seq analysis steps
+. . .
 
-![](../img/alignment5.png){fig-align="center" width="70%" fig-alt="A diagram of RNA-Seq analysis steps." .lightbox}
+<br>
+
+***Next slide:** steps to obtain a count table from raw reads*
+
+------
+
+![](../img/rnaseq-steps2.png){fig-align="center" width="75%" fig-alt="A diagram of RNA-Seq analysis steps." .lightbox}
 
 ::: footer
 :::
 
-## RNA-Seq analysis steps
+# Questions? {background-color="#A7B1B7" .unlisted}
 
-![](../img/rnaseq-wf-1.png){fig-align="center" width="60%" fig-alt="A diagram showing the steps in an RNA-Seq analysis pipeline." .lightbox}
+<br><br>
 
-## RNA-Seq analysis steps
+[_Click here to go to the next lecture, [**Working with files in the Unix shell I**](./w4b_shell-files1.qmd)_]{style="display:block; text-align:center"}
 
-![](../img/rnaseq-wf-2.png){fig-align="center" width="60%" fig-alt="A diagram showing the steps in an RNA-Seq analysis pipeline." .lightbox}
-
-## RNA-Seq analysis steps
+## Bonus slide: RNA-Seq analysis steps
 
 ![](../img/rnaseq-wf-3.png){fig-align="center" width="60%" fig-alt="A diagram showing the steps in an RNA-Seq analysis pipeline." .lightbox}
 
