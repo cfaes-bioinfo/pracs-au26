@@ -40,29 +40,24 @@ bibliography: ../references.bib
 ## Introduction
 
 In these exercises, you'll practice with shell commands,
-especially those that operate on files as seen in this week's classes.
-
-_In general, you should use shell commands for all exercises._
-_E.g., if you are asked to check a file size, don't do so in the OnDemand file browser!_
-
-_Questions 2 and 3 of Exercise 3, and all of Exercise 5, use material from_
-_Wednesday's lecture ([w4c: Shell files II](./w4c_shell-files2.qmd))._
+especially those that operate on files.
 
 ### Setting up
 
-- Start a VS Code session through OSC OnDemand in the folder
-  `/fs/ess/PAS3493/people/$USER`.
-- Create and use a Markdown file to keep notes on what you're doing.
-- You'll use the @garrigós2025 data files,
-  which you should have stored as `garrigos-data` in the above dir.
+1. Start a VS Code session through OSC OnDemand in the folder
+   `/fs/ess/PAS3493/people/$USER`.
+2. Create and use a Markdown file to keep notes on what you're doing.
 
-<details><summary>_Click here for instructions if you need to (re)download these files_</summary>
+You'll use the @garrigós2025 data files,
+which you should have stored as `garrigos` in the above dir.
+
+<details><summary> {{< fa lightbulb >}} _Click here for instructions if you need to (re)download these files._</summary>
 
 ```bash
 # Make sure you're in your personal dir:
 cd /fs/ess/PAS3493/people/$USER
 
-git clone https://github.com/jelmerp/garrigos-data
+git clone https://github.com/cfaes-bioinfo/garrigos
 ```
 
 </details>
@@ -75,71 +70,59 @@ Also, if you struggled with any of the exercises we did do in class,
 go over those again.
 :::
 
-## Exercise 1: Files and dirs -- the basics
+## Exercise 1: Nuances of `cp` and `mv` behavior
 
-_You should start in `/fs/ess/PAS3493/people/$USER`._
+You should start in `/fs/ess/PAS3493/people/$USER`.
+Use shell commands to do the following:
 
 1. Create a dir `week04/ex1` within `/fs/ess/PAS3493/people/$USER`, and navigate there.
-   _Use this as the working dir for all following questions in this exercise,_
-   _so avoid navigating anywhere else._
+   Use this as the working dir for all following questions in this exercise,
+   so avoid navigating anywhere else.
+2. Create a new file called `newfile.txt` in your working dir.
 
-2. What is the size of the `metadata.tsv` file of the @garrigós2025 dataset?
+::: callout-info
+#### Note on `cp` and `mv` behavior
+For both `cp` and `mv`, when operating on files
+(and this works equivalently for directories):
 
-3. Copy the `ref` dir of the @garrigós2025 dataset to your current working dir,
-   giving the new copy the name `ref_copy`.
+- If the destination path is an existing dir,
+  the file will go into that dir and keep its original name.
+- If the destination path is _not_ an existing dir,
+  the (last bit of the) destination specifies the new file name.
+- A trailing slash in the destination path makes explicit that you are referring
+  to a dir and not a file.
+:::
 
-4. Run the following command
-   (this one was only mentioned briefly on the lecture page!):
-
-   ```bash
-   rmdir ref_copy
-   ```
-
-   What is this trying to do and why does it fail?
-   _(Hint: check the callout box in the_
-   _`rm` [section of the lecture page](./w4b_shell-files1.qmd#rm-to-remove))_
-
-5. Move the GTF file in `ref_copy` to your current working dir,
-   keeping the same file name.
-
-6. Do you think you will now be able to successfully run `rmdir ref_copy`?
-   Try it.
-
-## Exercise 2: Putting commands in the right order
-
-The four commands below will, when run in the right order:
-create a dir `week04/ex2`, move into it,
-copy the metadata file there, and rename the copy to `samples.tsv`.
-
-In which order should these commands be run?
-_(This assumes you are back in `/fs/ess/PAS3493/people/$USER` ---_
-_so `cd` there first if you are still in the `ex1` dir.)_
+With the above information in mind,
+try to answer the questions below about the following command:
 
 ```bash
-mv metadata.tsv samples.tsv
-cp ../../garrigos-data/meta/metadata.tsv .
-mkdir -p week04/ex2
-cd week04/ex2
+cp newfile.txt more_data/
 ```
 
-Then run them in that order, and check the result with `ls`.
+3. What do you think the command would do or attempt to do?
+4. Do you think the command will succeed?
+   Run the command and see whether you were right.
+5. What would the command have done if you had omitted the trailing slash?
 
-## Exercise 3: Moving, copying and removing dummy FASTQ files
+## Exercise 2: Moving, copying and removing dummy FASTQ files
 
-1. Create a dir `week04/ex3` within `/fs/ess/PAS3493/people/$USER`, and navigate there.
-   _Use this as the working dir for all following questions in this exercise,_
-   _so avoid navigating anywhere else._
+1. Create a dir `week04/ex2` within `/fs/ess/PAS3493/people/$USER`, and navigate there.
+   Like in the previous exercise, use this as the working dir for all questions in the exercise.
 
-2. Create a new dir `seqs`,
-   and use the command below to create some dummy FASTQ files in there.
+2. Create a new dir `seqs`, and use the command below to create some dummy files,
+   supposedly in the FASTQ format, in that dir.
    Then, check the result with `ls` and use a command to get a count of the number
    of files you created.
 
    ```bash
-   # [This command uses a trick called 'brace expansion' to create many files at once.]
-   # [You don't need to understand how this works.]
    touch seqs/sample{01..25}_R{1,2}.fastq
    ```
+
+   ::: {.callout-tip appearance="simple"}
+   This uses a trick called 'brace expansion' to create many files at once.
+   You don't need to understand how this works.
+   :::
 
 3. The `seqs` dir now contains 50 files.
    Without running it, how many files do you think `ls seqs/*2*` will list?
@@ -160,51 +143,52 @@ Then run them in that order, and check the result with `ls`.
 6. Move all R1 files into a dir `seqs_R1`, and then rename `seqs`,
    which should now only contain R2 files, to `seqs_R2`.
 
-## Exercise 4: Nuances of `cp` and `mv` behavior
+## Exercise 3: More copying, and `rmdir`
 
-1. Create a dir `week04/ex4` within `/fs/ess/PAS3493/people/$USER`, and navigate there.
-2. Create a new file called `newfile.txt` in your working dir.
+1. Create a dir `week04/ex3` within `/fs/ess/PAS3493/people/$USER`, and navigate there.
+   Use this as the working dir for all following questions in this exercise,
+   so avoid navigating anywhere else.
 
-For both `cp` and `mv`, when operating on files
-(and this works equivalently for directories):
+2. Copy the `ref` dir of the @garrigós2025 dataset to your current working dir,
+   giving the new copy the name `ref_copy`.
 
-- If the destination path is an existing dir,
-  the file will go into that dir and keep its original name.
-- If the destination path is _not_ an existing dir,
-  the (last bit of the) destination specifies the new file name.
-- A trailing slash in the destination path makes explicit that you are referring
-  to a dir and not a file.
+3. Run the following command
+   (`rmdir` was only mentioned briefly on the lecture page!):
 
-With that in mind, try to answer the questions below about the following command:
+   ```bash
+   rmdir ref_copy
+   ```
 
-```bash
-cp newfile.txt more_data/
-```
+   What is this trying to do and why does it fail?
+   _(Hint: check the callout box in the_
+   _`rm` [section of the lecture page](./w4b_shell-files1.qmd#rm-to-remove))_
 
-3. What do you think the command would do or attempt to do?
-4. Do you think the command will succeed?
-   Run the command and see whether you were right.
-5. What would the command have done if you had omitted the trailing slash?
+4. Move the GTF file in `ref_copy` to your current working dir,
+   keeping the same file name.
 
-## Exercise 5: Exploring the GTF annotation file
+5. Do you think you will now be able to successfully run `rmdir ref_copy`?
+   Try it.
+
+6. Does `rmdir` seem like a slightly silly, incompetent command?
+   Why do you think it exists at all?
+
+## Exercise 4: Exploring the GTF annotation file
 
 ### GTF file info
 
 This exercise will work with the GTF file in the example dataset,
 so we'll start with some more info about GTF files.
-
-As mentioned, the file typically starts with *header lines* that contain metadata
+As mentioned, the file typically starts with **header lines** that contain metadata
 and start with `#`.
 Then, the main part of a GTF file is essentially a table, with:
 
-- One row for each annotated "**genomic feature**" (gene, exon, CDS, etc.)
+- One row for each annotated "**genomic feature**" (gene, exon, transcript, etc.)
 - Columns with information like the genomic coordinates of the features
 
-Here is a snippet of the table part of our _Culex pipiens_ GTF file,
-with the same manually added column names as in the lecture:
+Here is a snippet of our _Culex pipiens_ GTF table,
+again with column names added for clarity (they aren't in the file!):
 
 ```bash-out-solo
-# [Column names are not present in the file! They are shown for informational purposes.]
 seqname       source  feature     start   end     score  strand  frame    attributes
 NC_068937.1   Gnomon  gene        2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id ""; db_xref "GeneID:120427725"; description "homeotic protein deformed"; gbkey "Gene"; gene "LOC120427725"; gene_biotype "protein_coding";
 NC_068937.1   Gnomon  transcript  2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gbkey "mRNA"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA";
@@ -216,26 +200,23 @@ Some details on what's in each column:
 
 | Column # | Column ID        | Explanation                                                                                                                                                                                                                                       |
 | -------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1        | **_seqname_**    | Name of the chromosome, scaffold, or contig                                                                                                                                                                                                       |
-| 2        | **_source_**     | Name of the program that generated this feature, or the data source (e.g. database)                                                                                                                                                               |
-| 3        | **_feature_**    | Name of the genomic feature type, e.g. "gene", "transcript", "exon", "CDS"                                                                                                                                                                        |
-| 4        | **_start_**      | Start position of the feature                                                                                                                                                                                                                     |
-| 5        | **_end_**        | End position of the feature                                                                                                                                                                                                                       |
-| 6        | **_score_**      | A confidence score for the feature, often absent (in which case it is `.`)                                                                                                                                                                        |
-| 7        | **_strand_**     | Whether the feature is on the `+` (forward) or `-` (reverse) strand^[Because double-stranded DNA is represented as a single sequence, the `strand` column effectively indicates in which direction a feature should be read along this sequence.] |
-| 8        | **_frame_**      | The "frame" for coding features, either `0`, `1` or `2` (or `.` for no frame). E.g. `0` means the first base of the feature is the first base of a codon                                                                                          |
+| 1        | **_seqname_**    | Name of the chromosome, scaffold, or contig.                                                                                                                                                                                                       |
+| 2        | **_source_**     | Name of the program that generated this feature, or the data source (e.g. database).                                                                                                                                                               |
+| 3        | **_feature_**    | Name of the genomic feature type, e.g. "gene", "transcript", "exon", "CDS".                                                                                                                                                                        |
+| 4        | **_start_**      | Start position of the feature.                                                                                                                                                                                                                     |
+| 5        | **_end_**        | End position of the feature.                                                                                                                                                                                                                       |
+| 6        | **_score_**      | A confidence score for the feature, often absent (in which case it is `.`).                                                                                                                                                                        |
+| 7        | **_strand_**     | Whether the feature is on the `+` (forward) or `-` (reverse) strand^[Because double-stranded DNA is represented as a single sequence, the `strand` column effectively indicates in which direction a feature should be read along this sequence.]. |
+| 8        | **_frame_**      | The "frame" for coding features, either `0`, `1` or `2` (or `.` for no frame). E.g. `0` means the first base of the feature is the first base of a codon.                                                                                          |
 | 9        | **_attributes_** | A semicolon-separated list of key-value pairs with additional information. Can be very wide!                                                                                                                                                      |
 
 : {.striped .hover}
 
-### Your turn!
+### Your turn
 
-1. Create a dir `week04/ex5` within `/fs/ess/PAS3493/people/$USER`, and navigate there.
+_You should still be in your `ex3` dir with the GTF file and can stay there._
 
-2. Copy the genome annotation GTF file `garrigos-data/ref/GCF_016801865.2.gtf.gz`
-   to a file called `annot.gtf.gz` inside your `ex5` working dir.
-
-3. Explore `annot.gtf.gz` with `less -S`.
+1. Explore `annot.gtf.gz` with `less -S`.
    Just look around a bit and try to navigate with the keybindings shown in the lecture,
    then consider the following questions:
 
@@ -243,17 +224,37 @@ Some details on what's in each column:
    - How can you tell where the header ends and the table part begins?
    - Is the `-S` option useful here?
 
-4. Recall that `zcat` is the counterpart of `cat` for gzip-compressed files:
+2. Recall that `zcat` is the counterpart of `cat` for gzip-compressed files:
    it prints their contents in human-readable form.
    Pipe the output of `zcat` to another command to print only the first 15 lines
    of `annot.gtf.gz`.
 
-5. Count the number of lines in the GTF file both in compressed and uncompressed form.
+3. Count the number of lines in the GTF file both in compressed and uncompressed form.
    Are the counts the same?
 
    <details><summary> {{< fa lightbulb >}} _Click to show a hint._</summary>
    Use the `zcat`-then-pipe trick from the previous exercise to get the "uncompressed count".
    The "compressed count" on the other hand, is simply the number of lines in `annot.gtf.gz`.
+   </details>
+
+4. Count the number of lines in the GTF file that contain the text "carbonic anhydrase".
+   Based on this count, how many carbonic anhydrase genes do you think the genome has?
+
+   a) Exactly as many as the line count, because each line in a GTF file is one gene
+   b) Fewer than the line count, because each gene is described by multiple lines
+   c) More than the line count, because `grep -c` counts at most one match per line
+   d) You can't tell, because line counts of compressed files are meaningless
+
+5. Build on your command from the previous question to create a count table of
+   feature types among the "carbonic anhydrase" lines.
+   Then answer these questions:
+
+   - How many carbonic anhydrase genes are there?
+   - Why do you think there are more transcripts than genes?
+
+   <details><summary> {{< fa lightbulb >}} _Click to show a hint._</summary>
+   The feature type is in column 3 of the GTF file.
+   Then, use the `cut`-`sort`-`uniq` combination from the lecture.
    </details>
 
 ## Solutions
@@ -278,121 +279,74 @@ cd /fs/ess/PAS3493/people/$USER/week04/ex1
 
 </details>
 
-<details><summary>**2.** What is the size of the `metadata.tsv` file?</summary>
-
-It is 633 bytes:
+<details><summary>**2.** Create a new file called `newfile.txt` in your working dir.</summary>
 
 ```bash
-ls -lh ../../garrigos-data/meta/metadata.tsv
+touch newfile.txt
+```
+
+</details>
+
+<details><summary>**3.** What do you think the command would do or attempt to do?</summary>
+
+Because we added a trailing forward slash to `more_data/`,
+we are making clear that we are referring to a directory.
+So the command will attempt to copy the file into a dir `more_data`,
+with the file keeping the same name.
+
+</details>
+
+<details><summary>**4.** Do you think the command will succeed?</summary>
+
+The `more_data/` dir does not exist,
+and `cp` will not create a dir on the fly -- so it will fail:
+
+```bash
+cp newfile.txt more_data/
 ```
 ```bash-out
--rw-rw----+ 1 jelmer PAS0471 633 Sep  7 09:05 ../../garrigos-data/meta/metadata.tsv
+cp: cannot create regular file ‘more_data/’: Not a directory
 ```
 </details>
 
-<details><summary>**3.** Copy the `ref` dir to `ref_copy`.</summary>
+<details><summary>**5.** What would the command have done if you had omitted the trailing forward slash?</summary>
 
-Because you are copying a dir, you will need the `-r` (recursive) option:
+If you had omitted the trailing forward slash,
+it would have created a copy of the file with *file* name `more_data`
+(if that seems confusing: note that in Unix, files don't need to have a file
+extension).
 
-```bash
-cp -r ../../garrigos-data/ref ref_copy
-```
-</details>
-
-<details><summary>**4.** Run the `rmdir` command.</summary>
-
-`rmdir` tries to remove a directory,
-but unlike `rm -r`, it only works on _empty_ directories.
-Here it fails because `ref_copy` still contains the GTF file:
+P.S.: To copy the file according to the original intention,
+first create the destination dir and then copy:
 
 ```bash
-rmdir ref_copy
-```
-```bash-out
-rmdir: failed to remove 'ref_copy': Directory not empty
+mkdir more_data
+cp newfile.txt more_data/
 ```
 
-</details>
-
-<details><summary>**5.** Move the GTF file in `ref_copy` to your current working dir.</summary>
-
-To keep the same filename,
-remember to simply use the `.` shortcut for the current working dir as the destination:
-
-```bash
-mv ref_copy/GCF_016801865.2.gtf.gz .
-```
-
-</details>
-
-<details><summary>**6.** Do you think you will now be able to successfully run `rmdir ref_copy`?</summary>
-
-Yes, because the `ref_copy` dir is now empty, this will work:
-
-```bash
-# [No output means it succeeds!]
-rmdir ref_copy
-```
-
-Let's check -- indeed, the `ref_copy` dir is no longer there:
-
-```bash
-ls
-```
-```bash-out
-GCF_016801865.2.gtf.gz
-```
+Note also that once the `more_data` dir exists,
+it **does not** make a difference whether or not you use a trailing slash.
 
 </details>
 
 ### Exercise 2
 
-<details><summary>In which order should the commands be run?</summary>
-
-```bash
-mkdir -p week04/ex2
-cd week04/ex2
-cp ../../garrigos-data/meta/metadata.tsv .
-mv metadata.tsv samples.tsv
-```
-
-The dir has to exist before you can move into it,
-and the file has to be copied before the copy can be renamed.
-
-Note also that the `../../` in the `cp` command only makes sense _after_
-you have moved two dir levels down with `cd`:
-running that command before the `cd` would give you a
-"No such file or directory" error.
-
-Finally, let's check the result:
-
-```bash
-ls
-```
-```bash-out
-samples.tsv
-```
-
-</details>
-
-### Exercise 3
-
 <details><summary>**1.** Create a new dir and navigate there.</summary>
 
-Assuming you're doing this right after exercise 2,
-you should be in `/fs/ess/PAS3493/people/$USER/week04/ex2`,
+Assuming you're doing this right after exercise 1,
+you should be in `/fs/ess/PAS3493/people/$USER/week04/ex1`,
 in which case the following commands work:
 
 ```bash
-mkdir ../ex3
-cd ../ex3
+mkdir ../ex2
+cd ../ex2
 ```
 
 Or, with absolute paths:
 
 ```bash
-mkdir /fs/ess/PAS3493/people/$USER/week04/ex3
-cd /fs/ess/PAS3493/people/$USER/week04/ex3
+mkdir /fs/ess/PAS3493/people/$USER/week04/ex2
+cd /fs/ess/PAS3493/people/$USER/week04/ex2
 ```
 
 </details>
@@ -604,106 +558,96 @@ removed 'sample09_R2.fastq'
 
 </details>
 
-### Exercise 4
+### Exercise 3
 
 <details><summary>**1.** Create a new dir and navigate there.</summary>
 
-Assuming you're doing this right after exercise 3,
-you should be in `/fs/ess/PAS3493/people/$USER/week04/ex3`,
+Assuming you're doing this right after exercise 2,
+you should be in `/fs/ess/PAS3493/people/$USER/week04/ex2`,
 in which case the following commands work:
 
 ```bash
-mkdir ../ex4
-cd ../ex4
+mkdir ../ex3
+cd ../ex3
 ```
 
 Or, with absolute paths:
 
 ```bash
-mkdir /fs/ess/PAS3493/people/$USER/week04/ex4
-cd /fs/ess/PAS3493/people/$USER/week04/ex4
-```
-</details>
-
-<details><summary>**2.** Create a new file called `newfile.txt` in your working dir.</summary>
-
-```bash
-touch newfile.txt
+mkdir /fs/ess/PAS3493/people/$USER/week04/ex3
+cd /fs/ess/PAS3493/people/$USER/week04/ex3
 ```
 
 </details>
 
-<details><summary>**3.** What do you think the command would do or attempt to do?</summary>
+<details><summary>**2.** Copy the `ref` dir to `ref_copy`.</summary>
 
-Because we added a trailing forward slash to `more_data/`,
-we are making clear that we are referring to a directory.
-So the command will attempt to copy the file into a dir `more_data`,
-with the file keeping the same name.
-
-</details>
-
-<details><summary>**4.** Do you think the command will succeed?</summary>
-
-The `more_data/` dir does not exist,
-and `cp` will not create a dir on the fly -- so it will fail:
+Because you are copying a dir, you will need the `-r` (recursive) option:
 
 ```bash
-cp newfile.txt more_data/
+cp -r ../../garrigos/ref ref_copy
+```
+</details>
+
+<details><summary>**3.** Run the `rmdir` command.</summary>
+
+`rmdir` tries to remove a directory,
+but unlike `rm -r`, it only works on _empty_ directories.
+Here it fails because `ref_copy` still contains the GTF file:
+
+```bash
+rmdir ref_copy
 ```
 ```bash-out
-cp: cannot create regular file ‘more_data/’: Not a directory
+rmdir: failed to remove 'ref_copy': Directory not empty
 ```
+
 </details>
+<details><summary>**4.** Move the GTF file in `ref_copy` to your current working dir.</summary>
 
-<details><summary>**5.** What would the command have done if you had omitted the trailing forward slash?</summary>
-
-If you had omitted the trailing forward slash,
-it would have created a copy of the file with *file* name `more_data`
-(if that seems confusing: note that in Unix, files don't need to have a file
-extension).
-
-P.S.: To copy the file according to the original intention,
-first create the destination dir and then copy:
+To keep the same filename,
+remember to simply use the `.` shortcut for the current working dir as the destination:
 
 ```bash
-mkdir more_data
-cp newfile.txt more_data/
+mv ref_copy/annot.gtf.gz .
 ```
-
-Note also that once the `more_data` dir exists,
-it **does not** make a difference whether or not you use a trailing slash.
 
 </details>
 
-### Exercise 5
+<details><summary>**5.** Do you think you will now be able to successfully run `rmdir ref_copy`?</summary>
 
-<details><summary>**1.** Create a new dir and navigate there.</summary>
-
-Assuming you're doing this right after exercise 4,
-you should be in `/fs/ess/PAS3493/people/$USER/week04/ex4`,
-in which case the following commands work:
+Yes, because the `ref_copy` dir is now empty, this will work:
 
 ```bash
-mkdir ../ex5
-cd ../ex5
+# [No output means it succeeds!]
+rmdir ref_copy
 ```
 
-Or, with absolute paths:
+Let's check -- indeed, the `ref_copy` dir is no longer there:
 
 ```bash
-mkdir /fs/ess/PAS3493/people/$USER/week04/ex5
-cd /fs/ess/PAS3493/people/$USER/week04/ex5
+ls
 ```
+```bash-out
+annot.gtf.gz
+```
+
 </details>
 
-<details><summary>**2.** Copy the genome annotation file.</summary>
+<details><summary>**6.** Why does `rmdir` exist if it's so limited?</summary>
 
-```bash
-cp ../../garrigos-data/ref/GCF_016801865.2.gtf.gz annot.gtf.gz
-```
+`rmdir` exists as a safety measure to prevent accidental deletion of non-empty
+directories.
+It's a more restrictive alternative to `rm -r`,
+which can delete directories and their contents without any such restrictions.
+By requiring the directory to be empty, `rmdir` ensures that you don't accidentally
+delete a directory with important files inside.
+
 </details>
 
-<details><summary>**3.** Explore `annot.gtf.gz` with `less -S`.</summary>
+### Exercise 4
+
+<details><summary>**1.** Explore `annot.gtf.gz` with `less -S`.</summary>
 
 - The file has 4 header lines:
 
@@ -728,7 +672,7 @@ NC_068937.1     Gnomon  transcript      2046    110808  .       +       .       
 
 </details>
 
-<details><summary>**4.** Pipe the output of `zcat` to another command to print the file's first 15 lines.</summary>
+<details><summary>**2.** Pipe the output of `zcat` to another command to print the file's first 15 lines.</summary>
 
 ```bash
 zcat annot.gtf.gz | head -n 15
@@ -752,7 +696,7 @@ NC_068937.1     Gnomon  CDS     105987  106087  .       +       2       gene_id 
 ```
 </details>
 
-<details><summary>**5.** Count the number of lines in the GTF file both in compressed and uncompressed form.</summary>
+<details><summary>**3.** Count the number of lines in the GTF file both in compressed and uncompressed form.</summary>
 
 - Uncompressed count:
 
@@ -775,5 +719,52 @@ NC_068937.1     Gnomon  CDS     105987  106087  .       +       2       gene_id 
 So: no, the counts are not the same!
 The lesson: line counts of compressed files are meaningless ---
 always decompress first (e.g. with `zcat`) when you want to count lines.
+
+</details>
+
+<details><summary>**4.** How many carbonic anhydrase genes do you think the genome has?</summary>
+
+- Count the lines that contain "carbonic anhydrase":
+
+  ```bash
+  zcat annot.gtf.gz | grep -c "carbonic anhydrase"
+  ```
+  ```bash-out
+  243
+  ```
+
+- The correct answer is **b)**: fewer genes than lines.
+  Recall from the GTF snippet at the top of this exercise that a single gene is
+  described by multiple lines:
+  one `gene` line, but also one or more `transcript` lines, and several `exon`
+  and `CDS` lines, etc.
+  (Regarding answer **d)**: because we used `zcat`, `grep` operated on the
+  decompressed contents, so this count _is_ meaningful.)
+
+</details>
+
+<details><summary>**5.** Create a count table of feature types among the "carbonic anhydrase" lines.</summary>
+
+- Select column 3 with `cut`, then `sort` and count with `uniq -c`:
+
+  ```bash
+  zcat annot.gtf.gz | grep "carbonic anhydrase" | cut -f 3 | sort | uniq -c
+  ```
+  ```bash-out
+       81 CDS
+       89 exon
+       16 gene
+       19 start_codon
+       19 stop_codon
+       19 transcript
+  ```
+
+- So, there are **16** carbonic anhydrase genes.
+
+- There are more transcripts (19) than genes (16) because some genes have multiple
+  transcripts --- different versions of the gene's mRNA,
+  mostly due to alternative splicing.
+  In the GTF snippet at the top of this exercise, you can see a hint of this
+  in the `product` attribute: `transcript variant X3`.
 
 </details>

@@ -110,13 +110,7 @@ In this lecture, you will learn to use the Unix shell to:
   touch week04/lectureC.md
   ```
 
-- Move into your sandbox dir from the previous lecture:
-
-  ```bash
-  cd /fs/ess/PAS3493/people/$USER/week04/sandbox
-  ```
-
-- Copy the files you'll need today into your sandbox.\
+- Copy the files you'll need today into your sandbox from the previous lecture.\
   Today's commands all operate on files from the @garrigós2025 dataset,
   and copying the handful we need into your working dir means that
   every command below can simply use a file name,
@@ -125,21 +119,27 @@ In this lecture, you will learn to use the Unix shell to:
   ```bash
   # (Recall from the last lecture: the '*' is a wildcard, so the third
   #  command copies both the _R1 and the _R2 file for this sample.)
-  cp ../../garrigos-data/README.md .
-  cp ../../garrigos-data/meta/metadata.tsv .
-  cp ../../garrigos-data/fastq/ERR10802863_R*.fastq.gz .
-  cp ../../garrigos-data/ref/GCF_016801865.2.gtf.gz .
+  cp garrigos/README.md week04/sandbox
+  cp garrigos/meta/metadata.tsv week04/sandbox
+  cp garrigos/fastq/S63_R*.fastq.gz week04/sandbox
+  cp garrigos/ref/annot.gtf.gz week04/sandbox
   ```
-
-  Check with `ls` that these five files (two FASTQ files) are now in your working dir.
-  (You will likely also see leftover dirs and files from the previous lecture ---
-  that's fine, just ignore those.)
 
   ::: {.callout-warning appearance="simple"}
   Copying data files like this is only for convenience while practicing.
   In a real project, you would leave the data where it is
   and refer to it with a path --- as you'll do from next week onwards.
   :::
+
+- Move into the sandbox dir:
+
+  ```bash
+  cd week04/sandbox
+  ```
+
+  Check with `ls` that these five files (two FASTQ files) are now in your working dir.
+  (You will likely also see leftover dirs and files from the previous lecture ---
+  that's fine, just ignore those.)
 
 ## Viewing the contents of text files
 
@@ -155,46 +155,49 @@ screen:
 cat README.md
 ```
 ````bash-out
-# README for `garrigos-data`
+# README for `garrigos`
 
 - Author: Jelmer Poelstra
 - Affiliation: CFAES Bioinformatics Core, The Ohio State University
 - Contact: <poelstra.1@osu.edu>
-- URL: <https://github.com/jelmerp/garrigos-data>
+- URL: <https://github.com/cfaes-bioinfo/garrigos>
 - Created: 2024-01-20
-- Last updated: 2026-09-09
+- Last updated: 2026-09-12
 
 This directory contains files associated with the paper
-“Two avian _Plasmodium_ species trigger different transcriptional responses on their vector _Culex pipiens_”
+“Two avian _Plasmodium_ species trigger different transcriptional responses on
+their vector _Culex pipiens_”
 ([Garrigós et al. 2025, Molecular Ecology](https://doi.org/10.1111/mec.17240)).
-The files are intended for practice in coursework and other tutorials
-on omics / RNA-Seq data analysis.
-If you use these data beyond practice purposes,
-please cite the original paper and obtain the full data from ENA
-(see the links above).
+The files are intended for practice in coursework and other tutorials on omics /
+RNA-Seq data analysis.
+If you use these data beyond practice purposes, please cite the original paper and
+obtain the full data from ENA (see the links above).
 
-The rest of this README describes the files in this directory,
-by sub-directory.
+The rest of this README describes the files in this directory, by sub-directory.
 
 ## FASTQ files (in sub-directory `fastq`)
 
 The FASTQ files are paired-end 75-bp Illumina RNA-Seq reads from
 _Culex pipiens_ samples: 44 files for 22 samples, with `_R1` and `_R2`
 in the file names denoting the forward and reverse reads, respectively.
+
 These were downloaded from the European Nucleotide Archive (ENA)
 under study accession `PRJEB41609`, using the tool
 [`fastq-dl`](https://github.com/rpetit3/fastq-dl) v3.0.1 on 2024-01-20.
 
 To simplify the dataset for practice purposes, the following modifications were made:
 
-- FASTQ files for the following samples were removed:
+- Files for the following samples were **removed**:
   - 2 samples that were also excluded in the study itself
-    (see the paper for details)
-  - All samples at the 21-day (21 DAI) time point
-- FASTQ files were randomly "subset" to keep only 500,000 reads per file using the tool
-  [`seqtk`](https://github.com/lh3/seqtk) v1.3-r106
-- FASTQ files were renamed from `<ID>_1.fastq.gz` / `<ID>_2.fastq.gz`
-  to `<ID>_R1.fastq.gz` / `<ID>_R2.fastq.gz`
+    (see the paper for details).
+  - All samples at the 21-day (21 DAI) time point.
+
+- Files were randomly "**subset**" to keep only 500,000 reads per file using
+  the tool [`seqtk`](https://github.com/lh3/seqtk) v1.3-r106.
+
+- Files were **renamed** by removing the shared ENA prefix `S` and
+  replacing it with `S` (for "sample"), and by replacing the `_1` and `_2` suffixes
+  by `_R1` or `_R2` to denote the forward and reverse reads.
 
 ## Metadata (in sub-directory `meta`)
 
@@ -211,12 +214,10 @@ _Culex pipiens pallens_ genome assembly `TS_CPP_V2` (`GCF_016801865.2`)
 was downloaded from NCBI using the
 [NCBI Datasets tool](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/download-and-install/)
 v15.31.1 on 2024-01-20.
-The GTF file was renamed to `GCF_016801865.2.gtf.gz` and gzipped
-to keep it below GitHub's file size limit.
+The GTF file was renamed to `annot.gtf.gz` and gzipped.
 
 For the analysis of the data, the reference genome FASTA file is also needed.
-This is not included here,
-but can be downloaded from NCBI using the following command:
+This is not included here, but can be downloaded from NCBI using:
 
 ```bash
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_genomic.fna.gz
@@ -229,28 +230,28 @@ cat metadata.tsv
 ```
 ```bash-out
 sample_id       time    treatment
-ERR10802882     10dpi   cathemerium
-ERR10802875     10dpi   cathemerium
-ERR10802879     10dpi   cathemerium
-ERR10802883     10dpi   cathemerium
-ERR10802878     10dpi   control
-ERR10802884     10dpi   control
-ERR10802877     10dpi   control
-ERR10802881     10dpi   control
-ERR10802876     10dpi   relictum
-ERR10802880     10dpi   relictum
-ERR10802885     10dpi   relictum
-ERR10802886     10dpi   relictum
-ERR10802864     24hpi   cathemerium
-ERR10802867     24hpi   cathemerium
-ERR10802870     24hpi   cathemerium
-ERR10802866     24hpi   control
-ERR10802869     24hpi   control
-ERR10802863     24hpi   control
-ERR10802871     24hpi   relictum
-ERR10802874     24hpi   relictum
-ERR10802865     24hpi   relictum
-ERR10802868     24hpi   relictum
+S82     10dpi   cathemerium
+S75     10dpi   cathemerium
+S79     10dpi   cathemerium
+S83     10dpi   cathemerium
+S78     10dpi   control
+S84     10dpi   control
+S77     10dpi   control
+S81     10dpi   control
+S76     10dpi   relictum
+S80     10dpi   relictum
+S85     10dpi   relictum
+S86     10dpi   relictum
+S64     24hpi   cathemerium
+S67     24hpi   cathemerium
+S70     24hpi   cathemerium
+S66     24hpi   control
+S69     24hpi   control
+S63     24hpi   control
+S71     24hpi   relictum
+S74     24hpi   relictum
+S65     24hpi   relictum
+S68     24hpi   relictum
 ```
 
 ### `head` and `tail`
@@ -267,15 +268,15 @@ head metadata.tsv
 ```
 ```bash-out
 sample_id       time    treatment
-ERR10802882     10dpi   cathemerium
-ERR10802875     10dpi   cathemerium
-ERR10802879     10dpi   cathemerium
-ERR10802883     10dpi   cathemerium
-ERR10802878     10dpi   control
-ERR10802884     10dpi   control
-ERR10802877     10dpi   control
-ERR10802881     10dpi   control
-ERR10802876     10dpi   relictum
+S82     10dpi   cathemerium
+S75     10dpi   cathemerium
+S79     10dpi   cathemerium
+S83     10dpi   cathemerium
+S78     10dpi   control
+S84     10dpi   control
+S77     10dpi   control
+S81     10dpi   control
+S76     10dpi   relictum
 ```
 
 Use the `-n` option to specify the number of lines to print:
@@ -285,15 +286,15 @@ head -n 3 metadata.tsv
 ```
 ```bash-out
 sample_id       time    treatment
-ERR10802882     10dpi   cathemerium
-ERR10802875     10dpi   cathemerium
+S82     10dpi   cathemerium
+S75     10dpi   cathemerium
 ```
 
 Let's try to take a peek inside a FASTQ file.
 To print the first eight lines (two reads), use `-n 8` with `head`:
 
 ``` bash
-head -n 8 ERR10802863_R1.fastq.gz
+head -n 8 S63_R1.fastq.gz
 ```
 ``` bash-out
 �
@@ -353,7 +354,7 @@ called `lesspipe` set up --- on some other computers, `less` may show you
 the same gibberish that `head` did.]
 
 ``` bash
-less ERR10802863_R1.fastq.gz
+less S63_R1.fastq.gz
 ```
 ```bash-out
 @ERR10802863.8435456 8435456 length=74
@@ -385,7 +386,7 @@ With the `-S` option to `less`, lines will not be wrapped but will
 (press the rightward arrow <kbd>→</kbd> to see that part):
 
 ``` bash
-less -S ERR10802863_R1.fastq.gz
+less -S S63_R1.fastq.gz
 # [output not shown]
 ```
 :::
@@ -407,7 +408,7 @@ To **exit/quit** `less` and get your shell prompt back, press <kbd>q</kbd>.
 ::: exercise
 #### {{< fa user-edit >}} Exercise: `less`
 
-Open the FASTQ file with `less ERR10802863_R1.fastq.gz`, then:
+Open the FASTQ file with `less S63_R1.fastq.gz`, then:
 
 1. Move around a bit using the keys listed above ---
    <kbd>↑</kbd> / <kbd>↓</kbd>, <kbd>u</kbd> / <kbd>d</kbd>,
@@ -527,7 +528,7 @@ in a directory. You could do that as follows:
 
 ```bash
 # First redirect 'ls' output to a file:
-ls ../../garrigos-data/fastq > filelist.txt
+ls ../../garrigos/fastq > filelist.txt
 
 # Then count the number of lines, i.e. the number of files in the 'fastq' dir:
 wc -l filelist.txt
@@ -551,7 +552,7 @@ A more convenient way to perform this kind of operation is with a "**pipe**",
 as follows:
 
 ```bash
-ls ../../garrigos-data/fastq | wc -l
+ls ../../garrigos/fastq | wc -l
 ```
 ```bash-out
 44
@@ -575,7 +576,7 @@ We'll see pipes in action a bunch more in the next section.
 What do you think the command below does, and what will the resulting count represent?
 
 ```bash
-cat ERR10802863_R1.fastq.gz ERR10802863_R2.fastq.gz | wc -l
+cat S63_R1.fastq.gz S63_R2.fastq.gz | wc -l
 ```
 
 <details><summary> {{< fa check-circle >}} Click for the solution. </summary>
@@ -590,14 +591,14 @@ In this case, `cat` would simply print the contents of the two files back-to-bac
 Therefore, `wc -l` will count the total number of lines across the two files.
 
 ```bash
-cat ERR10802863_R1.fastq.gz ERR10802863_R2.fastq.gz | wc -l
+cat S63_R1.fastq.gz S63_R2.fastq.gz | wc -l
 ```
 ```bash-out
 193612
 ```
 
 Thinking one step further: can we get the total number of reads for sample
-`ERR10802863` across its two FASTQ files, by dividing the result by 4?
+`S63` across its two FASTQ files, by dividing the result by 4?
 (Recall: one FASTQ read covers 4 lines.)
 No, we can't, since the file is compressed:
 compressed and uncompressed line counts for a file are not the same.
@@ -633,15 +634,15 @@ head metadata.tsv
 ```
 ```bash-out
 sample_id       time    treatment
-ERR10802882     10dpi   cathemerium
-ERR10802875     10dpi   cathemerium
-ERR10802879     10dpi   cathemerium
-ERR10802883     10dpi   cathemerium
-ERR10802878     10dpi   control
-ERR10802884     10dpi   control
-ERR10802877     10dpi   control
-ERR10802881     10dpi   control
-ERR10802876     10dpi   relictum
+S82     10dpi   cathemerium
+S75     10dpi   cathemerium
+S79     10dpi   cathemerium
+S83     10dpi   cathemerium
+S78     10dpi   control
+S84     10dpi   control
+S77     10dpi   control
+S81     10dpi   control
+S76     10dpi   relictum
 ```
 
 "_Tabular_" files like this one contain data that is arranged in a
@@ -681,13 +682,13 @@ to print all lines from `metadata.tsv` that contain "cathemerium":
 grep "cathemerium" metadata.tsv
 ```
 ```bash-out
-ERR10802882     10dpi   cathemerium
-ERR10802875     10dpi   cathemerium
-ERR10802879     10dpi   cathemerium
-ERR10802883     10dpi   cathemerium
-ERR10802864     24hpi   cathemerium
-ERR10802867     24hpi   cathemerium
-ERR10802870     24hpi   cathemerium
+S82     10dpi   cathemerium
+S75     10dpi   cathemerium
+S79     10dpi   cathemerium
+S83     10dpi   cathemerium
+S64     24hpi   cathemerium
+S67     24hpi   cathemerium
+S70     24hpi   cathemerium
 ```
 
 While not always necessary, it's good practice to consistently
@@ -793,7 +794,7 @@ TODO CHECK FOR SHORTER SEARCH PATTERN
 
 ```bash
 # Search for carbonic anhydrase-related proteins in the GTF file:
-zcat GCF_016801865.2.gtf.gz | grep "carbonic anhydrase-related protein" | head -n 2
+zcat annot.gtf.gz | grep "carbonic anhydrase-related protein" | head -n 2
 ```
 ```bash-out
 NC_068937.1     Gnomon  gene    398255  486969  .       -       .       gene_id "LOC120422535"; transcript_id ""; db_xref "GeneID:120422535"; description "carbonic anhydrase-related protein 10"; gbkey "Gene"; gene "LOC120422535"; gene_biotype "protein_coding";
@@ -849,8 +850,8 @@ cut -f 1,3 metadata.tsv | head -n 3
 ```
 ```bash-out
 sample_id       treatment
-ERR10802882     cathemerium
-ERR10802875     cathemerium
+S82     cathemerium
+S75     cathemerium
 ```
 
 ```bash
@@ -858,8 +859,8 @@ cut -f 1-2 metadata.tsv | head -n 3
 ```
 ```bash-out
 sample_id       time
-ERR10802882     10dpi
-ERR10802875     10dpi
+S82     10dpi
+S75     10dpi
 ```
 
 _Note that it is not possible to change the order of columns with `cut`!_
@@ -900,16 +901,16 @@ where we can tell it to *start at* a specific line using `-n +<starting-line>`:
 tail -n +2 metadata.tsv | head
 ```
 ```bash-out
-ERR10802882     10dpi   cathemerium
-ERR10802875     10dpi   cathemerium
-ERR10802879     10dpi   cathemerium
-ERR10802883     10dpi   cathemerium
-ERR10802878     10dpi   control
-ERR10802884     10dpi   control
-ERR10802877     10dpi   control
-ERR10802881     10dpi   control
-ERR10802876     10dpi   relictum
-ERR10802880     10dpi   relictum
+S82     10dpi   cathemerium
+S75     10dpi   cathemerium
+S79     10dpi   cathemerium
+S83     10dpi   cathemerium
+S78     10dpi   control
+S84     10dpi   control
+S77     10dpi   control
+S81     10dpi   control
+S76     10dpi   relictum
+S80     10dpi   relictum
 ```
 
 Second, select the column of interest with `cut`:
@@ -1145,7 +1146,7 @@ if the single sample shown has a count of 1, this means there are no duplicates.
 tail -n +2 metadata.tsv | cut -f 1 | sort | uniq -c | sort -nr | head -n 1
 ```
 ```bash-out
-      1 ERR10802886
+      1 S86
 ```
 
 Omitting the `head -n 1` or even the `sort -nr` would also work in this case.
@@ -1187,7 +1188,7 @@ and will run quickly and without using much computer memory!
 
 ```bash
 # [Don't run this - for illustration purposes only]
-cat ../../garrigos-data/fastq/*R1.fastq.gz > all_R1.fastq.gz
+cat ../../garrigos/fastq/*R1.fastq.gz > all_R1.fastq.gz
 ```
 
 ::: {.callout-tip collapse="false"}

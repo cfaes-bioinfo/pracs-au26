@@ -291,6 +291,39 @@ details {
   border-radius: 5px;
 }
 
+/* Body content (everything after summary) needs its own right/left inset
+   so text and code blocks don't run up against the border -- details's own
+   padding-right is 0px (kept that way so summary's highlighted background
+   spans the full width) and padding-left:6px alone is too tight, so give
+   the content itself extra room instead of changing the container. Uses
+   margin rather than padding: padding-left here would win (by specificity)
+   over Bootstrap's own `ul{padding-left:2rem}` and shrink the space a
+   list needs for its own bullets, whereas margin leaves each element's
+   own padding untouched and just shifts the whole box inward. */
+details>summary~* {
+  margin-right: 16px;
+  margin-left: 10px;
+}
+
+/* The manual/fake input+output boxes (.bash-in-nocolor, .bash-out,
+   .bash-out-solo, .r-out, .r-out-solo, ...) are bare <pre> elements with
+   no wrapping div, and each sets its own margin via a single class
+   selector -- which outranks the generic rule above by CSS specificity,
+   so they'd otherwise ignore it and stay flush against the border, unlike
+   a real fenced code block (wrapped in a scaffold div that has no
+   competing margin of its own and so does inherit the inset). Target the
+   element+attribute combo instead of naming each class individually: any
+   bare <pre class="..."> that's a direct child of details -- current or
+   future -- automatically wins that specificity fight (0,1,2 beats a
+   bare class selector's 0,1,0) and gets the same inset. The child
+   combinator (not a descendant one) is what keeps this from also
+   double-matching the nested pre.sourceCode inside a real code block's
+   scaffold div, which already gets its inset from the scaffold itself. */
+details>pre[class] {
+  margin-right: 16px;
+  margin-left: 10px;
+}
+
 
 /* --------------------------------------------------------------------------/*
 /* Navbar tools (e.g. GitHub) dropdown: align menu to the right edge of its
