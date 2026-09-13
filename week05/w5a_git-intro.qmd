@@ -1,0 +1,348 @@
+---
+title: "Version control with Git:<br>Why and how"
+subtitle: "Week 5 -- Lecture A"
+pagetitle: "w5a: Git intro (slides)"
+date: September 21, 2026
+date-format: MMMM DD, YYYY
+author: Jelmer Poelstra
+institute: "CFAES Bioinformatics Core, OSU"
+format:
+  revealjs:
+    theme: [default, ../theme_slides.scss]
+    css: ../slides.css
+    smaller: true
+    scrollable: false
+    progress: true
+    incremental: false
+    slide-number: true
+    slide-level: 2
+    highlight-style: atom-one
+    embed-resources: false # Can't be used with chalkboard
+    chalkboard:
+      theme: whiteboard
+    toc: true
+    toc-depth: 1
+    toc-title: Overview
+    footer: "[~ PRACS-AU26 ~](/index.qmd){target='_blank'}"
+    logo: ../img/CFAES-Horiz-RGBHEX.svg
+    template-partials:
+      - ../title-slide.html
+    menu:
+      width: wide
+      numbers: true
+bibliography: ../references.bib
+---
+
+# Introduction {background-color="#A7B1B7"}
+
+## Learning goals
+
+**In this lecture, you'll learn:**
+
+- Why it's a good idea to use a formal Version Control System (VCS)
+  for research projects
+- Key Git concepts and terminology --- e.g. repositories and commits
+- An overview of the basic Git workflow, before diving into hands-on practice
+
+. . .
+
+<br>
+
+::: callout-tip
+This lecture covers Git **concepts** ---
+we'll put them into practice right after, in the
+[hands-on continuation of this lecture](./w5b_git.qmd).
+:::
+
+# Version control {background-color="#A7B1B7"}
+
+## Why use a Version Control System (VCS)?
+
+Here are some "versioning"- and backup-related challenges for your **research project files**
+that you may run into:
+
+- How do you save periodic copies?
+  - *Do you only save versions of individual files?*\
+    Space-efficient, but doesn't allow you to go back to the state of
+    other project files at the same point in time.
+  - *Do you save a copy of the full project periodically?*\
+    Better than the above option, but can become prohibitive in terms of disk storage.
+- How do you know what changes were made between saved versions?
+- How do you restore an accidentally deleted, modified, or overwritten file?
+  This can especially be an issue at OSC where there is no recycle bin or undo button.
+- [How do you manage simultaneous variants of files, such as when making experimental changes?]{style="color:#807c7c"}
+- [How do you collaborate, especially when working simultaneously?]{style="color:#807c7c"}
+
+## Why use a Version Control System (VCS)?
+
+Modern cloud storage solutions like OneDrive and Dropbox can help with some
+of these challenges:
+for example, you can restore automatically saved earlier versions of files,
+and work simultaneously on files.
+But they don't solve all of them, and you can't use them directly at (e.g.) OSC.
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+However, with a formal Version Control System (VCS) like Git:
+
+- You can easily see your history of changes.
+- You have a time machine: you can go back to past states of your project
+  (and not just of individual files!).
+- Sharing your code and other aspects of your project is easy.
+- [You can do simultaneous collaborative work --- and can always track down who made which changes.]{style="color:#807c7c"}
+- [You can make experimental changes without affecting current functionality.]{style="color:#807c7c"}
+
+## Why use a Version Control System (VCS)?
+
+As @allesina2019 put it in Chapter 2 of their book *Computing Skills for Biologists*:
+
+> *Version control is a way to keep your scientific projects tidily organized,*
+> *collaborate on science, and have the whole history of each project at your fingertips.*
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+In this course, you will (only) learn the basics of using version control.
+The grayed-out examples on the previous slides are only covered in the
+[optional self-study material](../bonus/git.qmd).
+
+::: {.callout-tip appearance="simple"}
+But you will practice applying these basics quite a lot!
+:::
+
+## How Git works
+
+**Git** is the most widely used Version Control System.
+Git maintains databases called **repositories**,
+in which you save "snapshots" of your project with every minor piece of progress.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+Git manages this cleverly without having to create full copies of the project for every snapshot:
+
+![The boxes with dashed lines depict files that have not changed: these will not be saved repeatedly.<br>Figure from <https://git-scm.com>.](../img/git-scm-snapshots.png){fig-align="center" width="90%" fig-alt="A diagram showing how Git saves project snapshots." .lightbox}
+
+## How Git works
+
+As illustrated on the previous slide,
+files that haven't changed between snapshots are not saved again and again with every snapshot.
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+Note that **one Git repository manages files inside a single directory structure**.
+To use Git effectively,
+it is therefore important that your projects are properly organized or at least
+kept in separate dirs, as discussed in week 2.
+
+## Key Git term #1: Repository (repo)
+
+A Git "repository" (or "repo") is the **version-control database for a project.**
+Note that:
+
+- You can start a Git repository in any dir you have write access to on your computer and on OSC.
+- It is typical (and recommended) to have one Git repository for each research project.
+- The Git database is saved in a hidden dir (**`.git`**) within the dir in which you started the repo.
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: callout-tip
+#### Hidden files and dirs
+When a file or dir name starts with a **`.`**, like in `.git`, it is "hidden".
+Hidden files and dirs don't show up in most file browsers by default,
+nor in `ls` file listings unless you use the `-a` ("all") option.
+
+Hidden files and dirs are often generated (and used!) automatically by various software,
+and one reason they are hidden is that they are not supposed to be manually
+edited, moved, or removed (unless you know exactly what you're doing).
+A location that has many hidden files is your Home directory,
+where these files store different kinds of personal configurations.
+:::
+
+## Key Git term #2: Commit
+
+A Git "commit" is a **saved snapshot** of the project.
+You'll soon learn more about this, but for now, note that:
+
+- You can always go back to the exact state of the entire project, or of individual
+  files, at any commit.
+- You make commits **manually** ---
+  Git is not an automated backup system, and this is by design!
+
+## What do I put under version control?
+
+You should primarily put **manually edited** files under version control, e.g.:
+
+- Scripts (and if you're writing software, all its source code)
+- Project documentation files
+- Metadata (e.g., sample information)
+- Optionally manuscripts, especially if you write them in a plain text format
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+What about data and results?
+
+- Raw data may or may not be included ---
+  for omics data, this is generally not feasible due to large file sizes
+- Results from analyses should generally not be included
+
+## Source versus derived files
+
+The general idea behind what you should and should not include is that you
+should _version-control the source, but not derived files_.
+In other words, version-control files that are manually edited,
+but not the files that can be automatically/deterministically generated from them.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+. . .
+
+For instance:
+
+- Version-control your Markdown file, not the HTML it produces.
+- Version-control your script, not the output it produces.
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: callout-tip
+#### Derived files
+
+Recall from week 2 that results and other derived files are (or should be)
+in essence *dispensable*,
+because they can be regenerated using the raw data and the scripts.
+:::
+
+## File limitations
+
+There are some limitations to the types and sizes of files that can be committed with Git:
+
+- **File type**: binary (non-text) files, such as Word or Excel files, or compiled software, can be
+  included, but Git can't show you line-by-line changes for them like it can for plain-text files,
+  and your repo can grow quickly if you commit many versions of them.
+- **Repository size**: for performance reasons, it's best to keep individual repositories under about 1 GB.
+- **File size**: Git itself doesn't limit file sizes, but GitHub (which we'll use on Wednesday) blocks files >100 MB.
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+As such, omics data is usually too large to be version-controlled.
+To make your data available to others,
+you should use dedicated repositories like NCBI's Sequence Read Archive
+(SRA; we'll talk more about data sharing later).
+
+## User Interfaces for Git
+
+You can work with Git in several different ways --- using:
+
+- The native command-line interface (CLI)
+- Third-party graphical user interfaces (GUIs) such as GitHub Desktop and GitKraken
+- IDEs/editors with Git integration like RStudio and VS Code
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+In this course, we will focus on the CLI because it's the most universal and powerful
+interface. But it's absolutely fine to switch to GUI usage later,
+which will not be hard if you've learned Git basics with the CLI.
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: callout-note
+Git takes some getting used to, regardless of the interface.
+Many people have one or more "false starts" with it.
+I hope that being forced to use it in a course will take you past that!
+:::
+
+# The basic Git workflow {background-color="#A7B1B7"}
+
+## The basic Git workflow
+
+Git commands always start with `git` followed by a second command/subcommand or "verb": `git add`,
+`git commit`, etc. Only three commands tend to make up the vast majority of your Git work:
+
+- **`git add`** does two things:
+  - Start "**tracking**" files --- needed because files in your dir hierarchy
+    are _not_ automatically included in the repo
+  - Mark changed and new files as ready to be committed, which is called "**staging**" files
+- **`git commit`**\
+  Create a new snapshot of the project that includes all currently staged changes
+- **`git status`**\
+  Get the status of your repo: which files have changed, which new files are present,
+  tips on next steps, etc.
+
+## The basic Git workflow
+
+![Adding and committing changes with Git commands.<br>The Git database, which is in a hidden folder `.git`, is depicted with a gray background.](../img/git-staging-area.svg){fig-align="center" width="85%" fig-alt="A diagram of the process of adding and committing changes with Git commands." .lightbox}
+
+## The basic Git workflow
+
+![Another way of visualizing the adding and committing of changes in Git.<br>Note that `git add` has a dual function: it starts tracking files and stages them.](../img/git-do1.png){fig-align="center" width="48%" fig-alt="A diagram of the process of adding and committing changes with Git commands" .lightbox}
+
+# Check your understanding {background-color="#A7B1B7"}
+
+## Quiz: What goes under version control?
+
+In an RNA-Seq project, which of these files should you commit to your Git repository?
+
+a) `scripts/trim.sh`
+b) `data/fastq/S01_R1.fastq.gz`
+c) `README.md`
+d) `results/multiqc_report.html`
+e) `meta/samples.tsv`
+
+. . .
+
+::: callout-tip
+#### Answer
+**a), c), and e)**: these are manually edited "source" files.
+b) is raw data that is generally too large for Git,
+and d) is a derived file that you can regenerate with your scripts.
+:::
+
+## Quiz: Nothing to commit?
+
+You created a new script `trim.sh` in your project's Git repository,
+and then ran:
+
+```bash
+git commit -m "Add trimming script"
+```
+
+But Git reports "_nothing added to commit_". What did you forget?
+
+a) To first run `git init` in your project dir
+b) To first run `git add trim.sh`
+c) To connect to the internet --- Git needs a connection to make commits
+d) To write a longer commit message
+
+. . .
+
+::: callout-tip
+#### Answer
+**b)**: Git doesn't automatically track new files ---
+`git add` starts tracking them and stages them.
+(Without a repository, you would have gotten a "not a git repository" error,
+and Git works entirely locally: no internet connection is needed.)
+:::
+
+# Questions? {background-color="#A7B1B7" .unlisted}
+
+<br><br>
+
+[_Click here to continue with today's hands-on practice: [**Version control with Git**](./w5b_git.qmd)_]{style="display:block; text-align:center"}
+
+## References
