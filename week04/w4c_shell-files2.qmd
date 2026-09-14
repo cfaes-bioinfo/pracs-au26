@@ -1,5 +1,5 @@
 ---
-title: "Working with files in the Unix shell II:<br>Viewing, summarizing and manipulating files"
+title: "Working with files in the Unix shell II:<br>Viewing, summarizing, and manipulating files"
 subtitle: "Week 4 -- Lecture C"
 pagetitle: "w4c: Shell files II"
 date: 2026-09-16
@@ -70,40 +70,53 @@ In this lecture, you will learn to use the Unix shell to:
 
 ### Getting ready
 
-- Start a VS Code session, with a terminal, just like before.
+::: {.panel-tabset}
 
-  <details><summary> {{< fa lightbulb >}} Click here to see the instructions.</summary>
+## Continuing from the last lecture?
 
-  1. Log in to OSC's OnDemand portal at <https://ondemand.osc.edu>.
-  2. In the blue top bar, select `Interactive Apps` and near the bottom,
-     click `Code Server`.
-  3. Fill out the form as follows:
-     - **Cluster**: `pitzer`
-     - **Account**: `PAS3493`
-     - **Number of hours**: `2`
-     - **Working Directory**: `/fs/ess/PAS3493/people/<user>`
-      (replace `<user>` with your user name)
-     - **App Code Server version**: `4.129.0`
-  4. Click `Launch`, and in the next page, click the `Connect to VS Code` button once it appears.
-  5. In VS Code, **open a terminal** by either:
-     - Clicking {{< fa bars >}} &rarr; `Terminal` &rarr; `New Terminal`
-     - Using the keyboard shortcut <kbd>Ctrl</kbd>+<kbd>`</kbd>
+Navigate back to your top-level personal dir from `week04/sandbox`:
 
-  6. Check that you are in `/fs/ess/PAS3493/people/$USER`
-     by typing `pwd` in the terminal.
+```bash
+cd ../..
+```
 
-     ::: {.callout-tip appearance="simple"}
-     Recall that `$USER` is a variable that represents your username.
+Not sure where you are?
+Then use the absolute path to your personal dir instead:
 
-     If you're not in `/fs/ess/PAS3493/people/$USER`,
-     it may be listed under `Recents` in the `Get Started` document ---
-     if so, click on that entry.
-     Otherwise, click `File` > `Open Folder` and type/select that path.
-     :::
+```bash
+cd /fs/ess/PAS3493/people/$USER
+```
 
-  </details>
+## Don't have an existing VS Code session?
 
-- Optional --- create and open a Markdown file for notes:
+1. Log in to OSC's OnDemand portal at <https://ondemand.osc.edu>.
+2. In the blue top bar, select `Interactive Apps` and near the bottom,
+   click `Code Server`.
+3. Fill out the form as follows:
+   - **Cluster**: `pitzer`
+   - **Account**: `PAS3493`
+   - **Number of hours**: `2`
+   - **Working Directory**: `/fs/ess/PAS3493/people/<user>`
+    (replace `<user>` with your user name)
+   - **App Code Server version**: `4.129.0`
+4. Click `Launch`, and in the next page, click the `Connect to VS Code` button once it appears.
+5. In VS Code, **open a terminal** by either:
+   - Clicking {{< fa bars >}} &rarr; `Terminal` &rarr; `New Terminal`
+   - Using the keyboard shortcut <kbd>Ctrl</kbd>+<kbd>`</kbd>
+6. Check that you are in `/fs/ess/PAS3493/people/$USER`
+   by typing `pwd` in the terminal.
+
+   ::: {.callout-tip appearance="simple"}
+   Recall that `$USER` is a variable that represents your username.
+   If you're not in `/fs/ess/PAS3493/people/$USER`,
+   it may be listed under `Recents` in the `Get Started` document ---
+   if so, click on that entry.
+   Otherwise, click `File` > `Open Folder` and type/select that path.
+   :::
+
+:::
+
+- *Optional:* create and open a Markdown file for notes:
 
   ```bash
   # After this command, click on the file name in the file explorer to open it:
@@ -112,17 +125,15 @@ In this lecture, you will learn to use the Unix shell to:
 
 - Copy the files you'll need today into the `sandbox` dir you created in the previous lecture.\
   Today's commands all operate on files from the @garrigós2025 dataset,
-  and copying the handful we need into your working dir means that
-  every command below can simply use a file name,
-  with no `../../` paths to get wrong:
+  and for convenience, we'll first copy the handful we need into our working dir:
 
   ```bash
-  # (Recall from the last lecture: the '*' is a wildcard, so the third
+  # (Recall from the previous lecture: the '*' is a wildcard, so the third
   #  command copies both the _R1 and the _R2 file for this sample.)
-  cp garrigos/README.md week04/sandbox
-  cp garrigos/meta/metadata.tsv week04/sandbox
-  cp garrigos/fastq/S63_R*.fastq.gz week04/sandbox
-  cp garrigos/ref/annot.gtf.gz week04/sandbox
+  cp garrigos/README.md week04/sandbox/
+  cp garrigos/meta/metadata.tsv week04/sandbox/
+  cp garrigos/fastq/S63_R*.fastq.gz week04/sandbox/
+  cp garrigos/ref/annot.gtf.gz week04/sandbox/
   ```
 
   ::: {.callout-warning appearance="simple"}
@@ -153,80 +164,6 @@ The **`cat`** command prints the entire contents of one or more files to
 screen:
 
 ```bash
-cat README.md
-```
-````bash-out
-# README for `garrigos`
-
-- Author: Jelmer Poelstra
-- Affiliation: CFAES Bioinformatics Core, The Ohio State University
-- Contact: <poelstra.1@osu.edu>
-- URL: <https://github.com/cfaes-bioinfo/garrigos>
-- Created: 2024-01-20
-- Last updated: 2026-09-12
-
-This directory contains files associated with the paper
-“Two avian _Plasmodium_ species trigger different transcriptional responses on
-their vector _Culex pipiens_”
-([Garrigós et al. 2025, Molecular Ecology](https://doi.org/10.1111/mec.17240)).
-The files are intended for practice in coursework and other tutorials on omics /
-RNA-Seq data analysis.
-If you use these data beyond practice purposes, please cite the original paper and
-obtain the full data from ENA (see the links above).
-
-The rest of this README describes the files in this directory, by sub-directory.
-
-## FASTQ files (in sub-directory `fastq`)
-
-The FASTQ files are paired-end 75-bp Illumina RNA-Seq reads from
-_Culex pipiens_ samples: 44 files for 22 samples, with `_R1` and `_R2`
-in the file names denoting the forward and reverse reads, respectively.
-
-These were downloaded from the European Nucleotide Archive (ENA)
-under study accession `PRJEB41609`, using the tool
-[`fastq-dl`](https://github.com/rpetit3/fastq-dl) v3.0.1 on 2024-01-20.
-
-To simplify the dataset for practice purposes, the following modifications were made:
-
-- Files for the following samples were **removed**:
-  - 2 samples that were also excluded in the study itself
-    (see the paper for details).
-  - All samples at the 21-day (21 DAI) time point.
-
-- Files were randomly "**subset**" to keep only 500,000 reads per file using
-  the tool [`seqtk`](https://github.com/lh3/seqtk) v1.3-r106.
-
-- Files were **renamed** by removing the shared ENA prefix `ERR108028` and
-  replacing it with `S` (for "sample"), and by replacing the `_1` and `_2` suffixes
-  by `_R1` or `_R2` to denote the forward and reverse reads.
-
-## Metadata (in sub-directory `meta`)
-
-Metadata from the study was downloaded from <https://doi.org/10.20350/digitalCSIC/15708>
-and simplified to keep only:
-
-- The sample ID, time point, and treatment columns
-- The samples for which the FASTQ files were retained (see above)
-
-## Reference annotation file (in sub-directory `ref`)
-
-A reference genome GTF file with the RefSeq annotation of the
-_Culex pipiens pallens_ genome assembly `TS_CPP_V2` (`GCF_016801865.2`)
-was downloaded from NCBI using the
-[NCBI Datasets tool](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/download-and-install/)
-v15.31.1 on 2024-01-20.
-The GTF file was renamed to `annot.gtf.gz` and gzipped.
-
-For the analysis of the data, the reference genome FASTA file is also needed.
-This is not included here, but can be downloaded from NCBI using:
-
-```bash
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_genomic.fna.gz
-```
-
-````
-
-```bash
 cat metadata.tsv
 ```
 ```bash-out
@@ -255,18 +192,14 @@ S65     24hpi   relictum
 S68     24hpi   relictum
 ```
 
-The `time` column uses `24hpi` (24 hours post-infection) and `10dpi`
-(10 days post-infection) --- the 1- and 10-day (DAI) time points
-from the paper.
-
 ### `head` and `tail`
 
 Some files, especially when working with omics data, can be huge ---
 so printing the whole file with `cat` is not always ideal.
-The twin commands **`head`** and **`tail`** are useful,
-because they print only the first (`head`) or last (`tail`) lines of a file.
+Usefully, the twin commands **`head`** and **`tail`** only print the
+first (`head`) or last (`tail`) lines of a file.
 
-By default, `head` and `tail` print 10 lines:
+By default, these print 10 lines:
 
 ```bash
 head metadata.tsv
@@ -315,7 +248,7 @@ i��k��q�ְ(G�ϫ��L�^��=��<���K��j�_/�[ۭ
 ```
 
 <details class="details-quiz">
-<summary>Ouch! 😳 What went wrong here? *(Click for the solution)*</summary>
+<summary>Ouch! 😳 What went wrong here? *(Click to see the answer)*</summary>
 
 _The answer will be added after class._
 
@@ -329,7 +262,7 @@ We were presented with the contents of the *compressed* file, which isn't human-
 
 To get around the problem you just encountered with `head`,
 you might be inclined to decompress these files
-(which you could do with the `gunzip` command you'll see in a few weeks).
+(e.g. with the `gunzip` command, which you'll use in next week's assignment).
 However, at least when it comes to FASTQ files,
 it is better to keep them compressed:
 
@@ -339,7 +272,7 @@ it is better to keep them compressed:
   Additionally, several commands including `cat` have a counterpart for compressed
   files (`zcat` in the case of `cat`).
 
-Other sequence files, like assembly FASTA files and annotation GTF/GFF files,
+Other genomics files, like assembly FASTA files and annotation GTF/GFF files,
 are often also compressed when you download them.
 These types of files, though, are more commonly decompressed before usage ---
 e.g. because they don't take up nearly as much space as a set of FASTQ files.
@@ -380,7 +313,7 @@ AAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 #### The `-S` option to `less` suppresses "line-wrapping" _(Click to expand)_
 
 When lines are too long to fit on your computer screen,
-`less` will by default "wrap" them onto a next line on the screen.
+`less` will by default "wrap" them onto the next line on the screen.
 That's convenient for reading,
 but can be confusing for tabular formats and formats like FASTQ,
 because it means that one line on the screen no longer corresponds to one line
@@ -388,7 +321,7 @@ in the file.
 
 With the `-S` option to `less`, lines will not be wrapped but will
 "run out of the screen" on the right-hand side
-(press the rightward arrow <kbd>→</kbd> to see that part):
+(press the right arrow key <kbd>→</kbd> to see that part):
 
 ``` bash
 less -S S63_R1.fastq.gz
@@ -411,24 +344,18 @@ you can **move around** in the file in several ways --- for example:
 To **exit/quit** `less` and get your shell prompt back, press <kbd>q</kbd>.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: `less`
+#### {{< fa user-edit >}} Exercise 1: `less`
 
 Open the FASTQ file with `less S63_R1.fastq.gz`, then:
 
-1. Move around a bit using the keys listed above ---
-   <kbd>↑</kbd> / <kbd>↓</kbd>, <kbd>u</kbd> / <kbd>d</kbd>,
-   and <kbd>G</kbd> (end of the file) / <kbd>g</kbd> (back to the top).
-
-2. Among the very first reads, you should already spot some unusual-looking ones.
+a. Move around a bit using the keys listed above.
+b. Among the first reads, you should already spot some unusual-looking ones.
    What is unusual about them?
-
-3. Press <kbd>q</kbd> to quit `less` and get your prompt back.
-
-<details><summary>{{< fa check-circle >}} Click for the solution.</summary>
-
-_The solution will be added after class._
+c. Press <kbd>q</kbd> to quit `less` and get your prompt back.
 
 <!---
+<details><summary>{{< fa check-circle >}} Click for the solution.</summary>
+
 A number of reads are much shorter than the others,
 and only consist of `N`s, i.e. uncalled bases. For example:
 
@@ -438,14 +365,14 @@ NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 +
 ###################################
 ```
----->
 </details>
+---->
 :::
 
 ### `wc -l` to count lines
 
 _(This command doesn't display file contents and would fit better in the section_
-_on Unix data tools below, but needs to be introduced for the next bit.)_
+_on Unix data tools below, but needs to be introduced for the next section.)_
 
 The **`wc`** command by default counts the number of lines, words, and bytes
 in its input ---
@@ -533,13 +460,13 @@ in a directory. You could do that as follows:
 
 ```bash
 # First redirect 'ls' output to a file:
-ls ../../garrigos/fastq > filelist.txt
+ls > filelist.txt
 
-# Then count the number of lines, i.e. the number of files in the 'fastq' dir:
+# Then count the number of lines, i.e. the number of files in the working dir:
 wc -l filelist.txt
 ```
 ```bash-out
-44 filelist.txt
+5 filelist.txt
 ```
 
 (This works because `ls` switches to printing one file per line whenever its
@@ -557,17 +484,17 @@ A more convenient way to perform this kind of operation is with a "**pipe**",
 as follows:
 
 ```bash
-ls ../../garrigos/fastq | wc -l
+ls | wc -l
 ```
 ```bash-out
-44
+5
 ```
 
 With the pipe, the output of the command on the left-hand side
 (a file listing, in this case) is **redirected into the command on the right-hand side**
 (`wc` in this case).
 Like many others, the `wc` command will gladly accept input that way
-(i.e., via **standard in**) instead of via a file name argument.
+(i.e., via **standard in**, or *stdin*) instead of via a file name argument.
 
 Pipes are useful because they avoid having to write/read intermediate files ---
 this saves typing, makes the operation quicker, and reduces file clutter.
@@ -576,7 +503,7 @@ you don't need to make a `filelist.txt` file to count the number of files.
 We'll see pipes in action a bunch more in the next section.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: the pipe
+#### {{< fa user-edit >}} Exercise 2: the pipe
 
 What do you think the command below does, and what will the resulting count represent?
 
@@ -584,11 +511,9 @@ What do you think the command below does, and what will the resulting count repr
 cat S63_R1.fastq.gz S63_R2.fastq.gz | wc -l
 ```
 
+<!-----
 <details><summary> {{< fa check-circle >}} Click for the solution. </summary>
 
-_The solution will be added after class._
-
-<!-----
 Like many shell commands, `cat` accepts multiple arguments,
 i.e. it can operate on multiple files.
 In this case, `cat` would simply print the contents of the two files back-to-back
@@ -605,10 +530,10 @@ cat S63_R1.fastq.gz S63_R2.fastq.gz | wc -l
 Thinking one step further: can we get the total number of reads for sample
 `S63` across its two FASTQ files, by dividing the result by 4?
 (Recall: one FASTQ read covers 4 lines.)
-No, we can't, since the file is compressed:
+No, we can't, since the files are compressed:
 compressed and uncompressed line counts for a file are not the same.
----->
 </details>
+---->
 :::
 
 ## Unix data tools
@@ -625,7 +550,7 @@ We will cover the following commands:
 - `sort` to sort lines, or tabular data by column
 - `uniq` to remove duplicates
 
-We'll start with taking a look at one of the example data files,
+We'll start by revisiting one of the example data files,
 and discussing tabular plain-text files.
 
 ### Tabular plain-text files and file extensions
@@ -650,25 +575,24 @@ S81     10dpi   control
 S76     10dpi   relictum
 ```
 
-"_Tabular_" files like this one contain data that is arranged in a
+"Tabular" files like this one contain data that is arranged in a
 rows-and-columns format, i.e. as in a table or an Excel spreadsheet.
 Because plain-text files do not have an intrinsic way to define columns,
-certain characters are used as column "delimiters" in **plain-text tabular** files.
+certain characters are used as **column delimiters** in plain-text tabular files.
 Most commonly, these are:
 
 - A **Tab** (<kbd>Tab</kbd>), and such files are often stored with a **`.tsv`** extension for
   Tab-Separated Values ("**TSV** file").
-- A comma (<kbd>,</kbd>), and such files are often stored with a **`.csv`** extension for
+- A **comma** (<kbd>,</kbd>), and such files are often stored with a **`.csv`** extension for
   Comma-Separated Values ("**CSV** file").
 
-::: callout-important
-#### Plain-text file _extensions_ are flexible and mostly for human-readability.
+::: callout-warning
+#### Plain-text file extensions are flexible and mostly for human-readability.
 
 All plain-text files are fundamentally the same, i.e. "just plain-text files".
-**Therefore, changing the file extension does not change anything about the file.**
-Instead, different file extensions are used primarily "just" to make clear
+Therefore, **changing the file extension does not change the file itself.**
+Instead, different file extensions are used primarily to make clear
 to humans, and to some extent to the computer, what the file contains.
-
 This applies to all types of plain-text files, like `.txt`, `.csv`, and `.tsv`,
 but also sequence file types like `.fastq` and script files like `.R` and `.sh`.
 :::
@@ -698,9 +622,8 @@ S70     24hpi   cathemerium
 
 While not always necessary, it's good practice to consistently
 **use quotes** (`"..."`) around the search pattern like above^[
-Use _double_ quotes by default, like in the examples,
-but _single_ quotes can generally also be used though they exhibit some different
-behavior.].
+Use _double_ quotes by default, like in the examples.
+_Single_ quotes generally work too, but they behave differently in some situations.].
 
 Instead of printing matching lines, you can also **count** them with the `-c` option.
 For example, how many control samples are in the dataset?
@@ -729,20 +652,18 @@ which doesn't contain "control" either ---
 so the dataset has 15 non-control samples.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: `grep`
+#### {{< fa user-edit >}} Exercise 3: `grep`
 
-1. What output do you expect from the command below?
-   Next, check if you were correct by executing the command.
+a. What output do you expect from the command below?
+   Check your answer by executing the command.
 
    ```bash
    grep -vc "contro" metadata.tsv
    ```
 
+   <!------
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-   _The solution will be added after class._
-
-   <!------
    The command gives the same output as the previous example:
    the shorter pattern `contro` still matches the `control` lines,
    so `-v` still excludes exactly those lines:
@@ -753,37 +674,36 @@ so the dataset has 15 non-control samples.
    ```bash-out
    16
    ```
-   ---->
    </details>
+   ---->
 
-2. Based on the output of the above command, how do you think `grep`'s matching
-   behavior differs from globbing with the `*` shell wildcard?
-
-   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
-
-   _The solution will be added after class._
+b. Based on the output of the above command, how do you think `grep`'s matching
+   behavior differs from globbing with the shell wildcard `*`?
 
    <!------
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
    While the initial examples also implied this,
    the above example should make it abundantly clear that `grep` does not need
    to match entire lines or words, etc.
 
    This behavior is very different from globbing with the `*` wildcard,
    where the pattern has to match the entire file name!
-   ---->
    </details>
+   ---->
 :::
 
-::: {.callout-note collapse="true"}
-#### Additional useful `grep` options _(Click to expand)_
+::: {.callout-note collapse="false"}
+#### Additional useful `grep` options
 
-- `grep` has many other useful options, such as:
-  - `-i` to ignore case (uppercase vs. lowercase) when searching
-  - `-n` to print the line number for each matching line
-  - `-A <n>` and `-B <n>` to print `n` lines after and before each match
-  - `-w` to make a pattern match whole "words" only
-  - `-r` to search files in directories recursively
-    (note that even without `-r`, `grep` can operate on multiple files)
+`grep` has many other useful options, such as:
+
+- `-i` to ignore case (uppercase vs. lowercase) when searching
+- `-n` to print the line number for each matching line
+- `-A <n>` and `-B <n>` to print `n` lines after and before each match
+- `-w` to make a pattern match whole "words" only
+- `-r` to search files in directories recursively
+  (note that even without `-r`, `grep` can operate on multiple files)
 :::
 
 ### Operating on compressed files
@@ -793,17 +713,14 @@ it prints their contents in human-readable form.
 By piping `zcat`'s output into `grep` or into any other command,
 you can therefore use all the tools you've learned about with compressed files:
 
-<!---
-TODO CHECK FOR SHORTER SEARCH PATTERN
---->
-
 ```bash
-# Search for carbonic anhydrase-related proteins in the GTF file:
-zcat annot.gtf.gz | grep "carbonic anhydrase-related protein" | head -n 2
+# Search for cecropin-related lines in the GTF file:
+zcat annot.gtf.gz | grep "cecropin" | head -n 3
 ```
 ```bash-out
-NC_068937.1     Gnomon  gene    398255  486969  .       -       .       gene_id "LOC120422535"; transcript_id ""; db_xref "GeneID:120422535"; description "carbonic anhydrase-related protein 10"; gbkey "Gene"; gene "LOC120422535"; gene_biotype "protein_coding";
-NC_068937.1     Gnomon  transcript      398255  486969  .       -       .       gene_id "LOC120422535"; transcript_id "XM_039585997.2"; db_xref "GeneID:120422535"; experiment "COORDINATES: polyA evidence [ECO:0006239]"; gbkey "mRNA"; gene "LOC120422535"; model_evidence "Supporting evidence includes similarity to: 10 Proteins"; product "carbonic anhydrase-related protein 10, transcript variant X1"; transcript_biotype "mRNA";
+NC_068937.1     Gnomon  gene    43201550        43201918        .       +       .       gene_id "LOC120426347"; transcript_id ""; db_xref "GeneID:120426347"; description "cecropin-A2-like"; gbkey "Gene"; gene "LOC120426347"; gene_biotype "protein_coding";
+NC_068937.1     Gnomon  transcript      43201550        43201918        .       +       .       gene_id "LOC120426347"; transcript_id "XM_039591134.2"; db_xref "GeneID:120426347"; experiment "COORDINATES: polyA evidence [ECO:0006239]"; gbkey "mRNA"; gene "LOC120426347"; model_evidence "Supporting evidence includes similarity to: 26 ESTs, 18 Proteins"; product "cecropin-A2-like"; transcript_biotype "mRNA";
+NC_068937.1     Gnomon  exon    43201550        43201708        .       +       .       gene_id "LOC120426347"; transcript_id "XM_039591134.2"; db_xref "GeneID:120426347"; experiment "COORDINATES: polyA evidence [ECO:0006239]"; gene "LOC120426347"; model_evidence "Supporting evidence includes similarity to: 26 ESTs, 18 Proteins"; product "cecropin-A2-like"; transcript_biotype "mRNA"; exon_number "1";
 ```
 
 ::: {.callout-tip appearance="simple"}
@@ -814,7 +731,7 @@ In this week's exercises and next week's assignment, you'll further explore this
 
 The `cut` command selects, or we could say "cuts out",
 one or more columns from a tabular file.
-You always have to use its **`-f`** ("field") option to specify the
+To select columns, use its **`-f`** ("field") option to specify the
 **desired column(s)**:
 
 ```bash
@@ -848,7 +765,7 @@ time
 ::: {.callout-note collapse="true"}
 #### More `cut` options _(Click to expand)_
 
-To select **multiple columns**, use a comma-delimited list, or a range with `-`:
+To select **multiple columns**, use a comma-separated list, or a range with `-`:
 
 ```bash
 cut -f 1,3 metadata.tsv | head -n 3
@@ -868,7 +785,7 @@ S82     10dpi
 S75     10dpi
 ```
 
-_Note that it is not possible to change the order of columns with `cut`!_
+Note that it is not possible to change the order of columns with `cut`!
 
 The default column **delimiter** that `cut` expects is a Tab.
 Therefore, we didn't have to specify the delimiter in the above examples.
@@ -876,7 +793,7 @@ But when a file has a different column delimiter,
 use the `-d` option --- e.g. `-d ,` for a CSV file:
 
 ```bash
-# [Don't run this, hypothetical example]
+# [Don't run this - for illustration only]
 # Select the second column in a comma-delimited (CSV) file:
 cut -d , -f 2 my-data.csv
 ```
@@ -886,20 +803,19 @@ cut -d , -f 2 my-data.csv
 
 Say you want an **alphabetically sorted list of distinct treatments** in `metadata.tsv`.
 (That's a bit trivial here, because this file is small enough to see that information
-at a glance, but you could use the following code also to operate on a huge genome
-annotation file.)
+at a glance --- but the same approach works on a huge genome annotation file.)
 To do this, you'll need to learn about two new commands:
 
 - **`sort`** to sort/order/arrange rows, by default in alphanumeric order.
 - **`uniq`** to remove duplicates (i.e., keep all distinct/unique entries)
-  _from a sorted file/list_.
+  from a sorted file/list.
 
-We'll build up a small "pipeline" to do this step-by-step,
+We'll build up a small "pipeline" to do this step by step,
 piping the output into `head` at every step.
 
 First, we need to get rid of the header line!
-We can do this with a neat trick with `tail`,
-where we can tell it to *start at* a specific line using `-n +<starting-line>`:
+We can do this with a neat `tail` trick,
+where we can tell it to **start at** a specific line using `-n +<starting-line>`:
 
 ```bash
 # '-n +2' tells tail to start at line 2:
@@ -954,8 +870,8 @@ control
 control
 ```
 
-Finally, use `uniq` to keep only unique (distinct) values ---
-and get rid of `head`, since our command is now complete:
+Finally, use `uniq` to keep only distinct values ---
+and get rid of `head`, since the command is now complete:
 
 ```bash
 tail -n +2 metadata.tsv | cut -f 3 | sort | uniq
@@ -966,13 +882,12 @@ control
 relictum
 ```
 
-Great!
-
-#### Generating a count table
+#### Generating a frequency table
 
 With a very small modification to this pipeline,
-you can generate a "count table" instead of a simple list!
-You just have to add `uniq`'s `-c` option (for **c**ount):
+you can generate a "frequency table" instead of a simple list:
+a table with the number of times each distinct value occurs.
+You only have to add `uniq`'s `-c` option (for **c**ount):
 
 ```bash
 tail -n +2 metadata.tsv | cut -f 3 | sort | uniq -c
@@ -984,9 +899,9 @@ tail -n +2 metadata.tsv | cut -f 3 | sort | uniq -c
 ```
 
 :::{.callout-note collapse="true"}
-#### Sorting the count table _(Click to expand)_
+#### Sorting the frequency table _(Click to expand)_
 
-And this count table can in turn be sorted by most frequent occurrence ---
+And this frequency table can in turn be sorted by most frequent occurrence ---
 to do this, use `sort`'s `-n` option for numeric sorting together with `-r`
 for reverse sorting so the largest numbers go first:
 
@@ -1029,11 +944,11 @@ tail -n +2 metadata.tsv | sort -k3,3 -k2,2
 :::
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise
+#### {{< fa user-edit >}} Exercise 4: `cut`, `sort`, and `uniq`
 
-1. **Put the pipeline together.**
+a. Put the pipeline together.
    The four pieces below, when combined with pipes (`|`) in the right order,
-   produce a count table of the number of samples per time point.
+   produce a frequency table of the number of samples per time point.
    In which order should they go?
    Write out the full command and run it ---
    how many `10dpi` and how many `24hpi` samples are there?
@@ -1045,28 +960,25 @@ tail -n +2 metadata.tsv | sort -k3,3 -k2,2
    tail -n +2 metadata.tsv
    ```
 
-   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
-
-   _The solution will be added after class._
-
    <!----
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
    The file comes first, then we select the column, then sort, then count:
 
    ```bash
    tail -n +2 metadata.tsv | cut -f 2 | sort | uniq -c
    ```
    ```bash-out
-     12 10dpi
-     10 24hpi
+        12 10dpi
+        10 24hpi
    ```
 
    So the two time points do _not_ have the same number of samples:
    there are 12 `10dpi` samples and 10 `24hpi` samples.
-   ---->
    </details>
+   ---->
 
-2. **What if you forget `sort`?**
-   Say you run the treatment count table again, but leave out `sort`:
+b. What if you forget `sort`?
+   Say you run the treatment frequency table again, but leave out `sort`:
 
    ```bash
    tail -n +2 metadata.tsv | cut -f 3 | uniq -c
@@ -1079,11 +991,9 @@ tail -n +2 metadata.tsv | sort -k3,3 -k2,2
    c) More than three lines, with each treatment appearing several times.
    d) Three lines, but in a different order.
 
+   <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-   _The solution will be added after class._
-
-   <!----
    The correct answer is **c)**.
 
    `uniq` only compares _adjacent_ lines,
@@ -1091,42 +1001,38 @@ tail -n +2 metadata.tsv | sort -k3,3 -k2,2
    here, one run per treatment per time point:
 
    ```bash-out
-      4 cathemerium
-      4 control
-      4 relictum
-      3 cathemerium
-      3 control
-      4 relictum
+         4 cathemerium
+         4 control
+         4 relictum
+         3 cathemerium
+         3 control
+         4 relictum
    ```
 
    This is why `sort` almost always comes right before `uniq`.
-   ---->
    </details>
+   ---->
 
-3. **What if you forget `tail -n +2`?**
+c. What if you forget `tail -n +2`? Which extra line appears in the output, and why?
 
    ```bash
    cut -f 3 metadata.tsv | sort | uniq -c
    ```
 
-   Which extra line appears in the output, and why?
-
+   <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-   _The solution will be added after class._
-
-   <!----
    The line `1 treatment` is added,
    because the header line is now treated as just another data line:
 
    ```bash-out
-      7 cathemerium
-      7 control
-      8 relictum
-      1 treatment
+         7 cathemerium
+         7 control
+         8 relictum
+         1 treatment
    ```
-   ---->
    </details>
+   ---->
 :::
 
 <hr style="height:1pt; visibility:hidden;" />
@@ -1137,11 +1043,9 @@ tail -n +2 metadata.tsv | sort -k3,3 -k2,2
 Using a pipeline similar to those above,
 check whether any duplicate sample IDs are present in `metadata.tsv`.
 
+<!----
 <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-_The solution will be added after class._
-
-<!----
 No duplicate sample IDs are present.
 
 The most elegant way to see this is by using `sort -nr | head -n 1` at the end:
@@ -1155,13 +1059,13 @@ tail -n +2 metadata.tsv | cut -f 1 | sort | uniq -c | sort -nr | head -n 1
 ```
 
 Omitting the `head -n 1` or even the `sort -nr` would also work in this case.
----->
 </details>
+---->
 :::
 
 ## Self-study: The Unix philosophy and data streaming
 
-Today, and in particular with these Unix data tool examples,
+In this lecture, and in particular with these Unix data tool examples,
 we saw the Unix philosophy in action:
 
 > *This is the Unix philosophy: Write programs that do one thing and do it well.*
@@ -1188,11 +1092,11 @@ and it will freeze or refuse to open the file.
 Here is one other example,
 combining the `cat` command with globbing and redirection.
 This command would concatenate (combine) all your R1 FASTQ files into a single file.
-This is both elegantly short code,
-and will run quickly and without using much computer memory!
+This code is elegantly short,
+and will run quickly without using much computer memory!
 
 ```bash
-# [Don't run this - for illustration purposes only]
+# [Don't run this - for illustration only]
 cat ../../garrigos/fastq/*R1.fastq.gz > all_R1.fastq.gz
 ```
 
@@ -1236,7 +1140,7 @@ sort metadata.tsv > metadata_sorted.tsv
 mv metadata_sorted.tsv metadata.tsv
 ```
 
-However, our general recommendation is that whenever you edit files,
+However, I generally recommend that whenever you edit files,
 you keep both the original and the edited version ---
 so you won't typically need the above roundabout method.
 :::
