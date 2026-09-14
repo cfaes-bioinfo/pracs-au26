@@ -41,11 +41,327 @@ This page contains optional self-study material if you want to dig deeper into G
 Some of it may also be useful as a reference in case you run into problems while
 trying to use Git.
 
+- Moving and removing tracked files
+- Unstaging files
 - Collaboration with Git: multi-user remote workflows
 - Contributing to repositories: Forking & Pull Requests
 - Undoing (& viewing) changes that have been committed
 - Branching & merging
 - Miscellaneous Git
+
+## Moving and removing tracked files
+
+_This section and the next one continue with the `originspecies` repository
+from the [Git hands-on lecture](/week05/w5b_git.qmd)._
+
+When you want to remove, move, or rename files that are tracked by Git,
+it is good practice to preface the regular `rm` and `mv` commands with `git` ---
+that is, to use `git rm` and `git mv`.
+
+When removing or moving/renaming a tracked file with `git rm` / `git mv`,
+changes will be made to your working dir just like with a regular `rm`/`mv`,
+and the operation will also be _staged_.
+For example:
+
+``` sh
+# (NOTE: Don't run this, hypothetical examples)
+git rm file-to-remove.txt
+git mv myoldname.txt mynewname.txt
+
+git status
+```
+```bash-out
+On branch main
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        renamed:    myoldname.txt -> mynewname.txt
+        deleted:    file-to-remove.txt
+```
+
+::: {.callout-warning collapse=true}
+#### What if I forget to use `git rm`/`git mv`? _(Click to expand)_
+
+It is inevitable that you will occasionally forget about this and e.g. use `rm`
+instead of `git rm`.
+Fortunately, _Git will eventually figure out what happened_. For example:
+
+- For a renamed file, Git will first be confused and register both a removed file and an
+  added file:
+
+  ```bash
+  # (Don't run this, this is a hypothetical example)
+  mv myoldname.txt mynewname.txt
+
+  git status
+  ```
+  ```bash-out
+  On branch main
+  Changes not staged for commit:
+    (use "git add/rm <file>..." to update what will be committed)
+    (use "git restore <file>..." to discard changes in working directory)
+          deleted:    myoldname.txt
+
+  Untracked files:
+    (use "git add <file>..." to include in what will be committed)
+          mynewname.txt
+  ```
+
+- But after you stage both changes (the new file and the deleted file),
+  Git realizes it was renamed instead:
+
+  ```bash
+  git add myoldname.txt
+  git add mynewname.txt
+
+  git status
+  ```
+  ```bash-out
+  On branch main
+  Changes to be committed:
+    (use "git restore --staged <file>..." to unstage)
+          renamed:    myoldname.txt -> mynewname.txt
+  ```
+
+So, there is no need to stress if you forget this, but when you remember,
+use `git mv` and `git rm`.
+:::
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: `.gitignore` and `git rm`
+
+**1.** Create a new directory `results` with files `Galapagos.txt` and `Ascension.txt`.
+Add a line to the `.gitignore` file to ignore all files in `results`,
+and commit the changes to the `.gitignore` file.
+
+<details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+
+- Create the dir and files:
+
+  ```bash
+  mkdir results
+  touch results/Galapagos.txt results/Ascension.txt
+  ```
+
+- Optional - check that they are detected by Git
+  (note: only the dir will be shown, not its contents):
+
+  ```bash
+  git status
+  ```
+  ```bash-out
+  On branch main
+  Untracked files:
+    (use "git add <file>..." to include in what will be committed)
+          results/
+
+  nothing added to commit but untracked files present (use "git add" to track)
+  ```
+
+- Add the text "results/" to the `.gitignore` file:
+
+  ```bash
+  echo "results/" >> .gitignore
+  ```
+
+- Optional - check the status again:
+
+  ```bash
+  git status
+  ```
+  ```bash-out
+  On branch main
+  Changes not staged for commit:
+    (use "git add <file>..." to update what will be committed)
+    (use "git restore <file>..." to discard changes in working directory)
+          modified:   .gitignore
+
+  no changes added to commit (use "git add" and/or "git commit -a")
+  ```
+
+  Looks good, `results/` is no longer listed.
+  But you do need to commit the changes to `.gitignore`.
+
+- Commit the changes to `.gitignore`:
+
+  ```bash
+  git add .gitignore
+  git commit -m "Add results dir to gitignore"
+  ```
+  ```bash-out
+  [main 33b6576] Add results dir to gitignore
+  1 file changed, 1 insertion(+)
+  ```
+</details>
+
+**2.** Create and commit an empty new file `notes.txt`.
+Then, remove it with `git rm` and commit your file removal.
+
+<details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+
+- Create the file and add and commit it:
+
+  ```bash
+  touch notes.txt
+  git add notes.txt
+  git commit -m "Add notes"
+  ```
+  ```bash-out
+  [main 44a37f9] Add notes
+   1 file changed, 0 insertions(+), 0 deletions(-)
+   create mode 100644 notes.txt
+  ```
+
+- Optional - check that the file is there:
+
+  ```bash
+  ls
+  ```
+  ```bash-out
+  data  notes.txt  origin.txt  results  todo.txt  todo.txt~
+  ```
+
+- Remove the file with `git rm` and commit the removal:
+
+  ```bash
+  git rm notes.txt
+  git commit -m "These notes were made in error"
+  ```
+  ```bash-out
+  [main 058fd47] These notes were made in error
+   1 file changed, 0 insertions(+), 0 deletions(-)
+   delete mode 100644 notes.txt
+  ```
+
+- Optional - check that the file is no longer there:
+
+  ```bash
+  ls
+  ```
+  ```bash-out
+  data  origin.txt  results  todo.txt  todo.txt~
+  ```
+</details>
+:::
+
+## Unstaging files
+
+In the [Git hands-on lecture](/week05/w5b_git.qmd#undoing-changes-that-have-not-been-committed),
+you used `git restore` to undo changes to files in your working dir.
+`git restore` can also *unstage* a file.
+In other words, you can undo the staging that is done by `git add`,
+so the file goes back to the *modified* state.
+
+This is most often needed when you added a file that was not supposed to be part
+of the next commit. For example:
+
+1. You modify two files and use `git add --all`:
+
+   ```sh
+   echo "Variation under domestication" >> origin.txt
+   echo "Prepare for the next journey" >> todo.txt
+
+   git add --all
+   ```
+
+2. Then you realize that those two file changes should be part of separate commits.
+   Again, check the status first:
+
+   ```bash
+   git status
+   ```
+   ```bash-out
+   On branch main
+   Changes to be committed:
+     (use "git restore --staged <file>..." to unstage)
+           modified:   origin.txt
+           modified:   todo.txt
+   ```
+
+3. And use `git restore --staged` as suggested by Git:
+
+   ```sh
+   git restore --staged todo.txt
+
+   git status
+   ```
+   ```bash-out
+   On branch main
+   Changes to be committed:
+     (use "git restore --staged <file>..." to unstage)
+           modified:   origin.txt
+
+   Changes not staged for commit:
+     (use "git add <file>..." to update what will be committed)
+     (use "git restore <file>..." to discard changes in working directory)
+           modified:   todo.txt
+   ```
+
+Now, you can go ahead and add these changes to separate commits: see the exercise below.
+
+And finally, in case you merely staged a file _prematurely_,
+you can just continue editing the file and re-add it afterwards.
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Commit the changes 1-by-1
+
+Commit the currently staged changes to `origin.txt`.
+
+<details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+```bash
+git commit -m "Start writing about artificial selection"
+```
+</details>
+
+Next, stage and commit the changes to `todo.txt`.
+
+<details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+```bash
+git add todo.txt
+git commit -m "Update the TODO file"
+```
+</details>
+
+:::
+
+::: {.callout-note collapse="true"}
+#### Undoing staged changes _(Click to expand)_
+
+What if you had made mistaken changes (like an accidental deletion) and also
+*staged* those changes?
+You can simply follow the two steps described above, in order:
+
+1. First unstage the file with `git restore --staged <file>`.
+2. Then discard changes in the working dir with `git restore <file>`.
+
+For instance, you overwrote the contents of the book and then staged the overwritten file:
+
+```sh
+echo "Instincts of the Cuckoo" > origin.txt
+git add origin.txt
+
+cat origin.txt
+```
+```bash-out
+Instincts of the Cuckoo
+```
+
+You can undo all of this as follows:
+
+```bash
+git restore --staged origin.txt
+git restore origin.txt
+
+cat origin.txt
+```
+```bash-out
+On the Origin of Species
+Variation under domestication
+```
+:::
 
 ## Collaboration with Git: multi-user remote workflows
 
