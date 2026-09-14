@@ -123,9 +123,9 @@ cd /fs/ess/PAS3493/people/$USER
   touch week04/lectureC.md
   ```
 
-- Copy the files you'll need today into the `sandbox` dir you created in the previous lecture.\
-  Today's commands all operate on files from the @garrigós2025 dataset,
-  and for convenience, we'll first copy the handful we need into our working dir:
+- Today's commands all use files from the @garrigós2025 dataset.
+  For convenience, copy the handful of files you'll need into the `sandbox` dir
+  you created in the previous lecture:
 
   ```bash
   # (Recall from the previous lecture: the '*' is a wildcard, so the third
@@ -338,6 +338,8 @@ you can **move around** in the file in several ways --- for example:
 
 - With <kbd>u</kbd> (up) and <kbd>d</kbd> (down): move half a page at a time
 
+- With <kbd>Space</kbd> (down) and <kbd>b</kbd> (back up): move a full page at a time
+
 - By pressing <kbd>G</kbd> to go to the end of the file,
   and <kbd>g</kbd> to go (back) to the top
 
@@ -371,8 +373,7 @@ NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 
 ### `wc -l` to count lines
 
-_(This command doesn't display file contents and would fit better in the section_
-_on Unix data tools below, but needs to be introduced for the next section.)_
+_(This command doesn't display file contents, but you'll need it in the next section.)_
 
 The **`wc`** command by default counts the number of lines, words, and bytes
 in its input ---
@@ -466,10 +467,11 @@ ls > filelist.txt
 wc -l filelist.txt
 ```
 ```bash-out
-5 filelist.txt
+12 filelist.txt
 ```
 
-(This works because `ls` switches to printing one file per line whenever its
+(Your count may differ slightly, depending on what you did in the previous lecture.
+This works because `ls` switches to printing one file per line whenever its
 output is not going straight to the screen, such as when you redirect or pipe it.)
 
 That worked, but you needed two separate lines of code,
@@ -487,8 +489,22 @@ as follows:
 ls | wc -l
 ```
 ```bash-out
-5
+11
 ```
+
+<details class="details-quiz">
+<summary>Why is this count one lower than the count in `filelist.txt` above? *(Click to see the answer)*</summary>
+
+_The answer will be added after class._
+
+<!----
+When you ran `ls > filelist.txt`, the shell created the (still empty) file `filelist.txt`
+_before_ running `ls` --- so `ls` listed that file too.
+Because you removed `filelist.txt` afterwards, it isn't included this time.
+(This "the shell prepares the output file first" behavior is also why you should
+never redirect back to an input file: see the self-study section at the end.)
+---->
+</details>
 
 With the pipe, the output of the command on the left-hand side
 (a file listing, in this case) is **redirected into the command on the right-hand side**
@@ -505,35 +521,61 @@ We'll see pipes in action a bunch more in the next section.
 ::: exercise
 #### {{< fa user-edit >}} Exercise 2: the pipe
 
-What do you think the command below does, and what will the resulting count represent?
+a. What do you think the command below does?
+   Could you divide the resulting count by 4 to get the total number of reads
+   for sample `S63`? Why or why not?
 
-```bash
-cat S63_R1.fastq.gz S63_R2.fastq.gz | wc -l
-```
+   ```bash
+   cat S63_R1.fastq.gz S63_R2.fastq.gz | wc -l
+   ```
 
-<!-----
-<details><summary> {{< fa check-circle >}} Click for the solution. </summary>
+   <!-----
+   <details><summary> {{< fa check-circle >}} Click for the solution. </summary>
 
-Like many shell commands, `cat` accepts multiple arguments,
-i.e. it can operate on multiple files.
-In this case, `cat` would simply print the contents of the two files back-to-back
-(con`cat`enate them!).
-Therefore, `wc -l` will count the total number of lines across the two files.
+   Like many shell commands, `cat` accepts multiple arguments,
+   i.e. it can operate on multiple files.
+   In this case, `cat` would simply print the contents of the two files back-to-back
+   (con`cat`enate them!).
+   Therefore, `wc -l` will count the total number of lines across the two files.
 
-```bash
-cat S63_R1.fastq.gz S63_R2.fastq.gz | wc -l
-```
-```bash-out
-193612
-```
+   ```bash
+   cat S63_R1.fastq.gz S63_R2.fastq.gz | wc -l
+   ```
+   ```bash-out
+   193612
+   ```
 
-Thinking one step further: can we get the total number of reads for sample
-`S63` across its two FASTQ files, by dividing the result by 4?
-(Recall: one FASTQ read covers 4 lines.)
-No, we can't, since the files are compressed:
-compressed and uncompressed line counts for a file are not the same.
-</details>
----->
+   However, you can't get the total number of reads for sample `S63`
+   by dividing this count by 4 (recall: one FASTQ read covers 4 lines),
+   since the files are compressed:
+   compressed and uncompressed line counts for a file are not the same.
+   </details>
+   ---->
+
+b. A classmate wants to count the entries in their working dir,
+   but accidentally types `>` instead of `|`:
+
+   ```bash
+   ls > wc -l
+   ```
+
+   Without running it: what do you think will happen?
+   Then run it, and check what happened with `ls` and `cat wc`.
+
+   <!-----
+   <details><summary> {{< fa check-circle >}} Click for the solution. </summary>
+
+   Nothing is printed, and no counting happens. Instead:
+
+   - The shell treats the word right after `>` as the name of the output file,
+     so it creates a _file_ called `wc`.
+   - The remaining `-l` is simply passed on to `ls` as an option.
+
+   So this command is equivalent to `ls -l > wc`: the file `wc` now contains
+   a long-format file listing (which even includes `wc` itself!).
+   Remove the file with `rm wc`.
+   </details>
+   ---->
 :::
 
 ## Unix data tools
@@ -574,6 +616,22 @@ S77     10dpi   control
 S81     10dpi   control
 S76     10dpi   relictum
 ```
+
+Now, let's look at its first few lines with `cat -A`,
+which makes normally invisible characters visible:
+Tabs are shown as `^I`, and the end of each line as `$`:
+
+```bash
+cat -A metadata.tsv | head -n 3
+```
+```bash-out
+sample_id^Itime^Itreatment$
+S82^I10dpi^Icathemerium$
+S75^I10dpi^Icathemerium$
+```
+
+So, the columns in this file are separated by single Tab characters,
+and not by a bunch of spaces, as the earlier output may have suggested.
 
 "Tabular" files like this one contain data that is arranged in a
 rows-and-columns format, i.e. as in a table or an Excel spreadsheet.
@@ -691,6 +749,24 @@ b. Based on the output of the above command, how do you think `grep`'s matching
    where the pattern has to match the entire file name!
    </details>
    ---->
+
+c. Count the number of `relictum` samples at the `24hpi` time point
+   with a single line of code. _(You won't need any new `grep` options.)_
+
+   <!------
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+   You can pipe the output of one `grep` command into another:
+   the first selects the `24hpi` lines, and the second counts the `relictum` lines among those.
+
+   ```bash
+   grep "24hpi" metadata.tsv | grep -c "relictum"
+   ```
+   ```bash-out
+   4
+   ```
+   </details>
+   ---->
 :::
 
 ::: {.callout-note collapse="false"}
@@ -806,7 +882,8 @@ Say you want an **alphabetically sorted list of distinct treatments** in `metada
 at a glance --- but the same approach works on a huge genome annotation file.)
 To do this, you'll need to learn about two new commands:
 
-- **`sort`** to sort/order/arrange rows, by default in alphanumeric order.
+- **`sort`** to sort/order/arrange rows --- by default alphabetically,
+  comparing text character by character (so `10` would come before `9`!).
 - **`uniq`** to remove duplicates (i.e., keep all distinct/unique entries)
   from a sorted file/list.
 
@@ -902,8 +979,9 @@ tail -n +2 metadata.tsv | cut -f 3 | sort | uniq -c
 #### Sorting the frequency table _(Click to expand)_
 
 And this frequency table can in turn be sorted by most frequent occurrence ---
-to do this, use `sort`'s `-n` option for numeric sorting together with `-r`
-for reverse sorting so the largest numbers go first:
+to do this, use `sort`'s `-n` option to sort numerically
+(otherwise, numbers are sorted as text, as explained above)
+together with `-r` for reverse sorting so the largest numbers go first:
 
 ```bash
 tail -n +2 metadata.tsv | cut -f 3 | sort | uniq -c | sort -nr
@@ -986,15 +1064,15 @@ b. What if you forget `sort`?
 
    What do you expect to happen?
 
-   a) The same output as before --- `sort` does not affect the counts.
-   b) An error message, because `uniq` needs sorted input.
-   c) More than three lines, with each treatment appearing several times.
-   d) Three lines, but in a different order.
+   A) The same output as before --- `sort` does not affect the counts.
+   B) An error message, because `uniq` needs sorted input.
+   C) More than three lines, with each treatment appearing several times.
+   D) Three lines, but in a different order.
 
    <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-   The correct answer is **c)**.
+   The correct answer is **C**.
 
    `uniq` only compares _adjacent_ lines,
    so without sorting first, it counts each separate "run" of identical values ---
@@ -1010,27 +1088,6 @@ b. What if you forget `sort`?
    ```
 
    This is why `sort` almost always comes right before `uniq`.
-   </details>
-   ---->
-
-c. What if you forget `tail -n +2`? Which extra line appears in the output, and why?
-
-   ```bash
-   cut -f 3 metadata.tsv | sort | uniq -c
-   ```
-
-   <!----
-   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
-
-   The line `1 treatment` is added,
-   because the header line is now treated as just another data line:
-
-   ```bash-out
-         7 cathemerium
-         7 control
-         8 relictum
-         1 treatment
-   ```
    </details>
    ---->
 :::
@@ -1081,6 +1138,8 @@ to swap out components, and to learn.
 What about those **text "streams"** mentioned in the quote above?
 Rather than loading entire files into memory,
 most Unix tools process them one line at a time.
+(A notable exception is `sort`, which has to see all lines before it can output anything ---
+though for large files, it cleverly uses temporary files rather than loading everything into memory.)
 
 This is very useful when working with large files in particular!
 For example,
