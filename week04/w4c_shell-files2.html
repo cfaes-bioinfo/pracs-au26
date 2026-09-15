@@ -4305,8 +4305,7 @@ font-size: 2.5em;
   <li><a href="#tabular-plain-text-files-and-file-extensions" id="toc-tabular-plain-text-files-and-file-extensions" class="nav-link" data-scroll-target="#tabular-plain-text-files-and-file-extensions"><span class="header-section-number">4.1</span> Tabular plain-text files and file extensions</a></li>
   <li><a href="#grep-to-print-lines-that-match-a-pattern" id="toc-grep-to-print-lines-that-match-a-pattern" class="nav-link" data-scroll-target="#grep-to-print-lines-that-match-a-pattern"><span class="header-section-number">4.2</span> <code>grep</code> to print lines that match a pattern</a></li>
   <li><a href="#operating-on-compressed-files" id="toc-operating-on-compressed-files" class="nav-link" data-scroll-target="#operating-on-compressed-files"><span class="header-section-number">4.3</span> Operating on compressed files</a></li>
-  <li><a href="#selecting-columns-using-cut" id="toc-selecting-columns-using-cut" class="nav-link" data-scroll-target="#selecting-columns-using-cut"><span class="header-section-number">4.4</span> Selecting columns using <code>cut</code></a></li>
-  <li><a href="#combining-cut-sort-and-uniq-to-create-a-list" id="toc-combining-cut-sort-and-uniq-to-create-a-list" class="nav-link" data-scroll-target="#combining-cut-sort-and-uniq-to-create-a-list"><span class="header-section-number">4.5</span> Combining <code>cut</code>, <code>sort</code>, and <code>uniq</code> to create a list</a></li>
+  <li><a href="#combining-cut-sort-and-uniq-to-create-a-list" id="toc-combining-cut-sort-and-uniq-to-create-a-list" class="nav-link" data-scroll-target="#combining-cut-sort-and-uniq-to-create-a-list"><span class="header-section-number">4.4</span> Combining <code>cut</code>, <code>sort</code>, and <code>uniq</code> to create a list</a></li>
   </ul></li>
   <li><a href="#self-study-the-unix-philosophy-and-data-streaming" id="toc-self-study-the-unix-philosophy-and-data-streaming" class="nav-link" data-scroll-target="#self-study-the-unix-philosophy-and-data-streaming"><span class="header-section-number">5</span> Self-study: The Unix philosophy and data streaming</a>
   <ul class="collapse">
@@ -4605,6 +4604,7 @@ AAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE</code>
 <li><p>With <kbd>u</kbd> (up) and <kbd>d</kbd> (down): move half a page at a time</p></li>
 <li><p>With <kbd>Space</kbd> (down) and <kbd>b</kbd> (back up): move a full page at a time</p></li>
 <li><p>By pressing <kbd>G</kbd> to go to the end of the file, and <kbd>g</kbd> to go (back) to the top</p></li>
+<li><p>By pressing <kbd>/</kbd>, typing a search pattern, and pressing <kbd>Enter</kbd> to jump to the next match (then <kbd>n</kbd> for the next and <kbd>N</kbd> for the previous match)</p></li>
 </ul>
 <p>To <strong>exit/quit</strong> <code>less</code> and get your shell prompt back, press <kbd>q</kbd>.</p>
 <section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-1-less" class="level4 exercise">
@@ -4613,6 +4613,7 @@ AAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE</code>
 <ol type="a">
 <li>Move around a bit using the keys listed above.</li>
 <li>Among the first reads, you should already spot some unusual-looking ones. What is unusual about them?</li>
+<li><strong>Bonus</strong>: Use <code>less</code>’s search function to jump to more reads like that. What pattern did you search for?</li>
 <li>Press <kbd>q</kbd> to quit <code>less</code> and get your prompt back.</li>
 </ol>
 <!---
@@ -4627,6 +4628,9 @@ NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 +
 ###################################
 ```
+
+To jump to more of these reads, search for a stretch of `N`s:
+type `/NNNNN`, press <kbd>Enter</kbd>, and then press <kbd>n</kbd> to go to each next match.
 </details>
 ---->
 </section>
@@ -4637,7 +4641,7 @@ NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 <p>The <strong><code>wc</code></strong> command by default counts the number of lines, words, and bytes in its input — but is most commonly used to only <strong>count lines</strong>, with the <code>-l</code> option:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wc</span> <span class="at">-l</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>23 metadata.tsv</code></pre>
-<p>This simple operation can be surprisingly useful: the number of lines <strong>reflects the number of entries</strong> in many file types.</p>
+<p>This simple operation can be surprisingly useful: the number of lines <strong>reflects the number of entries</strong> in many file types. For example, <code>metadata.tsv</code> has 23 lines: one header line plus one line for each of the 22 samples.</p>
 </section>
 </section>
 <section id="redirection-and-the-pipe" class="level2" data-number="3">
@@ -4667,81 +4671,58 @@ NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> test.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>My second line
 My third line</code></pre>
+<div class="callout callout-style-simple callout-warning">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>Because <code>&gt;</code> empties an existing file <em>before</em> the command even runs, never redirect output back to the command’s own input file: <code>head metadata.tsv &gt; metadata.tsv</code> would leave you with an empty <code>metadata.tsv</code>. (More on this in the <a href="#dont-redirect-back-to-the-input-file">self-study section</a> at the end.)</p>
+</div>
+</div>
+</div>
 </section>
 <section id="the-pipe" class="level3" data-number="3.2">
 <h3 data-number="3.2" class="anchored" data-anchor-id="the-pipe"><span class="header-section-number">3.2</span> The pipe</h3>
-<p>Say that you want to count the number of entries (files and subdirs) in a directory. You could do that as follows:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># First redirect &#39;ls&#39; output to a file:</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="op">&gt;</span> filelist.txt</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Then count the number of lines, i.e. the number of files in the working dir:</span></span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="fu">wc</span> <span class="at">-l</span> filelist.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>12 filelist.txt</code></pre>
-<p>(Your count may differ slightly, depending on what you did in the previous lecture. This works because <code>ls</code> switches to printing one file per line whenever its output is not going straight to the screen, such as when you redirect or pipe it.)</p>
-<p>That worked, but you needed two separate lines of code, and are left with a file <code>filelist.txt</code> that you probably want to remove, since it has served its sole purpose:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> filelist.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>A more convenient way to perform this kind of operation is with a “<strong>pipe</strong>”, as follows:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>11</code></pre>
-<details class="details-quiz">
-<summary>
-Why is this count one lower than the count in <code>filelist.txt</code> above? <em>(Click to see the answer)</em>
-</summary>
-<p><em>The answer will be added after class.</em></p>
-<!----
-When you ran `ls > filelist.txt`, the shell created the (still empty) file `filelist.txt`
-_before_ running `ls` --- so `ls` listed that file too.
-Because you removed `filelist.txt` afterwards, it isn't included this time.
-(This "the shell prepares the output file first" behavior is also why you should
-never redirect back to an input file: see the self-study section at the end.)
----->
-</details>
+<p>Say that you want to count the number of FASTQ files in the <code>garrigos/fastq</code> dir. You could do that as follows:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># [Hypothetical example, don&#39;t run this]</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co"># First redirect &#39;ls&#39; output to a file:</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> ../../garrigos/fastq <span class="op">&gt;</span> fastq-files.txt</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Then count the number of lines, i.e. the number of files in that dir:</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="fu">wc</span> <span class="at">-l</span> fastq-files.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>44 fastq-files.txt</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Now remove the file you no longer need</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> fastq-files.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>(This count is valid because <code>ls</code> prints one entry per line whenever its output doesn’t go straight to the screen, such as when you redirect or pipe it.)</em></p>
+<p>Above, we essentially wrote an “intermediate result” (<code>fastq-files.txt</code>) to file, which we later removed. What if you could avoid having to write this intermediate file? You can do so with a “<strong>pipe</strong>”:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> ../../garrigos/fastq <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>44</code></pre>
 <p>With the pipe, the output of the command on the left-hand side (a file listing, in this case) is <strong>redirected into the command on the right-hand side</strong> (<code>wc</code> in this case). Like many others, the <code>wc</code> command will gladly accept input that way (i.e., via <strong>standard in</strong>, or <em>stdin</em>) instead of via a file name argument.</p>
-<p>Pipes are useful because they avoid having to write/read intermediate files — this saves typing, makes the operation quicker, and reduces file clutter. In the example above, you don’t need to make a <code>filelist.txt</code> file to count the number of files. We’ll see pipes in action a bunch more in the next section.</p>
-<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-2-the-pipe" class="level4 exercise">
-<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-2-the-pipe"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Exercise 2: the pipe</h4>
+<p>Pipes are useful because they avoid having to write/read intermediate files — this saves typing, makes the operation quicker, and reduces file clutter. In the example above, you don’t need to make a <code>fastq-files.txt</code> file to count the number of files. We’ll see pipes in action a bunch more in the next section.</p>
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-self-study-exercise-the-pipe" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-self-study-exercise-the-pipe"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Self-study exercise: the pipe</h4>
 <ol type="a">
 <li><p>What do you think the command below does? Could you divide the resulting count by 4 to get the total number of reads for sample <code>S63</code>? Why or why not?</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> S63_R1.fastq.gz S63_R2.fastq.gz <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<!-----
-<details><summary>  Click for the solution. </summary>
-
-Like many shell commands, `cat` accepts multiple arguments,
-i.e. it can operate on multiple files.
-In this case, `cat` would simply print the contents of the two files back-to-back
-(con`cat`enate them!).
-Therefore, `wc -l` will count the total number of lines across the two files.
-
-```bash
-cat S63_R1.fastq.gz S63_R2.fastq.gz | wc -l
-```
-```bash-out
-193612
-```
-
-However, you can't get the total number of reads for sample `S63`
-by dividing this count by 4 (recall: one FASTQ read covers 4 lines),
-since the files are compressed:
-compressed and uncompressed line counts for a file are not the same.
-</details>
-----></li>
-<li><p>A classmate wants to count the entries in their working dir, but accidentally types <code>&gt;</code> instead of <code>|</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="op">&gt;</span> wc <span class="at">-l</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> Click for the solution.</p>
+</summary>
+<p>Like many shell commands, <code>cat</code> accepts multiple arguments, i.e. it can operate on multiple files. In this case, <code>cat</code> would simply print the contents of the two files back-to-back (con<code>cat</code>enate them!). Therefore, <code>wc -l</code> will count the total number of lines across the two files.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> S63_R1.fastq.gz S63_R2.fastq.gz <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>193612</code></pre>
+<p>However, you can’t get the total number of reads for sample <code>S63</code> by dividing this count by 4 (recall: one FASTQ read covers 4 lines), since the files are compressed: compressed and uncompressed line counts for a file are not the same.</p>
+</details></li>
+<li><p>A classmate wants to pipe the output of <code>ls</code> into <code>wc</code>, but accidentally types <code>&gt;</code> instead of <code>|</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="op">&gt;</span> wc</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Without running it: what do you think will happen? Then run it, and check what happened with <code>ls</code> and <code>cat wc</code>.</p>
-<!-----
-<details><summary>  Click for the solution. </summary>
-
-Nothing is printed, and no counting happens. Instead:
-
-- The shell treats the word right after `>` as the name of the output file,
-  so it creates a _file_ called `wc`.
-- The remaining `-l` is simply passed on to `ls` as an option.
-
-So this command is equivalent to `ls -l > wc`: the file `wc` now contains
-a long-format file listing (which even includes `wc` itself!).
-Remove the file with `rm wc`.
-</details>
-----></li>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> Click for the solution.</p>
+</summary>
+<p>Nothing is printed, and no counting happens. Instead, the shell treats the word right after <code>&gt;</code> as the name of the output file, so it creates a <em>file</em> called <code>wc</code> that contains the file listing (which even includes <code>wc</code> itself!). Remove the file with <code>rm wc</code>.</p>
+</details></li>
 </ol>
 </section>
 </section>
@@ -4759,40 +4740,46 @@ Remove the file with `rm wc`.
 <p>We’ll start by revisiting one of the example data files, and discussing tabular plain-text files.</p>
 <section id="tabular-plain-text-files-and-file-extensions" class="level3" data-number="4.1">
 <h3 data-number="4.1" class="anchored" data-anchor-id="tabular-plain-text-files-and-file-extensions"><span class="header-section-number">4.1</span> Tabular plain-text files and file extensions</h3>
-<p>The examples below will use the <code>metadata.tsv</code> file that you copied into your sandbox at the start of this lecture. Let’s take another look at its first 10 lines:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The examples below will use the <code>metadata.tsv</code> file that you copied into your sandbox at the start of this lecture. Let’s take another look at its first few lines:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-n</span> 3 metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>sample_id       time    treatment
 S82     10dpi   cathemerium
-S75     10dpi   cathemerium
-S79     10dpi   cathemerium
-S83     10dpi   cathemerium
-S78     10dpi   control
-S84     10dpi   control
-S77     10dpi   control
-S81     10dpi   control
-S76     10dpi   relictum</code></pre>
-<p>Now, let’s look at its first few lines with <code>cat -A</code>, which makes normally invisible characters visible: Tabs are shown as <code>^I</code>, and the end of each line as <code>$</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> <span class="at">-A</span> metadata.tsv <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>sample_id^Itime^Itreatment$
-S82^I10dpi^Icathemerium$
-S75^I10dpi^Icathemerium$</code></pre>
-<p>So, the columns in this file are separated by single Tab characters, and not by a bunch of spaces, as the earlier output may have suggested.</p>
+S75     10dpi   cathemerium</code></pre>
 <p>“Tabular” files like this one contain data that is arranged in a rows-and-columns format, i.e. as in a table or an Excel spreadsheet. Because plain-text files do not have an intrinsic way to define columns, certain characters are used as <strong>column delimiters</strong> in plain-text tabular files. Most commonly, these are:</p>
 <ul>
 <li>A <strong>Tab</strong> (<kbd>Tab</kbd>), and such files are often stored with a <strong><code>.tsv</code></strong> extension for Tab-Separated Values (“<strong>TSV</strong> file”).</li>
 <li>A <strong>comma</strong> (<kbd>,</kbd>), and such files are often stored with a <strong><code>.csv</code></strong> extension for Comma-Separated Values (“<strong>CSV</strong> file”).</li>
 </ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Tabs or spaces? Checking with <code>cat -A</code>
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>From the <code>head</code> output above, you can’t tell whether the columns are separated by Tabs or by a bunch of spaces. The <code>-A</code> option of <code>cat</code> makes normally invisible characters visible: Tabs are shown as <code>^I</code>, and the end of each line as <code>$</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> <span class="at">-A</span> metadata.tsv <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>sample_id^Itime^Itreatment$
+S82^I10dpi^Icathemerium$
+S75^I10dpi^Icathemerium$</code></pre>
+<p>So, the columns in this file are separated by single Tab characters.</p>
+</div>
+</div>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Warning</span>Plain-text file extensions are flexible and mostly for human-readability.
+<span class="screen-reader-only">Warning</span>Plain-text file extensions are flexible and mostly for human readability
 </div>
 </div>
 <div class="callout-body-container callout-body">
 <p>All plain-text files are fundamentally the same, i.e. “just plain-text files”. Therefore, <strong>changing the file extension does not change the file itself.</strong> Instead, different file extensions are used primarily to make clear to humans, and to some extent to the computer, what the file contains. This applies to all types of plain-text files, like <code>.txt</code>, <code>.csv</code>, and <code>.tsv</code>, but also sequence file types like <code>.fastq</code> and script files like <code>.R</code> and <code>.sh</code>.</p>
+<p>Note that the same is true for compressed files: removing <code>.gz</code> from a file name (e.g., renaming <code>annot.gtf.gz</code> to <code>annot.gtf</code>) does <strong>not</strong> decompress the file — it only makes its name misleading.</p>
 </div>
 </div>
 </section>
@@ -4800,7 +4787,7 @@ S75^I10dpi^Icathemerium$</code></pre>
 <h3 data-number="4.2" class="anchored" data-anchor-id="grep-to-print-lines-that-match-a-pattern"><span class="header-section-number">4.2</span> <code>grep</code> to print lines that match a pattern</h3>
 <p>The <code>grep</code> command is extremely useful and will find specific text (or text patterns) in a file. By default, it will <strong>print each line that contains a “match” in full</strong>.</p>
 <p>Its basic syntax is <code>grep &quot;&lt;pattern&gt;&quot; &lt;file-path&gt;</code>. For example, to print all lines from <code>metadata.tsv</code> that contain “cathemerium”:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="st">&quot;cathemerium&quot;</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="st">&quot;cathemerium&quot;</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>S82     10dpi   cathemerium
 S75     10dpi   cathemerium
 S79     10dpi   cathemerium
@@ -4810,29 +4797,24 @@ S67     24hpi   cathemerium
 S70     24hpi   cathemerium</code></pre>
 <p>While not always necessary, it’s good practice to consistently <strong>use quotes</strong> (<code>&quot;...&quot;</code>) around the search pattern like above<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
 <p>Instead of printing matching lines, you can also <strong>count</strong> them with the <code>-c</code> option. For example, how many control samples are in the dataset?</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-c</span> <span class="st">&quot;control&quot;</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb43"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-c</span> <span class="st">&quot;control&quot;</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>7</code></pre>
-<p>The option <code>-v</code> <strong>inverts</strong> <code>grep</code>’s behavior and prints all lines that <strong>do not match</strong> the pattern. For example, you can combine <code>-v</code> and <code>-c</code> to count lines that do not contain the text “control”:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb43"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-vc</span> <span class="st">&quot;control&quot;</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>16</code></pre>
-<p>Note that this count of 16 includes the <em>header</em> line, which doesn’t contain “control” either — so the dataset has 15 non-control samples.</p>
-<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-3-grep" class="level4 exercise">
-<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-3-grep"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Exercise 3: <code>grep</code></h4>
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-2-grep" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-2-grep"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Exercise 2: <code>grep</code></h4>
 <ol type="a">
 <li><p>What output do you expect from the command below? Check your answer by executing the command.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb45"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-vc</span> <span class="st">&quot;contro&quot;</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb45"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-c</span> <span class="st">&quot;contro&quot;</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <!------
 <details><summary>  _Click for the solution._ </summary>
 
 The command gives the same output as the previous example:
-the shorter pattern `contro` still matches the `control` lines,
-so `-v` still excludes exactly those lines:
+the shorter pattern `contro` still matches all the `control` lines:
 
 ```bash
-grep -vc "contro" metadata.tsv
+grep -c "contro" metadata.tsv
 ```
 ```bash-out
-16
+7
 ```
 </details>
 ----></li>
@@ -4848,7 +4830,13 @@ This behavior is very different from globbing with the `*` wildcard,
 where the pattern has to match the entire file name!
 </details>
 ----></li>
-<li><p>Count the number of <code>relictum</code> samples at the <code>24hpi</code> time point with a single line of code. <em>(You won’t need any new <code>grep</code> options.)</em></p>
+<li><p><strong>Bonus</strong>: Count the number of <code>relictum</code> samples at the <code>24hpi</code> time point with a single line of code.</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-lightbulb" aria-label="lightbulb"></i> Click here for a hint.</p>
+</summary>
+<p>You can pipe the output of one <code>grep</code> command into another <code>grep</code> command!</p>
+</details>
 <!------
 <details><summary>  _Click for the solution._ </summary>
 
@@ -4866,7 +4854,7 @@ grep "24hpi" metadata.tsv | grep -c "relictum"
 </ol>
 </section>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="true" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="true" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -4875,15 +4863,16 @@ grep "24hpi" metadata.tsv | grep -c "relictum"
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-4" class="callout-4-contents callout-collapse collapse show">
+<div id="callout-5" class="callout-5-contents callout-collapse collapse show">
 <div class="callout-body-container callout-body">
 <p><code>grep</code> has many other useful options, such as:</p>
 <ul>
-<li><code>-i</code> to ignore case (uppercase vs. lowercase) when searching</li>
-<li><code>-n</code> to print the line number for each matching line</li>
-<li><code>-A &lt;n&gt;</code> and <code>-B &lt;n&gt;</code> to print <code>n</code> lines after and before each match</li>
-<li><code>-w</code> to make a pattern match whole “words” only</li>
-<li><code>-r</code> to search files in directories recursively (note that even without <code>-r</code>, <code>grep</code> can operate on multiple files)</li>
+<li><code>-v</code> to <strong>invert</strong> the matching, i.e. print all lines that do <strong>not</strong> match the pattern.</li>
+<li><code>-i</code> to <strong>ignore case</strong> (uppercase vs. lowercase) when searching.</li>
+<li><code>-n</code> to print the <strong>line number</strong> for each matching line.</li>
+<li><code>-A &lt;n&gt;</code> and <code>-B &lt;n&gt;</code> to print <code>n</code> lines <strong>after</strong> and <strong>before</strong> each match.</li>
+<li><code>-w</code> to make a pattern match whole “<strong>words</strong>” only.</li>
+<li><code>-r</code> to search files in directories <strong>recursively</strong><a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>.</li>
 </ul>
 </div>
 </div>
@@ -4891,7 +4880,7 @@ grep "24hpi" metadata.tsv | grep -c "relictum"
 </section>
 <section id="operating-on-compressed-files" class="level3" data-number="4.3">
 <h3 data-number="4.3" class="anchored" data-anchor-id="operating-on-compressed-files"><span class="header-section-number">4.3</span> Operating on compressed files</h3>
-<p>The <code>zcat</code> command is the counterpart of <code>cat</code> for gzip-compressed files: it prints their contents in human-readable form. By piping <code>zcat</code>’s output into <code>grep</code> or into any other command, you can therefore use all the tools you’ve learned about with compressed files:</p>
+<p>The <code>zcat</code> command is the counterpart of <code>cat</code> for gzip-compressed files: it prints their contents in human-readable form. By piping <code>zcat</code>’s output into <code>grep</code> or into any other command, you can therefore use all the tools you’ve learned about even with compressed files:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb46"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Search for cecropin-related lines in the GTF file:</span></span>
 <span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> annot.gtf.gz <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;cecropin&quot;</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>NC_068937.1     Gnomon  gene    43201550        43201918        .       +       .       gene_id &quot;LOC120426347&quot;; transcript_id &quot;&quot;; db_xref &quot;GeneID:120426347&quot;; description &quot;cecropin-A2-like&quot;; gbkey &quot;Gene&quot;; gene &quot;LOC120426347&quot;; gene_biotype &quot;protein_coding&quot;;
@@ -4908,26 +4897,42 @@ NC_068937.1     Gnomon  exon    43201550        43201708        .       +       
 </div>
 </div>
 </section>
-<section id="selecting-columns-using-cut" class="level3" data-number="4.4">
-<h3 data-number="4.4" class="anchored" data-anchor-id="selecting-columns-using-cut"><span class="header-section-number">4.4</span> Selecting columns using <code>cut</code></h3>
-<p>The <code>cut</code> command selects, or we could say “cuts out”, one or more columns from a tabular file. To select columns, use its <strong><code>-f</code></strong> (“field”) option to specify the <strong>desired column(s)</strong>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb48"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Select the second column of the file:</span></span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cut</span> <span class="at">-f</span> 2 metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>time
-10dpi
-10dpi
-10dpi
-10dpi
-10dpi
-10dpi
-# [...output truncated...]</code></pre>
-<p>In many cases, with <code>cut</code> and other commands alike, it can be useful to <strong>pipe the output to <code>head</code></strong> to quickly see if your command works without printing a large number (sometimes thousands) of lines:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb50"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cut</span> <span class="at">-f</span> 2 metadata.tsv <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>time
-10dpi
-10dpi</code></pre>
+<section id="combining-cut-sort-and-uniq-to-create-a-list" class="level3" data-number="4.4">
+<h3 data-number="4.4" class="anchored" data-anchor-id="combining-cut-sort-and-uniq-to-create-a-list"><span class="header-section-number">4.4</span> Combining <code>cut</code>, <code>sort</code>, and <code>uniq</code> to create a list</h3>
+<p>Say you want an <strong>alphabetically sorted list of distinct treatments</strong> in <code>metadata.tsv</code>. (That’s a bit trivial here, because this file is small enough to see that information at a glance — but the same approach works on a huge genome annotation file.) To do this, you’ll need to learn about three new commands:</p>
+<ul>
+<li><strong><code>cut</code></strong> to select, or “cut out”, one or more columns from a tabular file.</li>
+<li><strong><code>sort</code></strong> to sort/order/arrange rows — by default alphabetically.</li>
+<li><strong><code>uniq</code></strong> to remove duplicates (i.e., keep all distinct/unique entries) from a sorted file/list.</li>
+</ul>
+<p>We’ll build up a small “pipeline” to do this step by step, piping the output into <code>head</code> at every step. Piping output into <code>head</code> is a handy way to quickly check whether a command works, without printing a large number of lines.</p>
+<p>First, we need to get rid of the header line — otherwise, the column name <code>treatment</code> would end up in our list as if it were one of the treatments. We can do this with a neat <code>tail</code> trick that tells it to <strong>start at</strong> a specific line using <code>-n +&lt;starting-line&gt;</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb48"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co"># &#39;-n +2&#39; tells tail to start at line 2:</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">head</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>S82     10dpi   cathemerium
+S75     10dpi   cathemerium
+S79     10dpi   cathemerium
+S83     10dpi   cathemerium
+S78     10dpi   control
+S84     10dpi   control
+S77     10dpi   control
+S81     10dpi   control
+S76     10dpi   relictum
+S80     10dpi   relictum</code></pre>
+<p>Second, select the column of interest with <code>cut</code>, using its <strong><code>-f</code></strong> (“field”) option to specify the desired column(s):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb50"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">head</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>cathemerium
+cathemerium
+cathemerium
+cathemerium
+control
+control
+control
+control
+relictum
+relictum</code></pre>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -4936,7 +4941,7 @@ NC_068937.1     Gnomon  exon    43201550        43201708        .       +       
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>To select <strong>multiple columns</strong>, use a comma-separated list, or a range with <code>-</code>:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb52"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cut</span> <span class="at">-f</span> 1,3 metadata.tsv <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -4955,42 +4960,8 @@ S75     10dpi</code></pre>
 </div>
 </div>
 </div>
-</section>
-<section id="combining-cut-sort-and-uniq-to-create-a-list" class="level3" data-number="4.5">
-<h3 data-number="4.5" class="anchored" data-anchor-id="combining-cut-sort-and-uniq-to-create-a-list"><span class="header-section-number">4.5</span> Combining <code>cut</code>, <code>sort</code>, and <code>uniq</code> to create a list</h3>
-<p>Say you want an <strong>alphabetically sorted list of distinct treatments</strong> in <code>metadata.tsv</code>. (That’s a bit trivial here, because this file is small enough to see that information at a glance — but the same approach works on a huge genome annotation file.) To do this, you’ll need to learn about two new commands:</p>
-<ul>
-<li><strong><code>sort</code></strong> to sort/order/arrange rows — by default alphabetically, comparing text character by character (so <code>10</code> would come before <code>9</code>!).</li>
-<li><strong><code>uniq</code></strong> to remove duplicates (i.e., keep all distinct/unique entries) from a sorted file/list.</li>
-</ul>
-<p>We’ll build up a small “pipeline” to do this step by step, piping the output into <code>head</code> at every step.</p>
-<p>First, we need to get rid of the header line! We can do this with a neat <code>tail</code> trick, where we can tell it to <strong>start at</strong> a specific line using <code>-n +&lt;starting-line&gt;</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb57"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="co"># &#39;-n +2&#39; tells tail to start at line 2:</span></span>
-<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">head</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>S82     10dpi   cathemerium
-S75     10dpi   cathemerium
-S79     10dpi   cathemerium
-S83     10dpi   cathemerium
-S78     10dpi   control
-S84     10dpi   control
-S77     10dpi   control
-S81     10dpi   control
-S76     10dpi   relictum
-S80     10dpi   relictum</code></pre>
-<p>Second, select the column of interest with <code>cut</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb59"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">head</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>cathemerium
-cathemerium
-cathemerium
-cathemerium
-control
-control
-control
-control
-relictum
-relictum</code></pre>
 <p>Third, use <code>sort</code> to alphabetically sort the result:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb61"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">head</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb57"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">head</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>cathemerium
 cathemerium
 cathemerium
@@ -5002,19 +4973,19 @@ control
 control
 control</code></pre>
 <p>Finally, use <code>uniq</code> to keep only distinct values — and get rid of <code>head</code>, since the command is now complete:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb63"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb59"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>cathemerium
 control
 relictum</code></pre>
 <section id="generating-a-frequency-table" class="level4">
 <h4 class="anchored" data-anchor-id="generating-a-frequency-table">Generating a frequency table</h4>
 <p>With a very small modification to this pipeline, you can generate a “frequency table” instead of a simple list: a table with the number of times each distinct value occurs. You only have to add <code>uniq</code>’s <code>-c</code> option (for <strong>c</strong>ount):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb65"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb61"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>      7 cathemerium
       7 control
       8 relictum</code></pre>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -5023,10 +4994,11 @@ relictum</code></pre>
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>And this frequency table can in turn be sorted by most frequent occurrence — to do this, use <code>sort</code>’s <code>-n</code> option to sort numerically (otherwise, numbers are sorted as text, as explained above) together with <code>-r</code> for reverse sorting so the largest numbers go first:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb67"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-nr</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>And this frequency table can in turn be sorted by most frequent occurrence.</p>
+<p>By default, <code>sort</code> sorts alphabetically, even when lines start with numbers: it compares text character by character, so <code>10</code> would come before <code>9</code> (because <code>1</code> comes before <code>9</code>). To sort numbers by their value instead, use <code>sort</code>’s <code>-n</code> option. Here, combine it with <code>-r</code> for reverse sorting so the largest numbers go first:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb63"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-nr</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>      8 relictum
       7 control
       7 cathemerium</code></pre>
@@ -5034,7 +5006,7 @@ relictum</code></pre>
 </div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -5043,29 +5015,29 @@ relictum</code></pre>
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-7" class="callout-7-contents callout-collapse collapse">
+<div id="callout-8" class="callout-8-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>Above, we used <code>sort</code> to simply sort a list. More generally, <code>sort</code> will by default perform sorting based on the entire line. To sort based on one or more columns, the way you’ve probably done in Excel, use the <code>-k</code> option — for example:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb69"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort based on the third column:</span></span>
-<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-k3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb65"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort based on the third column:</span></span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-k3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><code>-k</code> takes a start and a stop column to sort by, so if you want to strictly sort only based on one column at a time, use this syntax:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb70"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Explicitly indicate to sort based on the third column only:</span></span>
-<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-k3,3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb66"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Explicitly indicate to sort based on the third column only:</span></span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-k3,3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>To sort first by one column and <em>then</em> by another, use <code>-k</code> multiple times:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb71"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort first by the third column, then break ties using the second column:</span></span>
-<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-k3,3</span> <span class="at">-k2,2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb67"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort first by the third column, then break ties using the second column:</span></span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-k3,3</span> <span class="at">-k2,2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
 </section>
-<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-4-cut-sort-and-uniq" class="level4 exercise">
-<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-4-cut-sort-and-uniq"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Exercise 4: <code>cut</code>, <code>sort</code>, and <code>uniq</code></h4>
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-3-cut-sort-and-uniq" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-3-cut-sort-and-uniq"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Exercise 3: <code>cut</code>, <code>sort</code>, and <code>uniq</code></h4>
 <ol type="a">
 <li><p>Put the pipeline together. The four pieces below, when combined with pipes (<code>|</code>) in the right order, produce a frequency table of the number of samples per time point. In which order should they go? Write out the full command and run it — how many <code>10dpi</code> and how many <code>24hpi</code> samples are there?</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb72"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span></span>
-<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cut</span> <span class="at">-f</span> 2</span>
-<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a><span class="fu">uniq</span> <span class="at">-c</span></span>
-<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb68"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span></span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cut</span> <span class="at">-f</span> 2</span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a><span class="fu">uniq</span> <span class="at">-c</span></span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <!----
 <details><summary>  _Click for the solution._ </summary>
 The file comes first, then we select the column, then sort, then count:
@@ -5082,8 +5054,8 @@ So the two time points do _not_ have the same number of samples:
 there are 12 `10dpi` samples and 10 `24hpi` samples.
 </details>
 ----></li>
-<li><p>What if you forget <code>sort</code>? Say you run the treatment frequency table again, but leave out <code>sort</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb73"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<li><p>What if you forget <code>sort</code>? Say you run the pipeline for the treatment frequency table again, but leave out <code>sort</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb69"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>What do you expect to happen?</p>
 <ol type="A">
 <li>The same output as before — <code>sort</code> does not affect the counts.</li>
@@ -5115,9 +5087,10 @@ This is why `sort` almost always comes right before `uniq`.
 </ol>
 </section>
 <hr style="height:1pt; visibility:hidden;">
-<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-bonus-exercise-duplicate-sample-ids" class="level4 exercise">
-<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-bonus-exercise-duplicate-sample-ids"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Bonus exercise: duplicate sample IDs</h4>
-<p>Using a pipeline similar to those above, check whether any duplicate sample IDs are present in <code>metadata.tsv</code>.</p>
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-bonus-exercise-sample-ids-and-study-design" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-bonus-exercise-sample-ids-and-study-design"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Bonus exercise: sample IDs and study design</h4>
+<ol type="a">
+<li><p>Using a pipeline similar to those above, check whether any duplicate sample IDs are present in <code>metadata.tsv</code>.</p>
 <!----
 <details><summary>  _Click for the solution._ </summary>
 
@@ -5135,7 +5108,39 @@ tail -n +2 metadata.tsv | cut -f 1 | sort | uniq -c | sort -nr | head -n 1
 
 Omitting the `head -n 1` or even the `sort -nr` would also work in this case.
 </details>
----->
+----></li>
+<li><p>The experiment has 2 time points and 3 treatments. Modify the treatment frequency table pipeline so that it counts the number of samples for each <em>combination</em> of time point and treatment. Is the design balanced, i.e. does every combination have the same number of samples?</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-lightbulb" aria-label="lightbulb"></i> Click here for a hint.</p>
+</summary>
+<p><code>cut</code> can select multiple columns at once: list the column numbers separated by commas (e.g. <code>cut -f 1,3</code> selects columns 1 and 3), or specify a range with a dash (e.g. <code>cut -f 1-2</code> selects columns 1 through 2).</p>
+</details>
+<!----
+<details><summary>  _Click for the solution._ </summary>
+
+Select both the time point (column 2) and treatment (column 3) columns
+with `cut -f 2,3` (or `cut -f 2-3`), and keep the rest of the pipeline the same:
+
+```bash
+tail -n +2 metadata.tsv | cut -f 2,3 | sort | uniq -c
+```
+```bash-out
+      4 10dpi   cathemerium
+      4 10dpi   control
+      4 10dpi   relictum
+      3 24hpi   cathemerium
+      3 24hpi   control
+      4 24hpi   relictum
+```
+
+Because `uniq` compares entire lines,
+it now counts each distinct combination of time point and treatment.
+The design is not fully balanced:
+at 24hpi, there are only 3 samples for both the cathemerium and control treatments.
+</details>
+----></li>
+</ol>
 </section>
 </section>
 </section>
@@ -5151,10 +5156,10 @@ Omitting the `head -n 1` or even the `sort -nr` would also work in this case.
 <p>What about those <strong>text “streams”</strong> mentioned in the quote above? Rather than loading entire files into memory, most Unix tools process them one line at a time. (A notable exception is <code>sort</code>, which has to see all lines before it can output anything — though for large files, it cleverly uses temporary files rather than loading everything into memory.)</p>
 <p>This is very useful when working with large files in particular! For example, <em><code>head</code> will print results instantly even for a 10 TB file</em> that could never be loaded into memory. By contrast, try to take a peek at such a file with a GUI text editor, and it will freeze or refuse to open the file.</p>
 <p>Here is one other example, combining the <code>cat</code> command with globbing and redirection. This command would concatenate (combine) all your R1 FASTQ files into a single file. This code is elegantly short, and will run quickly without using much computer memory!</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb74"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="co"># [Don&#39;t run this - for illustration only]</span></span>
-<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> ../../garrigos/fastq/<span class="pp">*</span>R1.fastq.gz <span class="op">&gt;</span> all_R1.fastq.gz</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb70"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="co"># [Don&#39;t run this - for illustration only]</span></span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> ../../garrigos/fastq/<span class="pp">*</span>R1.fastq.gz <span class="op">&gt;</span> all_R1.fastq.gz</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="true" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="true" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -5163,7 +5168,7 @@ Omitting the `head -n 1` or even the `sort -nr` would also work in this case.
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-8" class="callout-8-contents callout-collapse collapse show">
+<div id="callout-9" class="callout-9-contents callout-collapse collapse show">
 <div class="callout-body-container callout-body">
 <ul>
 <li>FASTQ files can be concatenated freely since every read is a “stand-alone” unit of 4 lines.</li>
@@ -5176,11 +5181,11 @@ Omitting the `head -n 1` or even the `sort -nr` would also work in this case.
 <section id="dont-redirect-back-to-the-input-file" class="level3" data-number="5.2">
 <h3 data-number="5.2" class="anchored" data-anchor-id="dont-redirect-back-to-the-input-file"><span class="header-section-number">5.2</span> Don’t redirect back to the input file!</h3>
 <p>One thing you should never do is redirect the output of a command “back” to its own input file. This doesn’t just fail — it <strong>destroys the input file</strong>, because the shell empties the file to prepare it for the output <em>before</em> the command has had a chance to read it.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb75"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="co"># [Don&#39;t run this - for illustration only]</span></span>
-<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a><span class="co"># You should NEVER run something like this:</span></span>
-<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span> metadata.tsv <span class="op">&gt;</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb71"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="co"># [Don&#39;t run this - for illustration only]</span></span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a><span class="co"># You should NEVER run something like this:</span></span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span> metadata.tsv <span class="op">&gt;</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-10-contents" aria-controls="callout-10" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -5189,19 +5194,19 @@ Omitting the `head -n 1` or even the `sort -nr` would also work in this case.
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-9" class="callout-9-contents callout-collapse collapse">
+<div id="callout-10" class="callout-10-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>Therefore, if you really want to edit the original file instead of creating a separate edited copy, you will need two steps:</p>
 <ol type="1">
 <li>Redirect to a new, edited copy of the input file.</li>
 <li>Rename the copy to overwrite the original file.</li>
 </ol>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb76"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="co"># [Don&#39;t run this - for illustration only]</span></span>
-<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1 - redirect to a new file:</span></span>
-<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span> metadata.tsv <span class="op">&gt;</span> metadata_sorted.tsv</span>
-<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb76-5"><a href="#cb76-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2 - rename the new file to overwrite the original (if really needed!)</span></span>
-<span id="cb76-6"><a href="#cb76-6" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> metadata_sorted.tsv metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb72"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="co"># [Don&#39;t run this - for illustration only]</span></span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1 - redirect to a new file:</span></span>
+<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span> metadata.tsv <span class="op">&gt;</span> metadata_sorted.tsv</span>
+<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2 - rename the new file to overwrite the original (if really needed!)</span></span>
+<span id="cb72-6"><a href="#cb72-6" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> metadata_sorted.tsv metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>However, I generally recommend that whenever you edit files, you keep both the original and the edited version — so you won’t typically need the above roundabout method.</p>
 </div>
 </div>
@@ -5223,6 +5228,7 @@ Garrigós, Marta, Guillem Ylla, Josué Martínez-de la Puente, Jordi Figuerola, 
 <ol>
 <li id="fn1"><p> This works because OSC, like most Linux systems, has a helper program called <code>lesspipe</code> set up — on some other computers, <code>less</code> may show you the same gibberish that <code>head</code> did.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn2"><p> Use <em>double</em> quotes by default, like in the examples. <em>Single</em> quotes generally work too, but they behave differently in some situations.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p> Note that even without <code>-r</code>, <code>grep</code> can operate on multiple files: you can give multiple file names as arguments or use a wildcard.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section></div></main> <!-- /main -->
 <script>
