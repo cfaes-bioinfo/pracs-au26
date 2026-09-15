@@ -343,6 +343,9 @@ you can **move around** in the file in several ways --- for example:
 - By pressing <kbd>G</kbd> to go to the end of the file,
   and <kbd>g</kbd> to go (back) to the top
 
+- By pressing <kbd>/</kbd>, typing a search pattern, and pressing <kbd>Enter</kbd>
+  to jump to the next match (then <kbd>n</kbd> for the next and <kbd>N</kbd> for the previous match)
+
 To **exit/quit** `less` and get your shell prompt back, press <kbd>q</kbd>.
 
 ::: exercise
@@ -353,7 +356,9 @@ Open the FASTQ file with `less S63_R1.fastq.gz`, then:
 a. Move around a bit using the keys listed above.
 b. Among the first reads, you should already spot some unusual-looking ones.
    What is unusual about them?
-c. Press <kbd>q</kbd> to quit `less` and get your prompt back.
+c. **Bonus**: Use `less`'s search function to jump to more reads like that.
+   What pattern did you search for?
+d. Press <kbd>q</kbd> to quit `less` and get your prompt back.
 
 <!---
 <details><summary>{{< fa check-circle >}} Click for the solution.</summary>
@@ -367,6 +372,9 @@ NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 +
 ###################################
 ```
+
+To jump to more of these reads, search for a stretch of `N`s:
+type `/NNNNN`, press <kbd>Enter</kbd>, and then press <kbd>n</kbd> to go to each next match.
 </details>
 ---->
 :::
@@ -388,6 +396,7 @@ wc -l metadata.tsv
 
 This simple operation can be surprisingly useful:
 the number of lines **reflects the number of entries** in many file types.
+For example, `metadata.tsv` has 23 lines: one header line plus one line for each of the 22 samples.
 
 ## Redirection and the pipe
 
@@ -454,57 +463,47 @@ My second line
 My third line
 ```
 
+::: {.callout-warning appearance="simple"}
+Because `>` empties an existing file _before_ the command even runs,
+never redirect output back to the command's own input file:
+`head metadata.tsv > metadata.tsv` would leave you with an empty `metadata.tsv`.
+(More on this in the [self-study section](#dont-redirect-back-to-the-input-file) at the end.)
+:::
+
 ### The pipe
 
-Say that you want to count the number of entries (files and subdirs)
-in a directory. You could do that as follows:
+Say that you want to count the number of FASTQ files in the `garrigos/fastq` dir.
+You could do that as follows:
 
 ```bash
+# [Hypothetical example, don't run this]
 # First redirect 'ls' output to a file:
-ls > filelist.txt
+ls ../../garrigos/fastq > fastq-files.txt
 
-# Then count the number of lines, i.e. the number of files in the working dir:
-wc -l filelist.txt
+# Then count the number of lines, i.e. the number of files in that dir:
+wc -l fastq-files.txt
 ```
 ```bash-out
-12 filelist.txt
+44 fastq-files.txt
+```
+```bash
+# Now remove the file you no longer need
+rm fastq-files.txt
 ```
 
-(Your count may differ slightly, depending on what you did in the previous lecture.
-This works because `ls` switches to printing one file per line whenever its
-output is not going straight to the screen, such as when you redirect or pipe it.)
+_(This count is valid because `ls` prints one entry per line whenever its output
+doesn't go straight to the screen, such as when you redirect or pipe it.)_
 
-That worked, but you needed two separate lines of code,
-and are left with a file `filelist.txt` that you probably want to remove,
-since it has served its sole purpose:
-
-```bash
-rm filelist.txt
-```
-
-A more convenient way to perform this kind of operation is with a "**pipe**",
-as follows:
+Above, we essentially wrote an "intermediate result" (`fastq-files.txt`) to file,
+which we later removed. What if you could avoid having to write this intermediate file?
+You can do so with a "**pipe**":
 
 ```bash
-ls | wc -l
+ls ../../garrigos/fastq | wc -l
 ```
 ```bash-out
-11
+44
 ```
-
-<details class="details-quiz">
-<summary>Why is this count one lower than the count in `filelist.txt` above? *(Click to see the answer)*</summary>
-
-_The answer will be added after class._
-
-<!----
-When you ran `ls > filelist.txt`, the shell created the (still empty) file `filelist.txt`
-_before_ running `ls` --- so `ls` listed that file too.
-Because you removed `filelist.txt` afterwards, it isn't included this time.
-(This "the shell prepares the output file first" behavior is also why you should
-never redirect back to an input file: see the self-study section at the end.)
----->
-</details>
 
 With the pipe, the output of the command on the left-hand side
 (a file listing, in this case) is **redirected into the command on the right-hand side**
@@ -515,11 +514,11 @@ Like many others, the `wc` command will gladly accept input that way
 Pipes are useful because they avoid having to write/read intermediate files ---
 this saves typing, makes the operation quicker, and reduces file clutter.
 In the example above,
-you don't need to make a `filelist.txt` file to count the number of files.
+you don't need to make a `fastq-files.txt` file to count the number of files.
 We'll see pipes in action a bunch more in the next section.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 2: the pipe
+#### {{< fa user-edit >}} Self-study exercise: the pipe
 
 a. What do you think the command below does?
    Could you divide the resulting count by 4 to get the total number of reads
@@ -529,7 +528,6 @@ a. What do you think the command below does?
    cat S63_R1.fastq.gz S63_R2.fastq.gz | wc -l
    ```
 
-   <!-----
    <details><summary> {{< fa check-circle >}} Click for the solution. </summary>
 
    Like many shell commands, `cat` accepts multiple arguments,
@@ -550,32 +548,25 @@ a. What do you think the command below does?
    since the files are compressed:
    compressed and uncompressed line counts for a file are not the same.
    </details>
-   ---->
 
-b. A classmate wants to count the entries in their working dir,
+b. A classmate wants to pipe the output of `ls` into `wc`,
    but accidentally types `>` instead of `|`:
 
    ```bash
-   ls > wc -l
+   ls > wc
    ```
 
    Without running it: what do you think will happen?
    Then run it, and check what happened with `ls` and `cat wc`.
 
-   <!-----
    <details><summary> {{< fa check-circle >}} Click for the solution. </summary>
 
-   Nothing is printed, and no counting happens. Instead:
-
-   - The shell treats the word right after `>` as the name of the output file,
-     so it creates a _file_ called `wc`.
-   - The remaining `-l` is simply passed on to `ls` as an option.
-
-   So this command is equivalent to `ls -l > wc`: the file `wc` now contains
-   a long-format file listing (which even includes `wc` itself!).
+   Nothing is printed, and no counting happens.
+   Instead, the shell treats the word right after `>` as the name of the output file,
+   so it creates a _file_ called `wc` that contains the file listing
+   (which even includes `wc` itself!).
    Remove the file with `rm wc`.
    </details>
-   ---->
 :::
 
 ## Unix data tools
@@ -599,39 +590,16 @@ and discussing tabular plain-text files.
 
 The examples below will use the `metadata.tsv` file that you copied into your
 sandbox at the start of this lecture.
-Let's take another look at its first 10 lines:
+Let's take another look at its first few lines:
 
 ```bash
-head metadata.tsv
+head -n 3 metadata.tsv
 ```
 ```bash-out
 sample_id       time    treatment
 S82     10dpi   cathemerium
 S75     10dpi   cathemerium
-S79     10dpi   cathemerium
-S83     10dpi   cathemerium
-S78     10dpi   control
-S84     10dpi   control
-S77     10dpi   control
-S81     10dpi   control
-S76     10dpi   relictum
 ```
-
-Now, let's look at its first few lines with `cat -A`,
-which makes normally invisible characters visible:
-Tabs are shown as `^I`, and the end of each line as `$`:
-
-```bash
-cat -A metadata.tsv | head -n 3
-```
-```bash-out
-sample_id^Itime^Itreatment$
-S82^I10dpi^Icathemerium$
-S75^I10dpi^Icathemerium$
-```
-
-So, the columns in this file are separated by single Tab characters,
-and not by a bunch of spaces, as the earlier output may have suggested.
 
 "Tabular" files like this one contain data that is arranged in a
 rows-and-columns format, i.e. as in a table or an Excel spreadsheet.
@@ -644,8 +612,28 @@ Most commonly, these are:
 - A **comma** (<kbd>,</kbd>), and such files are often stored with a **`.csv`** extension for
   Comma-Separated Values ("**CSV** file").
 
+::: callout-note
+#### Tabs or spaces? Checking with `cat -A`
+
+From the `head` output above, you can't tell whether the columns are separated
+by Tabs or by a bunch of spaces.
+The `-A` option of `cat` makes normally invisible characters visible:
+Tabs are shown as `^I`, and the end of each line as `$`:
+
+```bash
+cat -A metadata.tsv | head -n 3
+```
+```bash-out
+sample_id^Itime^Itreatment$
+S82^I10dpi^Icathemerium$
+S75^I10dpi^Icathemerium$
+```
+
+So, the columns in this file are separated by single Tab characters.
+:::
+
 ::: callout-warning
-#### Plain-text file extensions are flexible and mostly for human-readability.
+#### Plain-text file extensions are flexible and mostly for human readability
 
 All plain-text files are fundamentally the same, i.e. "just plain-text files".
 Therefore, **changing the file extension does not change the file itself.**
@@ -653,6 +641,10 @@ Instead, different file extensions are used primarily to make clear
 to humans, and to some extent to the computer, what the file contains.
 This applies to all types of plain-text files, like `.txt`, `.csv`, and `.tsv`,
 but also sequence file types like `.fastq` and script files like `.R` and `.sh`.
+
+Note that the same is true for compressed files:
+removing `.gz` from a file name (e.g., renaming `annot.gtf.gz` to `annot.gtf`)
+does **not** decompress the file --- it only makes its name misleading.
 :::
 
 ### `grep` to print lines that match a pattern
@@ -693,44 +685,27 @@ grep -c "control" metadata.tsv
 7
 ```
 
-The option `-v` **inverts** `grep`'s behavior and prints all lines that
-**do not match** the pattern.
-For example, you can combine `-v` and `-c` to count lines that do not contain
-the text "control":
-
-```bash
-grep -vc "control" metadata.tsv
-```
-```bash-out
-16
-```
-
-Note that this count of 16 includes the _header_ line,
-which doesn't contain "control" either ---
-so the dataset has 15 non-control samples.
-
 ::: exercise
-#### {{< fa user-edit >}} Exercise 3: `grep`
+#### {{< fa user-edit >}} Exercise 2: `grep`
 
 a. What output do you expect from the command below?
    Check your answer by executing the command.
 
    ```bash
-   grep -vc "contro" metadata.tsv
+   grep -c "contro" metadata.tsv
    ```
 
    <!------
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
    The command gives the same output as the previous example:
-   the shorter pattern `contro` still matches the `control` lines,
-   so `-v` still excludes exactly those lines:
+   the shorter pattern `contro` still matches all the `control` lines:
 
    ```bash
-   grep -vc "contro" metadata.tsv
+   grep -c "contro" metadata.tsv
    ```
    ```bash-out
-   16
+   7
    ```
    </details>
    ---->
@@ -750,8 +725,12 @@ b. Based on the output of the above command, how do you think `grep`'s matching
    </details>
    ---->
 
-c. Count the number of `relictum` samples at the `24hpi` time point
-   with a single line of code. _(You won't need any new `grep` options.)_
+c. **Bonus**: Count the number of `relictum` samples at the `24hpi` time point
+   with a single line of code.
+
+   <details><summary>{{< fa lightbulb >}} Click here for a hint.</summary>
+   You can pipe the output of one `grep` command into another `grep` command!
+   </details>
 
    <!------
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
@@ -774,12 +753,14 @@ c. Count the number of `relictum` samples at the `24hpi` time point
 
 `grep` has many other useful options, such as:
 
-- `-i` to ignore case (uppercase vs. lowercase) when searching
-- `-n` to print the line number for each matching line
-- `-A <n>` and `-B <n>` to print `n` lines after and before each match
-- `-w` to make a pattern match whole "words" only
-- `-r` to search files in directories recursively
-  (note that even without `-r`, `grep` can operate on multiple files)
+- `-v` to **invert** the matching, i.e. print all lines that do **not** match the pattern.
+- `-i` to **ignore case** (uppercase vs. lowercase) when searching.
+- `-n` to print the **line number** for each matching line.
+- `-A <n>` and `-B <n>` to print `n` lines **after** and **before** each match.
+- `-w` to make a pattern match whole "**words**" only.
+- `-r` to search files in directories **recursively**^[
+  Note that even without `-r`, `grep` can operate on multiple files:
+  you can give multiple file names as arguments or use a wildcard.].
 :::
 
 ### Operating on compressed files
@@ -787,7 +768,7 @@ c. Count the number of `relictum` samples at the `24hpi` time point
 The `zcat` command is the counterpart of `cat` for gzip-compressed files:
 it prints their contents in human-readable form.
 By piping `zcat`'s output into `grep` or into any other command,
-you can therefore use all the tools you've learned about with compressed files:
+you can therefore use all the tools you've learned about even with compressed files:
 
 ```bash
 # Search for cecropin-related lines in the GTF file:
@@ -803,39 +784,62 @@ NC_068937.1     Gnomon  exon    43201550        43201708        .       +       
 In this week's exercises and next week's assignment, you'll further explore this GTF file.
 :::
 
-### Selecting columns using `cut`
+### Combining `cut`, `sort`, and `uniq` to create a list
 
-The `cut` command selects, or we could say "cuts out",
-one or more columns from a tabular file.
-To select columns, use its **`-f`** ("field") option to specify the
-**desired column(s)**:
+Say you want an **alphabetically sorted list of distinct treatments** in `metadata.tsv`.
+(That's a bit trivial here, because this file is small enough to see that information
+at a glance --- but the same approach works on a huge genome annotation file.)
+To do this, you'll need to learn about three new commands:
 
-```bash
-# Select the second column of the file:
-cut -f 2 metadata.tsv
-```
-```bash-out
-time
-10dpi
-10dpi
-10dpi
-10dpi
-10dpi
-10dpi
-# [...output truncated...]
-```
+- **`cut`** to select, or "cut out", one or more columns from a tabular file.
+- **`sort`** to sort/order/arrange rows --- by default alphabetically.
+- **`uniq`** to remove duplicates (i.e., keep all distinct/unique entries)
+  from a sorted file/list.
 
-In many cases, with `cut` and other commands alike,
-it can be useful to **pipe the output to `head`** to quickly see if your command
-works without printing a large number (sometimes thousands) of lines:
+We'll build up a small "pipeline" to do this step by step,
+piping the output into `head` at every step.
+Piping output into `head` is a handy way to quickly check whether
+a command works, without printing a large number of lines.
+
+First, we need to get rid of the header line --- otherwise, the column name
+`treatment` would end up in our list as if it were one of the treatments.
+We can do this with a neat `tail` trick that tells it to **start at** a specific
+line using `-n +<starting-line>`:
 
 ```bash
-cut -f 2 metadata.tsv | head -n 3
+# '-n +2' tells tail to start at line 2:
+tail -n +2 metadata.tsv | head
 ```
 ```bash-out
-time
-10dpi
-10dpi
+S82     10dpi   cathemerium
+S75     10dpi   cathemerium
+S79     10dpi   cathemerium
+S83     10dpi   cathemerium
+S78     10dpi   control
+S84     10dpi   control
+S77     10dpi   control
+S81     10dpi   control
+S76     10dpi   relictum
+S80     10dpi   relictum
+```
+
+Second, select the column of interest with `cut`,
+using its **`-f`** ("field") option to specify the desired column(s):
+
+```bash
+tail -n +2 metadata.tsv | cut -f 3 | head
+```
+```bash-out
+cathemerium
+cathemerium
+cathemerium
+cathemerium
+control
+control
+control
+control
+relictum
+relictum
 ```
 
 ::: {.callout-note collapse="true"}
@@ -874,60 +878,6 @@ use the `-d` option --- e.g. `-d ,` for a CSV file:
 cut -d , -f 2 my-data.csv
 ```
 :::
-
-### Combining `cut`, `sort`, and `uniq` to create a list
-
-Say you want an **alphabetically sorted list of distinct treatments** in `metadata.tsv`.
-(That's a bit trivial here, because this file is small enough to see that information
-at a glance --- but the same approach works on a huge genome annotation file.)
-To do this, you'll need to learn about two new commands:
-
-- **`sort`** to sort/order/arrange rows --- by default alphabetically,
-  comparing text character by character (so `10` would come before `9`!).
-- **`uniq`** to remove duplicates (i.e., keep all distinct/unique entries)
-  from a sorted file/list.
-
-We'll build up a small "pipeline" to do this step by step,
-piping the output into `head` at every step.
-
-First, we need to get rid of the header line!
-We can do this with a neat `tail` trick,
-where we can tell it to **start at** a specific line using `-n +<starting-line>`:
-
-```bash
-# '-n +2' tells tail to start at line 2:
-tail -n +2 metadata.tsv | head
-```
-```bash-out
-S82     10dpi   cathemerium
-S75     10dpi   cathemerium
-S79     10dpi   cathemerium
-S83     10dpi   cathemerium
-S78     10dpi   control
-S84     10dpi   control
-S77     10dpi   control
-S81     10dpi   control
-S76     10dpi   relictum
-S80     10dpi   relictum
-```
-
-Second, select the column of interest with `cut`:
-
-```bash
-tail -n +2 metadata.tsv | cut -f 3 | head
-```
-```bash-out
-cathemerium
-cathemerium
-cathemerium
-cathemerium
-control
-control
-control
-control
-relictum
-relictum
-```
 
 Third, use `sort` to alphabetically sort the result:
 
@@ -978,10 +928,13 @@ tail -n +2 metadata.tsv | cut -f 3 | sort | uniq -c
 :::{.callout-note collapse="true"}
 #### Sorting the frequency table _(Click to expand)_
 
-And this frequency table can in turn be sorted by most frequent occurrence ---
-to do this, use `sort`'s `-n` option to sort numerically
-(otherwise, numbers are sorted as text, as explained above)
-together with `-r` for reverse sorting so the largest numbers go first:
+And this frequency table can in turn be sorted by most frequent occurrence.
+
+By default, `sort` sorts alphabetically, even when lines start with numbers:
+it compares text character by character,
+so `10` would come before `9` (because `1` comes before `9`).
+To sort numbers by their value instead, use `sort`'s `-n` option.
+Here, combine it with `-r` for reverse sorting so the largest numbers go first:
 
 ```bash
 tail -n +2 metadata.tsv | cut -f 3 | sort | uniq -c | sort -nr
@@ -1022,7 +975,7 @@ tail -n +2 metadata.tsv | sort -k3,3 -k2,2
 :::
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 4: `cut`, `sort`, and `uniq`
+#### {{< fa user-edit >}} Exercise 3: `cut`, `sort`, and `uniq`
 
 a. Put the pipeline together.
    The four pieces below, when combined with pipes (`|`) in the right order,
@@ -1056,7 +1009,7 @@ a. Put the pipeline together.
    ---->
 
 b. What if you forget `sort`?
-   Say you run the treatment frequency table again, but leave out `sort`:
+   Say you run the pipeline for the treatment frequency table again, but leave out `sort`:
 
    ```bash
    tail -n +2 metadata.tsv | cut -f 3 | uniq -c
@@ -1095,29 +1048,65 @@ b. What if you forget `sort`?
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Bonus exercise: duplicate sample IDs
+#### {{< fa user-edit >}} Bonus exercise: sample IDs and study design
 
-Using a pipeline similar to those above,
-check whether any duplicate sample IDs are present in `metadata.tsv`.
+a. Using a pipeline similar to those above,
+   check whether any duplicate sample IDs are present in `metadata.tsv`.
 
-<!----
-<details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+   <!----
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-No duplicate sample IDs are present.
+   No duplicate sample IDs are present.
 
-The most elegant way to see this is by using `sort -nr | head -n 1` at the end:
-if the single sample shown has a count of 1, this means there are no duplicates.
+   The most elegant way to see this is by using `sort -nr | head -n 1` at the end:
+   if the single sample shown has a count of 1, this means there are no duplicates.
 
-```bash
-tail -n +2 metadata.tsv | cut -f 1 | sort | uniq -c | sort -nr | head -n 1
-```
-```bash-out
-      1 S86
-```
+   ```bash
+   tail -n +2 metadata.tsv | cut -f 1 | sort | uniq -c | sort -nr | head -n 1
+   ```
+   ```bash-out
+         1 S86
+   ```
 
-Omitting the `head -n 1` or even the `sort -nr` would also work in this case.
-</details>
----->
+   Omitting the `head -n 1` or even the `sort -nr` would also work in this case.
+   </details>
+   ---->
+
+b. The experiment has 2 time points and 3 treatments.
+   Modify the treatment frequency table pipeline so that it counts the number of
+   samples for each _combination_ of time point and treatment.
+   Is the design balanced, i.e. does every combination have the same number of samples?
+
+   <details><summary>{{< fa lightbulb >}} Click here for a hint.</summary>
+   `cut` can select multiple columns at once:
+   list the column numbers separated by commas (e.g. `cut -f 1,3` selects columns 1 and 3),
+   or specify a range with a dash (e.g. `cut -f 1-2` selects columns 1 through 2).
+   </details>
+
+   <!----
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+   Select both the time point (column 2) and treatment (column 3) columns
+   with `cut -f 2,3` (or `cut -f 2-3`), and keep the rest of the pipeline the same:
+
+   ```bash
+   tail -n +2 metadata.tsv | cut -f 2,3 | sort | uniq -c
+   ```
+   ```bash-out
+         4 10dpi   cathemerium
+         4 10dpi   control
+         4 10dpi   relictum
+         3 24hpi   cathemerium
+         3 24hpi   control
+         4 24hpi   relictum
+   ```
+
+   Because `uniq` compares entire lines,
+   it now counts each distinct combination of time point and treatment.
+   The design is not fully balanced:
+   at 24hpi, there are only 3 samples for both the cathemerium and control treatments.
+   </details>
+   ---->
 :::
 
 ## Self-study: The Unix philosophy and data streaming
