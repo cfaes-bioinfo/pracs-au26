@@ -37,6 +37,10 @@ bibliography: ../references.bib
 
 <br>
 
+<!----
+TODO for next year: - previous session no longer uses garrigos-data, download in this session
+--->
+
 ## Introduction
 
 ### Context & overview
@@ -336,15 +340,10 @@ you can **move around** in the file in several ways --- for example:
 
 - With up <kbd>↑</kbd> and down <kbd>↓</kbd> arrows: move line-by-line
 
-- With <kbd>u</kbd> (up) and <kbd>d</kbd> (down): move half a page at a time
-
 - With <kbd>Space</kbd> (down) and <kbd>b</kbd> (back up): move a full page at a time
 
 - By pressing <kbd>G</kbd> to go to the end of the file,
   and <kbd>g</kbd> to go (back) to the top
-
-- By pressing <kbd>/</kbd>, typing a search pattern, and pressing <kbd>Enter</kbd>
-  to jump to the next match (then <kbd>n</kbd> for the next and <kbd>N</kbd> for the previous match)
 
 To **exit/quit** `less` and get your shell prompt back, press <kbd>q</kbd>.
 
@@ -356,9 +355,15 @@ Open the FASTQ file with `less S63_R1.fastq.gz`, then:
 a. Move around a bit using the keys listed above.
 b. Among the first reads, you should already spot some unusual-looking ones.
    What is unusual about them?
-c. **Bonus**: Use `less`'s search function to jump to more reads like that.
-   What pattern did you search for?
-d. Press <kbd>q</kbd> to quit `less` and get your prompt back.
+c. Press <kbd>q</kbd> to quit `less` and get your prompt back.
+
+----
+
+d. **Bonus**: Another useful feature of `less` is the ability to search through a file.
+  Press <kbd>/</kbd>, type a search pattern, and press <kbd>Enter</kbd>
+  to jump to the first match (then <kbd>n</kbd> for the next and <kbd>N</kbd> for the previous match).
+  Open the file back up with `less`, then use this feature to find more reads
+  like the ones you found in part b. What pattern did you search for?
 
 <!---
 <details><summary>{{< fa check-circle >}} Click for the solution.</summary>
@@ -464,8 +469,10 @@ My third line
 ```
 
 ::: {.callout-warning appearance="simple"}
-Because `>` empties an existing file _before_ the command even runs,
-never redirect output back to the command's own input file:
+Because `>` empties an existing file before the command even runs,
+never redirect output back to the command's own input file,
+even if you want to edit it in place.
+For example, the command
 `head metadata.tsv > metadata.tsv` would leave you with an empty `metadata.tsv`.
 (More on this in the [self-study section](#dont-redirect-back-to-the-input-file) at the end.)
 :::
@@ -649,13 +656,12 @@ does **not** decompress the file --- it only makes its name misleading.
 
 ### `grep` to print lines that match a pattern
 
-The `grep` command is extremely useful and will find specific text
+The `grep` command is an extremely useful command that searches for specific text
 (or text patterns) in a file.
 By default, it will **print each line that contains a "match" in full**.
 
-Its basic syntax is `grep "<pattern>" <file-path>`.
-For example,
-to print all lines from `metadata.tsv` that contain "cathemerium":
+Its basic syntax is `grep "<search-pattern>" <file-path>`.
+For example, to print all lines from `metadata.tsv` that contain "cathemerium":
 
 ```bash
 grep "cathemerium" metadata.tsv
@@ -724,6 +730,8 @@ b. Based on the output of the above command, how do you think `grep`'s matching
    where the pattern has to match the entire file name!
    </details>
    ---->
+
+-----
 
 c. **Bonus**: Count the number of `relictum` samples at the `24hpi` time point
    with a single line of code.
@@ -977,9 +985,8 @@ tail -n +2 metadata.tsv | sort -k3,3 -k2,2
 ::: exercise
 #### {{< fa user-edit >}} Exercise 3: `cut`, `sort`, and `uniq`
 
-a. Put the pipeline together.
-   The four pieces below, when combined with pipes (`|`) in the right order,
-   produce a frequency table of the number of samples per time point.
+a. The four pieces below, when combined with pipes (`|`) in the right order,
+   produce a frequency table of the **number of samples per time point**.
    In which order should they go?
    Write out the full command and run it ---
    how many `10dpi` and how many `24hpi` samples are there?
@@ -1009,7 +1016,7 @@ a. Put the pipeline together.
    ---->
 
 b. What if you forget `sort`?
-   Say you run the pipeline for the treatment frequency table again, but leave out `sort`:
+   Say you run the above pipeline again, but leave out `sort` like so:
 
    ```bash
    tail -n +2 metadata.tsv | cut -f 3 | uniq -c
@@ -1017,7 +1024,7 @@ b. What if you forget `sort`?
 
    What do you expect to happen?
 
-   A) The same output as before --- `sort` does not affect the counts.
+   A) The same output as before; `sort` does not affect the counts.
    B) An error message, because `uniq` needs sorted input.
    C) More than three lines, with each treatment appearing several times.
    D) Three lines, but in a different order.
@@ -1048,18 +1055,28 @@ b. What if you forget `sort`?
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Bonus exercise: sample IDs and study design
+#### {{< fa user-edit >}} Self-study exercise: sample IDs and study design
 
-a. Using a pipeline similar to those above,
+a. Using a pipeline similar to those above to create another frequency table,
    check whether any duplicate sample IDs are present in `metadata.tsv`.
 
-   <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-   No duplicate sample IDs are present.
+   To check for duplicate sample IDs, create a frequency table of the first column
+   (sample IDs):
 
-   The most elegant way to see this is by using `sort -nr | head -n 1` at the end:
-   if the single sample shown has a count of 1, this means there are no duplicates.
+   ```bash
+   tail -n +2 metadata.tsv | cut -f 1 | sort | uniq -c
+   ```
+
+   This produces one line per sample (22 in total), and every single one shows a
+   count of 1. That means there are no duplicate sample IDs:
+   if any sample ID were duplicated, its count would be 2 or higher.
+
+   Even better/more elegant: instead of scanning all 22 lines yourself,
+   add `sort -nr | head -n 1` to the end of the pipeline. This sorts the counts
+   from high to low and shows only the top line.
+   If that single count is 1, you immediately know there are no duplicates:
 
    ```bash
    tail -n +2 metadata.tsv | cut -f 1 | sort | uniq -c | sort -nr | head -n 1
@@ -1067,15 +1084,14 @@ a. Using a pipeline similar to those above,
    ```bash-out
          1 S86
    ```
-
-   Omitting the `head -n 1` or even the `sort -nr` would also work in this case.
    </details>
-   ---->
 
 b. The experiment has 2 time points and 3 treatments.
    Modify the treatment frequency table pipeline so that it counts the number of
    samples for each _combination_ of time point and treatment.
    Is the design balanced, i.e. does every combination have the same number of samples?
+   (You'll need to use `cut` on two columns instead of one ---
+   see the hint below if you need help.)
 
    <details><summary>{{< fa lightbulb >}} Click here for a hint.</summary>
    `cut` can select multiple columns at once:
@@ -1083,7 +1099,6 @@ b. The experiment has 2 time points and 3 treatments.
    or specify a range with a dash (e.g. `cut -f 1-2` selects columns 1 through 2).
    </details>
 
-   <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
    Select both the time point (column 2) and treatment (column 3) columns
@@ -1106,7 +1121,6 @@ b. The experiment has 2 time points and 3 treatments.
    The design is not fully balanced:
    at 24hpi, there are only 3 samples for both the cathemerium and control treatments.
    </details>
-   ---->
 :::
 
 ## Self-study: The Unix philosophy and data streaming
@@ -1126,14 +1140,11 @@ to swap out components, and to learn.
 
 What about those **text "streams"** mentioned in the quote above?
 Rather than loading entire files into memory,
-most Unix tools process them one line at a time.
-(A notable exception is `sort`, which has to see all lines before it can output anything ---
-though for large files, it cleverly uses temporary files rather than loading everything into memory.)
-
-This is very useful when working with large files in particular!
-For example,
-_`head` will print results instantly even for a 10 TB file_
-that could never be loaded into memory.
+most Unix tools process them one line at a time
+(a notable exception is `sort`, which has to see all lines before it can output anything).
+This is very useful when working with large files in particular! For example,
+`head` **prints results instantly even for a 10 TB file** that could never be loaded
+into memory.
 By contrast, try to take a peek at such a file with a GUI text editor,
 and it will freeze or refuse to open the file.
 
@@ -1149,11 +1160,21 @@ cat ../../garrigos/fastq/*R1.fastq.gz > all_R1.fastq.gz
 ```
 
 ::: {.callout-tip collapse="false"}
-#### The above code will produce a valid compressed FASTQ file, because:
+#### How does the above command work?
 
-- FASTQ files can be concatenated freely since every read is a
+- `cat` is presented with a list of all R1 FASTQ files in the `garrigos/fastq` dir:
+  the shell expands the glob pattern `*R1.fastq.gz` into a list of matching files,
+  and passes that list to `cat` as arguments.
+
+- `cat` then reads each file in turn, and prints its contents:
+  When it prints multiple files, it simply prints them one after the other,
+  i.e. concatenates them.
+
+- The concatenated output is redirected to the file `all_R1.fastq.gz`.
+  That is in fact a valid compressed FASTQ file, because:
+  - FASTQ files can be concatenated freely since every read is a
   "stand-alone" unit of 4 lines.
-- Gzipped (`.gz`) files can also be concatenated freely!
+  - Gzipped (`.gz`) files can also be concatenated freely!
 :::
 
 ### Don't redirect back to the input file!
