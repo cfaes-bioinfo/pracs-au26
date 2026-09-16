@@ -42,22 +42,22 @@ bibliography: ../references.bib
 
 ### Learning goals
 
-In this session about (bioinformatics) software management at OSC and beyond,
-you will learn:
+As we discussed in the [previous lecture](w6a_osc.qmd),
+you can use software at OSC by loading "modules" with system-wide installations,
+or by using containers or Conda.
+In this session, you will learn to use modules and containers,
+while [this optional-reading page covers Conda](../bonus/conda.qmd).
 
-- How to find and load OSC "modules" to use specific programs
-- Why containers and Conda are useful and reproducible alternative ways to use software
-- How to find and run Apptainer/Singularity containers to use specific programs
-- What the program FastQC does and how you can run it
+You'll also learn what the program FastQC does and how you can run it.
 
 ### Setting up
 
 1. At <https://ondemand.osc.edu>,
-   start a VS Code session in `/fs/ess/PAS3493/people/$USER`
-2. Open a terminal and create and then navigate to a `week06` dir
-3. _Optional: Create a new Markdown file for class notes and save it in your `week06` dir_
+   start a VS Code session in `/fs/ess/PAS3493/people/$USER`.
+2. Open a terminal and create and then navigate to a `week06` dir.
+3. _Optional: Create a new Markdown file for class notes and save it in your `week06` dir._
 
-## Intermezzo: VS Code revisited
+## Intermezzo I: VS Code revisited
 
 #### Install an extension
 
@@ -69,7 +69,8 @@ you will learn:
 
 2. In the Extensions pane that now fills the Primary (wide) Side Bar,
    search for and then install the extension **Rainbow CSV** (by *mechatroner*).
-   This extension makes CSV/TSV files easier to view with column-based colors.
+   This extension makes CSV/TSV files easier to view in the editor pane,
+   with column-based colors.
 
 #### Add a keyboard shortcut
 
@@ -99,7 +100,7 @@ Activity Bar, with the Extensions icon (bottom) highlighted.
 :::
 
 :::{.callout-note collapse="false"}
-### Self-study: Additional VS Code tips and tricks (_Click to expand_)
+### Self-study: Additional VS Code tips and tricks
 
 - **Automatic whole-line selection**\
   In VS Code's editor pane,
@@ -141,15 +142,11 @@ Activity Bar, with the Extensions icon (bottom) highlighted.
 - **Helpful keyboard shortcuts**\
 
   - Open a terminal: <kbd>Ctrl</kbd>+<kbd>\`</kbd> (backtick)
-
   - Toggle between the terminal and the editor pane:
     <kbd>Ctrl</kbd>+<kbd>\`</kbd> and <kbd>Ctrl</kbd>+<kbd>1</kbd>.
-
   - *"Line actions"* in the editor:
     - Move a line up or down: <kbd>Alt/Option</kbd>+<kbd>⬆</kbd>/<kbd>⬇</kbd>
-
     - Delete a line: <kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>
-
     - The standard copy and cut shortcuts
       (<kbd>Ctrl/⌘</kbd>+<kbd>X</kbd> / <kbd>C</kbd>)
       will **cut/copy the entire line** that the cursor is on!
@@ -163,70 +160,7 @@ Activity Bar, with the Extensions icon (bottom) highlighted.
   [Linux](https://code.visualstudio.com/shortcuts/keyboard-shortcuts-linux.pdf){target="_blank"}.)
 :::
 
-## Software management (at OSC)
-
-To analyze omics data sets, especially in genomics and transcriptomics,
-a typical workflow includes running a sequence of specialized bioinformatics
-software/programs/tools (I will use these terms interchangeably).
-
-For example,
-let's take another look at the steps in the RNA-Seq analysis workflow we'll go through,
-where each step is associated with a specific program (gray text):
-
-![](../img/rnaseq-wf-3.png){fig-align="center" width="60%" fig-alt="A diagram showing the steps in an RNA-Seq analysis pipeline." .lightbox}
-
-At OSC, there are system-wide installations of a number of such programs.
-We do need to "**load modules**" that contain these programs before we can use them.
-In this session, we will first talk about that process.
-
-However, OSC's collection of bioinformatics programs is not comprehensive,
-and programs that _are_ installed may not have the most recent versions available.
-We therefore need an additional way to get access to bioinformatics programs.
-But installing software like you are used to on your own computer
-is not really possible at a supercomputer center like OSC.
-
-The two most best approaches that we can use instead are:
-
-- The **Conda** software management program,
-  which installs software in "environments" you can load.
-- **Containers**, self-contained software environments that
-  even include large portions of their operating systems.
-
-Conda and containers are useful because:
-
-- At supercomputers like OSC, they bypass issues with "dependencies"^[
-    Other software upon which the software that you are trying to install depends.]
-  and "administrator privileges"^[
-    When your personal computer asks you to "authenticate" while you are
-    installing something, you are authenticating yourself as a user with
-    administrator privileges. At OSC, you don't have such privileges.]
-  that you may run into when trying to install software in other ways.
-- They make it easy to switch between different versions of the same
-  software, or to use mutually incompatible software.
-- They are highly **reproducible**.
-
-In this session, you will learn how to obtain and use containers,
-while [this optional-reading page covers Conda](../bonus/conda.qmd).
-
-::: {.callout-tip collapse="true"}
-#### Other options to install software / get it installed at OSC _(Click to expand)_
-
-Here are two further options to install or get software installed at OSC:
-
-- Send an **email to [OSC Help](mailto:oschelp@osc.edu)**.
-  They might be able to help you with your installation, or in case of commonly
-  used software, might be willing to perform a system-wide installation
-  (that is, making it available through Lmod / `module` commands).
-
-- **"Manually" install the software**, which in the best case involves
-  downloading a directly functioning binary (executable),
-  but more commonly requires you to "compile" (build) the program.
-  This is sometimes straightforward but can also become extremely tricky,
-  especially at OSC where you don't have administrator privileges
-  and will often have difficulties with dependencies.
-:::
-
-### The FastQC software
+## Intermezzo II: The FastQC software
 
 As an example piece of bioinformatics software,
 we will use FastQC (@andrews2010) in this session.
@@ -244,23 +178,12 @@ The most important one is this per-base quality score graph:
 
 ## Loading software at OSC with Lmod modules
 
-OSC administrators manage software with the "Lmod" system of software modules.
-This means that a lot of installed software can only be used after its
-**module is explicitly loaded.**
-That may seem like a drag, but  this practice enables the use of different
-versions of the same software,
-and of mutually incompatible software, on a single system.
-
+As discussed in the previous lecture,
+much of the software installed at OSC can only be used after its
+**module is explicitly loaded** (though basic shell commands and
+widely used software like Git, Python, and Apptainer don't need to be loaded).
 You can load, unload, and search for available software modules using the
 **`module`** command and its sub-commands.
-
-::: callout-tip
-#### Not all software has to be loaded
-Not all software has to be loaded:
-besides all the basic shell commands we have been using,
-very widely used software like Git, Python, and Apptainer
-is available to us without having to load anything.
-:::
 
 ### Searching for available modules
 
@@ -362,7 +285,7 @@ Here, we only covered the very basics of using `module`.
 To learn a bit more, you can read the boxes below, but in class,
 we will not go into further detail because we will mostly use containers instead
 (considering the limitations of these modules and the
-advantages of containers discussed above).
+advantages of containers discussed in the previous lecture).
 
 ::: {.callout-tip collapse="true"}
 #### Other `module` commands  _(Click to expand)_
@@ -606,114 +529,16 @@ type `q()` or use the general keyboard short for exiting
 
 ## Using Apptainer containers
 
-### Introduction
+As discussed in the previous lecture,
+containers are a great way to use programs that aren't available as OSC modules.
+Using a container involves two steps:
 
-As mentioned above,
-because many programs needed for omics data analysis are not available
-through OSC modules, you need an alternative way to access these.
+1. Obtaining a container image (a `.sif` file), which we'll do from **Seqera Containers**.
+2. Running the container image to access the software installed inside it.
 
-**Conda** and **containers** are both great options:
-here, we will go over containers,
-while [optional at-home reading covers Conda](../bonus/conda.qmd).
-These two approaches are quite different both conceptually and operationally.
-Conda is similar to OSC's modules, except that you can also install things yourself.
-Containers, on the other hand, are not installed or loaded^[
-Though it is possible to create containers yourself and install software into them --
-but we will not cover that.]:
-typical usage involves simply downloading a file and using it.
-
-::: {.callout-note collapse="true"}
-#### Pros and cons of Conda versus containers _(Click to expand)_
-
-Key advantages of Conda are that:
-
-- Once software is installed,
-  using it is just like using other software that has been installed.
-  With containers, on the other hand,
-  you essentially need a long "prefix" to your commands.
-- It is a bit easier to create custom environments with multiple programs or even
-  with programs you installed "manually" (not with Conda commands)
-
-Key advantages of containers are that:
-
-- They are more portable, i.e. likely to work across different computers.
-  For that and a few other reasons, they're overall a tad more reproducible than Conda.
-- It is quicker to download a container than to install software with Conda,
-  and Conda installation sometimes fails altogether
-- Conda environments often consists of tens of thousands of files,
-  and you may well hit the file _number_ quota (yes, these exist at OSC!)
-  when you have a number of Conda environments.
-- At OSC, Singularity doesn't require the loading of a module unlike Conda
-- With the container usage you'll learn, you need to remember fewer commands than with Conda
-
-One thing that currently does not differ is:
-
-- The same set of programs is available through Conda and as containers --
-  basically, their repositories are tightly linked
-:::
-
-Among container platforms, **Apptainer**
-(formerly, and in some cases still, known as **Singularity**)
-and especially Docker are most widely used.
-At supercomputers like OSC, however, only Apptainer containers can be used^[
-But luckily, the Apptainer program can work with Docker container images:
-it will convert them on the fly.].
-Some Apptainer container terminology:
-
-- **Container image**: a binary _file_ that contains the container application (`.sif` extension)
-- **Container** (sensu stricto): a _running_ container image
-- **Definition file**:
-  a plain text file that contains the recipe to build a container image
-
-### How we'll use containers
-
-Here, you will learn how to find container images online and use them at OSC.
-We will not cover writing Definition files to create your own custom containers,
-because this is very rarely needed given recent developments in online
-container availability.
-The website we'll use has, or can be asked to create,
-container images for nearly all open-source bioinformatics software!
-
-As such, for us, the first step to using a container is simply finding/obtaining one.
-The second step is to run an appropriate command to access the software
-installed inside the container.
 We'll go over these steps one-by-one.
 
 ### Obtaining a container image
-
-Several online repositories with publicly available container images exist,
-but I strongly recommend **Seqera Containers**.
-
-#### Seqera Containers
-
-Seqera Containers is currently the most reliable website to find and download
-available containers.
-It is actually more than just a repository:
-when a container with the program(s) you request is not available in the repository,
-it will build the container for you.
-It allows you to select:
-
-- Any recent version of software that's available --
-  and nearly all open-source bioinformatics software is
-- Any combination of software that's not mutually incompatible
-
-Then, it will see if a container with your exact requirements is already available
-and if not, it will build it and make it available.
-
-::: {.callout-tip collapse="true"}
-### More on which programs are (not) available as containers _(Click to expand)_
-
-The following applies to both containers and Conda:
-
-- Only free, open-source software is available
-  - _It is a good idea to avoid proprietary/paid software anyway!_
-  - Rarely, academic free software has restrictive licensing that prevents it
-    from being available
-- You may run into an old or "low-key" program/script that is not available.
-  I would take this as a sign that it may be better to avoid that program anyway --
-  in practice, it is likely to be outdated, poorly maintained,
-  and/or poorly documented.
-:::
 
 #### Finding a container, step-by-step
 

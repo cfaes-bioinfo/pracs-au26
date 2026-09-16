@@ -1,5 +1,5 @@
 ---
-title: "A closer look at OSC"
+title: "OSC: Beyond the basics"
 subtitle: "Week 6 -- Lecture A"
 pagetitle: "w6a: OSC part II (slides)"
 date: September 28, 2026
@@ -32,12 +32,6 @@ format:
       numbers: true
 ---
 
-# Introduction {background-color="#A7B1B7"}
-
-<!----
-TODO: Explain why there are three clusters (not 1) and how they differ.
----->
-
 ## Where we're heading
 
 In this and the next few weeks, you will learn to run
@@ -45,414 +39,15 @@ command-line bioinformatics programs at OSC step by step:
 
 <hr style="height:1pt; visibility:hidden;" />
 
-1. Additional details about OSC _(this lecture)_
+1. More general information about OSC _(this lecture)_
 2. How to use software at OSC, including programs that aren't installed _(next lecture)_
 3. How to write shell scripts _(next week)_
 4. How to submit shell scripts as "batch jobs" _(in two weeks)_
 5. How to build functional commands to run such programs _(throughout)_
 
-## Learning goals
+# Compute nodes and cores {background-color="#A7B1B7"}
 
-This session follows up on the
-[initial OSC introduction in week 2](../week02/w2b_osc.qmd),
-and goes a bit deeper into:
-
-- OSC Projects
-- Cores
-- OSC file systems
-- Compute node types and access
-
-# OSC Projects {background-color="#A7B1B7"}
-
-## OSC Projects
-
-In this course, we exclusively use the course's OSC Project `PAS3493`.
-For your own research, you would likely use a Project specific to a research
-project or grant, or your lab's general-use Project.
-
-<hr style="height:1pt; visibility:hidden;" />
-
-::: {.columns}
-::: {.column width="47%" .fragment data-fragment-index="1"}
-
-### [Using a Project]{style="display:block; text-align:center;"}
-
-- Storing data in its dirs in `/fs/ess` and/or `/fs/scratch`
-- Selecting the Project when starting compute jobs,
-  like Code Server and (later in the course) batch jobs
-
-:::
-::: {.column width="6%"}
-<div class="fragment" data-fragment-index="2" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
-:::
-::: {.column width="47%" .fragment data-fragment-index="2"}
-
-### [Managing a Project]{style="display:block; text-align:center;"}
-
-Generally only done by PIs
-([more info](https://www.osc.edu/supercomputing/support/account){target="_blank"}).
-Project administrators can, among others:
-
-- Manage the compute budget and `/fs/ess` storage allocation
-- Add users to the Project
-
-::: {.callout-note appearance="simple"}
-If a new user doesn't have an OSC account yet, they will get an invite email ---
-you can't create an account unless you've been added to a Project.
-:::
-
-:::
-:::
-
-::: footer
-:::
-
-## OSC billing
-
-OSC bills **Projects** (not individual users), and only for two things:
-
-::: {.columns}
-::: {.column width="30%" .box-blue .fragment data-fragment-index="1"}
-### File storage
-
-Storage in the Project dirs (`/fs/ess`), per TB per month.
-
-:::
-::: {.column width="3%"}
-:::
-::: {.column width="30%" .box-amber .fragment data-fragment-index="2"}
-### Compute
-
-Compute node usage per "**core hour**":\
-using 2 cores for 2 hours = 4 core hours.
-
-:::
-::: {.column width="3%"}
-:::
-::: {.column width="30%" .box-teal .fragment data-fragment-index="3"}
-### Who pays?
-
-- Every OSU PI gets a $1,000 credit.
-- OSU colleges pay some or all of the costs --- CFAES currently pays all of it.
-
-:::
-:::
-
-. . .
-
-<hr style="height:1pt; visibility:hidden;" />
-
-::: {.callout-note appearance="simple"}
-Prices for academic usage are generally low, but a Project using dozens of TBs
-and hundreds of thousands of core hours could be charged several thousand dollars per year.
-:::
-
-# Cores {background-color="#A7B1B7"}
-
-## Cores
-
-In week 2, you learned that a supercomputer center has multiple supercomputers,
-each of which consists of many nodes. But there is one more "level":
-
-![](../img/terminology.png){fig-align="center" width="95%" fig-alt="A diagram showing how the terms core/processor, node, and cluster/supercomputer fit together." .lightbox}
-
-. . .
-
-::: {.columns}
-::: {.column width="47%"}
-
-### [What is a core?]{style="display:block; text-align:center;"}
-
-A component of a computer (node) that can (semi-)independently
-perform a computing task, like running a bioinformatics program.
-
-Many programs can use **multiple cores** for a single run,
-which can speed things up considerably.
-
-:::
-::: {.column width="6%"}
-<div class="fragment" data-fragment-index="1" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
-:::
-::: {.column width="47%" .fragment data-fragment-index="1"}
-
-### [Core / Processor / CPU / Thread]{style="display:block; text-align:center;"}
-
-These terms are not technically synonyms,
-but are often used interchangeably.
-
-For working at OSC, treat them as meaning the same thing:
-the components of a node that can be reserved and used independently.
-
-:::
-:::
-
-::: footer
-:::
-
-## Quiz: Core hours
-
-::: callout-quiz
-::: callout-note
-#### Think about it
-
-A) You run a program with 8 reserved cores for 3 hours.
-   How many core hours will your OSC Project be billed for?
-
-B) Afterwards, you find out that the program only ever used 1 of those cores.
-   Does that change the number of billed core hours?
-   What does this tell you about how many cores to request?
-
-<hr style="height:1pt; visibility:hidden;" />
-
-<!-----
-<details><summary> {{< fa square-check >}} &nbsp; &nbsp; _Click for the answers_</summary>
-
-A) 8 cores × 3 hours = **24 core hours**.
-
-B) **No**: you're billed for the cores you _reserved_, whether or not they were used.
-   So request multiple cores only if the program can actually use them
-   (check its documentation!) --- otherwise you waste resources
-   and, as you'll see later, may also wait longer for your job to start.
-
-</details>
-
-<hr style="height:1pt; visibility:hidden;" />
------->
-:::
-:::
-
-# File systems {background-color="#A7B1B7"}
-
-## OSC file systems
-
-An expanded version of the table from week 2:
-
-<hr style="height:1pt; visibility:hidden;" />
-
-| File system   | Located within        | Quota                 | Backed up?    | Auto-purged?          | One for each... |
-|---------------|-----------------------|-----------------------|---------------|-----------------------|-----------------|
-| **Home**      | `/users/`             | 500 GB / 1 M files    | Yes           | No                    | User            |
-| **Project**   | `/fs/ess/`            | Flexible              | Yes           | No                    | OSC Project     |
-| **Scratch**   | `/fs/scratch/`        | 100 TB                | No            | After 60 days         | OSC Project     |
-| **Compute**   | `$TMPDIR`             | 1 TB                  | No            | After job completes   | Compute job     |
-
-: {.striped .hover}
-
-. . .
-
-<hr style="height:1pt; visibility:hidden;" />
-
-::: callout-tip
-#### Recommendation
-For your own research,
-**work mostly in the Project dir** (`/fs/ess/`),
-which offers backed-up, permanent storage with flexible quota.
-:::
-
-## When are the other file systems useful?
-
-::: {.columns}
-::: {.column width="30%" .box-blue .fragment data-fragment-index="1"}
-### Home
-
-**Drawbacks**: limited space that can't be expanded,
-and harder to share files with collaborators.
-
-<hr style="height:1pt; visibility:hidden;" />
-
-**Useful for**: files you use across projects, like some software.
-Also stores user-specific settings, in hidden files (`.`) that you should
-generally leave alone.
-
-:::
-::: {.column width="3%"}
-:::
-::: {.column width="30%" .box-amber .fragment data-fragment-index="2"}
-### Scratch
-
-**Drawbacks**: temporary and not backed up.
-
-<hr style="height:1pt; visibility:hidden;" />
-
-**Useful for**: large datasets, thanks to _effectively unlimited_ space and
-_faster_ read/write ("I/O") speed.
-Run analyses here, then copy key files to the Project dir.
-
-:::
-::: {.column width="3%"}
-:::
-::: {.column width="30%" .box-teal .fragment data-fragment-index="3"}
-### Compute
-
-**Drawbacks**: extremely fleeting --- files are deleted as soon as the job stops.
-
-<hr style="height:1pt; visibility:hidden;" />
-
-**Useful for**: very I/O-intensive jobs, with even faster I/O.
-But it requires extra code in your script, so I rarely use it.
-
-:::
-:::
-
-## Home dir clarifications & other notes
-
-::: {.columns}
-::: {.column width="52%"}
-
-### [Home dir clarifications]{style="display:block; text-align:center;"}
-
-- The project number in your Home dir path (e.g., `/users/PAS3454/jane`)
-  is merely a naming convention:
-  your Home dir is not really tied to any OSC Project.
-  It stays the same if you're removed from a Project or the Project stops existing.
-
-- You land in your Home dir after logging in,
-  but this is typically not where you want to be to work with data.
-
-- Avoid storing research project files in your Home dir.
-
-- Home dir will have hidden files (those starting with a `.`) that are generated
-  and used automatically by software.
-  Don't mess with them unless you know what you're doing!
-
-:::
-::: {.column width="5%"}
-<div class="fragment" data-fragment-index="1" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
-:::
-::: {.column width="43%" .fragment data-fragment-index="1"}
-
-::: {.callout-note}
-#### Accessing back-ups
-Home and Project dirs are backed up daily.
-You don't have _direct_ access to the backups,
-but you can email OSC to restore your files to the way they were on a specific date.
-:::
-
-::: {.callout-tip}
-#### Files on different clusters
-File systems are shared among OSC's clusters,
-so you can access your files in the exact same way
-regardless of which cluster you're connected to.
-:::
-
-:::
-:::
-
-::: footer
-:::
-
-## Quiz: Which file system?
-
-::: callout-quiz
-::: callout-note
-#### What would happen, or what would you do?
-
-A) Three days ago, you accidentally deleted a script from your dir in `/fs/scratch`.
-   Can OSC restore it?
-
-B) You ran an analysis in `/fs/scratch` in March and didn't look at the results
-   until June. What might you find?
-
-C) A program creates millions of small temporary files while running.
-   Why would it be a bad idea to have it write these to your Home dir?
-
-<hr style="height:1pt; visibility:hidden;" />
-
-<!-----
-<details><summary> {{< fa square-check >}} &nbsp; &nbsp; _Click for the answers_</summary>
-
-A) **No**: Scratch is not backed up. Only Home and Project dirs are.
-
-B) The results **may be gone**: files in Scratch are automatically purged after 60 days.
-   Copy results you want to keep to the Project dir.
-
-C) Home dirs have a quota of **1 million files** (not just 500 GB),
-   and Home also has slower I/O than Scratch ---
-   a Scratch dir would be a better choice.
-
-</details>
-
-<hr style="height:1pt; visibility:hidden;" />
------->
-:::
-:::
-
-# Compute nodes {background-color="#A7B1B7"}
-
-## Compute node types
-
-::: {.columns}
-::: {.column width="47%"}
-
-### ["Standard" nodes]{style="display:block; text-align:center;"}
-
-- By far the most numerous (e.g., Pitzer has 564)
-- Even these vary in size, e.g. from 40-48 cores per node on Pitzer
-- Used by default, and will serve you well for most omics analyses
-
-:::
-::: {.column width="6%"}
-<div class="fragment" data-fragment-index="1" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
-:::
-::: {.column width="47%" .fragment data-fragment-index="1"}
-
-### [Other node types]{style="display:block; text-align:center;"}
-
-- Nodes with extra memory: `largemem` and `hugemem`
-- Nodes with GPUs (Graphical Processing Units) rather than CPUs
-
-<hr style="height:1pt; visibility:hidden;" />
-
-::: {.callout-tip appearance="simple"}
-You may occasionally need these, for example for genome or transcriptome assembly
-(large-memory nodes) or Oxford Nanopore base-calling (GPU nodes).
-:::
-
-:::
-:::
-
-## Memory versus storage
-
-When we talk about a computer's "memory", this refers to **RAM** ---
-don't confuse this with file **storage**.
-
-<hr style="height:1pt; visibility:hidden;" />
-
-::: {.columns}
-::: {.column width="47%" .fragment data-fragment-index="1"}
-
-### [Memory (RAM)]{style="display:block; text-align:center;"}
-
-- The data a computer has actively "loaded" or in use
-- Accessed _orders of magnitude_ faster than data on disk
-- E.g., heavily used when you play a game or have many browser tabs open
-
-:::
-::: {.column width="6%"}
-<div class="fragment" data-fragment-index="2" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
-:::
-::: {.column width="47%" .fragment data-fragment-index="2"}
-
-### [Storage (disk)]{style="display:block; text-align:center;"}
-
-- The data that is saved in files on disk
-- When your computer freezes, it's typically because memory is full
-  and disk storage has to be used as well
-
-:::
-:::
-
-. . .
-
-<hr style="height:1pt; visibility:hidden;" />
-
-::: {.callout-note appearance="simple"}
-Bioinformatics programs may load input data into memory for fast access,
-and hold intermediate results there too.
-With large datasets, they may need 10s or 100s of GBs of memory.
-:::
-
-## Using compute nodes
+## Using compute nodes via "jobs"
 
 ::: {.columns}
 ::: {.column width="47%"}
@@ -484,6 +79,160 @@ In two weeks, you'll learn to submit scripts as "batch jobs" with Slurm.
 :::
 
 :::
+:::
+
+## Cores
+
+In week 2, you learned that a supercomputer center has multiple supercomputers,
+each of which consists of many nodes. But there is one more "level":
+
+![](../img/terminology.png){fig-align="center" width="95%" fig-alt="A diagram showing how the terms core/processor, node, and cluster/supercomputer fit together." .lightbox}
+
+## Cores
+
+::: {.columns}
+::: {.column width="47%"}
+
+### [What is a core?]{style="display:block; text-align:center;"}
+
+A component of a computer (node) that can (semi-)independently
+perform a computing task, like running a bioinformatics program.
+
+Many programs can use **multiple cores** for a single run,
+which can speed things up considerably.
+
+:::
+::: {.column width="6%"}
+<div class="fragment" data-fragment-index="1" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
+:::
+::: {.column width="47%" .fragment data-fragment-index="1"}
+
+### [Core / Processor / CPU / Thread]{style="display:block; text-align:center;"}
+
+These terms are not technically synonyms,
+but are often used interchangeably.
+
+For working at OSC, treat them as meaning the same thing:
+the components of a node that can be reserved and used independently.
+
+:::
+:::
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-note appearance="simple"}
+Typical compute jobs use 1 node and multiple cores on that node.
+:::
+
+## Quiz: Core hours
+
+::: callout-quiz
+::: callout-note
+#### Think about it
+
+A) You run a program with 8 reserved cores for 3 hours.
+   How many core hours will your OSC Project be billed for?
+
+B) Afterwards, you find out that the program only ever used 1 of those cores.
+   Does that change the number of billed core hours?
+
+C) Afterwards, you find out that the program finished after 1 hour,
+   and the job ended.
+
+What does this tell you about how many cores and hours to request?
+
+<hr style="height:1pt; visibility:hidden;" />
+
+<!-----
+<details><summary> {{< fa square-check >}} &nbsp; &nbsp; _Click for the answers_</summary>
+
+A) 8 cores × 3 hours = **24 core hours**.
+
+B) **No**: you're billed for the cores you _reserved_, whether or not they were used.
+   So request multiple cores only if the program can actually use them
+   (check its documentation!) --- otherwise you waste resources
+   and, as you'll see later, may also wait longer for your job to start.
+
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+------>
+:::
+:::
+
+## Compute node types
+
+::: {.columns}
+::: {.column width="47%"}
+
+### ["Standard" nodes]{style="display:block; text-align:center;"}
+
+- By far the most numerous (e.g., Pitzer has 564).
+- Even these vary in size, e.g. from 40-48 cores per node on Pitzer.
+- Used by default, and will serve you well for most omics analyses.
+
+:::
+::: {.column width="6%"}
+<div class="fragment" data-fragment-index="1" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
+:::
+::: {.column width="47%" .fragment data-fragment-index="1"}
+
+### [Other node types]{style="display:block; text-align:center;"}
+
+- Nodes with extra memory: `largemem` and `hugemem`.
+- Nodes with GPUs (Graphical Processing Units) rather than CPUs.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-tip appearance="simple"}
+You may occasionally need these, for example for genome or transcriptome assembly
+(large-memory nodes) or Oxford Nanopore base-calling (GPU nodes).
+:::
+
+:::
+:::
+
+## Memory versus storage
+
+When we talk about a computer's **memory**, this refers to **RAM** ---
+don't confuse this with file *storage*.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.columns}
+::: {.column width="47%" .fragment data-fragment-index="1"}
+
+### [Memory (RAM)]{style="display:block; text-align:center;"}
+
+- The data a computer has actively "loaded" or in use.
+- Accessed _orders of magnitude_ faster than data on disk.
+- E.g., heavily used when you play a game or have many browser tabs open.
+
+:::
+::: {.column width="6%"}
+<div class="fragment" data-fragment-index="2" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
+:::
+::: {.column width="47%" .fragment data-fragment-index="2"}
+
+### [Storage (disk)]{style="display:block; text-align:center;"}
+
+- The data that is saved in files on disk.
+- When your computer freezes, it's typically because memory is full
+  and disk storage has to be used as well.
+
+:::
+:::
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-note appearance="simple"}
+Bioinformatics programs may load input data into memory for fast access,
+and hold intermediate results there too.
+With large datasets, they may need 10s or 100s of GBs of memory.
 :::
 
 ## Quiz: True or false?
@@ -519,78 +268,209 @@ C) **True**: file systems are shared among OSC's clusters.
 :::
 :::
 
-# Putting it together {background-color="#A7B1B7"}
+# OSC Projects {background-color="#A7B1B7"}
 
-## Pitzer specs
+## OSC bills Project-wise
 
-Now that we understand a supercomputer's components a bit better,
-let's look at the specs for Pitzer:
-
-![](../img/pitzer_specs.png){fig-align="center" width="78%" fig-alt="A complex diagram showing the specs for the OSC Pitzer cluster." .lightbox}
-
-::: footer
-:::
-
-## {{< fa user-edit >}} System status
+OSC bills **Projects** (not individual users), and only for two things:
 
 ::: {.columns}
-::: {.column width="30%"}
+::: {.column width="30%" .box-blue .fragment data-fragment-index="1"}
+### File storage
 
-In OnDemand's "**Clusters**" dropdown menu,
-click on the item at the bottom, "**`System Status`**":
-
-![](/img/ondemand_systemstatus_select.png){fig-align="center" width="95%" fig-alt="A screenshot of the options in the OSC OnDemand Clusters dropdown menu." .lightbox}
+- Storage in the Project dirs (`/fs/ess`), per TB per month.
 
 :::
 ::: {.column width="3%"}
 :::
-::: {.column width="67%"}
+::: {.column width="30%" .box-amber .fragment data-fragment-index="2"}
+### Compute
+
+- Compute node usage per "**core hour**".
+
+- For example, using 2 cores for 2 hours = 4 core hours.
+
+:::
+::: {.column width="3%"}
+:::
+::: {.column width="30%" .box-teal .fragment data-fragment-index="3"}
+### Who pays?
+
+- Every OSU PI gets a $1,000 yearly credit.
+- OSU colleges pay some or all of the costs --- CFAES currently pays all of it.
+
+:::
+:::
 
 . . .
 
+<br>
+
+::: {.callout-note appearance="simple"}
+Prices for academic usage are generally low, but a Project using dozens of TBs
+and tens of thousands of core hours could be charged over a thousand dollars per year.
+:::
+
+## OSC Projects
+
+In this course, we exclusively use the course's OSC Project `PAS3493`.
+For your own research, you would likely use a Project specific to a research
+project or grant, or your lab's general-use Project.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.columns}
+::: {.column width="47%" .fragment data-fragment-index="1"}
+
+### [Using a Project]{style="display:block; text-align:center;"}
+
+In practice, "using" a Project means:
+
+- Storing data in its `/fs/ess` and/or `/fs/scratch` dirs.
+- Selecting the Project when starting compute jobs,
+  like Code Server and (later in the course) batch jobs.
+
+:::
+::: {.column width="6%"}
+<div class="fragment" data-fragment-index="2" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
+:::
+::: {.column width="47%" .fragment data-fragment-index="2"}
+
+### [Managing a Project]{style="display:block; text-align:center;"}
+
+Generally only done by PIs
+([more info](https://www.osc.edu/supercomputing/portals/client_portal/projects_budgets_and_charge_accounts){target="_blank"}).
+Project administrators can, among others:
+
+- Manage the compute budget and `/fs/ess` storage allocation.
+- Add users to the Project.
+
+:::
+:::
+
+# Storage areas {background-color="#A7B1B7"}
+
+## Storage areas: overview
+
+An expanded version of the table from week 2:
+
+<hr style="height:1pt; visibility:hidden;" />
+
+| Storage area | Located within | Quota              | Backed up? | Auto-purged?  | One for each... |
+| ------------ | -------------- | ------------------ | ---------- | ------------- | --------------- |
+| **Home**     | `/users/`      | 500 GB / 1 M files | Yes        | No            | User            |
+| **Project**  | `/fs/ess/`     | Flexible           | Yes        | No            | OSC Project     |
+| **Scratch**  | `/fs/scratch/` | 100 TB             | No         | After 60 days | OSC Project     |
+
+: {.striped .hover}
+
+. . .
+
+<br><br>
+
+::: {.callout-note appearance="simple"}
+There is a fourth storage area, compute, that is on compute nodes and is deleted
+when a job ends. In practice, this is rarely needed, and we won't use it in this course.
+:::
+
+## When are different storage areas useful?
+
+::: {.columns}
+::: {.column width="30%" .box-blue .fragment data-fragment-index="1"}
+### Project
+
+- **Drawbacks**:
+
+- **Useful for**:
+
+:::
+::: {.column width="3%"}
+:::
+::: {.column width="30%" .box-amber .fragment data-fragment-index="2"}
+### Scratch
+
+- **Drawbacks**: temporary and not backed up.
+
+- **Useful for**: large datasets, thanks to _effectively unlimited_ space and
+  _faster_ read/write ("I/O") speed.
+  Run analyses here, then copy key files to the Project dir.
+
+:::
+::: {.column width="3%"}
+:::
+::: {.column width="30%" .box-teal .fragment data-fragment-index="3"}
+### Home
+
+- **Drawbacks**: limited space that can't be expanded,
+  and harder to share files with collaborators.
+
+- **Useful for**: files you use across projects, like some software.
+
+:::
+:::
+
+## Storage areas: misc. notes
+
+- **Hidden files in the Home dir**:\
+  Your home dir will have hidden files (those starting with a `.`) that are generated
+  and used automatically by software. Don't mess with them unless you know what you're doing!
+
+<hr style="height:1pt; visibility:hidden;" />
+
+. . .
+
+- **Accessing back-ups**\
+  Home and Project dirs are backed up daily.
+  You don't have _direct_ access to the backups,
+  but you can email OSC to restore your files to the way they were on a specific date.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+. . .
+
+- **Accessing files across clusters**\
+  OSC's clusters share the entire file system, so you can access your files in
+  the exact same way regardless of which cluster you're connected to.
+
+# Additional OnDemand features {background-color="#A7B1B7"}
+
+## System status
+
+In OnDemand's "**Clusters**" dropdown menu,
+click on the item at the bottom, "**`System Status`**":
+
+![](/img/ondemand_systemstatus_select.png){fig-align="center" width="40%" fig-alt="A screenshot of the options in the OSC OnDemand Clusters dropdown menu." .lightbox}
+
 This page shows the live usage of the three clusters,
-and gives a good idea of the scale of the supercomputer center:
+and gives a good idea of the scale of the supercomputer center (***next slide***).
+
+_TODO: Explain why there are three clusters (not 1) and how they differ._
+
+----
 
 ![](/img/ondemand_systemstatus.png){fig-align="center" width="100%" fig-alt="A screenshot of the OSC Ondemand System Status page showing live cluster usage." .lightbox}
-
-:::
-:::
 
 ::: footer
 :::
 
 ## Direct Unix shell access
 
-The **Clusters** dropdown menu also gives direct access to a Unix shell on Ascend,
-Cardinal, or Pitzer. For example, via `Cardinal Shell Access`:
+The **Clusters** dropdown menu gives direct access to a Unix shell on any of the
+three clusters.
 
-![](../img/ondemand_shell-cardinal.png){fig-align="center" width="68%" fig-alt="A screenshot of a Unix shell opened via the Clusters menu on OSC OnDemand." .lightbox}
+- We're using Code Server here, but this can occasionally be useful as a quicker
+  access point.
+- Be aware that you will be on a login node, so you have less leeway in terms of
+  memory and CPU usage than on a compute node for testing purposes.
 
-::: {.callout-tip appearance="simple"}
-In this course, you access a shell via Code Server instead,
-but this method can occasionally be useful as a quicker access point.
-:::
+![](../img/ondemand_shell-cardinal.png){fig-align="center" width="60%" fig-alt="A screenshot of a Unix shell opened via the Clusters menu on OSC OnDemand." .lightbox}
 
 ::: footer
 :::
 
-## Citing and contacting OSC
+# Getting help {background-color="#A7B1B7"}
 
-::: {.columns}
-::: {.column width="47%"}
-
-### [Citing OSC]{style="display:block; text-align:center;"}
-
-When you use OSC, it's good practice to **acknowledge and cite OSC** in your papers ---
-see their [citation page](https://www.osc.edu/resources/getting_started/citation){target="_blank"}.
-
-:::
-::: {.column width="6%"}
-<div class="fragment" data-fragment-index="1" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
-:::
-::: {.column width="47%" .fragment data-fragment-index="1"}
-
-### [Contacting OSC]{style="display:block; text-align:center;"}
+## Contacting OSC to get help
 
 Email **<oschelp@osc.edu>** with questions like:
 
@@ -599,15 +479,264 @@ Email **<oschelp@osc.edu>** with questions like:
 - Why your jobs keep failing
 
 They are usually very quick to respond!
-
-<hr style="height:1pt; visibility:hidden;" />
+_TODO - UPDATE WITH CURRENT PROCEDURE FOR GETTING HELP_
 
 ::: {.callout-note appearance="simple"}
 If you don't have an account yet, use <start@osc.edu> instead.
 :::
 
+. . .
+
+<br>
+
+::: callout-tip
+### Citing OSC
+When you use OSC, it's good practice to **acknowledge and cite OSC** in your papers ---
+see their [citation page](https://www.osc.edu/resources/getting_started/citation){target="_blank"}.
+:::
+
+# Software management at OSC {background-color="#A7B1B7"}
+
+## Omics analyses use many programs
+
+A typical omics data analysis workflow consists of a sequence of specialized
+bioinformatics programs (a.k.a. software or tools).
+For example, the RNA-Seq workflow we'll go through
+(programs in gray text):
+
+![](../img/rnaseq-wf-3.png){fig-align="center" width="55%" fig-alt="A diagram showing the steps in an RNA-Seq analysis pipeline." .lightbox}
+
+## Getting access to software at OSC
+
+::: {.columns}
+::: {.column width="47%"}
+
+### [System-wide installations]{style="display:block; text-align:center;"}
+
+OSC has installed a number of bioinformatics programs,
+which you can use after "**loading modules**".
+
+But this collection is not comprehensive,
+and the most recent versions may not be available.
+
+:::
+::: {.column width="6%"}
+<div class="fragment" data-fragment-index="1" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
+:::
+::: {.column width="47%" .fragment data-fragment-index="1"}
+
+### [Installing software yourself?]{style="display:block; text-align:center;"}
+
+Installing software like you would on your own computer
+is generally not possible at OSC:
+
+- You don't have **administrator privileges**.
+- You will often run into issues with **dependencies**
+  (other software that a program depends on).
+
 :::
 :::
+
+## Lmod software modules
+
+OSC manages installed software with the **Lmod** module system:
+much of this software can only be used after **loading its module**
+(with the `module` command).
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.columns}
+::: {.column width="47%" .fragment data-fragment-index="1"}
+
+### [Why modules?]{style="display:block; text-align:center;"}
+
+It may seem like a drag, but modules make it possible to have:
+
+- Different versions of the same software
+- Mutually incompatible software
+
+on a single system.
+
+:::
+::: {.column width="6%"}
+<div class="fragment" data-fragment-index="2" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
+:::
+::: {.column width="47%" .fragment data-fragment-index="2"}
+
+### [Not everything needs loading]{style="display:block; text-align:center;"}
+
+Besides the basic shell commands we've been using,
+very widely used software like Git, Python, and Apptainer
+is available without loading anything.
+
+:::
+:::
+
+## Conda and containers
+
+The two best alternative approaches:
+
+::: {.columns}
+::: {.column width="47%" .box-blue .fragment data-fragment-index="1"}
+### Conda
+
+A software management program that installs software
+into "environments" that you can load.
+
+:::
+::: {.column width="6%"}
+:::
+::: {.column width="47%" .box-amber .fragment data-fragment-index="2"}
+### Containers
+
+Self-contained software environments that even include
+large portions of their operating system.
+
+:::
+:::
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+Both of these:
+
+- Bypass the dependency and administrator privilege issues.
+- Make it easy to switch between versions of the same software,
+  or to use mutually incompatible software.
+- Are highly **reproducible**.
+
+. . .
+
+::: {.callout-tip appearance="simple"}
+Next lecture, you'll learn to use modules and containers ---
+Conda is covered in [this optional self-study page](../bonus/conda.qmd){target="_blank"}.
+:::
+
+## Conda versus containers
+
+The two approaches are quite different, both conceptually and in practice:
+
+- **Conda** is similar to OSC's modules, except that you can install software yourself.
+- **Containers** are not installed or loaded: you typically just download a file and use it.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.columns}
+::: {.column width="47%" .box-blue .fragment data-fragment-index="1"}
+### Advantages of Conda
+
+- Once installed, you use software like any other installed software
+  (containers need a long "prefix" to your commands).
+- A bit easier to create custom environments with multiple programs.
+
+:::
+::: {.column width="6%"}
+:::
+::: {.column width="47%" .box-amber .fragment data-fragment-index="2"}
+### Advantages of containers
+
+- More portable, and therefore a bit more reproducible.
+- Quicker to obtain --- Conda installations are slower and sometimes fail.
+- Conda environments contain many files and can hit OSC's file _number_ quota.
+- At OSC, no module loading needed, and fewer commands to remember.
+
+:::
+:::
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-note appearance="simple"}
+The same set of programs is available through Conda and as containers,
+since their repositories are tightly linked.
+:::
+
+## Apptainer containers
+
+::: {.columns}
+::: {.column width="47%"}
+
+### [Container platforms]{style="display:block; text-align:center;"}
+
+**Docker** and **Apptainer** (formerly, and sometimes still, called **Singularity**)
+are the most widely used container platforms.
+
+At supercomputers like OSC, only Apptainer can be used ---
+but luckily, it can convert Docker container images on the fly.
+
+:::
+::: {.column width="6%"}
+<div class="fragment" data-fragment-index="1" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
+:::
+::: {.column width="47%" .fragment data-fragment-index="1"}
+
+### [Terminology]{style="display:block; text-align:center;"}
+
+- **Container image**: a binary _file_ that contains the container application
+  (`.sif` extension).
+- **Container** (strictly speaking): a _running_ container image.
+- **Definition file**: a plain-text file with the recipe to build a container image.
+
+:::
+:::
+
+## How we'll use containers
+
+::: {.columns}
+::: {.column width="47%" .box-blue .fragment data-fragment-index="1"}
+### 1. Obtain a container image
+
+From **Seqera Containers**, which has, or will build for you,
+containers with:
+
+- Nearly any open-source bioinformatics program
+- Any recent version
+- Any combination of compatible programs
+
+:::
+::: {.column width="6%"}
+:::
+::: {.column width="47%" .box-amber .fragment data-fragment-index="2"}
+### 2. Run the container image
+
+Run a command to access the software
+installed inside the container.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+_We won't write definition files to build our own containers ---
+given what's available online, this is rarely needed._
+
+:::
+:::
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-tip appearance="simple"}
+Only free, open-source software is available (this also applies to Conda).
+If a program isn't available, that may be a sign it's outdated,
+poorly maintained, or poorly documented, and better avoided anyway.
+:::
+
+## Other ways to get software at OSC
+
+- **Email OSC Help**\
+  They may be able to help with your installation, or,
+  for commonly used software, may be willing to do a system-wide installation
+  (i.e., make it available as a module).
+
+<hr style="height:1pt; visibility:hidden;" />
+
+. . .
+
+- **Install the software "manually"**\
+  In the best case, you can download a directly functioning executable,
+  but more commonly you need to "compile" (build) the program.
+  This can get very tricky at OSC due to the privilege and dependency issues.
 
 # Questions? {background-color="#A7B1B7" .unlisted}
 
