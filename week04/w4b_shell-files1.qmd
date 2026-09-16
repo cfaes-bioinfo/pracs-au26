@@ -47,7 +47,7 @@ We will focus on **commands that operate on files and dirs**.
 Specifically, you will learn to use the Unix shell to:
 
 - Create, copy, move, rename, and delete directories and files (**this lecture**)
-- Select multiple files with a shell wildcard (**this lecture**)
+- Select multiple files with globbing (**this lecture**)
 - View the contents of text files in various ways ([next lecture](./w4c_shell-files2.qmd))
 - Use redirection and the pipe to flexibly process the output of commands
   ([next lecture](./w4c_shell-files2.qmd))
@@ -484,7 +484,7 @@ Notably, almost all shell commands that operate on files and/or dirs
 **can operate on multiple (many!) files at a time**,
 which is one reason that using these commands can be highly efficient.
 That's especially true once you know how to select/specify many files at once
-using shortcuts known as wildcards (later in this lecture).
+using globbing (later in this lecture).
 :::
 
 ::: exercise
@@ -582,18 +582,12 @@ ls
 <pre class="bash-out"><code>apple.txt  <span style="color: #0328fc;">box</span>  <span style="color: #0328fc;">cup</span>  fig.txt  <span style="color: #0328fc;">jar</span>  kiwi_backup.txt  kiwi_copy.txt  kiwi.txt  <span style="color: #0328fc;">pot</span></code></pre>
 ```
 
-:::callout-tip
-#### Use Tab completion when typing paths to existing files!
-You will be much faster and less likely to have typos in your paths
-when you consistently use Tab completion.
-:::
-
 #### Copying dirs and their contents
 
 Finally, `cp` will by default refuse to copy directories and their contents ---
 that is, like `ls` and `mkdir`, it is not **recursive**^[
-For better or worse, non-recursiveness in shell commands is meant as a sort of safety mechanism,
-since it makes it harder to accidentally operate on very large amounts of data.]:
+Non-recursive defaults act as a kind of safety mechanism,
+since they make it harder to accidentally operate on very large amounts of data.]:
 
 ```bash
 cp jar/ jar_copy
@@ -602,7 +596,8 @@ cp jar/ jar_copy
 cp: -r not specified; omitting directory 'jar/'
 ```
 
-The `-r` option is needed for recursive copying:
+As the error message above hints,
+the `-r` option is needed for recursive copying:
 
 ```bash
 cp -r jar/ jar_copy
@@ -612,44 +607,104 @@ ls jar_copy/
 kiwi_backup.txt  kiwi.txt
 ```
 
+<hr style="height:1pt; visibility:hidden;" />
+
+::: callout-tip
+#### Both the `cp` and `mv` (next up) commands will by default:
+
+- Be **silent** when they succeed
+  (use the `-v` option for **verbose** to make them report what they do).
+- **Overwrite** existing files without reporting this
+  (use the `-i` option for **interactive** to make them ask before overwriting).
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise: Copying a dir a second time
+
+What do you think happens if you run the exact same command, `cp -r jar/ jar_copy`,
+a second time? Make a prediction, then run it and check the result with `ls jar_copy/`.
+
+<details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
+
+Recall that for files, if the destination is an existing dir,
+the copy is placed _inside_ it --- and the same is true for dirs.
+Because `jar_copy` now already exists,
+the second command creates a copy of `jar` _inside_ `jar_copy`:
+
+```bash
+cp -r jar/ jar_copy
+ls jar_copy/
+```
+```{=html}
+<pre class="bash-out"><code><span style="color: #0328fc;">jar</span>  kiwi_backup.txt  kiwi.txt</code></pre>
+```
+</details>
+:::
+
 ## `mv` to move and rename
 
 **Moving** a file versus **renaming** it is fundamentally the same operation:
 in both cases, you are **changing its path**.
-That is because both a file's name (e.g. `mango.txt`) and the dir it is inside
+After all, both a file's name (e.g. `mango.txt`) and the dir that it's inside
 (`box/`) are part of its path (`box/mango.txt`).
 
 As such, the **`mv`** command can be used to move files, rename them,
 or do both at the same time --- the same three scenarios you saw with `cp`:
 
-- Same directory, different file name ("renaming"):
+- Same directory, different file name ("**renaming**"):
 
   ```bash
-  mv kiwi_copy.txt plum.txt
+  mv -v kiwi_copy.txt plum.txt
+  ```
+  ```{=html}
+  <pre class="bash-out"><code>renamed 'kiwi_copy.txt' -> 'plum.txt'</code></pre>
+  ```
+  ```bash
+  ls
+  ```
+  ```{=html}
+  <pre class="bash-out"><code>apple.txt  <span style="color: #0328fc;">box</span>  <span style="color: #0328fc;">cup</span>  fig.txt  <span style="color: #0328fc;">jar</span>  <span style="color: #0328fc;">jar_copy</span>  kiwi_backup.txt  kiwi.txt  plum.txt<br><span style="color: #0328fc;">pot</span></code></pre>
   ```
 
-- Different directory, same file name ("moving"):
+- Different directory, same file name ("**moving**"):
 
   ```bash
-  # (cup/ is the dir you created in Exercise 2)
-  mv plum.txt cup/
+  # [Don't run this one: example only]
+  mv -v plum.txt cup/
+  ```
+  ```{=html}
+  <pre class="bash-out"><code>renamed 'plum.txt' -> 'cup/plum.txt'</code></pre>
   ```
 
-- Different directory, different file name ("moving + renaming"):
+- Different directory, different file name ("**moving + renaming**"):
 
   ```bash
-  mv kiwi_backup.txt cup/kiwi_old.txt
+  # [Don't run this one: example only]
+  mv -v kiwi_backup.txt cup/kiwi_old.txt
+  ```
+  ```{=html}
+  <pre class="bash-out"><code>renamed 'kiwi_backup.txt' -> 'cup/kiwi_old.txt'</code></pre>
   ```
 
-Finally, note that unlike `cp`, the `mv` command does not need an `-r` option to move or rename dirs!
+Final notes:
 
-::: callout-tip
-#### Both the `mv` and `cp` commands will by default:
+- While we used `-v` above to make `mv` report what it does,
+  this is **not required** for the command to work.
+- Unlike `cp`, the `mv` command does not need an `-r` option to move or rename dirs!
 
-- Not report what they do: no output = success
-  (use the **`-v` option for _verbose_** to make them report what they do).
-- Overwrite existing files without reporting this
-  (use the **`-i` option for _interactive_** to make them ask before overwriting).
+::: {.callout-warning}
+#### Avoid accidents due to typos by using Tab completion
+Watch out for typos in a destination dir name: `mv plum.txt cups`
+would not give an error even though there is no `cups` dir:
+it would _rename_ `plum.txt` to a **file** called `cups`.
+Including a trailing slash (`cups/`) protects against this,
+because `mv` will then give an error if that dir doesn't exist
+(the same goes for `cp`).
+
+Avoiding these mistakes is much easier if you consistently use Tab completion
+to type paths to existing dirs.
 :::
 
 ::: {.callout-note collapse="true"}
@@ -675,7 +730,7 @@ First, let's remove one of the dummy files you created above:
 rm apple.txt
 ```
 
-Like with `cp`, the **`-r`** option is needed to make the command work recursively:
+As with `cp`, the **`-r`** option is needed to make the command work recursively:
 
 ```bash
 # (box/ is the dir you created in Exercise 3)
@@ -690,15 +745,17 @@ rm: cannot remove 'box/': Is a directory
 rm -r box/
 ```
 
-::: {.callout-warning collapse="true"}
-#### There is no trash bin when deleting files in the shell, so use `rm` with caution! _(Click to expand)_
+::: callout-warning
+#### There is no trash bin when deleting files in the shell, so use `rm` with caution!
 
-`rm -r` can be very dangerous ---
-for example, the command `rm -r /` would try to remove the entire contents
-of the computer, including the operating system
-(luckily, `rm` nowadays refuses this particular command ---
-but it will not stop you from e.g. wiping your entire home dir with `rm -r ~`).
-A couple of ways to take precautions:
+`rm -r` can be very dangerous.
+For example, `rm -r /` would try to remove the entire contents of the computer,
+including the operating system^[
+Luckily, `rm` nowadays refuses this particular command ---
+but it will not stop you from e.g. wiping your entire home dir with `rm -r ~`.].
+You'll often see `rm -rf` online: the `-f` (force) option makes `rm`
+ignore nonexistent files and never ask for confirmation,
+so it's even less forgiving. A couple of ways to take precautions:
 
 - You can add the `-i` option,
   which will make you confirm each individual removal (can be tedious).
@@ -754,6 +811,10 @@ now your project's raw data has been erased! 😳
 (Additionally, it will produce an error because it cannot find the `extra` dir.
 But this error does not stop `rm` from moving on to the next argument.)
 
+Tab completion would have prevented this:
+it automatically "escapes" the space with a backslash,
+completing the name to `extra\ data`.
+
 </details>
 
 <hr style="height:1pt; visibility:hidden;" />
@@ -761,10 +822,10 @@ But this error does not stop `rm` from moving on to the next argument.)
 
 :::
 
-## Wildcard expansion (globbing)
+## Globbing
 
-Shell wildcard expansion is a very useful technique to select multiple files,
-where **wildcards** are **characters with a special meaning**.
+Globbing is a very useful shell technique to select multiple files at once,
+using **wildcards** --- **characters with a special meaning**.
 To practice with this,
 start by creating some dummy FASTQ files in your `sandbox` dir:
 
@@ -775,17 +836,33 @@ touch sample2_R1.fastq sample2_R2.fastq
 touch sample3_R1.fastq sample3_R2.fastq
 ```
 
+Let's check the contents of the `sandbox` dir again:
+
 ```bash
 ls
 ```
 ```{=html}
-<pre class="bash-out"><code><span style="color: #0328fc;">cup</span>  fig.txt  <span style="color: #0328fc;">jar</span>  <span style="color: #0328fc;">jar_copy</span>  kiwi.txt  <span style="color: #0328fc;">pot</span>  sample1_R1.fastq  sample1_R2.fastq<br>sample2_R1.fastq  sample2_R2.fastq  sample3_R1.fastq  sample3_R2.fastq</code></pre>
+<pre class="bash-out"><code><span style="color: #0328fc;">cup</span>  fig.txt  <span style="color: #0328fc;">jar</span>  <span style="color: #0328fc;">jar_copy</span>  kiwi_backup.txt  kiwi.txt  plum.txt  <span style="color: #0328fc;">pot</span><br>sample1_R1.fastq  sample1_R2.fastq  sample2_R1.fastq  sample2_R2.fastq<br>sample3_R1.fastq  sample3_R2.fastq</code></pre>
 ```
+
+We have a real mess now! Globbing will help us to select files to operate on without
+having to type out all of their names.
 
 The most commonly used wildcard is `*`,
 which matches **any number of any combination of characters**
-(including "nothing" --- the absence of any characters).
-For example, you can match only the two `sample1` files with a `*` using:
+(including "nothing", the absence of any characters).
+For example, you can match only the FASTQ files with a `*` using:
+
+```bash
+# This matches files that end with "fastq"
+ls *fastq
+```
+```bash-out
+sample1_R1.fastq  sample2_R1.fastq  sample3_R1.fastq
+sample1_R2.fastq  sample2_R2.fastq  sample3_R2.fastq
+```
+
+Or only the sample1 FASTQ files:
 
 ```bash
 # This matches files that start with "sample1"
@@ -795,7 +872,6 @@ ls sample1*
 sample1_R1.fastq  sample1_R2.fastq
 ```
 
-Selecting files with wildcard expansion is called **globbing**.
 When globbing, the pattern has to **match the entire file name** ---
 therefore, the following doesn't match anything:
 
@@ -811,7 +887,7 @@ So, if the text we use for matching is in the middle of the file name,
 like `R1`, we need a `*` on **both sides** of it:
 
 ```bash
-# This matches files that *contain*, anywhere in their names, "R1":
+# This matches files whose names contain "R1" anywhere:
 ls *R1*
 ```
 ```bash-out
@@ -823,8 +899,8 @@ In summary:
 | Pattern        | Matches files whose names...
 |----------------|---------------------------|
 | `sample1*`     | [start with]{.underline} "sample1"
-| `*.fastq`      | [end with]{.underline} ".fastq"
-| `*_R1*`        | [contain]{.underline} "\_R1"
+| `*fastq`       | [end with]{.underline} "fastq"
+| `*R1*`         | [contain]{.underline} "R1"
 | `*`            | _(matches all files and dirs in the working dir)_^[Except so-called hidden files, whose names start with a `.`.]
 
 : {.striped .hover}
@@ -882,40 +958,65 @@ Therefore, a command like `ls` receives the list of files
 When you type...
 
 ```bash
-ls sample1*fastq
+ls sample2*fastq
 ```
 
-...the shell will perform wildcard expansion before it runs the `ls` command.
-As such, the `ls` command will not see the `*` wildcard at all^[
+...the shell will perform globbing before it runs the `ls` command.
+As such, the `ls` command will never see the `*` wildcard^[
 If nothing matches, the shell leaves the pattern as is ---
-which is why the error message for `ls *R1` above showed `*R1` literally.],
-and be run as follows:
+which is why the error message for `ls *R1` above showed `*R1` literally.].
+Instead, the command that is actually run is:
 
 ```bash
-ls sample1_R1.fastq sample1_R2.fastq
+ls sample2_R1.fastq sample2_R2.fastq
+```
+
+You can see this expansion for yourself with `echo`,
+which simply prints whatever arguments it receives:
+
+```bash
+echo sample2*fastq
+```
+```bash-out
+sample2_R1.fastq sample2_R2.fastq
 ```
 
 #### Practical examples
 
-Because the expansion is done by the shell,
-wildcard expansion works with any command that accepts multiple paths as arguments,
+So far, we've only used globbing with the `ls` command to list files.
+But because the expansion is done by the shell,
+globbing works with **any command**,
+and is especially useful with commands that accept multiple paths as arguments,
 such as copy (`cp`), move (`mv`), and remove (`rm`).
-For example, we can:
+As some initial examples of how useful globbing is, we can:
 
-- Remove any stray `.txt` files at once using `rm -v *.txt`,
-  where we add the `-v` option to make `rm` report what it is removing:
+- Remove all stray `.txt` files at once.
+  Before removing files with a pattern,
+  it's a good habit to first check what the pattern matches with `ls`:
+
+  ```bash
+  ls *.txt
+  ```
+  ```bash-out
+  fig.txt  kiwi_backup.txt  kiwi.txt  plum.txt  sample1.txt  sample2.txt
+  ```
+
+  Then remove them
+  (adding the `-v` option just to make `rm` report what it is removing):
 
   ```bash
   rm -v *.txt
   ```
   ```bash-out
   removed 'fig.txt'
+  removed 'kiwi_backup.txt'
   removed 'kiwi.txt'
+  removed 'plum.txt'
   removed 'sample1.txt'
   removed 'sample2.txt'
   ```
 
-- Move all FASTQ files at once using:
+- Move all FASTQ files at once:
 
   ```bash
   mkdir fastq_files
@@ -930,9 +1031,77 @@ For example, we can:
   renamed 'sample3_R2.fastq' -> 'fastq_files/sample3_R2.fastq'
   ```
 
-Globbing is incredibly useful for working with large numbers of files,
+Globbing is incredibly handy for working with large numbers of files,
 and is one of the reasons that shell commands are so powerful and efficient.
 Later on, you'll use it, for example,
 to iterate over all FASTQ files in a dir to run a command on each of them.
+
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise: Globbing pitfalls
+
+a. Say your dir contained only two R1 FASTQ files, `sample1_R1.fastq` and `sample2_R1.fastq`.
+   You want to copy them into another dir, but forget to type the destination:
+
+   ```bash
+   # [Hypothetical - don't run]
+   cp *_R1.fastq
+   ```
+
+   Knowing that the shell expands the pattern before `cp` runs, what would happen?
+
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
+
+   After the shell has expanded the pattern, `cp` receives two arguments:
+
+   ```bash
+   cp sample1_R1.fastq sample2_R1.fastq
+   ```
+
+   So, `cp` treats the second file as the destination,
+   and it will silently overwrite `sample2_R1.fastq` with a copy of `sample1_R1.fastq`! 😳
+
+   (With three or more matching files, you would instead get an error such as
+   `cp: target 'sample3_R1.fastq' is not a directory`,
+   because when `cp` gets more than two arguments, the last one has to be a dir.)
+   </details>
+
+b. You want to remove all `.txt` files in your working dir,
+   but accidentally type a space after the `*`:
+
+   ```bash
+   # [Hypothetical - don't run]
+   rm * .txt
+   ```
+
+   What would happen?
+
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
+
+   A single stray space makes a big difference: `rm *.txt` removes all `.txt` files,
+   but `rm * .txt` removes **all files** in your working dir
+   (dirs are only spared because you didn't use `-r`,
+   though `rm` prints an error for each of them),
+   and it also complains that there is no file called `.txt`.
+
+   A good habit is to first run `ls` with the same pattern to check what it matches,
+   and only then run `rm`.
+   </details>
+
+c. What would have happened if you had used `*fastq*` instead of `*fastq`
+   in the `mv` example above, i.e. `mv -v *fastq* fastq_files/`?
+
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
+
+   The pattern `*fastq*` also matches the `fastq_files` dir itself!
+   So `mv` tries to move that dir into itself, which fails with an error.
+   The FASTQ files are still moved:
+
+   ```bash-out
+   mv: cannot move 'fastq_files' to a subdirectory of itself, 'fastq_files/fastq_files'
+   renamed 'sample1_R1.fastq' -> 'fastq_files/sample1_R1.fastq'
+   [...]
+   ```
+   </details>
+:::
 
 <hr style="height:1pt; visibility:hidden;" />

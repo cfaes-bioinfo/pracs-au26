@@ -38,7 +38,7 @@ bibliography: ../references.bib
 <br>
 
 <!----
-TODO for next year: - previous session no longer uses garrigos-data, download in this session
+TODO for 2027: - previous session no longer uses garrigos-data, download in this session
 --->
 
 ## Introduction
@@ -82,16 +82,15 @@ Navigate back to your top-level personal dir from `week04/sandbox`:
 
 ```bash
 cd ../..
+pwd
+```
+```bash-out
+/fs/ess/PAS3493/people/jelmer
 ```
 
-Not sure where you are?
-Then use the absolute path to your personal dir instead:
+_(Or use `cd /fs/ess/PAS3493/people/$USER` if you've gotten lost.)_
 
-```bash
-cd /fs/ess/PAS3493/people/$USER
-```
-
-## Don't have an existing VS Code session?
+## Starting fresh (no existing VS Code session)?
 
 1. Log in to OSC's OnDemand portal at <https://ondemand.osc.edu>.
 2. In the blue top bar, select `Interactive Apps` and near the bottom,
@@ -127,14 +126,13 @@ cd /fs/ess/PAS3493/people/$USER
   touch week04/lectureC.md
   ```
 
-- Today's commands all use files from the @garrigós2025 dataset.
+- Most of today's commands use files from the @garrigós2025 dataset.
   For convenience, copy the handful of files you'll need into the `sandbox` dir
   you created in the previous lecture:
 
   ```bash
-  # (Recall from the previous lecture: the '*' is a wildcard, so the third
+  # (Recall from the previous lecture: the '*' is a wildcard, so the second
   #  command copies both the _R1 and the _R2 file for this sample.)
-  cp garrigos/README.md week04/sandbox/
   cp garrigos/meta/metadata.tsv week04/sandbox/
   cp garrigos/fastq/S63_R*.fastq.gz week04/sandbox/
   cp garrigos/ref/annot.gtf.gz week04/sandbox/
@@ -153,7 +151,8 @@ cd /fs/ess/PAS3493/people/$USER
   cd week04/sandbox
   ```
 
-  Check with `ls` that these five files (including two FASTQ files) are now in your working dir.
+  Check with `ls` that these four files (including two FASTQ files)
+  are now in your working dir.
   (You will likely also see leftover dirs and files from the previous lecture ---
   that's fine, just ignore those.)
 
@@ -196,14 +195,24 @@ S65     24hpi   relictum
 S68     24hpi   relictum
 ```
 
+For reference, let's also open this file in the editor. Either:
+
+- Find it in the **file explorer** in the sidebar and click on it, or
+- **Hover** over the file name in the terminal and press <kbd>Cmd</kbd> (Mac) or
+  <kbd>Ctrl</kbd> (Windows/Linux), and you should see it become underlined and
+  clickable. Click it to open the file in the editor.
+
+Especially when working with omics data, files can be huge,
+and this is one reason we use commands instead of a text editor to work with them.
+But `cat` is not always the best tool for viewing large files either:
+printing a whole large file can take a while, and makes it hard to see the
+beginning of the output. We'll explore some other options below.
+
 ### `head` and `tail`
 
-Some files, especially when working with omics data, can be huge ---
-so printing the whole file with `cat` is not always ideal.
-Usefully, the twin commands **`head`** and **`tail`** only print the
+The twin commands **`head`** and **`tail`** print only the
 first (`head`) or last (`tail`) lines of a file.
-
-By default, these print 10 lines:
+By default, they print 10 lines:
 
 ```bash
 head metadata.tsv
@@ -231,6 +240,18 @@ sample_id       time    treatment
 S82     10dpi   cathemerium
 S75     10dpi   cathemerium
 ```
+
+::: callout-note
+#### Options that take an argument ([🤯]{style="font-size: 1.4em;"})
+
+This is the first option we've seen that needs a value:
+unlike the ON/OFF flags you saw so far, it has to be followed by a number.
+
+- In `-n 3`, `3` is an argument of the option `-n`
+  (cf. `metadata.tsv` is an argument of the command `head`).
+- You don't need a space between the option and its argument:
+  `head -n3 metadata.tsv` works the same as `head -n 3 metadata.tsv`.
+:::
 
 Let's try to take a peek inside a FASTQ file.
 To print the first eight lines (two reads), use `-n 8` with `head`:
@@ -282,18 +303,17 @@ These types of files, though, are more commonly decompressed before usage ---
 e.g. because they don't take up nearly as much space as a set of FASTQ files.
 :::
 
-### `less`: A file pager
+### `less` to page through files
 
-The `less` command is rather different from the previous commands,
-which simply printed file contents to the screen and then returned your shell prompt.
-Instead, `less` **opens** a file in a way that allows you to browse through it,
-and you need to explicitly quit the program to get your prompt back.
-
-Also, `less` will automatically display gzip-compressed files in
-human-readable form: [🥳]{style="font-size:1.2em"}^[
+The previous commands printed file contents to the screen and then returned
+your shell prompt.
+The `less` command is different, as it **opens** the file in a way that allows
+you to browse through it nicely.
+And it will display gzip-compressed files in human-readable form!^[
 This works because OSC, like most Linux systems, has a helper program
 called `lesspipe` set up --- on some other computers, `less` may show you
 the same gibberish that `head` did.]
+[🥳]{style="font-size:1.2em"}
 
 ``` bash
 less S63_R1.fastq.gz
@@ -313,39 +333,17 @@ CTCGGCGTTAACTTCATCACGCAGATCATTCCGTTCCAGCAGCTGAAGCAAGACTACCGTCAGTACGAGATGA
 AAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 ```
 
-::: {.callout-tip collapse="true"}
-#### The `-S` option to `less` suppresses "line-wrapping" _(Click to expand)_
-
-When lines are too long to fit on your computer screen,
-`less` will by default "wrap" them onto the next line on the screen.
-That's convenient for reading,
-but can be confusing for tabular formats and formats like FASTQ,
-because it means that one line on the screen no longer corresponds to one line
-in the file.
-
-With the `-S` option to `less`, lines will not be wrapped but will
-"run out of the screen" on the right-hand side
-(press the right arrow key <kbd>→</kbd> to see that part):
-
-``` bash
-less -S S63_R1.fastq.gz
-# [output not shown]
-```
-:::
-
 When you're inside the `less` pager,
 you can **move around** in the file in several ways --- for example:
 
-- By scrolling with your mouse
-
-- With up <kbd>↑</kbd> and down <kbd>↓</kbd> arrows: move line-by-line
-
-- With <kbd>Space</kbd> (down) and <kbd>b</kbd> (back up): move a full page at a time
-
-- By pressing <kbd>G</kbd> to go to the end of the file,
-  and <kbd>g</kbd> to go (back) to the top
+- By **scrolling** with your mouse.
+- With up <kbd>↑</kbd> and down <kbd>↓</kbd> arrows: move **line-by-line**.
+- With <kbd>Space</kbd> (down) and <kbd>b</kbd> (back up): move a **full page** at a time.
+- By pressing <kbd>G</kbd> to go to the **end** of the file,
+  and <kbd>g</kbd> to go (back) to the **top**.
 
 To **exit/quit** `less` and get your shell prompt back, press <kbd>q</kbd>.
+(When you do that, no output from the file will remain on the screen.)
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise 1: `less`
@@ -384,6 +382,26 @@ type `/NNNNN`, press <kbd>Enter</kbd>, and then press <kbd>n</kbd> to go to each
 ---->
 :::
 
+::: {.callout-tip collapse="true"}
+#### The `-S` option to `less` suppresses "line-wrapping" _(Click to expand)_
+
+When lines are too long to fit on your computer screen,
+`less` will by default "wrap" them onto the next line on the screen.
+That's convenient for reading,
+but can be confusing for tabular formats and formats like FASTQ,
+because it means that one line on the screen no longer corresponds to one line
+in the file.
+
+With the `-S` option to `less`, lines will not be wrapped but will
+"run out of the screen" on the right-hand side
+(press the right arrow key <kbd>→</kbd> to see that part):
+
+``` bash
+less -S S63_R1.fastq.gz
+# [output not shown]
+```
+:::
+
 ### `wc -l` to count lines
 
 _(This command doesn't display file contents, but you'll need it in the next section.)_
@@ -401,13 +419,13 @@ wc -l metadata.tsv
 
 This simple operation can be surprisingly useful:
 the number of lines **reflects the number of entries** in many file types.
-For example, `metadata.tsv` has 23 lines: one header line plus one line for each of the 22 samples.
+For example, recall that FASTQ files have four lines per read.
 
 ## Redirection and the pipe
 
 ### Redirection
 
-The regular output of a command that is printed to the screen
+The regular output that commands print to the screen
 (like a list of files by `ls`, or a number of lines by `wc -l`)
 is technically called **"standard out"** or in short "*stdout*".
 Sometimes, you may want to do something else with this output,
@@ -418,26 +436,26 @@ First, a reminder of what `echo` does without redirection ---
 it simply prints the text we provide to the screen:
 
 ```bash
-echo "My first line"
+echo "plum"
 ```
 ```bash-out
-My first line
+plum
 ```
 
-Now, redirect `echo`'s standard out to a new file `test.txt` using
+Now, redirect `echo`'s standard out to a new file `fruits.txt` using
 the `>` operator:
 
 ```bash
-echo "My first line" > test.txt
+echo "plum" > fruits.txt
 ```
 
 No output was printed to the screen --- **it went into the file instead**:
 
 ```bash
-cat test.txt
+cat fruits.txt
 ```
 ```bash-out
-My first line
+plum
 ```
 
 The **`>`** operator will redirect output to a file with the following rules:
@@ -448,11 +466,11 @@ The **`>`** operator will redirect output to a file with the following rules:
 Redirect another line into that same file:
 
 ```bash
-echo "My second line" > test.txt
-cat test.txt
+echo "fig" > fruits.txt
+cat fruits.txt
 ```
 ```bash-out
-My second line
+fig
 ```
 
 That may not have been what we intended!
@@ -460,21 +478,45 @@ As explained above, the earlier file content was _overwritten_.
 With **`>>`**, however, output is **appended** (added) to a file:
 
 ```bash
-echo "My third line" >> test.txt
-cat test.txt
+echo "banana" >> fruits.txt
+cat fruits.txt
 ```
 ```bash-out
-My second line
-My third line
+fig
+banana
 ```
 
-::: {.callout-warning appearance="simple"}
-Because `>` empties an existing file before the command even runs,
-never redirect output back to the command's own input file,
-even if you want to edit it in place.
-For example, the command
-`head metadata.tsv > metadata.tsv` would leave you with an empty `metadata.tsv`.
-(More on this in the [self-study section](#dont-redirect-back-to-the-input-file) at the end.)
+::: {.callout-warning collapse="true"}
+#### Redirection caveats _(Click to expand)_
+
+- **Never redirect output back to the command's own input file.**
+  Because `>` empties an existing file before the command even runs,
+  you shouldn't do this even if you want to edit a file in place.
+  For example, the command
+  `head metadata.tsv > metadata.tsv` would leave you with an empty `metadata.tsv`.
+  (More on this in the [self-study section](#dont-redirect-back-to-the-input-file) at the end.)
+
+- **Error messages are not redirected by** `>`.
+  Commands print error messages to a separate "stream" called
+  standard error (*stderr*). Because `>` only redirects standard out,
+  errors are still shown on the screen:
+
+  ```bash
+  # [We won't run this in class, but you can try it out yourself.]
+  ls fruits.txt nonexistent.txt > ls-out.txt
+  ```
+  ```bash-out
+  ls: cannot access 'nonexistent.txt': No such file or directory
+  ```
+  ```bash
+  cat ls-out.txt
+  ```
+  ```bash-out
+  fruits.txt
+  ```
+
+  That is usually a good thing, since you'll notice errors right away.
+  You'll run into standard error again later in the course.
 :::
 
 ### The pipe
@@ -484,26 +526,26 @@ You could do that as follows:
 
 ```bash
 # [Hypothetical example, don't run this]
-# First redirect 'ls' output to a file:
+# First, you'd redirect 'ls' output to a file:
 ls ../../garrigos/fastq > fastq-files.txt
 
-# Then count the number of lines, i.e. the number of files in that dir:
+# Then you'd count the number of lines, i.e. the number of files in that dir:
 wc -l fastq-files.txt
 ```
 ```bash-out
 44 fastq-files.txt
 ```
 ```bash
-# Now remove the file you no longer need
+# Finally, you'd remove the file you no longer need:
 rm fastq-files.txt
 ```
 
-_(This count is valid because `ls` prints one entry per line whenever its output
-doesn't go straight to the screen, such as when you redirect or pipe it.)_
+_(Wait, doesn't `ls` print several entries per line? Only when printing straight to the screen:
+when its output is redirected, `ls` prints one entry per line, so this count is correct.)_
 
 Above, we essentially wrote an "intermediate result" (`fastq-files.txt`) to file,
 which we later removed. What if you could avoid having to write this intermediate file?
-You can do so with a "**pipe**":
+You can do so with a so-called **pipe**:
 
 ```bash
 ls ../../garrigos/fastq | wc -l
@@ -516,16 +558,27 @@ With the pipe, the output of the command on the left-hand side
 (a file listing, in this case) is **redirected into the command on the right-hand side**
 (`wc` in this case).
 Like many others, the `wc` command will gladly accept input that way
-(i.e., via **standard in**, or *stdin*) instead of via a file name argument.
+(i.e., via standard in, or *stdin*) instead of via a file name argument.
 
-Pipes are useful because they avoid having to write/read intermediate files ---
-this saves typing, makes the operation quicker, and reduces file clutter.
+<details class="details-quiz">
+<summary>Compare this output with the earlier `wc -l` output. What's different, and why? *(Click to see the answer)*</summary>
+
+_The answer will be added after class._
+
+<!----
+The output no longer includes a file name: `wc` now reads from standard in
+rather than from a file, so there is no file name to report.
+---->
+</details>
+
+To recap, pipes are useful because they avoid having to write/read intermediate
+files --- this saves typing, makes the operation quicker, and reduces file clutter.
 In the example above,
 you don't need to make a `fastq-files.txt` file to count the number of files.
 We'll see pipes in action a bunch more in the next section.
 
 ::: exercise
-#### {{< fa user-edit >}} Self-study exercise: the pipe
+#### {{< fa user-edit >}} Exercise 2: the pipe
 
 a. What do you think the command below does?
    Could you divide the resulting count by 4 to get the total number of reads
@@ -535,6 +588,7 @@ a. What do you think the command below does?
    cat S63_R1.fastq.gz S63_R2.fastq.gz | wc -l
    ```
 
+   <!------
    <details><summary> {{< fa check-circle >}} Click for the solution. </summary>
 
    Like many shell commands, `cat` accepts multiple arguments,
@@ -555,6 +609,7 @@ a. What do you think the command below does?
    since the files are compressed:
    compressed and uncompressed line counts for a file are not the same.
    </details>
+   ---->
 
 b. A classmate wants to pipe the output of `ls` into `wc`,
    but accidentally types `>` instead of `|`:
@@ -563,9 +618,10 @@ b. A classmate wants to pipe the output of `ls` into `wc`,
    ls > wc
    ```
 
-   Without running it: what do you think will happen?
-   Then run it, and check what happened with `ls` and `cat wc`.
+   What do you think will happen?
+   Then run it, and check what happened, starting with `ls`.
 
+   <!------
    <details><summary> {{< fa check-circle >}} Click for the solution. </summary>
 
    Nothing is printed, and no counting happens.
@@ -574,30 +630,27 @@ b. A classmate wants to pipe the output of `ls` into `wc`,
    (which even includes `wc` itself!).
    Remove the file with `rm wc`.
    </details>
+   ---->
 :::
 
 ## Unix data tools
 
 We'll now turn to some commands that may be described as "Unix data tools".
-These commands are especially good for relatively simple data processing and
-summarizing steps, and are excellent at dealing with very large files.
-They are therefore quite useful when working with sequence data files.
-
-We will cover the following commands:
+These are especially good for relatively simple data processing and
+summarizing steps, and are excellent at dealing with very large files
+such as genomics files. We will cover the following commands:
 
 - `grep` to search for text in files
 - `cut` to select one or more columns from tabular data
 - `sort` to sort lines, or tabular data by column
 - `uniq` to remove duplicates
 
-We'll start by revisiting one of the example data files,
+But we'll start by revisiting one of the example data files,
 and discussing tabular plain-text files.
 
 ### Tabular plain-text files and file extensions
 
-The examples below will use the `metadata.tsv` file that you copied into your
-sandbox at the start of this lecture.
-Let's take another look at its first few lines:
+Let's take another look at the first few lines of the now-familiar `metadata.tsv` file:
 
 ```bash
 head -n 3 metadata.tsv
@@ -619,8 +672,8 @@ Most commonly, these are:
 - A **comma** (<kbd>,</kbd>), and such files are often stored with a **`.csv`** extension for
   Comma-Separated Values ("**CSV** file").
 
-::: callout-note
-#### Tabs or spaces? Checking with `cat -A`
+::: {.callout-note collapse="true"}
+#### Does a file use Tabs or spaces? You can check with `cat -A`.
 
 From the `head` output above, you can't tell whether the columns are separated
 by Tabs or by a bunch of spaces.
@@ -637,6 +690,10 @@ S75^I10dpi^Icathemerium$
 ```
 
 So, the columns in this file are separated by single Tab characters.
+
+`cat -A` is also useful for spotting Windows-style line endings,
+which are common in files created on Windows computers (e.g., exported from Excel).
+These show up as `^M$` instead of `$` and can make commands behave unexpectedly.
 :::
 
 ::: callout-warning
@@ -646,40 +703,43 @@ All plain-text files are fundamentally the same, i.e. "just plain-text files".
 Therefore, **changing the file extension does not change the file itself.**
 Instead, different file extensions are used primarily to make clear
 to humans, and to some extent to the computer, what the file contains.
-This applies to all types of plain-text files, like `.txt`, `.csv`, and `.tsv`,
-but also sequence file types like `.fastq` and script files like `.R` and `.sh`.
 
-Note that the same is true for compressed files:
-removing `.gz` from a file name (e.g., renaming `annot.gtf.gz` to `annot.gtf`)
-does **not** decompress the file --- it only makes its name misleading.
+- This applies to all types of plain-text files, like `.txt` and `.tsv`,
+  but also genomics files like `.fastq` and script files like `.R`.
+- The same is true for compressed files: removing `.gz` from a file name
+  (e.g., renaming `annot.gtf.gz` to `annot.gtf`)
+  does **not** decompress the file --- it only makes its name misleading.
 :::
 
 ### `grep` to print lines that match a pattern
 
 The `grep` command is an extremely useful command that searches for specific text
 (or text patterns) in a file.
-By default, it will **print each line that contains a "match" in full**.
+By default, it **prints each line that contains a "match" in full**.
 
 Its basic syntax is `grep "<search-pattern>" <file-path>`.
-For example, to print all lines from `metadata.tsv` that contain "cathemerium":
+For example, to print all lines from `metadata.tsv` that contain "relictum":
 
 ```bash
-grep "cathemerium" metadata.tsv
+grep "relictum" metadata.tsv
 ```
-```bash-out
-S82     10dpi   cathemerium
-S75     10dpi   cathemerium
-S79     10dpi   cathemerium
-S83     10dpi   cathemerium
-S64     24hpi   cathemerium
-S67     24hpi   cathemerium
-S70     24hpi   cathemerium
-```
+<pre class="bash-out"><code>S76     10dpi   <span class="match-red">relictum</span>
+S80     10dpi   <span class="match-red">relictum</span>
+S85     10dpi   <span class="match-red">relictum</span>
+S86     10dpi   <span class="match-red">relictum</span>
+S71     24hpi   <span class="match-red">relictum</span>
+S74     24hpi   <span class="match-red">relictum</span>
+S65     24hpi   <span class="match-red">relictum</span>
+S68     24hpi   <span class="match-red">relictum</span></code></pre>
 
-While not always necessary, it's good practice to consistently
-**use quotes** (`"..."`) around the search pattern like above^[
-Use _double_ quotes by default, like in the examples.
-_Single_ quotes generally work too, but they behave differently in some situations.].
+Two notes about the above command and output:
+
+1. While not always necessary, it's good practice to **use quotes** (`"..."`)
+   around the search pattern like above^[
+   Use _double_ quotes by default, like in the examples.
+   _Single_ quotes generally work too, but they behave differently in some situations.
+   There are some scenarios where omitting the quotes can lead to rather unexpected behavior.].
+2. In most terminals, including at OSC, `grep` will highlight the matching part of a line.
 
 Instead of printing matching lines, you can also **count** them with the `-c` option.
 For example, how many control samples are in the dataset?
@@ -692,7 +752,7 @@ grep -c "control" metadata.tsv
 ```
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 2: `grep`
+#### {{< fa user-edit >}} Exercise 3: `grep`
 
 a. What output do you expect from the command below?
    Check your answer by executing the command.
@@ -716,8 +776,8 @@ a. What output do you expect from the command below?
    </details>
    ---->
 
-b. Based on the output of the above command, how do you think `grep`'s matching
-   behavior differs from globbing with the shell wildcard `*`?
+b. Based on the output of the above command, how does `grep`'s matching behavior
+   seem to differ from globbing with the shell wildcard `*`?
 
    <!------
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
@@ -730,10 +790,33 @@ b. Based on the output of the above command, how do you think `grep`'s matching
    where the pattern has to match the entire file name!
    </details>
    ---->
+:::
 
------
+<hr style="height:1pt; visibility:hidden;" />
 
-c. **Bonus**: Count the number of `relictum` samples at the `24hpi` time point
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise: more `grep`
+
+a. A classmate wants to count the `24hpi` samples.
+   Reasoning that `24hpi` contains a `4` and `10dpi` does not, they run:
+
+   ```bash
+   grep -c "4" metadata.tsv
+   ```
+
+   Will this give them the correct count? Why or why not?
+
+   <!------
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+   No: it reports `11`, but there are only 10 `24hpi` samples.
+   `grep` matches the pattern anywhere in a line, so it also matches the
+   `10dpi` sample `S84`. With tabular files, use a pattern specific enough
+   to only match the column you have in mind, like `"24hpi"`.
+   </details>
+   ---->
+
+b. Count the number of `relictum` samples at the `24hpi` time point
    with a single line of code.
 
    <details><summary>{{< fa lightbulb >}} Click here for a hint.</summary>
@@ -776,7 +859,8 @@ c. **Bonus**: Count the number of `relictum` samples at the `24hpi` time point
 The `zcat` command is the counterpart of `cat` for gzip-compressed files:
 it prints their contents in human-readable form.
 By piping `zcat`'s output into `grep` or into any other command,
-you can therefore use all the tools you've learned about even with compressed files:
+you can therefore use all the tools you've learned about even with compressed files ---
+let's try that with the _Culex pipiens_ genome annotation GTF file:
 
 ```bash
 # Search for cecropin-related lines in the GTF file:
@@ -788,15 +872,20 @@ NC_068937.1     Gnomon  transcript      43201550        43201918        .       
 NC_068937.1     Gnomon  exon    43201550        43201708        .       +       .       gene_id "LOC120426347"; transcript_id "XM_039591134.2"; db_xref "GeneID:120426347"; experiment "COORDINATES: polyA evidence [ECO:0006239]"; gene "LOC120426347"; model_evidence "Supporting evidence includes similarity to: 26 ESTs, 18 Proteins"; product "cecropin-A2-like"; transcript_biotype "mRNA"; exon_number "1";
 ```
 
+_In this week's [exercises](./w4_exercises.qmd) and next week's assignment (GA2),_
+_you'll further explore this GTF file._
+
 ::: {.callout-tip appearance="simple"}
-In this week's exercises and next week's assignment, you'll further explore this GTF file.
+For very large files like this one: if you forget to pipe `zcat` (or `cat`) output
+into another command and your screen floods with text,
+press <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop it.
 :::
 
 ### Combining `cut`, `sort`, and `uniq` to create a list
 
-Say you want an **alphabetically sorted list of distinct treatments** in `metadata.tsv`.
-(That's a bit trivial here, because this file is small enough to see that information
-at a glance --- but the same approach works on a huge genome annotation file.)
+Say you want an **alphabetically sorted list of distinct treatments** in `metadata.tsv`
+(that's trivial for this file, because it's small enough to see that information
+at a glance --- but the same approach works on a huge GTF file).
 To do this, you'll need to learn about three new commands:
 
 - **`cut`** to select, or "cut out", one or more columns from a tabular file.
@@ -830,6 +919,12 @@ S81     10dpi   control
 S76     10dpi   relictum
 S80     10dpi   relictum
 ```
+
+::: {.callout-tip appearance="simple"}
+Don't forget to make use of the **command history** here!
+Press the up arrow key <kbd>↑</kbd> to recall the previous command,
+then edit it to create the next command.
+:::
 
 Second, select the column of interest with `cut`,
 using its **`-f`** ("field") option to specify the desired column(s):
@@ -934,9 +1029,9 @@ tail -n +2 metadata.tsv | cut -f 3 | sort | uniq -c
 ```
 
 :::{.callout-note collapse="true"}
-#### Sorting the frequency table _(Click to expand)_
+#### Producing a sorted frequency table _(Click to expand)_
 
-And this frequency table can in turn be sorted by most frequent occurrence.
+These frequency tables can in turn be sorted by most frequent occurrence.
 
 By default, `sort` sorts alphabetically, even when lines start with numbers:
 it compares text character by character,
@@ -966,8 +1061,8 @@ use the `-k` option --- for example:
 tail -n +2 metadata.tsv | sort -k3
 ```
 
-`-k` takes a start and a stop column to sort by,
-so if you want to strictly sort only based on one column at a time, use this syntax:
+However, `-k3` actually means "sort based on everything from column 3 to the end of the line."
+To sort based on a single column only, give both a start and a stop column:
 
 ```bash
 # Explicitly indicate to sort based on the third column only:
@@ -983,7 +1078,7 @@ tail -n +2 metadata.tsv | sort -k3,3 -k2,2
 :::
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 3: `cut`, `sort`, and `uniq`
+#### {{< fa user-edit >}} Self-study exercise: `cut`, `sort`, and `uniq`
 
 a. The four pieces below, when combined with pipes (`|`) in the right order,
    produce a frequency table of the **number of samples per time point**.
@@ -998,7 +1093,6 @@ a. The four pieces below, when combined with pipes (`|`) in the right order,
    tail -n +2 metadata.tsv
    ```
 
-   <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
    The file comes first, then we select the column, then sort, then count:
 
@@ -1013,10 +1107,9 @@ a. The four pieces below, when combined with pipes (`|`) in the right order,
    So the two time points do _not_ have the same number of samples:
    there are 12 `10dpi` samples and 10 `24hpi` samples.
    </details>
-   ---->
 
 b. What if you forget `sort`?
-   Say you run the above pipeline again, but leave out `sort` like so:
+   Say you run the treatment frequency table pipeline again, but leave out `sort` like so:
 
    ```bash
    tail -n +2 metadata.tsv | cut -f 3 | uniq -c
@@ -1029,7 +1122,6 @@ b. What if you forget `sort`?
    C) More than three lines, with each treatment appearing several times.
    D) Three lines, but in a different order.
 
-   <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
    The correct answer is **C**.
@@ -1049,15 +1141,8 @@ b. What if you forget `sort`?
 
    This is why `sort` almost always comes right before `uniq`.
    </details>
-   ---->
-:::
 
-<hr style="height:1pt; visibility:hidden;" />
-
-::: exercise
-#### {{< fa user-edit >}} Self-study exercise: sample IDs and study design
-
-a. Using a pipeline similar to those above to create another frequency table,
+c. Using a pipeline similar to those above to create another frequency table,
    check whether any duplicate sample IDs are present in `metadata.tsv`.
 
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
@@ -1086,7 +1171,7 @@ a. Using a pipeline similar to those above to create another frequency table,
    ```
    </details>
 
-b. The experiment has 2 time points and 3 treatments.
+d. The experiment has 2 time points and 3 treatments.
    Modify the treatment frequency table pipeline so that it counts the number of
    samples for each _combination_ of time point and treatment.
    Is the design balanced, i.e. does every combination have the same number of samples?
