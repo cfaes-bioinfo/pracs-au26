@@ -1,5 +1,5 @@
 ---
-title: "Version control with Git:<br>Why and how"
+title: "Version control:<br>Why and how"
 subtitle: "Week 5 -- Lecture A"
 pagetitle: "w5a: Git intro (slides)"
 date: September 21, 2026
@@ -38,7 +38,6 @@ bibliography: ../references.bib
 <!----
 Start of lecture:
 - Discuss Excel and Word usefulness?
-- What one or two things have you struggled most with in this course so far?
 - How is the pace so far: too fast, too slow, about right?
 --->
 
@@ -46,17 +45,18 @@ Start of lecture:
 
 **In this lecture, you'll learn:**
 
-- Why it's a good idea to use a formal Version Control System
+- Why it's a good idea to use a formal Version Control System like Git
   for research projects
 - Key Git concepts and terminology such as _repositories_ and _commits_
 - An overview of the basic Git workflow
+- What GitHub is and how it relates to Git
 
 . . .
 
 <br>
 
 ::: {.callout-tip appearance="simple"}
-This lecture covers Git **concepts**,
+This lecture covers Git concepts,
 and we'll put them into practice [in the next one](./w5b_git.qmd).
 :::
 
@@ -66,12 +66,14 @@ and we'll put them into practice [in the next one](./w5b_git.qmd).
 
 During a research project, your files will constantly change. Ideally, you can:
 
-- Keep earlier versions of your files
-- See what changed between them,
-- Go back (e.g., after accidentally overwriting a file,
+- **Keep earlier versions** of your files
+- See what **changed between versions**
+- **Go back** to earlier versions (e.g., after accidentally overwriting a file,
   or when a script stops working)
 
 . . .
+
+<hr style="height:1pt; visibility:hidden;" />
 
 Modern cloud storage solutions (OneDrive, Dropbox, etc.) help.
 You can restore automatically saved earlier versions of individual files,
@@ -79,8 +81,8 @@ and work simultaneously on files with collaborators.
 
 ## Why use a Version Control System?
 
-However, with a formal Version Control System,
-it's also or better possible to:
+However, a formal Version Control System does this better, and does more.
+It allows you to:
 
 ::: {.columns}
 ::: {.column .fragment data-fragment-index="1" width="44%"}
@@ -129,10 +131,10 @@ with every minor piece of progress.
 
 It manages this cleverly without having to create full copies of the project for every snapshot:
 
-![](../img/git-scm-snapshots.png){fig-align="center" width="80%" fig-alt="A diagram showing how Git saves project snapshots." .lightbox}
+![](../img/git-scm-snapshots2.png){fig-align="center" width="85%" fig-alt="A diagram showing how Git saves project snapshots." .lightbox}
 
 ::: legend2
-The boxes with dashed lines depict files that have not changed: these will not be saved repeatedly.<br>Figure from <https://git-scm.com>.
+The boxes with dashed lines depict files that have not changed: these will not be saved repeatedly.<br>Figure from [https://git-scm.com](https://git-scm.com){target="_blank"}.
 :::
 
 ::: footer
@@ -176,7 +178,7 @@ Within folders, systematic file organization also makes Git easier to work with.
 . . .
 
 ::: {.callout-note appearance="simple"}
-A file or dir name that starts with a **`.`**, like in `.git`, is **hidden**.
+A file or dir name that starts with a **`.`**, like `.git`, is **hidden**.
 
 These don't show up in file browsers or `ls` listings by default.
 :::
@@ -212,7 +214,7 @@ For instance:
 ::: callout-tip
 #### Derived files
 Recall from week 2 that results and other derived files in essence
-are (or should be) *dispensable*,
+are (or should be) *disposable*,
 because they can be regenerated using the raw data and the scripts.
 
 Therefore, version-controlling derived files is usually unnecessary and would lead
@@ -299,18 +301,25 @@ Your project directory contains the files below.
 Which ones should you put under version control?
 
 a) `scripts/trim.sh` --- a script you wrote
-b) `README.md` --- your project's documentation
-c) `results/trim/sampleA.fastq.gz` --- output from your trimming script
-d) `README.html` --- rendered from `README.md`
+b) `results/trim/sampleA.fastq.gz` --- output from your trimming script
+c) `data/sampleA.fastq.gz` --- raw reads from the sequencing facility
+d) `metadata/samples.tsv` --- a small sample table you typed up
+e) `README.html` --- rendered from `README.md`
+
+And: of the files you would *not* commit, which one most needs to be backed up some other way?
 
 <!-----
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: callout-tip
 #### Answer
-**a)** and **b)**: these are files you edit by hand.
-**c)** and **d)** are derived files: you can always regenerate them from the script
+**a)** and **d)**: these are files you edit by hand.
+**b)** and **e)** are derived files: you can always regenerate them from the script
 or the Markdown file.
+
+**c)** is _not_ derived: raw data can't be regenerated, but it's too large for Git.
+So that's the file that most needs a backup elsewhere ---
+not being in Git doesn't mean a file is unimportant!
 :::
 ------>
 
@@ -337,7 +346,7 @@ or the Markdown file.
 
 - But you can switch to GUI usage later:
   - This is not a hard switch to make.
-  - We recommend to use the VS Code integration, and will briefly show this.
+  - We recommend using the VS Code integration, and will briefly show this.
 
 :::
 :::
@@ -351,7 +360,7 @@ the main difficulties are conceptual, not technical.
 Many people have "false starts" with it,
 but in this course we try to get you past that.
 
-This is also an area where GenAI can be _really_ helpful!
+This is also an area where Generative AI can be **really** helpful!
 :::
 
 ::: footer
@@ -404,13 +413,95 @@ Adding and committing changes with Git commands:
 ![](../img/git-staging-area.svg){fig-align="center" width="100%" fig-alt="A diagram of the process of adding and committing changes with Git commands." .lightbox}
 
 ::: legend2
-The Git database, which is in a hidden folder `.git`, is depicted with a gray background.
+The Git database, which is in a hidden dir `.git`, is depicted with a gray background.
+:::
+
+# Remote repositories on GitHub {background-color="#A7B1B7"}
+
+## Git vs. GitHub
+
+::: {.columns}
+::: {.column width="47%"}
+
+### [Git]{style="display:block; text-align:center;"}
+
+- The version control **software** that you run on your computer or at OSC.
+- Your repositories are **local**: each is stored in a project's `.git` dir.
+
+:::
+::: {.column width="5%"}
+<div class="fragment" data-fragment-index="1" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
+:::
+::: {.column width="47%" .fragment data-fragment-index="1"}
+
+### [GitHub]{style="display:block; text-align:center;"}
+
+- A **website** that hosts Git repositories online.
+- An online counterpart of a local repo is called a
+  "**remote repository**" or simply a "**remote**".
+
+:::
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.fragment style="text-align:center;"}
+
+A remote on GitHub allows you to:
+
+- **Share** your work (e.g., alongside a publication)
+- Have an online **backup**
+- **Collaborate** with others
+
+:::
+
+. . .
+
+::: {.callout-tip appearance="simple"}
+We'll start using GitHub on Wednesday ---
+[create a GitHub account](/UA/UA3.qmd) before then!
+:::
+
+::: footer
+:::
+
+## Keeping local and remote repos in sync
+
+Commit locally as usual, and occasionally upload ("**push**")
+new commits to GitHub with `git push`:
+
+::: {.columns}
+::: {.column width="48%"}
+
+![](../img/git-remote-3.png){fig-align="center" width="80%" fig-alt="A diagram of a local repo with one more commit than its GitHub remote." .lightbox}
+
+::: legend2
+Boxes are commits and the `4dce25f`-type labels are commit IDs ("hashes").
+After making a new commit locally, your local and remote repos are out of sync:
+the local repo has one more commit than the GitHub remote.
+:::
+
+:::
+::: {.column width="4%"}
+:::
+::: {.column width="48%" .fragment}
+
+![](../img/git-remote-4.png){fig-align="center" width="80%" fig-alt="A diagram showing git push uploading the new local commit to GitHub." .lightbox}
+
+::: legend2
+`git push` uploads the new commit, after which the repos are back in sync.
+:::
+
+:::
+:::
+
+::: footer
 :::
 
 # Questions? {background-color="#A7B1B7" .unlisted}
 
 <br><br>
 
-[_Click here to continue with today's hands-on practice: [**Version control with Git**](./w5b_git.qmd)_]{style="display:block; text-align:center"}
+[_Click here to continue with today's hands-on practice: [Version control with Git](./w5b_git.qmd)_]{style="display:block; text-align:center"}
 
 ## References

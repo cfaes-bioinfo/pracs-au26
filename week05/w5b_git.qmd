@@ -1,7 +1,7 @@
 ---
-title: "Version control with Git: in practice"
+title: "Version control with Git"
 subtitle: "Week 5 -- Lecture B"
-pagetitle: "w5b: Git basics"
+pagetitle: "w5b: Git hands-on"
 date: 2026-09-21
 date-modified: last-modified
 author:
@@ -56,60 +56,42 @@ This is the hands-on continuation of today's lecture on version control with Git
 
 ### Getting ready
 
-#### Start a VS Code session
+- Start a VS Code session like you've done before.
 
-Start a VS Code session like you've done before.
+  <details><summary> {{< fa lightbulb >}} _Click here to see the instructions_</summary>
 
-<details><summary> {{< fa lightbulb >}} _Click here to see the instructions_</summary>
+  1. Log in to OSC's OnDemand portal at <https://ondemand.osc.edu>.
 
-1. Log in to OSC's OnDemand portal at <https://ondemand.osc.edu>.
+  2. In the blue top bar, select `Interactive Apps` and near the bottom,
+     click `Code Server`.
 
-2. In the blue top bar, select `Interactive Apps` and near the bottom,
-   click `Code Server`.
+  3. Fill out the form as follows (as necessary --- should be prefilled now!):
+     - **Cluster**: `pitzer`
+     - **Account**: `PAS3493`
+     - **Number of hours**: `2`
+     - **Working Directory**: `/fs/ess/PAS3493/people/<user>`
+       (replace `<user>` with your user name)
+     - **App Code Server version**: `4.129.0`
 
-3. Fill out the form as follows (as necessary --- should be prefilled now!):
-   - **Cluster**: `pitzer`
-   - **Account**: `PAS3493`
-   - **Number of hours**: `2`
-   - **Working Directory**: `/fs/ess/PAS3493/people/<user>`
-    (replace `<user>` with your user name)
-   - **App Code Server version**: `4.129.0`
+  4. Click `Launch`, and in the next page, click the `Connect to VS Code` button once it appears.
 
-4. Click `Launch`, and in the next page, click the `Connect to VS Code` button once it appears.
+  5. In VS Code, **open a terminal** by either:
+     - Clicking {{< fa bars >}} &rarr; `Terminal` &rarr; `New Terminal`
+     - Using the keyboard shortcut <kbd>Ctrl</kbd>+<kbd>`</kbd>
 
-5. In VS Code, **open a terminal** by either:
-   - Clicking {{< fa bars >}} &rarr; `Terminal` &rarr; `New Terminal`
-   - Using the keyboard shortcut <kbd>Ctrl</kbd>+<kbd>`</kbd>
+  6. Check that you are in `/fs/ess/PAS3493/people/$USER`
+     by typing `pwd` in the terminal.
 
-6. Check that you are in `/fs/ess/PAS3493/people/$USER`
-   by typing `pwd` in the terminal.
+     ::: {.callout-tip appearance="simple"}
+     Recall that `$USER` is a variable that represents your username.
 
-   ::: {.callout-tip appearance="simple"}
-   Recall that `$USER` is a variable that represents your username.
+     If you're not in `/fs/ess/PAS3493/people/$USER`,
+     it may be listed under `Recents` in the `Get Started` document ---
+     if so, click on that entry.
+     Otherwise, click `File` > `Open Folder` and type/select that path.
+     :::
 
-   If you're not in `/fs/ess/PAS3493/people/$USER`,
-   it may be listed under `Recents` in the `Get Started` document ---
-   if so, click on that entry.
-   Otherwise, click `File` > `Open Folder` and type/select that path.
-   :::
-
-</details>
-
-#### Create a dir for this week and navigate there
-
-```bash
-mkdir week05
-cd week05
-```
-
-#### Optional: Open a Markdown file for notes
-
-You may want to create and open a Markdown file to keep class notes:
-
-```bash
-# After this command, click on the file name in the file explorer to open it:
-touch lectureB.md
-```
+  </details>
 
 ## One-time Git configuration
 
@@ -141,8 +123,8 @@ These steps are all done with `git config --global`:
    here it is better to select a text editor that runs in the shell, like `nano`^[
    Git will open an editor when you need to provide a "commit message" but didn't
    enter one on the command line.
-   Its default editor is `vi`/`vim`, which is more complicated and,
-   for example, notoriously hard to exit for beginners.].)
+   Its default editor is `vi`/`vim`, which is harder to use and
+   notoriously hard for beginners to exit.].)
 
    ```sh
    git config --global core.editor "nano -w"
@@ -171,43 +153,61 @@ These steps are all done with `git config --global`:
 
 You'll create a Git repository for a **mock book project**:
 writing Charles Darwin's "On the Origin of Species".
-This example follows Chapter 2 of @allesina2019 and it's another example you may
-find silly,
-but it will help you learn the basic Git workflow while writing content that is
-easy to understand.
+This example follows Chapter 2 of @allesina2019.
+The topic may seem silly and not that relevant, but this setup is intended to help
+you learn the basic Git workflow while writing content that is easy to understand.
 
 ### Start a new Git repository
 
-Create a new dir for a mock project that you will version-control with Git,
-and navigate there:
+Create a new dir for a mock project that you will version-control with Git:
 
 ``` sh
-# (Your starting point should be /fs/ess/PAS3493/people/$USER/week05)
-mkdir originspecies
-cd originspecies
+# (Your starting point should be /fs/ess/PAS3493/people/$USER)
+mkdir -p week05/evo
+cd week05/evo
 ```
 
+Next, open this dir in VS Code with "Open Folder".
+This moves all of VS Code, not just the terminal, to this dir:
+the file explorer will only show this project's files,
+and VS Code's Git functionality will work with the repository you'll create here.
+This is also how you'll want to work with your own projects:
+open each project's dir as the folder in VS Code.
+
+1. Click {{< fa bars >}} &rarr; `File` &rarr; `Open Folder`.
+
+2. Type/select `/fs/ess/PAS3493/people/<user>/week05/evo`,
+   replacing `<user>` with your user name.
+   _This will cause VS Code to reload._
+
+3. Open a new terminal and check that you are in the `evo` dir:
+
+   ```sh
+   pwd
+   ```
+   ```bash-out
+   /fs/ess/PAS3493/people/jelmer/week05/evo
+   ```
+
 The command to **initialize a new Git repository is `git init`** ---
-use that to start a repo for the `originspecies` dir:
+use that to start a repo for the `evo` dir:
 
 ``` sh
 git init
 ```
 ``` bash-out
-Initialized empty Git repository in /fs/ess/PAS3493/people/jelmer/week05/originspecies/.git/
+Initialized empty Git repository in /fs/ess/PAS3493/people/jelmer/week05/evo/.git/
 ```
 
-Can we confirm that the Git repo dir is there?
-Recall from the previous lecture that Git stores its data in a **hidden dir called**
-`.git`. We can use the `ls` command with the `-a` option to show hidden files and dirs:
+Can you confirm that this hidden `.git` dir is there?
+The `ls` command will show hidden files and dirs with the `-a` option,
+and indeed, the `.git` dir is there:
 
 ```bash
 # (ls -a will also show the current dir "." and the parent dir "..")
 ls -a
 ```
-```bash-out
-.  ..  .git
-```
+<pre class="bash-out"><code><span class="ls-blue">.</span>  <span class="ls-blue">..</span>  <span class="ls-blue">.git</span></code></pre>
 
 Next, check the status of your new repository with `git status`:
 
@@ -225,19 +225,43 @@ nothing to commit (create/copy files and use "git add" to track)
 
 Git reports that you:
 
-- Are on a "branch" called `main`.
+- Are on a "**branch**" called `main`.
   We won't cover Git branches in class, but this is discussed in the
-  [optional self-study material](../bonus/git.qmd) and @allesina2019 Chapter 2.6.
-  Basically, branches are "parallel versions" of your repository.
+  [optional self-study material](../bonus/git.qmd) and in @allesina2019 Chapter 2.6.
+  Basically, branches are "parallel versions" of your repository that are useful
+  for collaborative and experimental work.
 
 - Have not created any commits yet.
 
 - Have "nothing to commit" because there are no files in this dir.
 
+::: {.callout-warning}
+#### Where (not) to run `git init`
+Above, we created a Git repo in an empty dir,
+but you can use `git init` just the same in a dir that already contains files.
+But only run it in the top-level dir of a **single project**:
+never in a dir like your home dir or `/fs/ess/PAS3493/people/$USER`,
+which contains many projects,
+and never inside a dir that is already part of a Git repo.
+If you did run `git init` in the wrong place, you can undo it by removing
+the `.git` dir that it created.
+First check with `pwd` that you are in that dir, and then run `rm -rf .git`
+(the `-f` is needed because some files inside `.git` are write-protected ---
+and recall from last week that `rm -rf` is unforgiving, so double-check!).
+
+Conversely, if you run a Git command outside of a repo, you'll get this error:
+
+```bash-out
+fatal: not a git repository (or any of the parent directories): .git
+```
+
+That usually just means that you're in the wrong dir: check with `pwd`.
+:::
+
 ### Your first Git commit
 
-You will start writing the book ([😉]{style="font-size:1.2em"})
-by `echo`-ing some text into a new file called `origin.txt`:
+Start writing the book ([😉]{style="font-size:1.2em"})
+by `echo`-ing text into a new file called `origin.txt`:
 
 ``` sh
 echo "An Abstract of an Essay on ..." > origin.txt
@@ -263,7 +287,7 @@ But as mentioned in the intro slides, Git does not automatically start "tracking
 that is, it won't automatically include all files that are in your dir in the repository.
 Instead, it tells you the file is "Untracked" and gives a hint on how to add it to the repository.
 
-So, **start tracking the file and stage it all at once** with `git add`:
+So, **start tracking the file and stage it in one go** with `git add`:
 
 ``` sh
 # (Note that tab-completion on file names will work here, too)
@@ -294,7 +318,9 @@ So, with your file tracked & staged, let's make your **first commit**.
 Add the option `-m` followed by a "**commit message**":
 a short description of the changes you are including in the current commit^[
 If you leave out `-m`, Git will instead open the `nano` editor that you
-configured above, so you can type your commit message there.]:
+configured above, so you can type your commit message there.
+Type your message, then press <kbd>Ctrl</kbd>+<kbd>X</kbd>, <kbd>Y</kbd> (to save),
+and <kbd>Enter</kbd> (to confirm the file name) --- Git will then make the commit.]:
 
 ``` sh
 git commit -m "Started the book"
@@ -307,13 +333,33 @@ git commit -m "Started the book"
 ```
 
 You've made your first commit!
-Here is another way of visualizing the adding and committing of changes in Git:
+Here is another way of visualizing how changes are staged and committed in Git ---
+and of the three areas that files can be in:
 
-![](../img/git-do1.png){fig-align="center" width="48%" fig-alt="A diagram of the process of adding and committing changes with Git commands" .lightbox}
+1. The **working tree (or working dir)** is where you make changes to files.
+2. The **staging area (or Index)** is where you stage changes to be included in the next commit.
+3. The **repository (or commit history)** is where committed changes are stored.
+   It has many "layers" of commits, and you can go back to any of them at any time.
+
+![](../img/git-do2.png){fig-align="center" width="48%" .no-border fig-alt="A diagram of the process of adding and committing changes with Git commands" .lightbox}
 
 ::: legend2
 Note that `git add` has a dual function: it starts tracking files and stages them.
 :::
+
+<details class="details-quiz">
+<summary>Why might the term "working tree" be used instead of "working directory"? *(Click to see the answer)*</summary>
+_The answer will be added after class._
+<!----
+The term "working tree" is used in Git to emphasize that we are referring to the
+entire hierarchy of dirs and files that makes up your project,
+and not the single dir that your terminal is currently in.
+
+That said, both terms are used interchangeably.
+As such, if you hear "working dir" _in the context of Git_,
+it usually refers to the entire hierarchy.
+---->
+</details>
 
 Let's check the status of the repo again:
 
@@ -327,8 +373,7 @@ nothing to commit, working tree clean
 ```
 
 It reported "nothing to commit, working tree clean",
-which means no changes have been made since the last commit.
-TODO - explain "working tree" (cf "working dir")
+which means no changes have been made anywhere in the project dir since the last commit.
 
 ::: {.callout-tip appearance="simple"}
 Try to get in the habit of using `git status` a lot ---
@@ -349,8 +394,13 @@ Date:   Mon Mar 11 10:55:35 2024 -0400
 
 Note the "hexadecimal code" (which uses numbers and the letters `a`–`f`)
 on the first line ---
-this is a unique identifier for each commit, called the **SHA-1 checksum**.
-You can reference and access each past commit with these checksums.
+this is a unique identifier for each commit, usually called the **commit hash**
+(or SHA-1 checksum).
+You can reference and access each past commit by its hash,
+and the first 7 characters are usually enough
+(as you'll see with `git log --oneline` below).
+The `HEAD -> main` part means that this is the commit you're currently at,
+on the `main` branch.
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise 1: Put the commands in order
@@ -390,7 +440,7 @@ Which ones?
 <!---
 <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 `git init` and `echo` can be swapped:
-Git doesn't care whether files already existed when you initialized the repo.
+Git doesn't care whether files already existed when you initialized the repo!
 Swapping `git add` and `git commit`, on the other hand,
 would make Git report that there is nothing to commit.
 </details>
@@ -421,7 +471,6 @@ no changes added to commit (use "git add" and/or "git commit -a")</code></pre>
 
 Git has **noticed** the changes, because the file is being tracked:
 `origin.txt` is listed as "modified".
-
 But changes to tracked files are **not** automatically staged ---
 use `git add` to **stage** the file as a first step to committing these changes:
 
@@ -437,7 +486,7 @@ That is deliberate: managing which files are tracked and staged is up to you.
 :::
 
 Now, make your second commit, again adding a commit message.
-Like always, you can decide what to write,
+Like always, it's up to you to decide what to write,
 but the idea is that you give a short description of the changes you made:
 
 ``` sh
@@ -488,26 +537,34 @@ The same goes for long `git diff` output.
 :::
 
 ::: callout-note
-### Staging files efficiently
+### Staging multiple files at once, and `git commit -a`
 
-When you would like to stage multiple files, you don't need to add them one-by-one:
+When you would like to stage multiple files, you don't need to add them one-by-one.
+Here are a few other options:
 
-``` sh
-# [Don't run any of this - these are hypothetical examples]
-# Stage all files in the project/repository:
-git add --all
+- Stage all files in the project/repository:
 
-# Stage all files in the current dir and its subdirs
-# (from the repo's top-level dir, this is the same as 'git add --all'):
-git add .
+  ``` sh
+  # [Don't run any of this - these are hypothetical examples]
+  git add --all
+  ```
 
-# Stage all files in a specific dir (here: 'scripts') in the project:
-git add scripts/
-```
+- Stage all files in the current dir and its subdirs
+  (so when run from the repo's top-level dir, this is the same as `git add --all`):
+
+  ```sh
+  git add .
+  ```
+
+- Stage all files in a specific dir (here: 'scripts') in the project:
+
+  ```sh
+  git add scripts/
+  ```
 
 Finally, you can use the `-a` option for `git commit` as a shortcut to
-**stage and commit all changes** with a single command
-(but this will not add untracked files!):
+**stage and commit all changes** with a single command,
+though be aware that this will not add untracked files:
 
 ``` sh
 # Stage & commit all changes to tracked files:
@@ -536,36 +593,25 @@ and it's **not** recommended to include both in a single commit.
 ::: exercise
 #### {{< fa user-edit >}} Exercise 2: Separate commits
 
-_TODO - improve this exercises -- too confusing/ advanced to have unrelated edits in one file here_
+Say that since your last commit, you have changed three files:
 
-Say that since your last commit, you have:
+1. `README.md`: you added information about your samples.
+2. `scripts/qc.sh`: you changed the output dir of this QC script from `qc` to `results/qc`.
+3. `scripts/qc_summary.sh`: you changed the dir that this script reads QC results from,
+   also from `qc` to `results/qc`.
 
-1. Added sample information to `README.md`.
-2. Changed the output dir in `scripts/qc.sh` from `qc` to `results/qc`.
-3. Updated the line in `README.md` that describes where the QC output goes.
-
-How many commits would you make, and which change(s) would go in each?
+How many commits would you make, and which file(s) would go in each?
 
 <!----
 <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-Two commits: one for change 1, and one for changes 2 and 3 together.
-Changes 2 and 3 are in different files, but they form a single unit of progress:
-the README should match what the script does.
+Two commits: one with `README.md`, and one with both scripts.
+
+The changes to the two scripts are in different files,
+but they form a single unit of progress:
+if you committed only the change to `qc.sh`,
+that commit would contain a `qc_summary.sh` script that looks for QC results in the wrong place.
 So, the rule is "one commit per change", not "one commit per file".
-</details>
----->
-
-Bonus: can you make these commits with the commands you know so far?
-
-<!----
-<details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
-
-Not quite: changes 1 and 3 are both in `README.md`,
-and `git add README.md` stages the whole file,
-so you can't split these changes up this way.
-(It is possible, though: VS Code lets you stage selected lines,
-and on the command line, you can use `git add -p`.)
 </details>
 ---->
 
@@ -575,18 +621,30 @@ and on the command line, you can use `git add -p`.)
 #### {{< fa user-edit >}} Exercise 3: Another change and commit
 
 1.  Create a new file `todo.txt` containing the line:
-    "June 18, 1858: read essay from Wallace".
+    "June 18, 1858: Read essay from Wallace".
 
     <!----
     <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
     ``` sh
-    echo "June 18, 1858: read essay from Wallace" > todo.txt
+    echo "June 18, 1858: Read essay from Wallace" > todo.txt
     ```
     </details>
     ---->
 
-2.  Stage the file to be committed.
+2.  Before staging the file, _predict_ what happens if you try to commit it right away
+    with `git commit -am "Added to-do list"`. Then try it. Were you right?
+
+    <!----
+    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+    Git doesn't make a commit: `-a` only stages changes to files that are already tracked,
+    and `todo.txt` isn't tracked yet
+    ("nothing added to commit but untracked files present").
+    </details>
+    ---->
+
+3.  Stage the file to be committed.
 
     <!----
     <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
@@ -597,7 +655,7 @@ and on the command line, you can use `git add -p`.)
     </details>
     ---->
 
-3.  Create a Git commit with the commit message "*Added to-do list*".
+4.  Create a Git commit with the commit message "*Added to-do list*".
 
     <!----
     <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
@@ -609,36 +667,54 @@ and on the command line, you can use `git add -p`.)
     ---->
 :::
 
-<hr style="height:1pt; visibility:hidden;" />
-
-_You have now learned the basic Git workflow! 🥳_
-_Below, we'll go through a few related key aspects of using Git._
+You have now learned the basic Git workflow! 🥳
+Below, we'll go through a few related key aspects of using Git.
 
 ## Ignoring files and directories
 
 As discussed in the [intro slides](./w5a_git-intro.qmd#what-to-version-control),
 it's best not to track some files,
 such as (bulky) data files, temporary files, and results.
-We've seen that Git reports any "untracked" files in your project whenever you
-run `git status`. This can get annoying and make it harder to spot changes and
-untracked files that you do want to add ---
-and you might even **accidentally start tracking** these files,
-for example with `git add --all`.
+At the same time, we've seen that Git reports any "untracked" files in your project
+whenever you run `git status`.
 
+Having these files reported every time you run `git status` can get annoying and
+make it harder to spot changes and untracked files that you _do_ want to add.
+More importantly, it makes it easy to commit such files by accident,
+for example with `git add --all`.
+And once a large data file has been committed,
+it stays in the repo's history even if you later delete it
+(and GitHub rejects files over 100 MB).
 To deal with this, you can **tell Git not to pay attention to certain files** by adding
 file names and wildcard selections to a special file called `.gitignore`.
 
-To see this in action,
-start by adding some content that you don't want to commit to your repository:
-a dir `data`, and a file ending in a `~`
-(a temporary file type that e.g. text editors can produce):
+As an example,
+let's start by adding some types of content you would not want to commit
+to your repository: a dir `data`, and a file ending in a `~`
+(a type of backup file that some text editors create):
 
 ``` sh
 mkdir data
-touch data/drawings_1855-{01..12} todo.txt~
+touch data/drawings_1855-02-17.png todo.txt~
 ```
 
-When you check the status of the repo, you see that Git has noticed these files:
+Let's take a look at the current contents of our dir:
+
+```sh
+tree
+```
+```{=html}
+<pre class="bash-out"><code>.
+├── <span style="color: #0328fc;">data</span>
+│   └── drawings_1855-02-17.png
+├── origin.txt
+├── todo.txt
+└── todo.txt~
+
+1 directory, 4 files</code></pre>
+```
+
+When you check the status of the repo, you should see that Git has noticed these files:
 
 ``` sh
 git status
@@ -649,35 +725,56 @@ git status
         <span class="git-red">data/</span>
         <span class="git-red">todo.txt~</span></code></pre>
 
-If you don't do anything about this,
-Git will keep reporting these untracked files whenever you run `git status`.
-**To prevent this, you can create a `.gitignore` file:**
+::: callout-note
+#### How untracked dirs are reported
+When a dir is untracked, Git reports the dir name and does not list the files
+inside it (above, the `drawings` file inside `data` is not shown).
+That is helpful, because it avoids cluttering the output of `git status`,
+but it's good to be aware of.
+:::
 
-- The file should be called exactly `.gitignore`,
-  and should be placed in the project's root dir.
+You can create a `.gitignore` file to prevent Git from reporting these files
+whenever you run `git status`:
+
 - This is a plain text file that contains dir and file names/patterns,
   all of which will be ignored by Git.
+- The file should be called exactly `.gitignore`,
+  and should be **placed in the project's root dir**.
+
+Some more things to know about `.gitignore`:
+
 - As soon as a `.gitignore` file exists,
   Git automatically checks and processes its contents.
 - Perhaps somewhat counterintuitively,
-  it's a good idea to add and commit this file to the Git repo.
+  you _should_ add and commit the `.gitignore` file itself:
+  that way, its history is kept, and it's shared along with the rest of the repo
+  (e.g., with collaborators or on GitHub).
 
-Now, create a `.gitignore` file and add entries to instruct Git
-to ignore everything in the `data/` dir, and any file that ends in a `~`:
+Create a `.gitignore` file and open it in the editor:
 
 ``` sh
-# Ignore everything in the data dir:
-echo "data/" > .gitignore
-# Ignore everything that ends in a ~:
-echo "*~" >> .gitignore
+# After this command, click on the file name in the file explorer to open it:
+touch .gitignore
 ```
-```sh
-cat .gitignore
-```
-```bash-out
+
+Then, type the following two lines in the file
+(press <kbd>Enter</kbd> at the end of the last line too):
+
+```bash-out-solo
 data/
 *~
 ```
+
+The first line makes Git ignore everything in the `data` dir,
+and the second makes it ignore everything that ends in a `~`.
+
+::: {.callout-tip}
+#### It doesn't matter how you change files
+So far, you have been changing files with `echo`, but here you are using the editor.
+Git doesn't care _how_ a file changed: it only looks at file contents.
+In your own projects, you'll mostly edit files in the editor,
+and then use the terminal to stage and commit your changes.
+:::
 
 When you check the status again,
 Git will have automatically processed the `.gitignore` file,
@@ -696,11 +793,11 @@ so track and commit this file as follows:
 
 ``` sh
 git add .gitignore
-git commit -m "Add a gitignore file"
+git commit -m "Added a gitignore file"
 ```
 
 ``` bash-out
-[main 9715ab5] Add a gitignore file
+[main 9715ab5] Added a gitignore file
  1 file changed, 2 insertions(+)
  create mode 100644 .gitignore
 ```
@@ -732,15 +829,15 @@ git commit -m "Add a gitignore file"
    </details>
    ---->
 
-2. Say that you add the line `todo.txt` to the `.gitignore` file of your `originspecies` repo,
-   and then append another line to `todo.txt`.
-   Would `git status` report that `todo.txt` was modified?
+2. Say that you add the line `todo.txt` to the `.gitignore` file of your
+   `evo` repo, and then append another line to `todo.txt`.
+   Would `git status` then report that `todo.txt` was modified?
 
    <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
    Yes: `.gitignore` only affects _untracked_ files.
-   Because `todo.txt` is already tracked (you committed it in Exercise 4),
+   Because `todo.txt` is already tracked (you committed it in Exercise 3),
    Git keeps tracking it and reports changes to it.
    To stop tracking a file, you'd first have to remove it from the repo,
    as shown in the [optional self-study material](../bonus/git.qmd).
@@ -759,16 +856,229 @@ If you instead mix, for example, scripts and results within dirs,
 you'll need many more specific and error-prone `.gitignore` entries.
 :::
 
-## File states and showing changes
+## Showing changes
 
-### File states
+### `git diff`
 
-To formalize what we've seen earlier,
-tracked files can be in one of three states:
+The `git diff` command shows changes made to tracked files.
+By default, for each file, it shows changes between the **working tree**
+and either the last commit or the stage/Index, depending on whether you have staged the file.
 
-- Unchanged since the last commit: **committed** (=> latest version is in the repo/commits).
-- Modified and staged since the last commit: **staged** (=> latest version is in the stage/"Index").
-- Modified but not staged since the last commit: **modified** (=> latest version is in the working tree).
+Because there are currently no differences between your working tree,
+the stage, and the last commit, `git diff` will show nothing:
+
+``` sh
+git diff
+```
+
+Now, change the to-do list
+(note: this will only work if you did Exercise 3).
+Open `todo.txt` in the editor by clicking on it in the file explorer,
+and add the following line below the existing one
+(again, press <kbd>Enter</kbd> at the end of the line):
+
+```bash-out-solo
+June 20, 1858: Send draft to Huxley
+```
+
+Then, check again with `git diff`:
+
+``` sh
+git diff
+```
+
+<pre class="bash-out"><code><span class="git-bold">diff --git a/todo.txt b/todo.txt
+index e3b5e55..9aca508 100644
+--- a/todo.txt
++++ b/todo.txt</span>
+<span class="git-cyan">@@ -1 +1,2 @@</span>
+ June 18, 1858: Read essay from Wallace
+<span class="git-green">+June 20, 1858: Send draft to Huxley</span></code></pre>
+
+We won't go into the details of the above "diff format",
+but at the bottom of the output above, you can see some specific changes:
+the line "Send draft to Huxley" was added (hence the **`+`** sign) in our
+latest version of the file.
+
+::: {.callout-note collapse="true"}
+#### More `git diff` *(Click to expand)*
+
+- To show differences between the stage and the last commit,
+  use the `--staged` option to `git diff`.
+  So, don't be surprised if `git diff` shows nothing right after you ran `git add`!
+
+- If you have changed multiple files, `git diff` will show all of them.
+  If you only want to see differences for one of them,
+  you can specify the filename to `git diff`.
+  In our example, doing so prints the same output as the plain `git diff` command
+  above, since we only changed one file:
+
+  ```sh
+  git diff todo.txt
+  # Output not shown, same as above
+  ```
+:::
+
+### VS Code functionality to show changes
+
+VS Code has built-in Git functionality,
+which can be more user-friendly than the Git command-line interface,
+especially for showing changes in files. For example:
+
+1. Click on the Git symbol in the narrow side bar (below the search icon)
+   to open the *Source Control* side bar.
+
+2. Under **Changes**, you should see `todo.txt`,
+   with an **`M`** (for "modified") next to it ---
+   click on the file name:
+
+![](../img/vscode_repos.png){fig-align="center" width="50%" fig-alt="A screenshot of the VS Code source control sidebar." .lightbox}
+
+3. Then, the following should appear in your editor pane ---
+   a much more intuitive overview than that of `git diff`,
+   which makes very clear which line was added:
+
+![](../img/vscode_diff.png){fig-align="center" width="95%" fig-alt="A screenshot of the VS Code diff view." .lightbox}
+
+::: {.callout-tip appearance="simple"}
+You can also stage and commit from the _Source Control_ side bar:
+hover over a file under **Changes** and click the **+** to stage it,
+then type a commit message in the box at the top and click **Commit**.
+In class, we'll stick with the command line, but this can be handy in your own projects.
+:::
+
+Finally, commit the change you made to the to-do list above.
+Use the `-a` option to `git commit` to stage and commit the change in one step:
+
+``` sh
+git commit -am "Added Huxley draft to to-do list"
+```
+
+## Undoing changes that have not been committed
+
+Now, we'll practice undoing changes to your working tree (that have not been staged)
+by recovering a version from the repo: in other words,
+using Git as an "undo button" after accidental file changes or removal.
+(In the [optional self-study Git material](../bonus/git.qmd),
+you can learn how to unstage files and how to undo changes that _have_ been committed.)
+
+Let's say you **accidentally overwrote** a file instead of appending to it,
+and you want to recover the previous version from the repo:
+
+1. Accidental overwriting of the file [😳]{style="font-size: 1.2em;"}:
+
+   ```sh
+   echo "Finish taxidermy of the finches" > todo.txt
+   ```
+
+2. Always start by checking the status:
+
+   ```sh
+   git status
+   ```
+   <pre class="bash-out"><code>On branch main
+   Changes not staged for commit:
+     (use "git add &lt;file&gt;..." to update what will be committed)
+     (use "git restore &lt;file&gt;..." to discard changes in working directory)
+           <span class="git-red">modified:   todo.txt</span>
+
+   no changes added to commit (use "git add" and/or "git commit -a")</code></pre>
+
+3. You'll want to "discard changes in working directory",
+   and Git told you how to do this --- with `git restore`:
+
+   ```sh
+   git restore todo.txt
+
+   cat todo.txt
+   ```
+   ```bash-out
+   June 18, 1858: Read essay from Wallace
+   June 20, 1858: Send draft to Huxley
+   ```
+
+Great! You have successfully recovered the previous version of the file from the repo.
+
+::: {.callout-warning}
+#### `git restore` can only bring back what Git has stored
+`git restore` replaces your file with the version stored by Git
+(the last commit, or the staged version if you staged the file).
+Had you not committed the Huxley line first, it would now be gone for good.
+:::
+
+If you **accidentally deleted a file**,
+you can similarly retrieve it with `git restore`:
+
+1. Accidental removal of `todo.txt`
+
+   ```sh
+   rm todo.txt
+   ```
+
+2. Use `git restore` to get the file back!
+
+   ```bash
+   git restore todo.txt
+
+   cat todo.txt
+   ```
+   ```bash-out
+   June 18, 1858: Read essay from Wallace
+   June 20, 1858: Send draft to Huxley
+   ```
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 5: What can Git restore?
+
+In which of these situations can `git restore` **not** get back what you lost?
+
+a) You accidentally removed a new file that you had never added with `git add`.
+b) You accidentally removed a whole dir of committed files with `rm -r`.
+c) You had edited a committed file without staging or committing those edits,
+   and then accidentally overwrote the file. You want those edits back.
+
+<!----
+<details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+The correct answers are **a)** and **c)**.
+Git can only restore versions of files that it has stored.
+It never stored anything for the file in a), nor for the uncommitted edits in c):
+there, `git restore` would only give you the last committed version.
+In b), `git restore <dirname>` brings back the whole dir.
+</details>
+---->
+:::
+
+## A few Git best-practices
+
+Several of these have already been mentioned above,
+but here is a summary of some key points:
+
+- **Write informative commit messages.**
+  Imagine looking back at your project in a few months,
+  after finding an error that you introduced a while ago.
+  - Not-so-good commit message: "*Updated file*"
+  - Good commit message: "*In file x, updated function y to include z*"
+
+![By XKCD - [image source](https://xkcd.com/1296){target="_blank"}](../img/xkcd-git-commit-msg.png){fig-align="center" width="70%" fig-alt="A humorous cartoon showing ever-worsening Git commit messages over time." .lightbox}
+
+- **Commit often, using small commits.**\
+  This will also help to keep commit messages informative!
+
+- **Before committing, check what you've changed.**\
+  Use `git diff [--staged]` or VS Code functionality.
+
+- **Avoid including unrelated changes in commits.**\
+  Separate commits if your working tree contains work from disparate edits:
+  use `git add` + `git commit` separately for two sets of files.
+
+- **Don't commit unnecessary files.**\
+  These clutter your repo and its history
+  (especially automatically generated, temporary files),
+  and when collaborating, they can lead to so-called
+  [merge conflicts](../bonus/git.qmd#merge-conflicts).
 
 ::: exercise
 #### {{< fa user-edit >}} Self-study exercise: File states
@@ -813,8 +1123,8 @@ Untracked files:
    but it does not add untracked files.
    </details>
 
-3. Say that, instead, you edit `scripts/qc.sh` once more, without running `git add` again.
-   How would `git status` list this file,
+3. Say that, before committing, you edit `scripts/qc.sh` once more, without running `git add` on it again.
+   How do you think `git status` would list this file,
    and which version of it would `git commit -m "My message"` include?
 
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
@@ -826,230 +1136,5 @@ Untracked files:
    To also include your newest edits, run `git add` on the file again.
    </details>
 :::
-
-### Showing changes
-
-The **`git diff` command** shows changes you have made to tracked files ---
-by default, for each file, changes between:
-
-- The **working tree** and the **last commit**, if you haven't staged the file.
-- The **working tree** and the **stage (Index)**, if you have staged the file
-  (so you'll only see changes that you made _after_ running `git add`).
-
-Right now, there are no differences to report in our `originspecies` repository,
-because your working tree, the stage/Index, and the last commit are all the same:
-
-``` sh
-# Git diff will not print anything if there are no changes to report:
-git diff
-```
-
-Change the to-do list
-(note: this will only work if you did the exercise above) and check again:
-
-``` sh
-echo "June 20, 1858: Send first draft to Huxley" >> todo.txt
-
-git diff
-```
-
-<pre class="bash-out"><code><span class="git-bold">diff --git a/todo.txt b/todo.txt
-index e3b5e55..9aca508 100644
---- a/todo.txt
-+++ b/todo.txt</span>
-<span class="git-cyan">@@ -1 +1,2 @@</span>
- June 18, 1858: read essay from Wallace
-<span class="git-green">+June 20, 1858: Send first draft to Huxley</span></code></pre>
-
-We won't go into the details of the above "diff format",
-but at the bottom of the output above, you can see some specific changes:
-the line "Send first draft to Huxley" was added (hence the **`+`** sign) in our
-latest version of the file.
-
-::: {.callout-note collapse="true"}
-#### More `git diff` *(Click to expand)*
-
-- To show changes that you **have staged**
-  (differences between the stage and the last commit),
-  use the `--staged` option to `git diff`.
-  So, don't be surprised if `git diff` shows nothing right after you ran `git add`!
-
-- If you have changed multiple files, but just want to see differences for one
-  of them, you can specify the filename to `git diff`.
-  In our example, that prints the same output as the plain `git diff` command
-  above, since we only changed one file:
-
-  ```sh
-  git diff todo.txt
-  # Output not shown, same as above
-  ```
-:::
-
-### VS Code functionality to show changes
-
-VS Code has some built-in Git functionality,
-some of which is quite a bit more user-friendly than the Git command-line interface.
-For example, to see changes between files:
-
-1. Click on the Git symbol in the narrow side bar (below the search icon)
-   to open the *Source Control* side bar.
-
-2. In the source control sidebar,
-   you should see the `garrigos` repository
-   (that dir is a Git repository too, because you downloaded it with `git clone` in week 4),
-   but you may not see the `originspecies` repository.
-   If not, click "File" > "Open Folder" and select `week05/originspecies`
-   to make VS Code start at that dir ---
-   then, you should definitely see the `originspecies` repo.
-   _TODO - test if it shows -- if reload is needed maybe skip?_
-
-3. Within the `originspecies` listing, you should see `todo.txt`:
-   click on the **`M`** next to the file `todo.txt`:
-
-![](../img/vscode_repos.png){fig-align="center" width="40%" fig-alt="A screenshot of the VS Code source control sidebar." .lightbox}
-
-4. Then, the following should appear in your editor pane:
-
-![](../img/vscode_diff.png){fig-align="center" width="95%" fig-alt="A screenshot of the VS Code diff view." .lightbox}
-
-That's a much more intuitive overview than that of `git diff`,
-and makes very clear which line was added.
-
-## Undoing changes that have not been committed
-
-Here, you'll learn how to undo changes that have not been
-committed, like undoing an accidental file removal or overwrite.
-(In the [optional self-study Git material](../bonus/git.qmd),
-you can learn how to unstage files and how to undo changes that _have_ been committed.)
-
-### Recovering a version from the repo
-
-We'll practice undoing changes to your working tree (that have not been staged)
-by recovering a version from the repo: in other words,
-using Git as an "undo button" after accidental file changes or removal.
-
-First, commit the change you made to the to-do list above,
-so that this latest version is stored in the repo:
-
-``` sh
-git commit -am "Add Huxley draft to to-do list"
-```
-
-Let's say you **accidentally overwrote** instead of appended to a file:
-
-1. Accidental overwriting of the file [😳]{style="font-size: 1.2em;"}:
-
-   ```sh
-   echo "Finish taxidermy of the finches" > todo.txt
-   ```
-
-2. Next, always start by checking the status:
-
-   ```sh
-   git status
-   ```
-   <pre class="bash-out"><code>On branch main
-   Changes not staged for commit:
-     (use "git add &lt;file&gt;..." to update what will be committed)
-     (use "git restore &lt;file&gt;..." to discard changes in working directory)
-           <span class="git-red">modified:   todo.txt</span>
-
-   no changes added to commit (use "git add" and/or "git commit -a")</code></pre>
-
-3. You'll want to "discard changes in working directory",
-   and Git told you how to do this --- with `git restore`:
-
-   ```sh
-   git restore todo.txt
-
-   cat todo.txt
-   ```
-   ```bash-out
-   June 18, 1858: read essay from Wallace
-   June 20, 1858: Send first draft to Huxley
-   ```
-
-Great! You have successfully recovered the previous version of the file from the repo.
-
-::: {.callout-warning}
-#### `git restore` can only bring back what Git has stored
-`git restore` replaces your file with the version stored by Git
-(the last commit, or the staged version if you staged the file).
-Had you not committed the Huxley line first, it would now be gone for good.
-Keep in mind, too, that `git restore` itself _permanently_ discards any
-uncommitted changes to the file --- one more reason to commit often!
-:::
-
-If you **accidentally deleted a file**,
-you can similarly retrieve it with `git restore`:
-
-1. Accidental removal of `todo.txt`
-
-   ```sh
-   rm todo.txt
-   ```
-
-2. Use `git restore` to get the file back!
-
-   ```bash
-   git restore todo.txt
-
-   cat todo.txt
-   ```
-   ```bash-out
-   June 18, 1858: read essay from Wallace
-   June 20, 1858: Send first draft to Huxley
-   ```
-
-::: exercise
-#### {{< fa user-edit >}} Exercise 5: What can Git restore?
-
-In which of these situations can `git restore` **not** get back what you lost?
-
-a) You accidentally overwrote a committed file, using `>` instead of `>>`.
-b) You accidentally removed a committed file with `rm`.
-c) You accidentally removed a new file that you had never added with `git add`.
-d) You accidentally removed a whole dir of committed files with `rm -r`.
-e) You accidentally overwrote a committed file, and want back the edits you had made to it
-   since your last commit (without staging them).
-
-<!----
-<details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
-
-The correct answers are **c)** and **e)**.
-Git can only restore versions of files that it has stored.
-It never stored anything for the file in c), nor for the uncommitted edits in e):
-there, `git restore` would only give you the last committed version.
-In the other cases, `git restore` will work ---
-for d), you would run `git restore` followed by the name of the dir.
-</details>
----->
-:::
-
-## A few Git best-practices
-
-- **Write informative commit messages.**
-  Imagine looking back at your project in a few months,
-  after finding an error that you introduced a while ago.
-  - Not-so-good commit message: "Updated file"
-  - Good commit message: "In file x, updated function y to include z"
-
-![By XKCD - [image source](https://xkcd.com/1296)](../img/xkcd-git-commit-msg.png){fig-align="center" width="70%" fig-alt="A humorous cartoon showing ever-worsening Git commit messages over time." .lightbox}
-
-- **Commit often, using small commits.**\
-  This will also help to keep commit messages informative!
-
-- **Before committing, check what you've changed.**\
-  Use `git diff [--staged]` or VS Code functionality.
-
-- **Avoid including unrelated changes in commits.**\
-  Separate commits if your working tree contains work from disparate edits:
-  use `git add` + `git commit` separately for two sets of files.
-
-- **Don't commit unnecessary files.**\
-  These clutter your repo and its history
-  (especially automatically generated, temporary files),
-  and when collaborating, they can lead to so-called
-  [merge conflicts](../bonus/git.qmd#merge-conflicts).
 
 <hr style="height:1pt; visibility:hidden;" />

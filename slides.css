@@ -70,6 +70,27 @@ p.caption {
   font-size: 0.93em;
 }
 
+/* Tables with an explicit tbl-colwidths get a <colgroup> with % widths,
+   but under the default table-layout:auto those are only hints -- a long
+   cell (e.g. a code span that can't wrap) can still force its column
+   wider, throwing off the percentages. Forcing fixed layout makes
+   tbl-colwidths authoritative, which matters when two tables are meant
+   to line up visually (e.g. a build across consecutive slides).
+
+   That alone isn't enough though: reveal's theme gives table only
+   `margin: auto`, no width, so each table still shrinks to fit its own
+   content -- a short table (e.g. one row) ends up narrower overall than
+   a long one, and the same column percentages then map to different
+   absolute widths. Adding width:100% makes every such table fill the
+   slide's content column, so percentages line up in absolute terms too.
+
+   Scoped to tables that actually have a colgroup so auto-sized tables
+   are unaffected. */
+.reveal table:has(colgroup) {
+  table-layout: fixed;
+  width: 100%;
+}
+
 /* --------------------------------------------------------------------------/*
 /* mermaid diagrams */
 
