@@ -158,7 +158,7 @@
 <nav role="doc-toc"> 
 <h2 id="toc-title">Overview</h2>
 <ul>
-<li><a href="#/compute-nodes-and-cores" id="/toc-compute-nodes-and-cores">Compute nodes and cores</a></li>
+<li><a href="#/compute-nodes-compute-jobs-and-cores" id="/toc-compute-nodes-compute-jobs-and-cores">Compute nodes, compute jobs, and cores</a></li>
 <li><a href="#/osc-projects" id="/toc-osc-projects">OSC Projects</a></li>
 <li><a href="#/storage-areas" id="/toc-storage-areas">Storage areas</a></li>
 <li><a href="#/additional-ondemand-features" id="/toc-additional-ondemand-features">Additional OnDemand features</a></li>
@@ -175,13 +175,13 @@
 <li>More general information about OSC <em>(this lecture)</em></li>
 <li>How to use software at OSC, including programs that aren’t installed <em>(next lecture)</em></li>
 <li>How to write shell scripts <em>(next week)</em></li>
-<li>How to submit shell scripts as “batch jobs” <em>(in two weeks)</em></li>
+<li>How to submit shell scripts as “batch jobs” <em>(in week 9)</em></li>
 <li>How to build functional commands to run such programs <em>(throughout)</em></li>
 </ol>
 </section>
 <section>
-<section id="compute-nodes-and-cores" class="title-slide slide level1 center" data-background-color="#A7B1B7">
-<h1>Compute nodes and cores</h1>
+<section id="compute-nodes-compute-jobs-and-cores" class="title-slide slide level1 center" data-background-color="#A7B1B7">
+<h1>Compute nodes, compute jobs, and cores</h1>
 
 </section>
 <section id="using-compute-nodes-via-jobs" class="slide level2">
@@ -205,7 +205,7 @@
 <i class="callout-icon"></i>
 </div>
 <div class="callout-content">
-<p>In two weeks, you’ll learn to submit scripts as “batch jobs” with Slurm.</p>
+<p>In week 9, you’ll learn to submit scripts as “batch jobs” with Slurm.</p>
 </div>
 </div>
 </div>
@@ -245,13 +245,14 @@
 </div>
 <div class="callout-content">
 <p>Typical compute jobs use 1 node and multiple cores on that node.</p>
+<p>A job’s resource usage is measured in <strong>core hours</strong>. For example, using 2 cores for 2 hours = 4 core hours.</p>
 </div>
 </div>
 </div>
 </div>
 </section>
-<section id="quiz-core-hours" class="slide level2">
-<h2>Quiz: Core hours</h2>
+<section id="core-hours" class="slide level2">
+<h2>Core hours</h2>
 <div class="callout-quiz">
 <div class="callout callout-note callout-titled callout-style-default">
 <div class="callout-body">
@@ -259,13 +260,13 @@
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
-<p><strong>Think about it</strong></p>
+<p><strong>Quiz: Core hours</strong></p>
 </div>
 <div class="callout-content">
 <ol type="A">
 <li><p>You run a program with 8 reserved cores for 3 hours. How many core hours will your OSC Project be billed for?</p></li>
 <li><p>Afterwards, you find out that the program only ever used 1 of those cores. Does that change the number of billed core hours?</p></li>
-<li><p>Afterwards, you find out that the program finished after 1 hour, and the job ended.</p></li>
+<li><p>Afterwards, you find out that the program finished after 1 hour, and the job ended. Does that change the number of billed core hours?</p></li>
 </ol>
 <p>What does this tell you about how many cores and hours to request?</p>
 <hr style="height:1pt; visibility:hidden;">
@@ -278,6 +279,13 @@ B) **No**: you're billed for the cores you _reserved_, whether or not they were 
    So request multiple cores only if the program can actually use them
    (check its documentation!) --- otherwise you waste resources
    and, as you'll see later, may also wait longer for your job to start.
+
+C) **Yes**: OSC only bills for the time a job actually ran,
+   so 8 cores × 1 hour = **8 core hours**.
+
+**Takeaway**: Only request as many cores as the program can use.
+For time, it's fine to be generous, because unused time isn't billed
+(though very long requests may wait longer in the queue).
 
 </details>
 
@@ -295,7 +303,7 @@ B) **No**: you're billed for the cores you _reserved_, whether or not they were 
 <h3 id="standard-nodes"><span style="display:block; text-align:center;">“Standard” nodes</span></h3>
 <ul>
 <li>By far the most numerous (e.g., Pitzer has 564).</li>
-<li>Even these vary in size, e.g.&nbsp;from 40-48 cores per node on Pitzer.</li>
+<li>Even these vary in size, e.g., from 40 to 48 cores per node on Pitzer.</li>
 <li>Used by default, and will serve you well for most omics analyses.</li>
 </ul>
 </div><div class="column" style="width:6%;">
@@ -306,7 +314,7 @@ B) **No**: you're billed for the cores you _reserved_, whether or not they were 
 <h3 id="other-node-types"><span style="display:block; text-align:center;">Other node types</span></h3>
 <ul>
 <li>Nodes with extra memory: <code>largemem</code> and <code>hugemem</code>.</li>
-<li>Nodes with GPUs (Graphical Processing Units) rather than CPUs.</li>
+<li>Nodes with GPUs (Graphics Processing Units) in addition to CPUs.</li>
 </ul>
 <hr style="height:1pt; visibility:hidden;">
 <div class="callout callout-tip callout-style-simple">
@@ -341,8 +349,17 @@ B) **No**: you're billed for the cores you _reserved_, whether or not they were 
 <h3 id="storage-disk"><span style="display:block; text-align:center;">Storage (disk)</span></h3>
 <ul>
 <li>The data that is saved in files on disk.</li>
-<li>When your computer freezes, it’s typically because memory is full and disk storage has to be used as well.</li>
 </ul>
+<div class="callout callout-tip callout-style-simple">
+<div class="callout-body">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-content">
+<p>When your computer freezes, it’s typically because memory is full, and it starts using disk storage as “virtual memory” — which is much slower.</p>
+</div>
+</div>
+</div>
 </div></div>
 <div class="fragment">
 <hr style="height:1pt; visibility:hidden;">
@@ -408,15 +425,16 @@ C) **True**: file systems are shared among OSC's clusters.
 <div class="column box-blue fragment" data-fragment-index="1" style="width:30%;">
 <h3 id="file-storage">File storage</h3>
 <ul>
-<li>Storage in the Project dirs (<code>/fs/ess</code>), per TB per month.</li>
+<li><p>File storage in the Project dirs (<code>/fs/ess</code>).</p></li>
+<li><p>Charged per TB per month.</p></li>
 </ul>
 </div><div class="column" style="width:3%;">
 
 </div><div class="column box-amber fragment" data-fragment-index="2" style="width:30%;">
 <h3 id="compute">Compute</h3>
 <ul>
-<li><p>Compute node usage per “<strong>core hour</strong>”.</p></li>
-<li><p>For example, using 2 cores for 2 hours = 4 core hours.</p></li>
+<li><p>Compute node usage</p></li>
+<li><p>Charged per core hour.</p></li>
 </ul>
 </div><div class="column" style="width:3%;">
 
@@ -473,21 +491,56 @@ C) **True**: file systems are shared among OSC's clusters.
 </section>
 <section id="storage-areas-overview" class="slide level2">
 <h2>Storage areas: overview</h2>
-<p>An expanded version of the table from week 2:</p>
+<p>An expanded version of the table from Week 2:</p>
 <hr style="height:1pt; visibility:hidden;">
 <table class="table-striped table-hover caption-top">
 <colgroup>
-<col style="width: 14%">
-<col style="width: 17%">
-<col style="width: 21%">
 <col style="width: 12%">
+<col style="width: 16%">
+<col style="width: 21%">
 <col style="width: 15%">
-<col style="width: 18%">
+<col style="width: 17%">
+<col style="width: 19%">
 </colgroup>
 <thead>
 <tr class="header">
-<th>Storage area</th>
-<th>Located within</th>
+<th>Area</th>
+<th>Path</th>
+<th>Quota</th>
+<th>Backed up?</th>
+<th>Auto-purged?</th>
+<th>One for each…</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Home</strong></td>
+<td><code>/users/</code></td>
+<td>500 GB / 1 M files</td>
+<td>Yes</td>
+<td>No</td>
+<td>User</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="storage-areas-overview-1" class="slide level2">
+<h2>Storage areas: overview</h2>
+<p>An expanded version of the table from Week 2:</p>
+<hr style="height:1pt; visibility:hidden;">
+<table class="table-striped table-hover caption-top">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 16%">
+<col style="width: 21%">
+<col style="width: 15%">
+<col style="width: 17%">
+<col style="width: 19%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Area</th>
+<th>Path</th>
 <th>Quota</th>
 <th>Backed up?</th>
 <th>Auto-purged?</th>
@@ -529,7 +582,8 @@ C) **True**: file systems are shared among OSC's clusters.
 <i class="callout-icon"></i>
 </div>
 <div class="callout-content">
-<p>There is a fourth storage area, compute, that is on compute nodes and is deleted when a job ends. In practice, this is rarely needed, and we won’t use it in this course.</p>
+<p>There is a fourth storage area, <em>compute</em>, that is on compute nodes and is deleted when a job ends.<br>
+In practice, this is rarely needed in bioinformatics, and we won’t use it in this course.</p>
 </div>
 </div>
 </div>
@@ -541,8 +595,8 @@ C) **True**: file systems are shared among OSC's clusters.
 <div class="column box-blue fragment" data-fragment-index="1" style="width:30%;">
 <h3 id="project">Project</h3>
 <ul>
-<li><p><strong>Drawbacks</strong>:</p></li>
-<li><p><strong>Useful for</strong>:</p></li>
+<li><p><strong>Drawbacks</strong>: storage is billed (per TB per month), and I/O is slower than on Scratch.</p></li>
+<li><p><strong>Useful for</strong>: everything you want to keep long-term and share with collaborators: raw data, scripts, documentation, and key results.</p></li>
 </ul>
 </div><div class="column" style="width:3%;">
 
@@ -562,16 +616,56 @@ C) **True**: file systems are shared among OSC's clusters.
 </ul>
 </div></div>
 </section>
+<section id="quiz-storage-areas" class="slide level2">
+<h2>Quiz: Storage areas</h2>
+<div class="callout-quiz">
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Storage areas</strong></p>
+</div>
+<div class="callout-content">
+<ol type="A">
+<li><p>Where would you store raw FASTQ files that you just received from a sequencing facility?</p></li>
+<li><p>Where would you store 1 TB of BAM files that you can regenerate from the FASTQ files in a day?</p></li>
+<li><p>After three months away, your BAM files in Scratch are gone. Why, and can OSC restore them?</p></li>
+</ol>
+<hr style="height:1pt; visibility:hidden;">
+<!-----
+<details><summary>  &nbsp; &nbsp; _Click for the answers_</summary>
+
+A) **Project**: it's permanent and backed up, and raw data can't be regenerated.
+
+B) **Scratch**: the files are large and can be regenerated, and I/O is faster there.
+   This also avoids paying for 1 TB of Project storage.
+
+C) Scratch files that haven't been accessed for 60 days are purged,
+   and Scratch isn't backed up, so OSC **can't** restore them.
+   You'd regenerate them from the raw data with your scripts ---
+   which is why you keep both of those in the Project dir.
+
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+------>
+</div>
+</div>
+</div>
+</div>
+</section>
 <section id="storage-areas-misc.-notes" class="slide level2">
 <h2>Storage areas: misc. notes</h2>
 <ul>
-<li><strong>Hidden files in the Home dir</strong>:<br>
-Your home dir will have hidden files (those starting with a <code>.</code>) that are generated and used automatically by software. Don’t mess with them unless you know what you’re doing!</li>
+<li><strong>Hidden files in the Home dir</strong><br>
+Your Home dir will have hidden files (those starting with a <code>.</code>) that are generated and used automatically by software. Don’t mess with them unless you know what you’re doing!</li>
 </ul>
 <hr style="height:1pt; visibility:hidden;">
 <div class="fragment">
 <ul>
-<li><strong>Accessing back-ups</strong><br>
+<li><strong>Accessing backups</strong><br>
 Home and Project dirs are backed up daily. You don’t have <em>direct</em> access to the backups, but you can email OSC to restore your files to the way they were on a specific date.</li>
 </ul>
 <hr style="height:1pt; visibility:hidden;">
@@ -597,7 +691,7 @@ OSC’s clusters share the entire file system, so you can access your files in t
 </figure>
 </div>
 <p>This page shows the live usage of the three clusters, and gives a good idea of the scale of the supercomputer center (<strong><em>next slide</em></strong>).</p>
-<p><em>TODO: Explain why there are three clusters (not 1) and how they differ.</em></p>
+<p>OSC buys a new cluster every few years and retires the oldest one, so the clusters differ in age and hardware: <strong>Pitzer</strong> (2018, expanded in 2020), <strong>Ascend</strong> (2022, with many GPU nodes), and <strong>Cardinal</strong> (2024, the newest). They share the same file systems and mostly the same software, so for this course, it doesn’t matter much which one you use.</p>
 </section>
 <section class="slide level2">
 
@@ -633,13 +727,13 @@ OSC’s clusters share the entire file system, so you can access your files in t
 </section>
 <section id="contacting-osc-to-get-help" class="slide level2">
 <h2>Contacting OSC to get help</h2>
-<p>Email <strong><a href="mailto:oschelp@osc.edu" class="email">oschelp@osc.edu</a></strong> with questions like:</p>
+<p>Open a support case in the <a href="https://support.osc.edu" target="_blank">OSC Service Center</a> (log in with your OSC credentials), or email <strong><a href="mailto:oschelp@osc.edu" class="email">oschelp@osc.edu</a></strong>, with questions like:</p>
 <ul>
 <li>Problems with your account</li>
 <li>Installing or using specific software</li>
 <li>Why your jobs keep failing</li>
 </ul>
-<p>They are usually very quick to respond! <em>TODO - UPDATE WITH CURRENT PROCEDURE FOR GETTING HELP</em></p>
+<p>They are usually very quick to respond! Include the cluster name, the exact error message, and what you’ve already tried.</p>
 <div class="callout callout-note callout-style-simple">
 <div class="callout-body">
 <div class="callout-icon-container">
@@ -674,11 +768,14 @@ OSC’s clusters share the entire file system, so you can access your files in t
 </section>
 <section id="omics-analyses-use-many-programs" class="slide level2">
 <h2>Omics analyses use many programs</h2>
-<p>A typical omics data analysis workflow consists of a sequence of specialized bioinformatics programs (a.k.a. software or tools). For example, the RNA-Seq workflow we’ll go through (programs in gray text):</p>
+<p>A typical omics data analysis workflow consists of a sequence of specialized bioinformatics programs (a.k.a. software or tools). For example, the RNA-Seq workflow we’ll go through:</p>
 <div class="quarto-figure quarto-figure-center">
 <figure>
 <p><a href="../img/rnaseq-wf-3.png" class="lightbox" data-gallery="quarto-lightbox-gallery-5"><img data-src="../img/rnaseq-wf-3.png" class="quarto-figure quarto-figure-center" style="width:55.0%" alt="A diagram showing the steps in an RNA-Seq analysis pipeline."></a></p>
 </figure>
+</div>
+<div class="footer">
+
 </div>
 </section>
 <section id="getting-access-to-software-at-osc" class="slide level2">
