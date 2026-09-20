@@ -98,7 +98,7 @@ In this lecture, you will learn to:
   Since you've already done this before, the easiest way to do so
   is to click on the `Recents` entry in the `Get Started` document:
 
-  <details><summary> {{< fa lightbulb >}} _Or: opening the folder manually (Click to expand)_</summary>
+  <details><summary> {{< fa lightbulb >}} _Or: open the folder manually (Click to expand)_</summary>
 
   1. Click {{< fa bars >}} &rarr; `File` &rarr; `Open Folder`.
 
@@ -161,6 +161,46 @@ remote repos:
   computers, e.g. your laptop and OSC).
 - `git clone` --- to download a copy of a remote repo that you don't yet have locally
   (you already used this in week 4).
+:::
+
+::: {.callout-note collapse="true"}
+#### A message you may run into when pulling _(Click to expand)_
+
+Usually, `git pull` simply downloads the commits you don't have yet,
+and you'll see no more than a summary of the changes.
+But when _both_ your local repo and the remote have commits that the other
+doesn't have --- the two have "**diverged**", which can easily happen when you
+work from two computers or with collaborators ---
+Git refuses to guess how to combine them, and prints a wall of text:
+
+```sh
+git pull
+```
+```bash-out
+hint: You have divergent branches and need to specify how to reconcile them.
+hint: You can do so by running one of the following commands sometime before
+hint: your next pull:
+hint:
+hint:   git config pull.rebase false  # merge
+hint:   git config pull.rebase true   # rebase
+hint:   git config pull.ff only       # fast-forward only
+hint:
+hint: You can replace "git config" with "git config --global" to set a default
+hint: preference for all repositories. [...]
+fatal: Need to specify how to reconcile divergent branches.
+```
+
+Nothing went wrong here, and nothing was changed:
+Git just stopped and asked you to pick a strategy.
+The first option, `merge`, keeps both sets of commits and ties them together
+with an extra "merge commit",
+and is the best default for how we use Git in this course.
+
+To select it once and for all, so you won't see this message again:
+
+```sh
+git config --global pull.rebase false
+```
 :::
 
 ### One-time setup: GitHub authentication
@@ -451,6 +491,58 @@ commits that you make locally to the remote repo:
 git push
 ```
 
+::: {#vscode-publish .callout-tip collapse="true"}
+#### Doing all of the above with a few clicks with VS Code _(Click to expand)_
+
+VS Code can do everything we just did (creating the GitHub repo,
+setting up the remote connection, and pushing) with one button.
+Whenever you open a Git repo that does _not_ yet have a remote,
+the Source Control side bar shows a blue **Publish Branch** button.
+
+The first time you click it, VS Code walks you through logging in to GitHub:
+
+1. When the "GitHub" extension asks to sign in, click **Allow**:
+
+   ![](../img/vscode-github-publish-1.png){fig-align="center" width="75%" fig-alt="A screenshot of the VS Code dialog asking whether the GitHub extension may sign in using GitHub." .lightbox}
+
+2. VS Code shows a **one-time code** --- click **Copy & Continue to Browser**,
+   which copies that code to your clipboard:
+
+   ![](../img/vscode-github-publish-2.png){fig-align="center" width="75%" fig-alt="A screenshot of the VS Code dialog showing a one-time authentication code." .lightbox}
+
+3. Click **Open** to let code-server open the GitHub login page in a new tab:
+
+   ![](../img/vscode-github-publish-3.png){fig-align="center" width="75%" fig-alt="A screenshot of the VS Code dialog asking permission to open the GitHub device-login website." .lightbox}
+
+   If no tab opens, go to <https://github.com/login/device> yourself ---
+   the notification in the bottom-right corner of VS Code reminds you of the
+   address and of your code:
+
+   ![](../img/vscode-github-publish-4.png){fig-align="center" width="75%" fig-alt="A screenshot of the VS Code notification with the GitHub device-login address and the one-time code." .lightbox}
+
+4. On the GitHub page, paste your one-time code.
+   Then, on the resulting page, click the green **Authorize** button at the bottom:
+
+   ![](../img/vscode-github-publish-5.png){fig-align="center" width="65%" fig-alt="A screenshot of the GitHub page to authorize Visual Studio Code." .lightbox}
+
+After you've logged in, VS Code asks for a repository name and whether to publish
+to a **public** or a **private** repository
+(for this course, pick **public**), and then creates the repo on GitHub and
+pushes your commits to it.
+Your login is remembered, so for later repos it really is just a few clicks.
+
+Two things to keep in mind if you use this:
+
+- VS Code sets up the remote with an **HTTPS** URL
+  (as you can check with `git remote -v`) rather than an SSH one,
+  and handles the authentication for you.
+
+- The SSH key you set up above is still worth having:
+  it lets you push from _any_ terminal at OSC ---
+  also outside of VS Code, and from inside scripts ---
+  whereas the VS Code login only works inside a VS Code session.
+:::
+
 ::: {.callout-note collapse="true"}
 #### Check or change the remote connection _(Click to expand)_
 
@@ -497,22 +589,24 @@ you would only need it to push, which you can't do for this repo anyway, since i
 ### Explore the repository on GitHub
 
 Back at GitHub on your repo page, refresh the browser page,
-and you should see something like this:
+and you should see something like this ---
+that's basically your repo's "home page",
+where you can see the files you just uploaded from your local repo:
 
-![](../img/github-repo-home.png){fig-align="center" width="95%" .no-border fig-alt="A screenshot of the front page of our new repository." .lightbox}
+![](../img/github-repo-home.png){fig-align="center" width="85%" .no-border fig-alt="A screenshot of the front page of our new repository." .lightbox}
 
-This is basically your repo's "home page",
-and you can see the files you just uploaded from your local repo.
-Next, click on `x commits`
-(`x` should be 5 if you followed along exactly in the previous class,
-but it's not really important if you have a different number):
+The part Zoomed in on in the screenshot below shows the number of commits made
+to the repo, and the ID and time (as a relative time, e.g. "3 hours ago")
+of the most recent commit.
 
-![](../img/github-x-commits2.png){fig-align="center" width="35%" .no-border fig-alt="A screenshot of the commit info on GitHub." .lightbox}
+![](../img/github-x-commits.png){fig-align="center" width="40%" .no-border fig-alt="A screenshot of the commit info on GitHub." .lightbox}
 
-You'll get an overview of the commits you made,
-somewhat similar to `git log`'s output:
+If you followed along exactly in the previous class, this should say 5 commits
+(but it's OK if you have a different number).
+Click on the `5 commits` (or similar) link to get an overview of the commits you made,
+similar to `git log`'s output:
 
-![](../img/github-commit-overview.png){fig-align="center" width="100%" .no-border fig-alt="A screenshot of the overview of commits on GitHub." .lightbox}
+![](../img/github-commit-overview.png){fig-align="center" width="85%" .no-border fig-alt="A screenshot of the overview of commits on GitHub." .lightbox}
 
 ::: {.callout-tip collapse="true"}
 #### Your avatar next to your commits _(Click to expand)_
@@ -528,13 +622,14 @@ somewhat similar to `git log`'s output:
   you can set that up on your GitHub profile page.
 :::
 
-You can click on a commit message to see the changes made by that commit:
+If you click on a commit message, you'll see the changes made by that commit ---
+click on the most recent commit:
 
-![The line that is highlighted in green was added by this commit.](../img/github-commit-details.png){fig-align="center" .no-border width="100%" fig-alt="A screenshot of the diff view on GitHub." .lightbox}
+![The line that is highlighted in green was added by this commit.](../img/github-commit-details.png){fig-align="center" .no-border width="85%" fig-alt="A screenshot of the diff view on GitHub." .lightbox}
 
 Go back to the previous page, the overview of commits.
 On the right-hand side, a **<kbd>< ></kbd>** button will allow you to
-see the _state of the entire repo_ (all files in the project) at the time of that commit:
+see the _state of the entire repo_ (all files in the project) at the time of that commit::
 
 ![](../img/github-browse-repo-at-commit.png){fig-align="center" width="28%" fig-alt="A screenshot of the Browse Repository button on GitHub." .lightbox}
 
@@ -542,7 +637,7 @@ On the commit overview page, scroll down all the way to the first commit and cli
 you'll see the repo's "home page" again, but now with only the `origin.txt` file,
 since that was the only file in your repo at the time:
 
-![](../img/github-past-repo.png){fig-align="center" width="90%" fig-alt="A screenshot of the view of our repository at an earlier timepoint." .lightbox}
+![](../img/github-past-repo.png){fig-align="center" width="70%" .no-border fig-alt="A screenshot of the view of our repository at an earlier timepoint." .lightbox}
 
 ### GitHub "Issues"
 
@@ -694,15 +789,14 @@ Go back to GitHub and refresh your repo page:
 note that the Markdown in `README.md` has been automatically rendered,
 and is shown below the file listing!
 
-![](../img/github-markdown-rendered.png){fig-align="center" width="90%" .no-border fig-alt="A screenshot of the rendered README file on GitHub." .lightbox}
+![](../img/github-markdown-rendered.png){fig-align="center" width="80%" .no-border fig-alt="A screenshot of the rendered README file on GitHub." .lightbox}
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise 1: Commit and push
 
 1.  Add the first chapter title, "Variation under domestication", to `origin.txt`,
     and commit this change.
-    Then, add a line of your choice to `todo.txt`,
-    and commit that change separately.
+    Then, add a line of your choice to `todo.txt`, and commit that change separately.
 
     <!----
     <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
