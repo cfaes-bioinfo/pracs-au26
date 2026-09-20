@@ -25,9 +25,9 @@ other-links:
   - text: "w15a: Bioconductor: R for omics data"
     icon: book
     href: w15a_bioconductor.html
-  - text: "Week 15 exercises"
-    icon: pencil
-    href: w15_exercises.html
+  - text: "w15c: Heatmaps"
+    icon: book
+    href: w15c_heatmaps.html
 language:
   title-block-published: "Presented on"
   title-block-modified: "Page last modified"
@@ -56,11 +56,10 @@ Today, with that gene count table, you will:
 
 1. At <https://ondemand.osc.edu>,
    start an RStudio session like in the previous lecture
-   ([Starting an RStudio Server session at OSC](../week12/w12a_r-basics.html#starting-an-rstudio-server-session-at-osc)) and open your RStudio Project
-
-  2. You should already have a `week15` folder from Monday's lecture
-  3. Create a new Quarto document by clicking `File` \> `New File` \>
-`Quarto Document` and save it inside the `week15` directory.
+   ([Starting an RStudio Server session at OSC](../week12/w12a_r-basics.qmd#starting-an-rstudio-server-session-at-osc)) and open your RStudio Project
+2. You should already have a `week15` folder from Monday's lecture
+3. Create a new Quarto document by clicking `File` \> `New File` \>
+   `Quarto Document` and save it inside the `week15` directory.
 
 ## Install and load R packages
 
@@ -79,7 +78,7 @@ if (!require("pheatmap")) {
 }
 ```
 
-```{r warning: FALSE}
+```{r warning=FALSE}
 library(tidyverse) # Misc. data manipulation and plotting
 library(pheatmap) # Heatmap plot
 library(EnhancedVolcano) # Volcano plot
@@ -99,7 +98,7 @@ For the differential expression analysis, we have the following input files:
 
 ```{r, eval=FALSE}
 # We'll save the paths to our input files for later use
-count_table_file <- "/fs/ess/PAS3493/people/menuka/salmon.merged.gene_counts_length_scaled.tsv"
+count_table_file <- "/fs/ess/PAS3493/share/week15/salmon.merged.gene_counts_length_scaled.tsv"
 metadata_file <- "../garrigos/meta/metadata.tsv"
 ```
 
@@ -112,7 +111,7 @@ metadata_file <- here::here("assets/metadata.tsv")
 
 ## Create a DESeq2 object
 
-Like in the *Culex* [paper]([https://pmc.ncbi.nlm.nih.gov/articles/PMC12288828/) whose data we are working with,
+Like in the *Culex* [paper](https://pmc.ncbi.nlm.nih.gov/articles/PMC12288828/) whose data we are working with,
 we will perform a Principal
 Component Analysis (PCA) and a Differential Expression (DE) analysis using the popular
 **DESeq2** package
@@ -128,7 +127,7 @@ do anything else, we need to create a DESeq2 object from three components:
 2. **Count table**\
    A matrix (table) with one row per gene, and one column per sample.
 3. **A statistical design**\
-   A statistical design formula (basically, which groups to compare) will tell DESEq2
+   A statistical design formula (basically, which groups to compare) will tell DESeq2
    *how* to analyze the data.
 
 ### Metadata
@@ -136,7 +135,7 @@ do anything else, we need to create a DESeq2 object from three components:
 First, we'll load the metadata file and take a look at the resulting data frame:
 
 ```{r}
-# Read in the count table
+# Read in the metadata
 meta_raw <- read_tsv(metadata_file, show_col_types = FALSE)
 ```
 
@@ -190,7 +189,7 @@ head(count_df)
 ```
 
 Again, we have to make several modifications before we can include it in the DESeq2 object.
-DESeq2 expects with whole numbers (integers) and with gene IDs as row names:
+DESeq2 expects counts as whole numbers (integers), and gene IDs as row names:
 
 ```{r}
 # Prepare the count table so it can be loaded into DESeq2
@@ -255,7 +254,9 @@ of our count matrix?
 dim(count_mat)
 ```
 
-How many rows and columns are present in count_mat? What is the mean of rows in count_mat? Show the top six results.
+What are the summed and mean counts per gene, and the summed counts per sample?
+We'll show the first six results for each:
+
 ```{r}
 # sum of rows in matrix
 head(rowSums(count_mat))
@@ -367,7 +368,7 @@ using ntop=500 top features by variance
   try to answer the three questions asked at the beginning of this PCA section.
 
 - How does our plot compare to the PCA plot in the paper (Figure 1),
-  in terms of the conclusions you just drew in the previous exercise.
+  in terms of the conclusions you just drew?
 
 <details><summary>*Click to see the paper's Figure 1*</summary>
 
@@ -410,7 +411,7 @@ pca_df <- plotPCA(
 ```
 
 With that `pca_df` dataframe in hand,
-it will be relatively straightforward to customize the plot using your knowlegde
+it will be relatively straightforward to customize the plot using your knowledge
 of ggplot2.
 
 </details><details><summary>*Click to see a possible solution*</summary>
@@ -473,7 +474,7 @@ infection status as an independent variable, i.e. the design `~treatment`.
 
 <details><summary>{{< fa user-edit >}} Given the PCA results, do you think that ignoring the `time` variable is a good idea? _(Click for the answer)_</summary>
 No: the time variable clearly has a large effect on overall patterns of gene expression,
-in fact more so than the treatment..
+in fact more so than the treatment.
 </details>
 
 _Controlling for time_ can be done in two ways:
@@ -644,17 +645,17 @@ and B being the compared sample groups, the LFC is calculated as:
 log2(mean of A / mean of B)
 ```
 
-Due the log-transformation, the LFC also increase more slowly than a raw fold-change:
+Due to the log-transformation, the LFC increases more slowly than a raw fold-change:
 
 - An LFC of **`1`** indicates a 2-fold difference
 - An LFC of **`2`** indicates a 4-fold difference
-- An LFC of **`3`** indicates a 8-fold difference
+- An LFC of **`3`** indicates an 8-fold difference
 
 A nice property of LFC is that decreases and increases in expression are expressed
 symmetrically:
 
-- An LFC of **`1`** means that group A has a **two-fold higher** expression that group B
-- An LFC of **`-1`** means that group A has a **two-fold lower** expression that group B
+- An LFC of **`1`** means that group A has a **two-fold higher** expression than group B
+- An LFC of **`-1`** means that group A has a **two-fold lower** expression than group B
 
 <hr style="height:1pt; visibility:hidden;" />
 
@@ -697,7 +698,7 @@ How many adjusted p-values were less than 0.05 (i.e., significant)?
 sum(res_rc24$padj < 0.05, na.rm = TRUE)
 ```
 
-So, we have `sum(res_rc24$padj < 0.05, na.rm = TRUE)` Differentially Expressed Genes
+So, we have `r sum(res_rc24$padj < 0.05, na.rm = TRUE)` Differentially Expressed Genes
 (**DEG**s) for this specific pairwise comparison.
 
 <hr style="height:1pt; visibility:hidden;" />
@@ -832,11 +833,11 @@ EnhancedVolcano(
 - **Figure out the identity of the above-mentioned log2-fold change outlier.**\
   *(You can do so either by labeling it in the plot, or by filtering the `res_rc24` table.)*
 
-<details><summary>*Click for the solution for how to lab it in the plot*</summary>
+<details><summary>*Click for the solution for how to label it in the plot*</summary>
 <hr style="height:1pt; visibility:hidden;" />
 
 ```{r}
-#fig.height=6.5
+#| fig-height: 6.5
 EnhancedVolcano(
   toptable = res_rc24,
   title = "relictum vs. control at 24 hpi",
@@ -859,7 +860,7 @@ as.data.frame(res_rc24) |> filter(log2FoldChange > 20)
 
 (Interestingly, there's a second gene with a LFC \> 20 that we hadn't seen in the plot,
 because it has `NA` as the `pvalue` and `padj`. See the
-[section "Extra info: `NA` values in the results table" in the Appendix](#na-values-in-the-deseq2-results-table)
+collapsed box "`NA` values in the DESeq2 results table" above
 for why p-values can be set to `NA`.)
 
 </details>
@@ -952,11 +953,11 @@ focal_gene_counts |>
   theme(legend.position = "none")
 ```
 
-Wow! It looks like in every single time + treatment combinations, all but one (or in one
+Wow! It looks like in every single time + treatment combination, all but one (or in one
 case, two) of the samples have zero expression, but there are several extreme outliers.
 
-Our focal comparison at `24hpi` (left panel/facet), and comparing `control` vs `relictum`:
-so it looks like the difference between these two groups is solely due to the one outlier
+For our focal comparison at `24hpi` (left panel/facet), comparing `control` vs `relictum`,
+it looks like the difference between these two groups is solely due to the one outlier
 in `relictum`. Nevertheless, even the multiple-testing corrected p-value (`padj`) is
 significant for this gene:
 
@@ -966,7 +967,7 @@ as.data.frame(res_rc24) |>
   filter(gene == "LOC120431476")
 ```
 
-So, we have to be careful with talking our statistical results at face value, and need to
+So, we have to be careful with taking our statistical results at face value, and need to
 visualize important genes!
 
 </details>
@@ -987,20 +988,20 @@ You could open the resulting file in Excel for further exploration.
 # Create the output directory, if necessary:
 dir.create("results/DE", recursive = TRUE, showWarnings = FALSE)
 
-# Write the
-write_tsv(as.data.frame(res_rc24), "results/DE/resultsres_rc24.tsv")
+# Write the results table to a TSV file
+write_tsv(as.data.frame(res_rc24), "results/DE/res_rc24.tsv")
 
-dds_file <- "TBA"
-saveRDS(dds, dds_file)
+# You can also save the whole DESeq2 object, so you can reload it later with readRDS()
+saveRDS(dds, "results/DE/dds.rds")
 ```
 
 ## In Closing
 Today, you have performed several steps in the analysis of gene counts that result from a
 typical RNA-seq workflow. Specifically, you have:
 
-- Created a DESEq2 object from the gene count data and the experiment's metadata
+- Created a DESeq2 object from the gene count data and the experiment's metadata
 - Performed exploratory data analysis including a PCA
-- Ran a Differential Expression (DE) analysis with DESeq2
+- Run a Differential Expression (DE) analysis with DESeq2
 - Extracted, interpreted, and visualized the DE results
 
 #### Next steps
@@ -1009,7 +1010,7 @@ Typical next steps in such an analysis include:
 
 - Another very common type of plot used for gene expression data (and omics data
   more generally) is a heatmap.
-  You'll create heatmaps in [this week's exercises](./w15_exercises.qmd).
+  You'll create heatmaps in [the next lecture](./w15c_heatmaps.qmd).
 
 - Extracting, comparing, and synthesizing DE results across **all pairwise comparisons**
   (this would for example allow us to make the upset plot in *Figure 2 of the paper*)

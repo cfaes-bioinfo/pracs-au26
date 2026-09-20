@@ -53,7 +53,7 @@ To get there, you still need to learn about the following topics:
 
 1. The basics of shell scripts _(this session)_
 2. Running command-line programs using shell scripts _(next session)_
-3. Submitting batch jobs with Slurm _(next week)_
+3. Submitting batch jobs with Slurm _(in week 9)_
 
 #### This session
 
@@ -70,7 +70,7 @@ In this session, we will talk about:
    start a VS Code session in `/fs/ess/PAS3493/people/$USER`
 2. Open a terminal and create and then navigate to a `week07` dir
 3. **Within the `week07` dir, create a dir `scripts`** (but don't navigate there)
-3. _Optional: Create a new Markdown file for class notes and save it in your `week07` dir_
+4. _Optional: Create a new Markdown file for class notes and save it in your `week07` dir_
 
 ## Shell scripts
 
@@ -107,7 +107,7 @@ we can **submit scripts as "batch jobs"** to the compute job scheduling program
 
 ::: callout-tip
 #### Bash vs. shell
-So far, we've mostly used talked about the Unix _shell_ and _shell_ scripts.
+So far, we've mostly talked about the Unix _shell_ and _shell_ scripts.
 From today onwards, we'll also see the term "Bash".
 Recall the difference we talked about in the Unix shell intro session:
 **there are multiple Unix shell language variants and the specific one we've been**
@@ -142,7 +142,7 @@ echo "This script will print a first and a last name"
 ```
 
 Shell scripts mostly contain the same Unix shell code you have become familiar with.
-As such, the `printline.sh` file with a single `echo` command
+As such, the `printname.sh` file with a single `echo` command
 _constitutes a functional shell script_!
 
 One way of running the script is by typing `bash` followed by the path to the script:
@@ -223,7 +223,7 @@ The following two default settings of the Bash shell are bad ideas inside script
 The shell's default behavior of ignoring the referencing of unset variables can
 lead to accidental file removal as follows:
 
-- Using a variable, you try to remove temporary files whose names start with `tmp_`:
+- Using a variable, you try to remove temporary files whose names start with `temp_`:
 
   ```bash
   # NOTE: DO NOT run this!
@@ -236,7 +236,7 @@ lead to accidental file removal as follows:
   ```bash
   # NOTE: DO NOT run this!
   tempdir=output/tmp
-  rm -r $tmpdir/*
+  rm -rf $tmpdir/*
   ```
 
 <details><summary> Above, the text specified the _intent_ of the commands. What would have actually happened? _(Click to expand)_</summary>
@@ -253,7 +253,7 @@ which means that we are referencing a (likely) non-existent variable.
   `rm -rf $tmpdir/*` would have been interpreted as `rm -rf /*`.
   Horrifyingly, this would **attempt to remove the entire filesystem**:
   recall that a leading `/` in a path is a computer's root directory.
-  (`-r` makes the removal _recursive_ and `-f` makes _forces_ removal).
+  (`-r` makes the removal _recursive_ and `-f` _forces_ removal).
 
 </details>
 
@@ -329,7 +329,7 @@ To be able to do this, the script:
 
 1. Needs to have a _shebang_ line so the computer knows which language to
    execute the script with
-2. The script needs to be "executable".
+2. Needs to be "executable".
    You can do that by changing the file permissions, e.g.:
 
   ```bash
@@ -411,7 +411,7 @@ input_file=../garrigos/fastq/S63_R1.fastq.gz
 ls -lh "$input_file"
 ```
 ```{.bash-out}
--rw-rw----+ 1 jelmer PAS0471 0 Mar  7 13:17 data/fastq/sample1_R1.fastq
+-rw-rw----+ 1 jelmer PAS0471 21M Sep  9 13:46 ../garrigos/fastq/S63_R1.fastq.gz
 ```
 
 ::: {.callout-note collapse="true"}
@@ -419,13 +419,11 @@ ls -lh "$input_file"
 
 - Assigning and printing the value of a variable **in R**:
 
-  ```{r, eval=TRUE}
-  #| class-output: styled-output
-  # (Don't run this)
+  ``` r
   x <- 5
   x
   ```
-  ```bash-out
+  ``` r-out
   [1] 5
   ```
 
@@ -439,7 +437,7 @@ ls -lh "$input_file"
   5
   ```
 
-Difference are that in the Unix shell:
+Differences are that in the Unix shell:
 
 - There cannot be any **spaces** around the **`=`** in `x=5`.
 - You need a **`$` prefix** to *reference* (but not to *assign*) variables
@@ -559,6 +557,7 @@ be part of a shell variable name: in this case a period, `.`.
 Quoting solves this, too:
 
 ```sh
+touch README_"$today"_final.txt
 ls -1
 ```
 ```bash-out
@@ -623,7 +622,7 @@ such as shell wildcards. Compare:
 echo *
 ```
 ```{.bash-out}
-18.txt Aug README_Thu, README_Thu, Aug 18.txt
+26.txt Mar README_Tue, README_Tue, Mar 26.txt
 ```
 
 ```bash
@@ -634,14 +633,14 @@ echo "*"
 *
 ```
 
-However, double quotes **not** turn off the special meaning of `$`
+However, double quotes do **not** turn off the special meaning of `$`
 (which is to denote a string as a variable):
 
 ```bash
 echo "$today"
 ```
 ```{.bash-out}
-Thu, Aug 18
+Tue, Mar 26
 ```
 
 ...but **_single quotes_** will:
@@ -748,7 +747,7 @@ echo "This script will print a first and a last name"
 echo "First name: $1"
 echo "Last name: $2"
 
-# [Paste this into you script - don't enter this directly in your terminal.]
+# [Paste this into your script - don't enter this directly in your terminal.]
 ```
 
 Next, run the script, passing the arguments `John` and `Doe` to it:
@@ -779,6 +778,7 @@ Then, run the script as instructed in the scenario to test your prediction.
    bash scripts/printname.sh
    ```
    ```bash-out
+   This script will print a first and a last name
    printname.sh: line 5: $1: unbound variable
    ```
    </details>
@@ -808,8 +808,9 @@ Then, run the script as instructed in the scenario to test your prediction.
    bash scripts/printname.sh
    ```
    ```bash-out
-   echo "First name:"
-   echo "Last name:"
+   This script will print a first and a last name
+   First name:
+   Last name:
    ```
 
    Being "commented out", the `set` line should read:
@@ -830,13 +831,14 @@ Then, run the script as instructed in the scenario to test your prediction.
    bash scripts/printname.sh "John Doe"
    ```
    ```bash-out
-   echo "First name: John Doe"
-   echo "Last name:"
+   This script will print a first and a last name
+   First name: John Doe
+   Last name:
    ```
    </details>
 
 - _To get back to where you were,_
-  _remove the `#` you inserted in the script in step 2 above to reactive the `set` line._
+  _remove the `#` you inserted in the script in step 2 above to reactivate the `set` line._
 :::
 
 ### Copying to variables with descriptive names

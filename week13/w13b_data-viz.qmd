@@ -41,41 +41,34 @@ never expected to see.” — John Tukey
 
 Data visualization is a critical step in data analysis to communicate
 our findings. Visual representation of data helps us to see
-the hidden patterns, and trends that we cannot usually see easily in raw data . In this
+the hidden patterns and trends that we cannot usually see easily in raw data. In this
 lecture, we will learn how to create pretty, informative and publication
 ready plots using the [ggplot2](https://ggplot2.tidyverse.org/) package
 in R. `ggplot2` is a powerful and flexible package in R based on the
 **Grammar of Graphics**. `ggplot2` aims to create grammatical rules for
-the development of graphics. Learning graphics will help you to
+the development of graphics. Learning this grammar will help you to
 create multi-layered graphics.
 
 `ggplot2` creates plots layer by layer. You can keep on adding
 annotations to graphs to build complex visualizations step by step. To
-create a plot in `ggplot2`, you pass your data as first argument, add then add layer of
-coordinates, and geometric objects (geoms) to
-represent the data points and so on. You can add as many layers as you want in the
+create a plot in `ggplot2`, you pass your data as the first argument, and then add layers of
+coordinates and geometric objects (geoms) to
+represent the data points, and so on. You can add as many layers as you want in the
 `ggplot` making the plot fully customizable.
 
 ### Overview & learning goals
 
-In this lecture, you will learn : 
+In this lecture, you will learn:
 
-- Basic syntax of `ggplot` function in R
-- How to create different types of plots using `ggplot2` package in R 
-- How to add different layers of information to the plots 
-- Export the plots in different formats
-
-Specifically, you will learn:
-
-- Learn about aesthetic mappings to the plots using `aes()`
-- Learn about the themes of ggplot using `theme()`
-- Add titles and labels using `labs()`
-- Create scatter plot, bar graphs, box plot using `geom_point()`, `geom_col()`, `geom_bar()` and `geom_boxplot()`
-- Facet the plots using `facet_wrap()` and `facet_grid()`
+- Basic syntax of the `ggplot()` function, including aesthetic mappings with `aes()`
+- How to create scatter plots, bar graphs, and box plots with `geom_point()`, `geom_col()`, `geom_bar()`, and `geom_boxplot()`
+- How to add titles and labels with `labs()`, and customize themes with `theme()`
+- How to facet plots using `facet_wrap()` and `facet_grid()`
+- How to export plots in different formats
 
 ## Set up and Data preparation
 
-### Open a new Quarto document in Rstudio
+### Open a new Quarto document in RStudio
 
 You should already have a `week13` directory from Monday's lecture.
 Create a new Quarto document by clicking `File` \> `New File` \>
@@ -84,10 +77,10 @@ Create a new Quarto document by clicking `File` \> `New File` \>
 ### Installing `tidyverse` and `palmerpenguins` packages
 
 For this lecture, we will use two packages:
-`Tidyverse and palmerpenguins`.
-[Tidyverse](https://ggplot2.tidyverse.org/) is a larger collection of
+_tidyverse_ and _palmerpenguins_.
+The [tidyverse](https://www.tidyverse.org/) is a larger collection of
 packages including `ggplot2`. Some of the other useful packages in the
-tidyverse for data manipulation and analysis includes `dplyr`for data
+tidyverse for data manipulation and analysis include `dplyr` for data
 manipulation (**we learnt on Monday**), `tidyr` for data tidying and more. By loading the
 `tidyverse`, you gain access to all of those packages. Therefore, I
 would recommend all of you to install the whole `tidyverse` package
@@ -96,7 +89,7 @@ instead of `ggplot2` alone. For the visualization, we will use
 physical measurements, and other attributes. 
 
 ::: {.callout-note}
-It is good practice to always install package directly in R console. Otherwise, every time you render 
+It is good practice to always install packages directly in the R console. Otherwise, every time you render 
 Quarto document, packages will be installed. Run the following code in
 your R console to install the packages needed for data visualization
 from Comprehensive R Archive Network (CRAN).
@@ -118,7 +111,7 @@ package using **library()** every time you start a new R session.
 :::
 
 Let's load the penguin data set, look at the data and its structure.
-`data` function loads the specified data sets and list of other available data sets.
+The `data()` function loads a specified data set; without arguments, it lists the available data sets.
 
 ```{r eval=FALSE}
 data("penguins")
@@ -127,12 +120,14 @@ str(penguins)
 ```
 
 ::: {.callout-note}
-# Penguin data sets : It consists of body measurement data of 3 species of penguins collected from 3 islands 
-in the Palmer, Archipelago, Antarctica. The data set contains 8 variables and 344 observations.
+#### The penguins data set
+
+It consists of body measurement data of 3 species of penguins collected from 3 islands
+in the Palmer Archipelago, Antarctica. The data set contains 8 variables and 344 observations.
  
 -   species (factor) : Species of penguin (Adelie, Chinstrap, Gentoo)
 -   island (factor): Island where the penguin was found (Biscoe, Dream,
-    Torg hensen)
+    Torgersen)
 -   bill_length_mm (num): Length of the penguin's bill in millimeters
 -   bill_depth_mm (num): Depth of the penguin's bill in millimeters
 -   flipper_length_mm (int): Length of the penguin's flipper in
@@ -152,8 +147,8 @@ To create a plot using `ggplot2`, we will use the function `ggplot()`.
 [ggplot2 cheat
 sheet](https://rstudio.github.io/cheatsheets/data-visualization.pdf)
 from RStudio provides an overview of the different types of plots that
-can be created using the `ggplot2` package. Use the `help(?)` we learnt in
-`week12` to read about `ggplot()` function.
+can be created using the `ggplot2` package. Use the `help()` function or the `?` operator that you learned about in
+week 12 to read about the `ggplot()` function.
 
 ::: {.callout-tip}
 ## `ggplot2 and ggplot` :
@@ -175,7 +170,7 @@ scatter plots, bar plots, box plots, etc.
 #### A plotting framework
 
 As mentioned above `ggplot` is composed of several layers. It might
-not make sense right now but we will see couple of examples by adding
+not make sense right now but we will see a couple of examples by adding
 several layers to our plot and clarify it.
 
 Your data frame is the first argument of `ggplot`. You can provide data in two ways: 
@@ -242,20 +237,59 @@ of the plot.
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise-1:
-- What do you think will happen if you keep the `color = species` outside of `aes()`. 
+- What do you think will happen if you keep `color = species` outside of `aes()`?
+  There are actually three different ways to do this -- try each one and see what happens:
+
+  a. `ggplot(aes(x = ..., y = ...), color = species)` -- still inside `ggplot()`, but outside `aes()`
+  b. `geom_point(color = species)` -- inside `geom_point()`, outside `aes()`
+  c. `geom_point(color = "red")` -- inside `geom_point()`, outside `aes()`, but with a fixed value instead of a variable
 
 <details>
 
 <summary>Click for the solution</summary>
 
+a. Inside `ggplot()` but outside `aes()`, `color = species` is silently ignored,
+   so all points are colored black (the default) and no legend is added:
+
 ```{r}
-penguins |>  
-  ggplot(aes(x =  bill_length_mm, 
+penguins |>
+  ggplot(aes(x =  bill_length_mm,
                      y = bill_depth_mm), color = species) +
   geom_point()
 ```
 
-Anything outside `aes()` is considered as fixed setting. Therefore, all the points are colored black (default color). Legends will not be provided because we are not mapping variables to anything.
+b. Inside `geom_point()`, outside `aes()`, the same `color = species` instead
+   produces an error:
+
+```{r, eval=FALSE}
+penguins |>
+  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(color = species)
+```
+```{r, echo=FALSE, error=TRUE}
+penguins |>
+  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(color = species)
+```
+
+c. But with a fixed value instead of a variable name, it works fine
+   (more on this in the next exercise):
+
+```{r}
+penguins |>
+  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(color = "red")
+```
+
+**Why does (b) fail while (c) works, given that both are outside `aes()`?**
+Anything outside `aes()` is treated as a **fixed setting** rather than a mapping,
+so it must be given a literal value (like `"red"`) that `geom_point()` can use
+directly to color every point. `species` isn't a variable that exists outside
+of the `penguins` data frame, so outside of `aes()`, R has no idea what it
+refers to and throws an error.
+In (a), by contrast, `ggplot()` simply ignores the `color` argument entirely
+because it's outside `aes()` and not a recognized argument of `ggplot()`
+itself, so `color = species` has no effect at all.
 
 </details>
 
@@ -294,7 +328,7 @@ We can set the aesthetic outside the `aes()` function to do it. **To map variabl
 <summary>Click for the solution</summary>
 
 ```{r}
-## you can set `color = "red" outside the `aes()` function inside the `geom_point()` function.
+## You can set `color = "red"` outside the `aes()` function, inside `geom_point()`.
 penguins |> 
   ggplot(aes(x =  bill_length_mm, 
                      y = bill_depth_mm )) +
@@ -346,13 +380,13 @@ penguins |>
 The order of the color will correspond to the order of species in the legend. If you are unsure which color
 to use for your plot, use the `colors()` to explore various available colors.
 
-What if you have 10 treatments that you want to color? It requires lot of typing. R has several functions
-with wide range of **color palettes**. Let's explore `RcolorBrewer` package that has several color palettes.
-. To use the `RcolorBrewer` package, first install it and load the package.
+What if you have 10 treatments that you want to color? It requires a lot of typing. R has several functions
+with a wide range of **color palettes**. Let's explore the `RColorBrewer` package, which has several color palettes.
+To use the `RColorBrewer` package, first install it and then load it.
 
 ![](../img/color_palette.png){width="50%" fig-align="center"}
 
-Let's pick `Pastel1` color palette for our scatter plot which needs to be used with the function `scale_color_brewer()`
+Let's pick the `Pastel1` color palette for our scatter plot, which needs to be used with the function `scale_color_brewer()`.
 
 ```{r}
 library(RColorBrewer)
@@ -422,20 +456,20 @@ We have tried to create `scatter plot` so far using `geom_point`. However, there
 It is one of the commonly used plot types.
 It can be used to visualize relationship between the categorical variable and numerical variable such as mean  as well as counts per group. 
 First, we will use bar graph to plot the mean of our data set. 
-Let's compute the mean first manually to plot the data. On Monday, we learnt to group variable/s by the `group_by` function. Use the same concept here to calculate the body mass of the penguins for each island.
+Let's compute the mean first manually to plot the data. On Monday, we learnt to group variable/s by the `group_by` function. Use the same concept here to calculate the mean body mass of the penguins for each island.
 
 ```{r}
 ## Before plotting, compute the mean
-mean <- penguins |> 
-  group_by(island) |> 
-  summarize(mean_body_mass = mean(body_mass_g, 
+island_means <- penguins |>
+  group_by(island) |>
+  summarize(mean_body_mass = mean(body_mass_g,
                                   na.rm = TRUE)) # remove missing values
-    
+
 ```
 
 
 ```{r}
-mean |> 
+island_means |>
   ggplot(aes(x = island, y = mean_body_mass)) +
   geom_col()
 ```
@@ -450,13 +484,17 @@ penguins |>
 
 
 ### Box plot
-We use box plot to visualize the relationship of numerical and categorical variables. We can 
+We use box plot to visualize the relationship of numerical and categorical variables. We can
 see the distribution of data. Let's say we want to create a box plot to visualize the distribution of `body_mass_g` across different `island` of penguins.
+This time, let's save the plot as an object, `box_plot_body_mass_and_island`,
+so we can reuse it later:
 ```{r}
-penguins |> 
-  ggplot(aes(x =  island, 
+box_plot_body_mass_and_island <- penguins |>
+  ggplot(aes(x =  island,
              y = body_mass_g)) +
   geom_boxplot()
+
+box_plot_body_mass_and_island
 ```
 
 ::: exercise
@@ -494,19 +532,19 @@ penguins |>
 </details>
 :::
 
-There are many other `geom` available in `ggplot` to construct the bar graph, histogram and more. 
+There are many other `geom`s available in `ggplot2` to construct bar graphs, histograms and more. 
 [ggplot2 cheat
-sheet](https://rstudio.github.io/cheatsheets/data-visualization.pdf) from RStudio provides a overview of the
+sheet](https://rstudio.github.io/cheatsheets/data-visualization.pdf) from RStudio provides an overview of the
 different types of plots that can be created using the `ggplot2`. 
 
 
 ## Multi-panel figures-faceting
 When you map too many variables in a single plot, your plot looks cluttered. One way to work around this 
-problem is to facet the plot. Faceting allowing to create multiple panels based on the values of a 
+problem is to facet the plot. Faceting allows you to create multiple panels based on the values of a 
 categorical variable. It is useful to create separate sub-plots for each category of a variable to find the 
 trends, patterns present in the data. You can use the `facet_wrap()` or `facet_grid()` functions to create faceted plots.
 
-- `facet_wrap()`: Use this function to facet by single categorical variable. It allows to lay out
+- `facet_wrap()`: Use this function to facet by a single categorical variable. It allows to lay out
 panels wrapped into a rectangular layout.
 
 - `facet_grid()` : Use this function to facet by one or two categorical variables. It allows you to lay out your facets in a grid, one for rows and one for columns. 
@@ -533,7 +571,7 @@ penguins |>
 ## Exporting the plots
 You can save the plots in different formats such as PNG, JPEG, PDF, etc. either manually or by using the 
 [ggsave](https://ggplot2.tidyverse.org/reference/ggsave.html) function. To export plot manually,
-use the `Export` button in the `Plots` of the `output pane`. You can choose the file format, 
+use the `Export` button in the `Plots` tab of the output pane. You can choose the file format, 
 size, but you are limited in other parameters when you export file manually. `ggsave()` provides more flexibility to save the plots. 
 
 ```{r eval=FALSE}

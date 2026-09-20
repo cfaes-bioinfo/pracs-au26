@@ -109,7 +109,7 @@ Activity Bar, with the Extensions icon (bottom) highlighted.
   it to the terminal --- or when cutting/copying lines!
 
 - **Downloading files**\
-  In the Explorer in the side bar, you can right click on any file,
+  In the Explorer in the side bar, you can right-click on any file,
   and among the options shown, you should see "**Download...**".
   Click on that to download the file to your computer!
   There is no way to upload, though --- this should be done through the OnDemand
@@ -139,7 +139,7 @@ Activity Bar, with the Extensions icon (bottom) highlighted.
   (or press <kbd>F1</kbd> or <kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>).
   To use it, start typing something to search for an option.
 
-- **Helpful keyboard shortcuts**\
+- **Helpful keyboard shortcuts**
 
   - Open a terminal: <kbd>Ctrl</kbd>+<kbd>\`</kbd> (backtick)
   - Toggle between the terminal and the editor pane:
@@ -222,7 +222,7 @@ We can see that `fastqc` is available, namely version `0.12.1`
 ::: {.callout-warning}
 #### Case-sensitivity
 These two search commands are not case-sensitive -- but `module load`,
-covered below, _is_ case-sensitive
+covered below, _is_ case-sensitive.
 :::
 
 ::: {.callout-warning}
@@ -248,9 +248,9 @@ Failed to search for file: GDBus.Error:org.freedesktop.DBus.Error.NameHasNoOwner
 Notes on the above command:
 
 - The command to run FastQC is `fastqc`
-- Like shell commands, `fastqc` has many options,
+- Like the shell commands you've learned so far, `fastqc` has many options,
   and we can pass FASTQ files as arguments.
-- To test for the program's availability, we will simply run `fastqc -v`,
+- To test for the program's availability, we simply ran `fastqc -v`,
   which prints the FastQC version.
 
 Now, load the module --
@@ -282,10 +282,11 @@ include the `module load` command in the script --
 we'll see this next week.
 
 Here, we only covered the very basics of using `module`.
-To learn a bit more, you can read the boxes below, but in class,
-we will not go into further detail because we will mostly use containers instead
-(considering the limitations of these modules and the
-advantages of containers discussed in the previous lecture).
+To learn a bit more, you can read the boxes below.
+In class, we will not go into further detail:
+for programs like FastQC that are available as modules,
+the basics above are all you need,
+and for other programs, we will use containers.
 
 ::: {.callout-tip collapse="true"}
 #### Other `module` commands  _(Click to expand)_
@@ -428,8 +429,8 @@ Type 'q()' to quit R.
 ```
 
 Now you're in the R console --
-type `q()` or use the general keyboard short for exiting
-<kbd>Ctrl/Cmd</kbd>+<kbd>D</kbd> to exit R.
+type `q()` or use the general keyboard shortcut for exiting,
+<kbd>Ctrl</kbd>+<kbd>D</kbd>, to exit R.
 :::
 
 ::: exercise
@@ -439,7 +440,8 @@ type `q()` or use the general keyboard short for exiting
    MultiQC summarizes the outputs of FastQC and many other bioinformatics programs.]
    -- is it available?
 
-   <details><summary>_Click to see the solution_</summary>
+   <!----
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
    No, it isn't available!
 
@@ -449,14 +451,16 @@ type `q()` or use the general keyboard short for exiting
    ```bash-out
    Lmod has detected the following error:  Unable to find: "multiqc".
    ```
-   </summary>
+   </details>
+   ---->
 
 2. Search for the program STAR^[
    STAR is an RNA-Seq aligner that we will use to align the reads from our
    example dataset to our reference genome.]
    -- is it available?
 
-   <details><summary>_Click to see the solution_</summary>
+   <!----
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
    Yes, it's available:
 
@@ -476,12 +480,15 @@ type `q()` or use the general keyboard short for exiting
    To find other possible module matches execute:
       $ module -r spider '.*star.*'
    ```
-   </summary>
+   </details>
+   ---->
 
 3. Load the STAR module and test whether you can use the program
    by running `STAR` (without adding any options).
 
-   <details><summary>_Click to see the solution_</summary>
+   <!----
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
    ```bash
    module load star/2.7.10b
    STAR
@@ -497,15 +504,33 @@ type `q()` or use the general keyboard short for exiting
    <https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf>
    To list all parameters, run STAR --help
    ```
-   </summary>
+   </details>
+   ---->
 
-4. _Bonus:_ Open a Unix shell on the Cardinal cluster:
+4. Predict what each of the following will do, and then check whether you were right:
+   a. `module load STAR/2.7.10b`
+   b. `module unload star/2.7.10b`, followed by `STAR`
+
+   <!----
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+   a. You get an error, because `module load` is case-sensitive:
+      the module name is lowercase `star`,
+      even though the command that it provides is uppercase `STAR`.
+   b. You get a "command not found" error:
+      after unloading its module, STAR is no longer available.
+
+   </details>
+   ---->
+
+5. _Bonus:_ Open a Unix shell on the Cardinal cluster:
    in OnDemand, click "Clusters" in the blue top bar,
    and then "Cardinal Shell Access".
    Also check there whether STAR is available and which versions --
-   does it differ from the situation in Pitzer?
+   does it differ from the situation on Pitzer?
 
-   <details><summary>_Click for the solution_</summary>
+   <!----
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
    Yes, two different versions are available on Cardinal,
    including a more recent version than on Pitzer:
@@ -524,7 +549,231 @@ type `q()` or use the general keyboard short for exiting
         starccm
    ```
    </details>
+   ---->
 
+:::
+
+## A practical example: running FastQC on a FASTQ file
+
+We will run FastQC using the module we loaded earlier.
+Module loading does not persist across shell sessions,
+so to be sure FastQC is available, (re)load the module:
+
+```bash
+module load fastqc/0.12.1
+```
+
+To analyze a FASTQ file with default FastQC settings,
+the command is simply `fastqc` followed by the FASTQ file path --
+and we could use one of the FASTQ files in our Garrigos practice data set:
+
+``` bash
+# [Don't run this]
+fastqc ../garrigos/fastq/S63_R1.fastq.gz
+```
+
+To shorten subsequent commands,
+let's start by assigning the FASTQ file path to a variable:
+
+```bash
+FASTQ_R1=../garrigos/fastq/S63_R1.fastq.gz
+```
+
+```bash
+ls -lh "$FASTQ_R1"
+```
+```bash-out
+-rw-rw----+ 1 jelmer PAS0471 21M Sep  9 13:46 ../garrigos/fastq/S63_R1.fastq.gz
+```
+
+With that, the above command becomes:
+
+```bash
+# [Don't run this]
+fastqc "$FASTQ_R1"
+```
+
+However, an annoying default behavior of FastQC is that it writes its output files
+in the same dir that contains the input FASTQ files ---
+this means mixing your raw data with your results, which we don't want!
+
+### Changing the output directory?
+
+To figure out how to change that behavior,
+consider that many standard shell commands and bioinformatics tools alike
+have an option `-h` and/or `--help` to print usage information to the screen.
+Let's try that:
+
+``` bash
+fastqc -h
+```
+``` bash-out
+            FastQC - A high throughput sequence QC analysis tool
+
+SYNOPSIS
+
+        fastqc seqfile1 seqfile2 .. seqfileN
+
+    fastqc [-o output dir] [--(no)extract] [-f fastq|bam|sam]
+           [-c contaminant file] seqfile1 .. seqfileN
+
+# [...output truncated...]
+```
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: FastQC help and output dir
+Look at FastQC's help info,
+and figure out which option can be used to specify a custom output directory.
+
+<!----
+<details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+The option to do this is `-o`/`--outdir`:
+
+``` bash
+fastqc -h
+```
+``` bash-out
+  -o --outdir     Create all output files in the specified output directory.
+                    Please note that this directory must exist as the program
+                    will not create it.  If this option is not set then the
+                    output file for each sequence file is created in the same
+                    directory as the sequence file which was processed.
+```
+</details>
+---->
+
+:::
+
+### The final FastQC command
+
+With the added `--outdir` (or `-o`) option,
+try to run the following FastQC command:
+
+``` bash
+# We'll have to first create the outdir ourselves, in this case:
+mkdir -p results/fastqc
+
+# Now we run FastQC:
+fastqc --outdir results/fastqc "$FASTQ_R1"
+```
+``` bash-out
+Started analysis of S63_R1.fastq.gz
+Approx 5% complete for S63_R1.fastq.gz
+Approx 10% complete for S63_R1.fastq.gz
+Approx 15% complete for S63_R1.fastq.gz
+[...truncated...]
+Analysis complete for S63_R1.fastq.gz
+```
+
+Success!
+Above, FastQC printed some "logging" information to screen,
+telling us about its progress.
+The main output, however, is in the output dir we specified:
+
+- A `.zip` file, which contains tables with FastQC's data summaries
+- An `.html` (HTML) file, which contains the graphs we'd like to see
+
+``` bash
+ls -lh results/fastqc
+```
+``` bash-out
+total 512K
+-rw-rw----+ 1 jelmer PAS0471 241K Mar 21 09:53 S63_R1_fastqc.html
+-rw-rw----+ 1 jelmer PAS0471 256K Mar 21 09:53 S63_R1_fastqc.zip
+```
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: callout-tip
+#### Specifying an output dir vs. output file(s)
+FastQC allows us to specify the output directory, but not the output file names:
+these will be automatically determined based on the input file name(s).
+This kind of behavior is fairly common for bioinformatics programs,
+since they will often produce multiple output files.
+:::
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Another FastQC run
+
+Run FastQC for the corresponding R2 FASTQ file.
+Would you use the same output dir or a different one?
+
+<!----
+<details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+It makes sense to use the same output dir.
+This is because, as you could see above,
+the output file names have the input file identifiers in them.
+As such, because we don't need to worry about overwriting files,
+it will be more convenient to have all results in a single dir.
+
+To run FastQC for the R2 (reverse-read) file:
+
+``` bash
+FASTQ_R2=../garrigos/fastq/S63_R2.fastq.gz
+
+fastqc --outdir results/fastqc "$FASTQ_R2"
+```
+``` bash-out
+Started analysis of S63_R2.fastq.gz
+Approx 5% complete for S63_R2.fastq.gz
+Approx 10% complete for S63_R2.fastq.gz
+Approx 15% complete for S63_R2.fastq.gz
+[...truncated...]
+Analysis complete for S63_R2.fastq.gz
+```
+
+``` bash
+ls -lh results/fastqc
+```
+``` bash-out
+total 1008K
+-rw-rw----+ 1 jelmer PAS0471 241K Mar 21 09:53 S63_R1_fastqc.html
+-rw-rw----+ 1 jelmer PAS0471 256K Mar 21 09:53 S63_R1_fastqc.zip
+-rw-rw----+ 1 jelmer PAS0471 234K Mar 21 09:55 S63_R2_fastqc.html
+-rw-rw----+ 1 jelmer PAS0471 244K Mar 21 09:55 S63_R2_fastqc.zip
+```
+
+Now, we have four files: two for each of our preceding successful FastQC runs.
+
+</details>
+---->
+:::
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Download the HTML files and open them
+
+Unfortunately, it's tricky to view HTML files in VS Code --
+or at least it is in the current Code Server version at OSC.
+
+Therefore, to look at the FastQC HTML files,
+you should first download them to your computer.
+
+We'll cover more scalable methods for downloading files from and uploading them
+to OSC in a couple of weeks,
+but here is a quick method when you just need one or few files:
+in the VS Code file explorer in the side bar,
+you can download a file by right-clicking on it and then selecting the
+"Download..." option.
+
+![](../img/vscode-download.png){fig-align="center" width="55%" fig-alt="A screenshot showing the file download option in the VS Code file explorer." .lightbox}
+
+Your turn:
+
+1. Download the two FastQC HTML files to your computer.
+
+2. In your computer's file browser, navigate to the folder you downloaded the files to,
+   and click on each of them.
+   This should open the files in your default web browser.
+
+3. Explore the files.
+   Which graphs do you understand, and which ones don't you understand?
+
+4. Are there noticeable differences between the two files
+   (i.e., between the forward and reverse reads for the same sample)?
 :::
 
 ## Using Apptainer containers
@@ -553,7 +802,7 @@ but the procedure would be the same for any other available program:
 3. After waiting for the list to populate,
    the **top hit** should be `bioconda::fastqc`,
    with version `0.12.1` selected
-   (the most recent version is always selected by default)
+   (the most recent version is always selected by default).
 
 ![](../img/container_search.png){width="90%" fig-align="center" fig-alt="A screenshot showing the search result for FastQC on the Seqera containers website." .lightbox}
 
@@ -610,7 +859,7 @@ and the box should say **"Fetching container"** for a while.
 This could take one or a few minutes,
 and even though the URL is made available immediately and won't change,
 you can only download/use the container once the "Container is ready".
-If you use an URL before the container is ready, you get this error:
+If you use a URL before the container is ready, you get this error:
 
 ```bash
 apptainer exec oras://community.wave.seqera.io/library/multiqc_trim-galore:15a1e9f26daf266f \
@@ -661,12 +910,12 @@ for long commands like this one.
 
 The **first time** you run this command,
 the container image will be downloaded to a default location (see box below),
-as you can see in he output above --- this will take a minute or so.
+as you can see in the output above --- this will take a minute or so.
 
 ### The container image cache (storage)
 
 The easiest way to run a container image you already downloaded is to simply
-keep re-use the exact same command with the URL to the container (!):
+reuse the exact same command with the URL to the container (!):
 Apptainer will realize that the image has already been downloaded and
 will automatically use the downloaded version:
 
@@ -681,7 +930,7 @@ FastQC v0.12.1
 ```
 
 - The `Using cached SIF image` line tells you that it is using a
-  previously-downloaded SIF file
+  previously downloaded SIF file.
 - You will keep seeing the `gocryptfs not found` message,
   but this is nothing to worry about.
 
@@ -698,12 +947,12 @@ but you can change it *for your current shell session* by setting the
 export APPTAINER_CACHEDIR=/fs/scratch/PAS3493/$USER/containers
 ```
 
-_(To permamently change this location, you would need to add_
+_(To permanently change this location, you would need to add_
 _this line to your `~/.bashrc` shell configuration file._
 _We won't cover this file in class.)_
 
 You can check what's in your cache as follows --
-though this is only informative in terms of how many containers are there
+though this is only informative in terms of how many containers there are
 and how much space they take up,
 because the container names are very cryptic:
 
@@ -720,226 +969,81 @@ Total space used: 383.99 MiB
 <hr style="height:1pt; visibility:hidden;" />
 :::
 
-## A practical example: running FastQC on a FASTQ file
+### Using a container instead of a module
 
-To analyze a FASTQ file with default FastQC settings,
-the command is simply `fastqc` followed by the FASTQ file path --
-and we could use one of the FASTQ files in our Garrigos practice data set:
+In the practical example above,
+we ran FastQC on a FASTQ file using the FastQC _module_.
+To run the same analysis with the _container_ instead,
+you would simply preface the exact same `fastqc` command with
+`apptainer exec <container-URL>`.
+For example, the container-based equivalent of our final FastQC command would be:
 
-``` bash
+```bash
 # [Don't run this]
 apptainer exec oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960 \
-  fastqc ../garrigos/fastq/S63_R1.fastq.gz
+  fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
 ```
-
-To shorten subsequent commands,
-let's start by assigning the container link and FASTQ file path to variables:
-
-```bash
-FASTQC_APPT=oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
-FASTQ_R1=../garrigos/fastq/S63_R1.fastq.gz
-```
-
-```bash
-echo "$FASTQC_APPT"
-ls -lh "$FASTQ_R1"
-```
-```bash-out
-oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
--rw-rw----+ 1 jelmer PAS0471 21M Sep  9 13:46 ../garrigos/fastq/S63_R1.fastq.gz
-```
-
-With that, the above command becomes:
-
-```bash
-# [Don't run this]
-apptainer exec "$FASTQC_APPT" \
-  fastqc "$FASTQ_R1"
-```
-
-However, an annoying default behavior of FastQC is that it writes its output files
-in the same dir that contains the input FASTQ files ---
-this means mixing your raw data with your results, which we don't want!
-
-### Changing the output directory?
-
-To figure out how to change that behavior,
-consider that many standard shell commands and bioinformatics tools alike
-have an option `-h` and/or `--help` to print usage information to the screen.
-Let's try that:
-
-``` bash
-apptainer exec "$FASTQC_APPT" \
-  fastqc -h
-```
-``` bash-out
-INFO:    Using cached SIF image
-INFO:    gocryptfs not found, will not be able to use gocryptfs
-
-            FastQC - A high throughput sequence QC analysis tool
-
-SYNOPSIS
-
-        fastqc seqfile1 seqfile2 .. seqfileN
-
-    fastqc [-o output dir] [--(no)extract] [-f fastq|bam|sam]
-           [-c contaminant file] seqfile1 .. seqfileN
-
-# [...output truncated...]
-```
-
-<hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: FastQC help and output dir
-Look at FastQC's help info,
-and figure out which option can be used to specify a custom output directory.
+#### {{< fa user-edit >}} Exercise: Containers versus modules
 
-<details><summary>*Click for the solution*</summary>
+Open a new terminal (click the `+` in the terminal panel),
+where no modules have been loaded.
+Predict what each of the following commands will do, and then check:
 
-The option to do this is `-o`/`--outdir`:
+1. ```bash
+   apptainer exec oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960 \
+     fastqc -v
+   ```
 
-``` bash
-fastqc -h
-```
-``` bash-out
-  -o --outdir     Create all output files in the specified output directory.
-                    Please note that this directory must exist as the program
-                    will not create it.  If this option is not set then the
-                    output file for each sequence file is created in the same
-                    directory as the sequence file which was processed.
-```
-</details>
+   <!----
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-:::
+   It works: FastQC is installed inside the container,
+   so no module needs to be loaded
+   (and Apptainer itself is available without loading anything):
 
-### The final FastQC command
+   ```bash-out
+   INFO:    Using cached SIF image
+   INFO:    gocryptfs not found, will not be able to use gocryptfs
+   FastQC v0.12.1
+   ```
+   </details>
+   ---->
 
-With the added `--outdir` (or `-o`) option,
-try to run the following FastQC command:
+2. ```bash
+   apptainer exec oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960 \
+     multiqc --version
+   ```
 
-``` bash
-# We'll have to first create the outdir ourselves, in this case:
-mkdir -p results/fastqc
+   <!----
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-# Now we run FastQC:
-apptainer exec "$FASTQC_APPT" \
-  fastqc --outdir results/fastqc "$FASTQ_R1"
-```
-``` bash-out
-Started analysis of S63_R1.fastq.gz
-Approx 5% complete for S63_R1.fastq.gz
-Approx 10% complete for S63_R1.fastq.gz
-Approx 15% complete for S63_R1.fastq.gz
-[...truncated...]
-Analysis complete for S63_R1.fastq.gz
-```
+   It fails, because a container only contains the software that was put in it ---
+   and this container only has FastQC:
 
-Success!
-Above, FastQC printed some "logging" information to screen,
-telling us about its progress.
-The main output, however, is in the output dir we specified:
+   ```bash-out
+   FATAL:   "multiqc": executable file not found in $PATH
+   ```
+   </details>
+   ---->
 
-- A `.zip` file, which contains tables with FastQC's data summaries
-- An `.html` (HTML) file, which contains the graphs we'd like to see
+3. ```bash
+   fastqc -v
+   ```
 
-``` bash
-ls -lh results/fastqc
-```
-``` bash-out
-total 512K
--rw-rw----+ 1 jelmer PAS0471 241K Mar 21 09:53 S63_R1_fastqc.html
--rw-rw----+ 1 jelmer PAS0471 256K Mar 21 09:53 S63_R1_fastqc.zip
-```
+   <!----
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-<hr style="height:1pt; visibility:hidden;" />
+   It fails: running a container doesn't install anything,
+   and no module has been loaded in this new shell:
 
-::: callout-tip
-#### Specifying an output dir vs. output file(s)
-FastQC allows us to specify the output directory, but not the output file names:
-these will be automatically determined based on the input file name(s).
-This kind of behavior is fairly common for bioinformatics programs,
-since they will often produce multiple output files.
-:::
+   ```bash-out
+   bash: fastqc: command not found...
+   ```
+   </details>
+   ---->
 
-::: exercise
-#### {{< fa user-edit >}} Exercise: Another FastQC run
-
-Run FastQC for the corresponding R2 FASTQ file.
-Would you use the same output dir or a different one?
-
-<details><summary>*Click for the solution*</summary>
-
-It makes sense to use the same output dir.
-This is because, as you could see above,
-the output file names have the input file identifiers in them.
-As such, because we don't need to worry about overwriting files,
-it will be more convenient to have all results in a single dir.
-
-To run FastQC for the R2 (reverse-read) file:
-
-``` bash
-FASTQ_R2=../garrigos/fastq/S63_R2.fastq.gz
-
-apptainer exec "$FASTQC_APPT" \
-  fastqc --outdir results/fastqc "$FASTQ_R2"
-```
-``` bash-out
-Started analysis of S63_R2.fastq.gz
-Approx 5% complete for S63_R2.fastq.gz
-Approx 10% complete for S63_R2.fastq.gz
-Approx 15% complete for S63_R2.fastq.gz
-[...truncated...]
-Analysis complete for S63_R2.fastq.gz
-```
-
-``` bash
-ls -lh results/fastqc
-```
-``` bash-out
-total 1008K
--rw-rw----+ 1 jelmer PAS0471 241K Mar 21 09:53 S63_R1_fastqc.html
--rw-rw----+ 1 jelmer PAS0471 256K Mar 21 09:53 S63_R1_fastqc.zip
--rw-rw----+ 1 jelmer PAS0471 234K Mar 21 09:55 S63_R2_fastqc.html
--rw-rw----+ 1 jelmer PAS0471 244K Mar 21 09:55 S63_R2_fastqc.zip
-```
-
-Now, we have four files: two for each of our preceding successful FastQC runs.
-
-</details>
-:::
-
-::: exercise
-#### {{< fa user-edit >}} **Exercise**: Download the HTML files and open them
-
-Unfortunately, it's tricky to view HTML files in VS Code --
-or at least it is in the current Code Server version at OSC.
-
-Therefore, to look at the FastQC HTML files,
-you should first download them to your computer.
-
-We'll cover more scalable methods for downloading files from and uploading them
-to OSC in a couple of weeks,
-but here is a quick method when you just need one or few files:
-in the VS Code file explorer in the side bar,
-you can download a file by right-clicking on it and then selecting the
-"Download..." option.
-
-![](../img/vscode-download.png){fig-align="center" width="55%" fig-alt="A screenshot showing the file download option in the VS Code file explorer." .lightbox}
-
-Your turn:
-
-1. Download the two FastQC HTML files to your computer.
-
-2. In your computer's file browser, navigate to the folder you downloaded the files to,
-   and click on each of them.
-   This should open the files in your default web browser.
-
-3. Explore the files.
-   Which graphs do you and which do you not understand?
-
-4. Are there noticeable differences between the two files
-   (i.e. between the forward and reverse reads for the same sample)?
 :::
 
 ## In closing
@@ -950,8 +1054,8 @@ like we just did, i.e. by executing the command directly in the terminal.
 
 Instead, it is preferable to write small shell scripts to run such programs,
 and then submit those scripts as so-called "batch jobs" at OSC.
-In the next two weeks,
+In the coming weeks,
 you will learn why that is the case and how you can do this:
 
-- Next week, you'll learn how to write shell scripts and loop over files
-- In two weeks, you'll learn how submit shell scripts as batch jobs.
+- Next week, you'll learn how to write shell scripts and loop over files.
+- In week 9, you'll learn how to submit shell scripts as batch jobs.

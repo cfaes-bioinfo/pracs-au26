@@ -87,7 +87,7 @@ I think this is well worth covering for a few reasons:
   But when you know how to run one nf-core pipeline,
   it will be relatively straightforward to run others as well.
 
-Recall from week 9 that the ["nf-core" initiative](https://nf-co.re/) (@ewels2020)
+Recall from week 10 that the ["nf-core" initiative](https://nf-co.re/) (@ewels2020)
 has many pipelines available for various omics data analysis types,
 with the following most popular pipelines:
 
@@ -427,8 +427,8 @@ bbsplit  custom  fastqc  fq_lint  multiqc  pipeline_info  salmon  star_salmon  t
 ```
 
 We'll explore those outputs more for the run on the @garrigós2025 data.
-The `work` dir is in this case in its default location, which is you current
-working dir (i.e, the dir from which you execute the `nextflow` command) --
+The `work` dir is in this case in its default location, which is your current
+working dir (i.e., the dir from which you execute the `nextflow` command) --
 let's list its contents:
 
 ```bash
@@ -442,7 +442,7 @@ ls work
 06  11  1d  22  2e  3a  45  4f  59  63  6c  73  80  87  91  9d  a4  a9  af  b4  bf  ce  d7            e3  eb  f3  ff
 ```
 
-As mentioned above, the hexadecimals between square brackets (e.g. `[62/4f8c0d]`)
+As mentioned above, the hexadecimals between square brackets (e.g. `[fb/68d030]`)
 that are printed before each job point to the sub-directory within this work-dir that
 it ran in (every individual job runs in its own dir).
 This can be handy for troubleshooting,
@@ -530,7 +530,6 @@ and the job wasn't actually rerun:
 
 ```bash-out
 [6c/714522] NFCORE_RNASEQ:PREPARE_GENOME:GUNZIP_GTF (genes_with_empty_tid.gtf.gz)                                                  [100%] 1 of 1, cached: 1 ✔
-[6c/714522] NFCORE_RNASEQ:PREPARE_GENOME:GUNZIP_GTF (genes_with_empty_tid.gtf.gz)                                                  [100%] 1 of 1, cached: 1 ✔
 [07/5a941c] NFCORE_RNASEQ:PREPARE_GENOME:GTF_FILTER (genome.fasta)                                                                 [100%] 1 of 1, cached: 1 ✔
 [f7/32ee05] NFCORE_RNASEQ:PREPARE_GENOME:GUNZIP_ADDITIONAL_FASTA (gfp.fa.gz)                                                       [100%] 1 of 1, cached: 1 ✔
 [80/4b8821] NFCORE_RNASEQ:PREPARE_GENOME:CUSTOM_CATADDITIONALFASTA (null)                                                          [100%] 1 of 1, cached: 1 ✔
@@ -579,7 +578,7 @@ touch README.md
 
 This pipeline requires a "sample sheet" as one of its inputs.
 In the sample sheet, you should provide the paths to your FASTQ files
-and specity the so-called "strandedness" of your RNA-Seq library.
+and specify the so-called "strandedness" of your RNA-Seq library.
 
 ::: {.callout-note collapse="true"}
 #### RNA-Seq library strandedness _(Click to expand)_
@@ -587,7 +586,7 @@ During RNA-Seq library prep, information about the directionality of the origina
 RNA transcripts can be retained (resulting in a "stranded" library) or lost
 (resulting in an "unstranded" library: specify `unstranded` in the sample sheet).
 
-In turn, stranded libraries can prepared either in
+In turn, stranded libraries can be prepared either in
 reverse-stranded (`reverse`, by far the most common) or
 forward-stranded (`forward`) fashion.
 For more information about library strandedness,
@@ -624,7 +623,7 @@ The file should have the following columns:
 
 We will create this file with a helper script that comes with the pipeline,
 and tell the script about the strandedness of the reads,
-the R1 and R2 FASTQ file suffices, the input FASTQ dir (`data/fastq`),
+the R1 and R2 FASTQ file suffixes, the input FASTQ dir (`../garrigos/fastq`),
 and the output file (`$samplesheet`):
 
 ```bash
@@ -684,7 +683,7 @@ Here is an explanation of the last command:
 
 - The `ls` command will spit out a list of all FASTQ files that includes the dir name.
 
-- `paste - -` will paste that FASTQ files side-by-side in two columns ---
+- `paste - -` will paste those FASTQ files side-by-side in two columns ---
   because there are 2 FASTQ files per sample, and they are automatically correctly
   ordered due to their file names, this will create one row per sample with the
   R1 and R2 FASTQ files next to each other.
@@ -695,7 +694,7 @@ Here is an explanation of the last command:
 
 - The second `sed` command, `'s@.*/(.*)_R1@\1,&@'`:
   - Adds the sample ID column by copying that part from the R1 FASTQ file name
-  - Requires `E` because it uses "extended" regular expressions
+  - Requires `-E` because it uses "extended" regular expressions
   - This uses `s@<search>@replace@` with `@` instead of `/`, because there is a `/` in our search pattern
   - In the search pattern (`.*/(.*)_R1`), the sample ID is captured with `(.*)`
   - In the replace section (`\1,&`), the captured sample ID is "recalled" with `\1`,
@@ -713,7 +712,7 @@ on a wide variety of compute infrastructures,
 from a laptop to HPC clusters and cloud computing.
 Our test-run used the simplest scenario, running everything "locally" on a single node.
 However, for our real data run,
-we want to have the pipeline submit Slurm batch jobs so it will effciently
+we want to have the pipeline submit Slurm batch jobs so it will efficiently
 run in parallel across multiple nodes.
 
 To tell the pipeline to submit Slurm batch jobs for us,
@@ -753,7 +752,7 @@ Let's go through the key parts of this shell script.
 ### Processing arguments passed to the script
 
 As we've often done with shell scripts to run bioinformatics tools,
-we'll keep the shell script flexible by having it accepts arguments that represent
+we'll keep the shell script flexible by having it accept arguments that represent
 the inputs and outputs of the pipeline:
 
 - Input 1: The sample sheet
@@ -803,7 +802,7 @@ nextflow run nf-core/rnaseq \
 
 Next, we'll add the **pipeline-specific options**,
 starting with several _required_ options
-(see the [pipeline's documentation](https://nf-co.re/rnaseq/3.14.0/docs/usage)),
+(see the [pipeline's documentation](https://nf-co.re/rnaseq/3.22.0/docs/usage)),
 which represent the inputs and outputs discussed above -- the paths to:
 
 - **`--input`**: the "sample sheet"
@@ -819,17 +818,35 @@ we want to remove reads that originate from ribosomal RNA
 (this removal step is skipped by default).
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Find the option to remove rRNA
+#### {{< fa user-edit >}} Exercise: Find the right pipeline options
 Take a look at the
 ["Parameters" tab on the pipeline's documentation website](https://nf-co.re/rnaseq/parameters):
 
 1. Browse through the options for a bit to get a feel for the extent to which you
    can customize the pipeline.
-2. Try to find the option to turn on removal of rRNA with SortMeRNA.
+
+2. Say you want to (a) remove rRNA, (b) skip the STAR alignment and quantify
+   with Salmon only, and (c) have Nextflow produce an execution timeline report.
+   For each of these three, decide **before looking it up** whether you expect
+   a single-dash or a double-dash option, then find the actual option name(s).
+   Was your prediction right in all three cases?
+   Why does the option for (c) have only one dash?
 
 <details><summary> _Click for the solution_ </summary>
 
-The option you want is **`--remove_ribo_rna`**.
+- (a) Removing rRNA is a pipeline-specific option (double dash), since it's
+  specific to this pipeline: **`--remove_ribo_rna`**.
+
+- (b) Skipping STAR and quantifying with Salmon only is also pipeline-specific
+  (double dash), and takes two options:
+  **`--skip_alignment`** (to skip STAR) and **`--pseudo_aligner salmon`**
+  (to run Salmon on its own).
+
+- (c) Producing an execution timeline report is a **general Nextflow option**
+  (single dash): **`-with-timeline`**.
+  Unlike (a) and (b), this isn't something specific to the _rnaseq_ pipeline --
+  every Nextflow pipeline can produce this kind of report,
+  because it's a feature of Nextflow itself rather than of this particular pipeline.
 
 </details>
 :::
@@ -855,7 +872,7 @@ nextflow run nf-core/rnaseq \
 
 ### The final script
 
-Now, we're read to create the full shell script.
+Now, we're ready to create the full shell script.
 
 ```bash
 touch scripts/nfc-rnaseq.sh
@@ -871,7 +888,7 @@ this contains the discussed command and variables, as well as:
   Therefore, we'll ask for quite a bit of time
   while we only need the default 1 core and 4 GB RAM.
   It's possible to change the resource requests for the Nextflow-submitted jobs
-  via `nextflow.config` file if needed, but we won't do that here.
+  via the `nextflow.config` file if needed, but we won't do that here.
   We ask for 12 hours mostly because the resource requests are rather large by
   default, such that jobs may be queued for substantial amounts of time
   (without queueing time, the pipeline would finish in well under an hour).
@@ -885,7 +902,7 @@ this contains the discussed command and variables, as well as:
 #SBATCH --output=slurm-nfc-rnaseq-%j.out
 set -euo pipefail
 
-# Load the Nextflow Conda environment
+# Load the Nextflow module
 module load nextflow/25.04.6
 
 # Copy command-line arguments
@@ -952,9 +969,9 @@ export NXF_SINGULARITY_CACHEDIR=/fs/scratch/PAS3493/containers
 
 Now that the shell script is ready,
 you can run the pipeline on the @garrigós2025 data!
-You will add the code to do so the `README.md` file we created above.
+You will add the code to do so to the `README.md` file we created above.
 
-### Define variables to pass the the shell script
+### Define variables to pass to the shell script
 
 First, define variables with the arguments needed to run the script:
 
@@ -1063,7 +1080,7 @@ by checking the Slurm log file -- the top of the file should look like this:
 
 ```bash
 # (We need the -R option to 'less' to display colors properly)
-less -R slurm-nfc_rnaseq*
+less -R slurm-nfc-rnaseq*
 ```
 ```bash-out
 Starting script nfc-rnaseq.sh
@@ -1181,7 +1198,7 @@ First, move into the `work` dir for the `SALMON_QUANT` job for sample `S67`.
 
 - Go through the lines for `SALMON_QUANT` jobs in the pipeline's Slurm log file
   to find the one with sample `S67`.
-  You can do by search e.g. with <kbd>Ctrl+F</kbd> in the editor,
+  You can do so by searching, e.g. with <kbd>Ctrl+F</kbd> in the editor,
   or with `grep` in the terminal:
 
   ```bash
@@ -1319,7 +1336,7 @@ The two most important outputs are:
 - The **gene count table**
   (`<outdir>/star_salmon/salmon.merged.gene_counts_length_scaled.tsv`):
   This is used for downstream analysis such as differential expression analysis --
-  which you already did last week!
+  which you'll do in week 15!
 
 ### The MultiQC report
 
@@ -1375,14 +1392,14 @@ were too short^[It says "too short" because the aligned part of the read was too
 
 <hr style="height:1pt; visibility:hidden;" />
 
-The **RSeqQC** > **Infer experiment** (library strandedness) plot.
+The **RSeQC** > **Infer experiment** (library strandedness) plot.
 If your library is:
 
 - Unstranded, there should be similar percentages of Sense and Antisense reads.
 - Forward-stranded, the vast majority of reads should be Sense.
 - Reverse-stranded, the vast majority of reads should be Antisense.
 
-![This libary is clearly forward-stranded, as we indicated in our sample sheet.](../img/multiqc_strandedness.png){fig-align="center" width="85%"}
+![This library is clearly forward-stranded, as we indicated in our sample sheet.](../img/multiqc_strandedness.png){fig-align="center" width="85%"}
 
 Finally, the section **nf-core/rnaseq Software Versions** way at the bottom
 lists the version of all programs used by the pipeline!

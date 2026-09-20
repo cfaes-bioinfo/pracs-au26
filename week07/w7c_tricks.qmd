@@ -83,6 +83,19 @@ touch sandbox/file1.txt sandbox/S1_R1.fastq.gz sandbox/S1_R2.fastq.gz
       echo "$f"
   done
   ```
+
+  <details><summary>_Click for the solution_</summary><p>
+  Look closely: the loop variable is `file`, but the `echo` line uses `$f` --
+  a variable that was never assigned.
+  Because we're at the interactive prompt rather than in a script with
+  `set -u`, the shell doesn't complain about the unset variable --
+  it just silently treats it as an empty string.
+  So the loop prints one empty line for each matching file.
+
+  This is exactly the kind of silent failure that `set -u` protects you
+  from: in a script with strict Bash settings, this typo would cause an
+  immediate error instead of silently doing the wrong thing.
+  </p></details>
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -141,7 +154,7 @@ you can search-and-replace text in your variable's values.
 For example:
 
 - Let's start by assigning a short DNA sequence to a variable so that you can
-  practice paramater expansion in the next step:
+  practice parameter expansion in the next step:
 
   ```bash
   dna_seq="AAGTTCAT"
@@ -157,7 +170,7 @@ For example:
   echo "${dna_seq//T/U}"
   ```
   ```bash-out
-  AAGUUCAT
+  AAGUUCAU
   ```
 
 - You can also assign the result of the parameter expansion back to a variable:
@@ -167,18 +180,18 @@ For example:
   echo "$rna_seq"
   ```
   ```bash-out
-  AAGUUCAT
+  AAGUUCAU
   ```
 
-So, the syntax for this type of parameter expansion is `${var_name//<search>/replace}` ---
+So, the syntax for this type of parameter expansion is `${var_name//<search>/<replace>}` ---
 let's deconstruct that:
 
 1. You reference the variable using the "full notation" with braces: here, `${dna_seq}`
 2. You add two forward slashes after the variable name, and then the search pattern: here, `//T`
 3. After another forward slash, enter the replacement: here, `/U`
 
-_(If you need to replace at most one of the search patterns,_
-_use a single backslash after the variable name: `{var_name/<search>/replace}`.)_
+_(If you only want to replace the first match,_
+_use a single forward slash after the variable name: `${var_name/<search>/<replace>}`.)_
 
 <hr style="height:1pt; visibility:hidden;" />
 
@@ -200,8 +213,8 @@ fastq_R2=
 ```
 
 <details><summary>_Click for the solution_</summary><p>
-Make sure you use `_R1`/`_R2` and not just `R1`/`R2`,
-because the string "R1" also occurs in the sample ID (`ERR1..`)!
+Make sure you use `_R1`/`_R2` and not just `R1`/`R2`:
+with other datasets, the string "R1" may also occur in the sample ID (e.g. `ERR1234`)!
 
 ```bash
 fastq_R1=../garrigos/fastq/S63_R1.fastq.gz
@@ -278,7 +291,7 @@ done
 
   # Final reporting
   echo
-  echo "# Succesfully finished script trim_mock.sh"
+  echo "# Successfully finished script trim_mock.sh"
   date
   ```
   </details>
@@ -289,8 +302,9 @@ done
   <details><summary>Solution</summary>
 
   ````markdown
-  - Step 2: run the trim_mock.sh script for each _sample_.
-    We will loop over R1 files only, and infer the R2 file name:
+  ### Step 2 - Run the trim_mock.sh script for each _sample_
+
+  We will loop over R1 files only, and infer the R2 file name:
 
   ```bash
   for R1 in ../garrigos/fastq/*_R1.fastq.gz; do
@@ -309,7 +323,7 @@ done
 
   trimmer --in1 ../garrigos/fastq/S63_R1.fastq.gz --in2 ../garrigos/fastq/S63_R2.fastq.gz --outdir results/trim_mock
 
-  # Succesfully finished script trim_mock.sh
+  # Successfully finished script trim_mock.sh
   Thu Sep 25 14:05:10 EDT 2025
 
   # Starting script trim_mock.sh
@@ -336,7 +350,7 @@ needed to run the steps in your project.
 ## General information
 
 - Author: Jelmer Poelstra
-- Date: 2026-10-02
+- Date: 2026-10-07
 - Environment: Pitzer cluster at OSC via VS Code
 - Working dir: `/fs/ess/PAS3493/people/<user>/week07`
 
@@ -354,7 +368,7 @@ for fastq in ../garrigos/fastq/*fastq.gz; do
 done
 ```
 
-### Step 2 - run the trim_mock.sh script for each _sample_.
+### Step 2 - Run the trim_mock.sh script for each _sample_
 
 Loop over R1 files only, and infer the R2 file name:
 
@@ -480,18 +494,18 @@ So, try to store the file count produced by the command in the variable `$n_file
 <details><summary>_Click for the solution_</summary>
 
 ```bash
-n_files=$(ls *fastq | wc -l)
+n_files=$(ls ../garrigos/fastq/*fastq.gz | wc -l)
 
 echo "The dir has $n_files files"
 ```
 ```{.bash-out}
-The dir has 6 files
+The dir has 44 files
 ```
 
 **Note:**
 You don't have to quote variables _inside_ a quoted `echo` call,
 since it's, well, already quoted.
-If you _also_ quote the variables, you will in fact _unquote_ it,
+If you _also_ quote the variable, you will in fact _unquote_ it,
 although that shouldn't pose a problem inside `echo` statements.
 
 </details>
@@ -501,7 +515,7 @@ although that shouldn't pose a problem inside `echo` statements.
 ## `basename` and `dirname` to extract parts of paths
 
 In loops and other contexts where you are working with file names programmatically,
-it is common to have a file path from wich you want to extract just the
+it is common to have a file path from which you want to extract just the
 "file name part".
 For example, we can think of the path `data/fastq/sample1_R1.fastq` as consisting
 of a directory part (`data/fastq/`) and a file name part (`sample1_R1.fastq`).
@@ -531,7 +545,7 @@ If you instead want the directory part of a path, use the `dirname` command:
 dirname ../garrigos/fastq/S63_R1.fastq.gz
 ```
 ```bash-out
-garrigos/fastq
+../garrigos/fastq
 ```
 
 One practical application of `basename` is the following.
@@ -604,7 +618,7 @@ Here, we'll use the `basename` command and a `for` loop.
 Start with creating some dummy files that represent alignments
 (the results of aligning reads in FASTQ files to a reference genome,
 stored in `.sam` or `.bam` files)^[
-With a `{01..50}` construct that is called brace expansion to create 50 files at once]:
+The `{01..50}` construct, which is called brace expansion, creates 50 files at once.]:
 
 ```bash
 mkdir -p sandbox
@@ -617,10 +631,10 @@ Check the names of the files you created and how many there are:
 ls sandbox
 ```
 ```bash-out
-sandbox/sample01.sam
-sandbox/sample02.sam
-sandbox/sample03.sam
-sandbox/sample04.sam
+sample01.sam
+sample02.sam
+sample03.sam
+sample04.sam
 # [...output truncated...]
 ```
 ```bash
@@ -632,7 +646,7 @@ ls sandbox/*sam | wc -l
 
 Now, say that you noticed these files somehow ended up with the wrong file extension:
 they are saved as `.sam` (SAM files) but are really `.bam` (BAM files).
-You'll have to rename them before moving on the next step in your analysis.
+You'll have to rename them before moving on to the next step in your analysis.
 
 ### Rename a single file using variables
 
@@ -694,10 +708,10 @@ mv -v sandbox/sample04.sam sandbox/sample04.bam
 # [...output truncated...]
 ```
 
-Finally, actually do the renaming copies by removing `echo`:
+Finally, actually do the renaming by removing `echo`:
 
 ```bash
-for old_path in *.fastq; do
+for old_path in sandbox/*.sam; do
     # Build the new file path:
     file_id=$(basename "$old_path" .sam)
     new_path=sandbox/"$file_id".bam
@@ -713,5 +727,20 @@ done
 ‘sandbox/sample04.sam’ -> ‘sandbox/sample04.bam’
 # [...output truncated...]
 ```
+
+## Recap and next steps
+
+In this lecture, you've picked up a set of Unix shell "tricks" that will make
+your scripts more powerful and your day-to-day shell use more efficient,
+including:
+
+- Parameter expansion to manipulate file names and other strings in variables
+- Command substitution to use the output of one command as input to another
+- `basename` and `dirname` to extract parts of a path
+- Useful keyboard shortcuts for editing and navigating the command line
+- Using loops together with these tricks, e.g. to rename many files at once
+
+Next week, we'll look at how you can use generative AI tools to help you
+write and improve shell scripts.
 
 <br>

@@ -8,7 +8,7 @@ author:
   - name: Jelmer Poelstra
     orcid: 0000-0002-3514-7462
     email: poelstra.1@osu.edu
-    affiliation: 
+    affiliation:
       - name: CFAES Bioinformatics Core, Ohio State University
         url: https://go.osu.edu/bioinformatics-core
       - name: Dept. of Plant Pathology, Ohio State University
@@ -54,7 +54,7 @@ This week, we'll cover two distinct topics:
   and what the advantages of formal pipelines/workflows written with these are
 - That you may be able to use publicly available pipelines such as those produced
   by the nf-core initiative
-  
+
 ### Getting ready
 
 1. At <https://ondemand.osc.edu>,
@@ -98,8 +98,8 @@ you've created Markdown files with the commands you used to run your scripts.
 For example, these files contained `for` loops to submit many FastQC and TrimGalore
 batch jobs.
 
-As [discussed in week 2](../week02/w2a_project-org.html#types-of-documentation-files-for-larger-projects),
-for larger projects, it is a good idea to create at least two separate Markdown files 
+As [discussed in week 2](../week02/w2a_project-org.qmd#three-types-of-documentation-files),
+for larger projects, it is a good idea to create at least two separate Markdown files
 for the code you used to run scripts and other commands:
 
 - A "lab notebook"-style file that has **chronological entries** and is comprehensive:
@@ -114,7 +114,7 @@ Let's see a more worked-out example of a protocol file.
 
 ### A longer protocol example
 
-Specifically, we'll include the following steps: 
+Specifically, we'll include the following steps:
 
 1. Read QC with FastQC _(independently for each file)_
 2. FastQC summary with MultiQC _(once for all files)_
@@ -203,7 +203,7 @@ for R1 in "$fastq_dir"/*_R1.fastq.gz; do
 done
 ```
 
-## Step 3: Trimmed read alignment to a reference genome with STAR
+## Step 4: Trimmed read alignment to a reference genome with STAR
 
 The `star.sh` script runs for one sample at a time and takes 4 arguments -
 input trimmed R1 and R2 FASTQs produced by `trimgalore.sh`, a reference FASTA file,
@@ -218,8 +218,8 @@ done
 
 ## Step 5: Gene-level alignment counting with Salmon
 
-The `salmon.sh` script runs for one sample at a time and takes 4 arguments -
-input BAM file produced by `start.sh`, a reference GTF file,
+The `salmon.sh` script runs for one sample at a time and takes 3 arguments -
+the input BAM file produced by `star.sh`, a reference GTF file,
 and the desired output dir:
 
 ```bash
@@ -246,11 +246,10 @@ and an overarching protocol Markdown file to describe the entire workflow:
 - It (more or less) ensures you are including all necessary steps
 
 However, in the example above,
-it is import to realize that you **cannot** run all the code at once.
+it is important to realize that you **cannot** run all the code at once.
 
 <details><summary>Why can't all the code be run at once? _(Click to see the solution)_</summary>
-This is because most steps need the input 
-with both the second and third steps using the output of an earlier step as their input.
+This is because most steps need files produced by an earlier step as their input.
 
 Therefore, if you run all code at once, all batch jobs will be submitted at the same time:
 this means that later steps will start running before the earlier step has finished,
@@ -258,8 +257,9 @@ i.e. before their input files are available, and will fail.
 </details>
 
 <details><summary>Which steps _can_ be run simultaneously? _(Click to see the solution)_</summary>
-This is because most steps need the input 
-with both the second and third steps using the output of an earlier step as their input.
+Steps 1 (FastQC) and 3 (TrimGalore), because both use the _raw_ FASTQ files as input
+and therefore don't depend on each other.
+Every other step needs the output of a preceding step.
 </details>
 
 ### How about automation?
@@ -269,12 +269,10 @@ you can't run them until the previous step has finished.
 You may therefore consider trying to improve automation,
 which you can do with two main approaches:
 
-1. With more advanced Bash and Slurm code 
+1. With more advanced Bash and Slurm code
 2. With "workflow management systems" like Nextflow _(recommended but takes some learning)_
 
-In this course, we will cover neither approach in detail^[
-We did initially plan to cover Nextflow, as you may have noticed,
-but decided to cut this part to allow for more time for the remaining topics.],
+In this course, we will cover neither approach in detail,
 but the rest of this lecture serves to at least make you aware of the possibilities.
 This is a more advanced topic that I would recommend to those of you planning
 to work with omics (especially genomics and transcriptomics) data a lot.
@@ -295,7 +293,7 @@ At the extreme, you could write a single shell script for all steps and all samp
 (i.e., a script with multiple loops) that can be submitted as a single batch job.
 While this would work, it would be highly inefficient^[
 Unless you use some other tricks - see also below.]
-because sample-wise steps would run consecutively across samples instead of 
+because sample-wise steps would run consecutively across samples instead of
 simultaneously.
 
 A more reasonable approach would be to write
@@ -322,7 +320,7 @@ and for one sample, where appropriate.
 There are ways to automate Slurm batch job submission so you don't have to wait
 for each step to finish before moving on to the next.
 Specifically, you can specify so-called Slurm "job dependencies" that only allow
-a job to to actually start once one or more other jobs have (sucessfully) finished
+a job to actually start once one or more other jobs have (successfully) finished
 running.
 For an example, see the [Appendix](#appendix-automation-with-bash-and-slurm).
 
@@ -340,7 +338,7 @@ provide ways to formally describe and execute pipelines.
 
 ![@perkel2019](../img/nature-feature.png){fig-align="center" width="70%"}
 
-A quote from this article, @perkel2019: 
+A quote from this article, @perkel2019:
 
 >Workflows can involve hundreds to thousands of data files;
 > a pipeline must be able to monitor their progress and exit gracefully if any step fails.
@@ -377,7 +375,7 @@ ties your workflow steps together.
 
 But overall, my recommendation with respect to workflow management is to either:
 
-- Accept that you're workflow isn't automated, and use Markdown protocols like the one above
+- Accept that your workflow isn't automated, and use Markdown protocols like the one above
 - Go all-in and use a workflow tool (I recommend Nextflow, specifically)
 
 ## Pre-existing pipelines
@@ -408,14 +406,14 @@ and well-documented pipelines written in Nextflow:
 <hr style="height:1pt; visibility:hidden;" />
 
 For many common omics analysis types, nf-core has a pipeline.
-It currently has 84 complete pipelines --
+It currently has over 150 complete pipelines --
 these are the six most popular ones:
 
 ![The 6 most popular nf-core pipelines as of Oct 19, 2025](../img/nfcore_pipelines_2025-10-19.png){fig-align="center" width="95%" .lightbox}
 
 Here's a closer look at the most widely used nf-core pipeline,
 the [rnaseq pipeline](https://nf-co.re/rnaseq),
-which we'll run in week 15 of the course:
+which we'll run in week 11 of the course:
 
 ![The nf-core rnaseq pipeline](../img/nfcore_rnaseq.png){fig-align="center" width="90%" .lightbox}
 
@@ -434,19 +432,19 @@ for example:
 trim=$1   # true or false
 map=$2    # true or false
 count=$3  # true or false
-  
+
 if [[ "$trim" == true ]]; then
     for R1 in data/fastq/*_R1.fastq.gz; do
         bash scripts/trim.sh "$R1" results/trim
     done
 fi
-  
+
 if [[ "$map" == true ]]; then
     for R1 in results/trim/*_R1.fastq.gz; do
         bash scripts/map.sh "$R1" results/map
     done
 fi
-  
+
 if [[ "$count" == true ]]; then
     bash scripts/count.sh results/map results/count_table.txt
 fi
@@ -476,19 +474,19 @@ of the bonus page on shell scripting.
 In the example below,
 jobs will only start after their "dependencies" (jobs whose outputs they need)
 have finished:
-  
+
 ```sh
 for R1 in data/fastq/*_R1.fastq.gz; do
     # Submit the trimming job and store its job number:
     submit_line=$(sbatch scripts/trim.sh "$R1" results/trim)
     trim_id=$(echo "$submit_line" | sed 's/Submitted batch job //')
-      
+
     # Submit the mapping job with the condition that it only starts when the
     # trimming job is done, using '--dependency=afterok:':
     R1_trimmed=results/trim/$(basename "$R1")
     sbatch --dependency=afterok:$trim_id scripts/map.sh "$R1_trimmed" results/map
 done
-  
+
 # If you give the mapping and counting jobs the same name with `#SBATCH --job-name=`,
 # then you can use '--dependency=singleton': the counting job will only start
 # when ALL the mapping jobs are done:

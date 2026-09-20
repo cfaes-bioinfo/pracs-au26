@@ -42,7 +42,7 @@ command-line bioinformatics programs at OSC step by step:
 1. More general information about OSC _(this lecture)_
 2. How to use software at OSC, including programs that aren't installed _(next lecture)_
 3. How to write shell scripts _(next week)_
-4. How to submit shell scripts as "batch jobs" _(in two weeks)_
+4. How to submit shell scripts as "batch jobs" _(in week 9)_
 5. How to build functional commands to run such programs _(throughout)_
 
 # Compute nodes, compute jobs, and cores {background-color="#A7B1B7"}
@@ -75,7 +75,7 @@ and assigns resources to jobs as they become available.
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: {.callout-tip appearance="simple"}
-In two weeks, you'll learn to submit scripts as "batch jobs" with Slurm.
+In week 9, you'll learn to submit scripts as "batch jobs" with Slurm.
 :::
 
 :::
@@ -143,6 +143,7 @@ B) Afterwards, you find out that the program only ever used 1 of those cores.
 
 C) Afterwards, you find out that the program finished after 1 hour,
    and the job ended.
+   Does that change the number of billed core hours?
 
 What does this tell you about how many cores and hours to request?
 
@@ -157,6 +158,13 @@ B) **No**: you're billed for the cores you _reserved_, whether or not they were 
    So request multiple cores only if the program can actually use them
    (check its documentation!) --- otherwise you waste resources
    and, as you'll see later, may also wait longer for your job to start.
+
+C) **Yes**: OSC only bills for the time a job actually ran,
+   so 8 cores × 1 hour = **8 core hours**.
+
+**Takeaway**: Only request as many cores as the program can use.
+For time, it's fine to be generous, because unused time isn't billed
+(though very long requests may wait longer in the queue).
 
 </details>
 
@@ -173,7 +181,7 @@ B) **No**: you're billed for the cores you _reserved_, whether or not they were 
 ### ["Standard" nodes]{style="display:block; text-align:center;"}
 
 - By far the most numerous (e.g., Pitzer has 564).
-- Even these vary in size, e.g. from 40-48 cores per node on Pitzer.
+- Even these vary in size, e.g., from 40 to 48 cores per node on Pitzer.
 - Used by default, and will serve you well for most omics analyses.
 
 :::
@@ -185,7 +193,7 @@ B) **No**: you're billed for the cores you _reserved_, whether or not they were 
 ### [Other node types]{style="display:block; text-align:center;"}
 
 - Nodes with extra memory: `largemem` and `hugemem`.
-- Nodes with GPUs (Graphical Processing Units) rather than CPUs.
+- Nodes with GPUs (Graphics Processing Units) in addition to CPUs.
 
 <hr style="height:1pt; visibility:hidden;" />
 
@@ -388,7 +396,7 @@ An expanded version of the table from Week 2:
 <br><br>
 
 ::: {.callout-note appearance="simple"}
-There is a fourth storage area, compute, that is on compute nodes and is deleted
+There is a fourth storage area, _compute_, that is on compute nodes and is deleted
 when a job ends.\
 In practice, this is rarely needed in bioinformatics, and we won't use it in this course.
 :::
@@ -399,9 +407,11 @@ In practice, this is rarely needed in bioinformatics, and we won't use it in thi
 ::: {.column width="30%" .box-blue .fragment data-fragment-index="1"}
 ### Project
 
-- **Drawbacks**:
+- **Drawbacks**: storage is billed (per TB per month),
+  and I/O is slower than on Scratch.
 
-- **Useful for**:
+- **Useful for**: everything you want to keep long-term and share with collaborators:
+  raw data, scripts, documentation, and key results.
 
 :::
 ::: {.column width="3%"}
@@ -429,17 +439,53 @@ In practice, this is rarely needed in bioinformatics, and we won't use it in thi
 :::
 :::
 
+## Quiz: Storage areas
+
+::: callout-quiz
+::: callout-note
+#### Storage areas
+
+A) Where would you store raw FASTQ files that you just received from a sequencing facility?
+
+B) Where would you store 1 TB of BAM files that you can regenerate
+   from the FASTQ files in a day?
+
+C) After three months away, your BAM files in Scratch are gone.
+   Why, and can OSC restore them?
+
+<hr style="height:1pt; visibility:hidden;" />
+
+<!-----
+<details><summary> {{< fa square-check >}} &nbsp; &nbsp; _Click for the answers_</summary>
+
+A) **Project**: it's permanent and backed up, and raw data can't be regenerated.
+
+B) **Scratch**: the files are large and can be regenerated, and I/O is faster there.
+   This also avoids paying for 1 TB of Project storage.
+
+C) Scratch files that haven't been accessed for 60 days are purged,
+   and Scratch isn't backed up, so OSC **can't** restore them.
+   You'd regenerate them from the raw data with your scripts ---
+   which is why you keep both of those in the Project dir.
+
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+------>
+:::
+:::
+
 ## Storage areas: misc. notes
 
-- **Hidden files in the Home dir**:\
-  Your home dir will have hidden files (those starting with a `.`) that are generated
+- **Hidden files in the Home dir**\
+  Your Home dir will have hidden files (those starting with a `.`) that are generated
   and used automatically by software. Don't mess with them unless you know what you're doing!
 
 <hr style="height:1pt; visibility:hidden;" />
 
 . . .
 
-- **Accessing back-ups**\
+- **Accessing backups**\
   Home and Project dirs are backed up daily.
   You don't have _direct_ access to the backups,
   but you can email OSC to restore your files to the way they were on a specific date.
@@ -464,7 +510,12 @@ click on the item at the bottom, "**`System Status`**":
 This page shows the live usage of the three clusters,
 and gives a good idea of the scale of the supercomputer center (***next slide***).
 
-_TODO: Explain why there are three clusters (not 1) and how they differ._
+OSC buys a new cluster every few years and retires the oldest one,
+so the clusters differ in age and hardware:
+**Pitzer** (2018, expanded in 2020), **Ascend** (2022, with many GPU nodes),
+and **Cardinal** (2024, the newest).
+They share the same file systems and mostly the same software,
+so for this course, it doesn't matter much which one you use.
 
 ----
 
@@ -492,14 +543,16 @@ three clusters.
 
 ## Contacting OSC to get help
 
-Email **<oschelp@osc.edu>** with questions like:
+Open a support case in the [OSC Service Center](https://support.osc.edu){target="_blank"}
+(log in with your OSC credentials), or email **<oschelp@osc.edu>**,
+with questions like:
 
 - Problems with your account
 - Installing or using specific software
 - Why your jobs keep failing
 
 They are usually very quick to respond!
-_TODO - UPDATE WITH CURRENT PROCEDURE FOR GETTING HELP_
+Include the cluster name, the exact error message, and what you've already tried.
 
 ::: {.callout-note appearance="simple"}
 If you don't have an account yet, use <start@osc.edu> instead.

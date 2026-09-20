@@ -157,7 +157,7 @@ View(meta)
 
 Data frames are another R data structure, like vectors.
 
-They contain tabular data and can be thought of a vectors pasted side-by-side:
+They contain tabular data and can be thought of as vectors pasted side-by-side:
 each column is a vector.
 This means that each column can only contain one data type.
 
@@ -170,11 +170,31 @@ like above, where:
 - Each column contains a different **"variable"** (e.g. coat color, weight)
 - Each row contains a different **"observation"** (data on e.g. one cat/person/sample)
 
-... a so-called
-**"tibble", which is the tidyverse variant of a data frame.**
+Note that the object we read in above is not a plain data frame but a so-called
+**"tibble", which is the tidyverse variant of a data frame**.
 The main difference is the nicer default printing behavior of tibbles:
 e.g. the data types of columns are shown,
 and only a limited number of rows are printed.
+
+::: callout-tip
+#### Regular data frames vs. tibbles
+Both data frames and tibbles are used in R to store tabular data containing rows and columns,
+often with mixed data types (character, integer, double etc).
+
+**Data frames** were introduced in base R and are available without loading any package.
+They print all rows and columns by default, which can be overwhelming for large datasets.
+When subsetting, R may simplify results unexpectedly
+(e.g., returning a vector instead of a data frame).
+In R versions before 4.0, they also converted character data into factors automatically.
+
+**Tibbles** are data frames too, but they tweak some of these older behaviors to make life
+a little easier.
+They were introduced in the tidyverse (specifically, in the _tibble_ package).
+They never convert strings to factors, they print in a more readable way
+(showing only the first 10 rows and only the columns that fit on the screen),
+and when subsetting they always return another tibble rather than simplifying to a vector.
+
+:::
 
 ### Extracting columns from a data frame
 
@@ -194,7 +214,7 @@ meta$treatment[2]
 
 The matrix data structure in R is similar to a data frame:
 it is also rectangular with rows and columns.
-But it differs in that all the elements in a matrix must of be same data type:
+But it differs in that all the elements in a matrix must be of the same data type:
 all numeric, character, or logical.
 This restriction applies only to the contents of the matrix which is
 the actual numbers inside the rectangular data area.
@@ -207,27 +227,28 @@ Most commonly, matrices consist of only _numerical_ data.
 Of course, column labels can then still be provided with column names,
 but what about rows?
 
-Rownames are typically used for **feature IDs (e.g., genes)** in Matrix and column names represent **sample_ID**.
+In a matrix, row names are typically used for **feature IDs (e.g., genes)** and column names for **sample IDs**.
 These rownames are important for RNAseq data analysis package `DESeq2` because the
 software uses rownames to match genes across the count matrix and associated metadata.
 While data frames in R also allow rownames, they are less commonly used for
 storing identifiers like gene names.
-Instead, genes names are usually stored as a separate column for clarity in data frame.
+Instead, gene names are usually stored as a separate column for clarity in a data frame.
 
 
 Generally, matrices are not nearly as common as data frames,
 but we are introducing them here because they are used in a number of omics-data
 related packages.
-For example, the package
-[DESeq2](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html),
-which we'll later use for differential expression analysis of our RNA-Seq count data.
+For example, the
+[DESeq2](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html)
+package, which we'll later use for differential expression analysis of our RNA-Seq count
+data, expects the counts as a matrix.
 
 ## The _dplyr_ package
 
 The [_dplyr_](https://cran.r-project.org/package=dplyr) package provides very
 useful functions for **manipulating data in data frames** ("data wrangling").
 This type of data processing is often essential before you can move on to say,
-data visualization (**week 13**) or statistical data analysis (**week 14**).
+data visualization (**the next lecture**) or statistical data analysis.
 
 In this session, we'll cover the most commonly used _dplyr_ functions:
 
@@ -262,7 +283,7 @@ objects, whose names are the column names.].
 The **order of the columns** in the output data frame is exactly as you list them in
 `select()`, and doesn't need to be the same as in the input data frame.
 In other words, `select()` is also one way to reorder columns:
-in the example above, we made `year` appear before `country`.
+in the example above, we made `time` appear before `sample_id`.
 
 You can also **specify columns that should be excluded**,
 by prefacing their name with a `!` (or a `-`):
@@ -309,7 +330,7 @@ rename(.data = meta_sel, sample = sample_id)
 And you could go on along these lines,
 successively creating new objects that you then use for the next step.
 
-But there is a more elegant way of dong this,
+But there is a more elegant way of doing this,
 directly sending ("piping") output from one function into the next function
 with the **pipe operator** `|>`
 (a vertical bar <kbd>|</kbd> followed by a greater-than sign <kbd>></kbd>).
@@ -396,7 +417,7 @@ meta |>
 
 <details><summary>{{< fa user-edit >}} How many rows were output? _(Click to see the answer)_</summary>
 <p>
-21 rows were output, as shown in the first line above: `12 x 3` (rows x columns)
+12 rows were output, as shown in the first line above: `12 x 3` (rows x columns)
 </p>
 </details>
 
@@ -422,7 +443,7 @@ where only one of the conditions needs to be met,
 use a `|` between the conditions:
 
 ```{r}
-# Keep rows with a control samples collected at 10dpi:
+# Keep rows that were either collected at 10dpi OR are control samples:
 meta |>
   filter(time == "10dpi" | treatment == "control")
 ```
@@ -491,7 +512,7 @@ where ties in the first column are broken by a second column (and so on).
 Do this by simply listing the columns in the appropriate order:
 
 ```{r}
-# Sort first by treatment, time, then by sample_id:
+# Sort first by treatment, then by time, then by sample_id:
 meta |>
   arrange(treatment, time, sample_id)
 ```
@@ -509,7 +530,7 @@ For a first example, let's go back to the `iris` dataframe:
 head(iris)
 ```
 
-Let's say you wanted to compute the ration of sepal length to with for each
+Let's say you wanted to compute the ratio of sepal length to width for each
 observation -- you can do so as follows with `mutate()`:
 
 ```{r}
@@ -518,27 +539,6 @@ iris |>
   head()
 ```
 
-::: callout-tip
-#### Regular data frames vs. tibbles
-Both data frames and tibbles are used in R to store tabular data containing rows and columns,
-often with mixed data types (character, integer, double etc).
-
-Data frames : Introduced in base R, available without loading any package. Often convert character data into
-factors automatically (though this can be disabled with stringsAsFactors = FALSE). Print all rows and columns
-by default, which can be overwhelming for large datasets. When subsetting, R may simplify results unexpectedly
-(e.g., returning a vector instead of a data frame).
-
-
-
-Tibbles : Tibbles are data frames, but they tweak some older behaviors to make life a little easier.
-Introduced in the tidyverse (specifically, the tibble package), and are part of the tidyverse ecosystem.
-Do not automatically convert strings to factors — everything stays as you enter it. Print in a more readable way,
-showing only the first 10 rows and all columns that fit on the screen.
-When subsetting, tibbles always return another tibble, preserving the data frame structure
-(unless you explicitly ask   for it).
-
-:::
-
 For an example with our `meta` dataframe, we'll use the `sub()` function,
 which can do a character-based search-and-replace.
 It takes three arguments: the pattern to search for, what to replace the pattern
@@ -546,10 +546,10 @@ with, and the subject vector.
 For example, to shorten sample IDs by removing the shared prefix:
 
 ```{r}
-# Create a new column 'sample_id_short' by replacing the 'ERR10802' pattern of sample_id with nothing :
+# Create a new column 'sample_id_short' by replacing the 'S' prefix of sample_id with nothing:
 meta |>
   mutate(
-    sample_id_short = sub(pattern = "ERR10802", replacement = "", x = sample_id)
+    sample_id_short = sub(pattern = "S", replacement = "", x = sample_id)
     )
 ```
 
@@ -560,7 +560,7 @@ simply "assign back to the same name":
 ```{r}
 meta |>
   mutate(
-    sample_id = sub(pattern = "ERR10802", replacement = "", x = sample_id)
+    sample_id = sub(pattern = "S", replacement = "", x = sample_id)
   )
 ```
 
@@ -570,7 +570,7 @@ meta |>
 Another very useful function is `substr()`, short for _substring_,
 which can extract parts of a character vector by position:
 say, you can ask it to only keep the first three characters.
-It includes arguments for the desired `start` and `end` positions of the substring:
+It includes arguments for the desired `start` and `stop` positions of the substring:
 
 ```{r}
 meta |>
@@ -600,14 +600,15 @@ meta_time
 
 ## `summarize()` to compute summary stats
 
-The final function _dplyr_ function we'll cover is `summarize()`,
+The final _dplyr_ function we'll cover is `summarize()`,
 which computes **summaries of your data across rows**.
-For example, to calculate the mean time across the entire dataset (all rows):
+For example, to count the total number of samples in the entire dataset (all rows),
+using the helper function `n()`, which simply counts rows:
 
 ```{r}
 # The syntax is similar to 'mutate': <new-column> = <operation>
 meta_time |>
-  summarize(mean_time = mean(time_num))
+  summarize(n_samples = n())
 ```
 
 The output is still a dataframe, but unlike with all previous _dplyr_ functions,
@@ -616,18 +617,18 @@ it is completely different from the input dataframe,
 
 `summarize()` becomes really powerful in combination with the helper function
 `group_by()` to compute **groupwise** stats.
-For example, to get the mean time_num separately for each treatment:
+For example, to get the number of samples for each treatment:
 
 ```{r}
 meta_time |>
   group_by(treatment) |>
-  summarize(mean_time = mean(time_num))
+  summarize(n_samples = n())
 ```
 
 `group_by()` implicitly splits a data frame into groups of rows:
 here, one group for observations from each treatment.
 After that, operations like in `summarize()` will happen separately for each group,
-which is how we ended up with per-treatment means.
+which is how we ended up with per-treatment counts.
 
 Before doing the exercise for `summarize()`, we will learn about the new function `str()`
 to understand the internal structure of your dataset/object. The argument for the `str()` is the name of the object you want to explore.
@@ -636,11 +637,12 @@ to understand the internal structure of your dataset/object. The argument for th
 ```{r}
 str(iris)
 ```
-For a output of iris dataset above shows:
 
-- The object has a class of dataframe
-- The total number of 150 observations and 5 variables
-- A full list of the variables names (e.g. Sepal.Length, Sepal.Width, etc)
+The output for the `iris` dataset above shows:
+
+- The object has the class `data.frame`
+- There are 150 observations and 5 variables
+- A full list of the variable names (e.g. Sepal.Length, Sepal.Width, etc.)
 - The data type of each variable (e.g. num, factor)
 
 
@@ -651,8 +653,8 @@ For a output of iris dataset above shows:
 <details><summary>*Click to see a solution*</summary>
 
 ```{r}
-iris_summary <- iris %>%
-  group_by(Species) %>%
+iris_summary <- iris |>
+  group_by(Species) |>
   summarize(
     avg_petal_length = mean(Petal.Length),
     avg_petal_width = mean(Petal.Width)
@@ -692,9 +694,10 @@ in different ways.
 
 ## Recap and looking forward
 
-- Different columns of Data frame can contain different types of data, but in a matrix all the
-  elements are of same data type.
-- Several functions of dplyr package such as `filter()`, `select()`, `arrange()`, `mutate()` in R provides a powerful way to manipulate large datasets.
+- Different columns of a data frame can contain different types of data, but in a matrix all
+  the elements are of the same data type.
+- Functions of the _dplyr_ package such as `filter()`, `select()`, `arrange()` and `mutate()`
+  provide a powerful way to manipulate large datasets.
 
 
 ::: callout-note
