@@ -7,7 +7,7 @@ author:
   - name: Jelmer Poelstra
     orcid: 0000-0002-3514-7462
     email: poelstra.1@osu.edu
-    affiliation: 
+    affiliation:
       - name: CFAES Bioinformatics Core, Ohio State University
         url: https://go.osu.edu/bioinformatics-core
       - name: Dept. of Plant Pathology, Ohio State University
@@ -37,8 +37,8 @@ Here is a complete overview of shell wildcards:
 | Wildcard   | Matches |
 |------------|---------------------------|
 | *          | Any number of any character, including nothing |
-| ?          | Any single character 
-| [] and [^] | One or none (`^`) of the "character class" within the brackets   
+| ?          | Any single character
+| [] and [^] | One or none (`^`) of the "character class" within the brackets
 
 <hr style="height:1pt; visibility:hidden;" />
 
@@ -64,7 +64,7 @@ sample1_R1.fastq  sample1_R2.fastq
 
 The character class wildcard **`[]`** can be useful when you want to include or
 exclude multiple files among a set of files with rather similar names.
-For example, 
+For example,
 to match files for `sample1` and `sample2` using only a character class with **`[]`**:
 
 - Method 1 -- List all possible characters (`1` and `2` in this case):
@@ -120,7 +120,7 @@ For example, use `..` within `{}` to indicate ranges of numbers or letters:
   ```bash
   # Note that it understands the indication of zero-padding of single digits:
   mkdir -p 2026-09-{01..30}
-  
+
   ls 2026-09*
   ```
   ```bash-out
@@ -130,10 +130,10 @@ For example, use `..` within `{}` to indicate ranges of numbers or letters:
 ```
 
 - Create 6 empty files:
-  
+
   ```bash
   touch fig-1{A..F}.png
-  
+
    ls fig-*
   ```
   ```bash-out
@@ -286,193 +286,9 @@ cp sample[^1]* selection/
 Method 2 --- Other way around; include sample numbers starting with a 0:
 
 ```bash
-cp sample0* selection/ 
+cp sample0* selection/
 ```
 
-</details>
-:::
-
-:::{.exercise}
-#### {{< fa user-edit >}} Exercise: Renaming files with a loop
-
-1. **Create mock "alignment" files**
-
-   - Create a directory `alignment` inside an appropriate dir in your project
-     (e.g. `analysis`, `results`)
-   - Inside the `alignment` dir, create files with names like
-     `sample01_A_08-14-2020.sam` - `sample50_H_09-16-2020.sam` for all combinations of: 
-     - 30 samples (`01`-`30`)
-     - 5 treatments (`A`-`E`)
-     - 2 dates (`08-14-2020` and `09-16-2020` -- yes, use this date format for now)
-     
-   ```sh
-   # Create a new dir and navigate there
-   mkdir -p results/alignment
-   cd results/alignment 
-    
-   # Create the files:
-   touch sample{01..30}_{A..E}_{08-14-2020,09-16-2020}.sam
-    
-   # Check that you have 300 files:
-   ls | wc -l
-   ```
-   ```bash-out
-   300
-   ```
-  
-2. **Rename files in a batch**  
-   Woops! You stored the alignment files you created in the previous step
-   as SAM files (`.sam`), but this was a mistake --
-   the files are actually the binary counterparts of SAM files: BAM files (`.bam`).
-   
-   Move into the dir with BAM files, and use a `for` loop to rename them,
-   changing the extension from `.sam` to `.bam`.
-   
-   <details><summary>_Click here for some hints_</summary>
-
-   - Loop over the files using globbing (wildcard expansion) directly;
-     there is no need to call `ls`.
-   - Use the `basename` command, or alternatively, `cut`, to strip the extension.
-   - Store the output of the `basename` (or `cut`) call using command substitution
-     (`$(command)` syntax).
-    - The new extension can simply be pasted behind the file name, like
-     `newname="$filename_no_extension"bam` or `newname=$(basename ...)bam`.
-   
-   </details>
-
-   <details><summary>_Click here for the solution_</summary>
-  
-   ```sh
-   for oldname in *.sam; do
-       newname=$(basename "$oldname" sam)bam
-       mv -v "$oldname" "$newname"
-   done
-   ```
-    
-   In the code above:
-    
-   - `$oldname` will contain the old file name in each iteration of the loop.
-   - We remove the `sam` suffix using `basename "$oldname" sam`.
-   - We use command substitution (`$()` syntax) to catch the output of the
-     `basename` command, and paste `bam` at the end.
-    
-   Also, note that:
-    
-   - You don't need a special construction to paste strings together:
-     you simply type `bam` after what will be the extension-less file name from
-     the `basename` command.
-   - I used informative variable names (`oldname` and `newname`), not cryptic ones like `i` and `o`.
-  
-   </details>
-
-3. **Copy files with wildcards**  
-   
-   Still in the dir with your SAM files, create a new dir called `subset`.
-   Then, using a single `cp` command,
-   copy files that satisfy the following conditions into the `subset` dir:
-   
-      - The sample ID/number should be 01-19, and
-      - The treatment should be A, B, or C.  
-   
-   <details><summary>_Click here for some hints</summary>
-   Just like you used multiple consecutive brace expansions above,
-   you can use two consecutive wildcard character sets (`[]`) here.
-   </details>
-
-   <details><summary>_Click here for the solution_</summary>
-
-   - Create the new dir:
-  
-     ```sh
-     mkdir subset
-     ```
-  
-   - Copy the files using four consecutive wildcard selections:
-     - The first digit should be a 0 or a 1 `[01]` (or `[0-1]`),
-     - The second can be any number `[0-9]` (`?` would work, too),
-     - The third, after an underscore, should be A, B, or C `[A-C]`,
-     - We don't care about what comes after that, but do need to account for
-       the additional characters, so will use a `*` to match any character:
-    
-     ```sh
-     cp -v sample[01][0-9]_[A-C]* subset/
-     ```
-     ```bash-out
-     ‘sample01_A_08-14-2020.bam’ -> ‘subset/sample01_A_08-14-2020.bam’
-     ‘sample01_A_09-16-2020.bam’ -> ‘subset/sample01_A_09-16-2020.bam’
-     ‘sample01_B_08-14-2020.bam’ -> ‘subset/sample01_B_08-14-2020.bam’
-     ‘sample01_B_09-16-2020.bam’ -> ‘subset/sample01_B_09-16-2020.bam’
-     ‘sample01_C_08-14-2020.bam’ -> ‘subset/sample01_C_08-14-2020.bam’
-     ‘sample01_C_09-16-2020.bam’ -> ‘subset/sample01_C_09-16-2020.bam’
-     ‘sample02_A_08-14-2020.bam’ -> ‘subset/sample02_A_08-14-2020.bam’
-     # [...output truncated...]
-     ```
-   </details>
-
-3. **Bonus: a trickier renaming loop**  
-   You now realize that your date format is suboptimal
-   (`MM-DD-YYYY`; which gave `08-14-2020` and `09-16-2020`)
-   and that you should use the `YYYY-MM-DD` format.
-   Use a `for` loop to rename the files.
-   
-   <details><summary>_Click here for some hints_</summary>
-  
-   - Use `cut` to extract the three elements of the date (day, month, and year)
-     on three separate lines.
-   - Store the output of these lines in variables using commands substitution, like:
-     `day=$(commands)`.
-   - Finally, paste your new file name together like: `newname="$part1"_"$year"` etc.
-   - When first writing your commands, it's helpful to be able to experiment easily:
-     start by echo-ing a single example file name, as in:
-     `echo sample23_C_09-16-2020.sam | cut ...`.
-   </details>
-
-   <details><summary>_Click here for the solution_</summary>
-  
-   - In the loop, first use `cut` to extract the month, day, and year:
-     - Start by extracting the entire date: cut by an `_` and take the third item
-       (`cut -d "_" -f 3`).
-     - Then extract the different components of the date separately for month,
-       date, and year, with `cut -d "-"`: the first item is the month, the second
-       is the day, and the third is the year.
-     - Save these compoinents of the date in variables using command substitution (`$()`).
-   - Second, use `cut` to extract what we may call the "sample prefix",
-     which contains the sample number and the treatment.
-   - Third, build the new file name simply by putting the variables in the right
-     order with `_` and `-` delimiters.
-   - Use `mv` to rename the files --- below, I've added `-v` for verbose so it
-     will report what it does.
-
-   ```sh
-   for oldname in *.bam; do
-       # Extract and store the month, day, and year:
-       # (First cut by '_' taking the 3rd item, then by '-')
-       month=$(echo "$oldname" | cut -d "_" -f 3 | cut -d "-" -f 1)
-       day=$(echo "$oldname" | cut -d "_" -f 3 | cut -d "-" -f 2)
-       year=$(basename "$oldname" .bam | cut -d "_" -f 3 | cut -d "-" -f 3)
-       
-       # Extract and store the sample prefix:
-       sample_prefix=$(echo "$oldname" | cut -d "_" -f 1-2)
-       
-       # Paste together the new name:
-       newname="$sample_prefix"_"$year"-"$month"-"$day".bam
-       
-       # Execute the move:
-       mv -v "$oldname" "$newname"
-   done
-   ```
-   ```bash-out
-   ‘sample01_A_08-14-2020.bam’ -> ‘sample01_A_2020-08-14.bam’
-   ‘sample01_A_09-16-2020.bam’ -> ‘sample01_A_2020-09-16.bam’
-   ‘sample01_B_08-14-2020.bam’ -> ‘sample01_B_2020-08-14.bam’
-   ‘sample01_B_09-16-2020.bam’ -> ‘sample01_B_2020-09-16.bam’
-   ‘sample01_C_08-14-2020.bam’ -> ‘sample01_C_2020-08-14.bam’
-   ‘sample01_C_09-16-2020.bam’ -> ‘sample01_C_2020-09-16.bam’
-   ‘sample01_D_08-14-2020.bam’ -> ‘sample01_D_2020-08-14.bam’
-   ‘sample01_D_09-16-2020.bam’ -> ‘sample01_D_2020-09-16.bam’
-   ‘sample01_E_08-14-2020.bam’ -> ‘sample01_E_2020-08-14.bam’
-   # [...output truncated...]
-   ```
 </details>
 :::
 
@@ -523,7 +339,7 @@ find [path] [expression-1] [expression-2] ...
 
 `find` will print all files by default, like `ls` --
 but unlike `ls`, it is recursive by default:
-  
+
 ```sh
 find zmays-snps
 ```
@@ -567,7 +383,7 @@ First, you can use `-type` as an expression to limit results by file type:
 
 ```sh
 # "-type f" to only match regular files (not, e.g., dirs)
-find data/seqs -name "zmaysB*fastq" -type f 
+find data/seqs -name "zmaysB*fastq" -type f
 ```
 
 In the previous command, the two expressions were implicitly connected with
@@ -577,7 +393,7 @@ the resulting matches had to be regular files and also had to have
 You can connect expressions _explicitly_ using the `-and` operator...
 
 ```sh
-find data/seqs -name "zmaysB*fastq" -and -type f 
+find data/seqs -name "zmaysB*fastq" -and -type f
 ```
 ```bash-out
 TBA
@@ -586,7 +402,7 @@ TBA
 ...or the `-or` operator:
 
 ```sh
-find data/seqs -name "zmaysA*fastq" -or -name "zmaysC*fastq" 
+find data/seqs -name "zmaysA*fastq" -or -name "zmaysC*fastq"
 ```
 ```bash-out
 TBA
@@ -609,7 +425,7 @@ in the `find` output:
 
 ```sh
 touch data/seqs/zmays{A,C}_R{1,2}-temp.fastq
-  
+
 find data/seqs -type f "!" -name "zmaysC*fastq" -and "!" -name "*-temp*"
 ```
 ```bash-out
@@ -636,7 +452,7 @@ TBA
 
 Now, say that you instead want to remove the temporary files we saw above.
 We can do this using `-exec` followed by the `rm` command
-(in this case, using `rm -i` for interactive removal): 
+(in this case, using `rm -i` for interactive removal):
 
 ```sh
 find data/seqs -name "*-temp.fastq" -exec rm -i {} \;
@@ -647,7 +463,7 @@ and you have to indicate the end of our command with an escaped semicolon: `\;`.
 
 `-exec` can be very useful to *process file queries* that are more
 complicated than what a simple globbing pattern allows for.
-With `-exec`, you can use any command to operate on the files that you found. 
+With `-exec`, you can use any command to operate on the files that you found.
 
 Finally, note that for the common operation of deleting files, a shortcut exists:
 
@@ -661,7 +477,7 @@ find zmays-snps/data/seqs -name "*-temp.fastq" -delete
 
 This command passes arguments, supplied via standard in, on to another command.
 For example...
-  
+
 ```sh
 find data/seqs -name "*-temp.fastq" | xargs rm
 ```
@@ -698,7 +514,7 @@ doing anything --- for example:
   ```
 
 - Save the `find` results in a text file:
-  
+
   ```bash
   find data/seqs -name "*-temp.fastq" > files-to-delete.txt
   cat files-to-delete.txt
@@ -724,8 +540,8 @@ but you were promised a solution with `find` and `xargs`!
 However, out of the box, the below does in fact fail:
 
 ```sh
-touch "samples A.txt"  "samples B.txt" 
-  
+touch "samples A.txt"  "samples B.txt"
+
 find . -name "samples [AB].txt" | xargs rm
 ```
 ```bash-out
@@ -745,157 +561,4 @@ find . -name "samples [AB].txt" -print0 | xargs -0 rm -v
 ```bash-out
 removed './samples A.txt'
 removed './samples B.txt'
-```
-
-::: callout-note
-#### `xargs` as an alternative to loops
-
-With `xargs`, you can also specify where you want to insert the arguments that
-are being passed on:
-
-```sh
-find data/seqs -name "*.fastq" |
-    xargs basename -s ".fastq" |
-    xargs -I{} fastq_stat --in {}.fastq --out results/{}.txt 
-```
-
-Above, `-I{}` specified that the arguments were passed on with the placeholder `{}`.
-We were then also able to use `{}` multiple times. 
-The above code does something that you may be otherwise be inclined to do in a loop
---- the above is equivalent to:
-
-```sh
-for fastq_file in data/seqs/*fastq; do
-    id=$(basename "$fastq_file" .fastq)
-    fastq_stat --in "$fastq_file" --out results/"$id".txt
-done
-```
-
-------
-
-One advantage of using `xargs` instead of a `for` loop is that you have control
-over parallelization.
-
-- To parallelize, i.e. to spawn multiple simultaneous process,
-  you can send each process to the background in the `for` loop using `&`:
-
-  ```sh
-  for fastq_file in *fastq; do
-      fastq_short=$(basename $fastq_file .fastq) 
-      fastq_stat --in $fastq_file --out results/$fastq_short.txt &
-  done
-  ```
-
-  However, this would spawn exactly as many processes as there are input files,
-  which could be way more than what we want.
-
-- With `xargs`, you can control the number of simultaneous processes that
-  are spawned using `-P` (here set to 6):
-
-  ```sh
-  find data/seqs -name "*.fastq" |
-      xargs basename -s ".fastq" |
-      xargs -P 6 -I{} fastq_stat --in {}.fastq --out results/{}.txt 
-  ```
-
-If you like the `xargs` approach to running multiple processes,
-you may also be interested in the `parallel` command,
-which is even more powerful than `xargs`.
-I personally don't do this very much because I tend to submit separate batch jobs
-for each file, which can easily be done with simple `for` loops.
-
-:::
-
-## Bash configuration files
-
-### Hidden files
-
-TBA
-
-### Bash configuration files
-
-Your bash shell is configured using hidden text files in your `$HOME` dir:
-
-- `~/.bashrc` -- for non-login shells
-- `~/.bash_profile` -- for non-login shells **FIX**
-
-These can be viewed and edited like normal text files:
-
-```bash
-cat ~/.bashrc    # Or open in VS Code
-```
-
-**Some settings that are / can be stored in these config files:**
-
-- The look of your prompt.
-- `alias`es -- personal, custom shortcuts for (complex) commands.
-- The `$PATH`, a list of directories with binaries (software executables)
-  that the computer is aware of.
-- Other custom settings like running setup scripts.
-
-::: callout-tip
-To not have to deal with the login/non-login shell distinction, it is common
-to put all settings in one of these files (often `.bashrc`) and let the second
-file (often `.bash_profile`) run the first file whenever it itself is being run.
-:::
-
-## `$PATH`: A list of directories with binaries
-
-`$PATH` is another environment variable like `$HOME` and `$USER`.
-
-It lists the directories that will be searched when you type a program’s name.
-This allows you to run programs without specifying the full path to the executable.
-For example:
-  
-```bash
-vcftools
-#> VCFtools (0.1.16)
-#> (c) Adam Auton and Anthony Marcketta 2009
-  
-# To check where the program's binary is located:
-which vcftools
-#> /usr/bin/vcftools
-```
-
-To check which directories are in your `$PATH`, you can simply `echo` it:
-
-```sh
-echo $PATH
-```
-```bash-out
-/apps/xalt/xalt/bin:/opt/mvapich2/intel/19.0/2.3.3/bin:/apps/gnu/8.4.0/bin:/opt/intel/19.0.5/itac_latest/bin:/opt/intel/19.0.5/advisor/bin64:/opt/intel/19.0.5/vtune_amplifier/bin64:/opt/intel/19.0.5/inspector_2019/bin64:/opt/intel/19.0.5/compilers_and_libraries_2019/linux/bin/intel64:/apps/software_usage:/usr/lib64/qt-3.3/bin:/opt/osc/bin:/opt/moab/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/ibutils/bin:/opt/ddn/ime/bin:/opt/puppetlabs/bin:/users/PAS0471/jelmer/software/bin
-```
-
-That output looks strange and is hard to read,
-because the directories are separated by colons `:`.
-Let's make that a bit more readable:
-  
-```sh
-echo $PATH | tr ":" "\n" | nl
-```
-```bash-out
-1  /apps/xalt/xalt/bin
-2  /opt/mvapich2/intel/19.0/2.3.3/bin
-3  /apps/gnu/8.4.0/bin
-4  /opt/intel/19.0.5/itac_latest/bin
-5  /opt/intel/19.0.5/advisor/bin64
-[...output-truncated...]
-```
-
-You can easily modify your `$PATH`.
-To add a directory to your `$PATH` in the current session,
-you simply *append* a new dir after a colon:
-
-```bash
-PATH=$PATH:~/new-dir-with-software/
-```
-
-However, this change will not have any effects outside of your current bash sessions.
-  
-**For lasting changes**,
-you should edit your bash configuration files (like `~/.bashrc`),
-from which `$PATH` is loaded whenever you open a terminal:
-  
-```bash
-echo "PATH=$PATH:~/new-dir-with-software/" >> ~/.bashrc
 ```
