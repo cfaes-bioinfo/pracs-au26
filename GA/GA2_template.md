@@ -1,23 +1,30 @@
 <!--
 GA2 README template.
-- Replace the header line below and fill in every section.
+- Add your answers to each question's section below.
 - For each question, unless noted otherwise: put the command(s) you ran in
-  a ```bash code block, and the command's output in a plain ``` code block
-  right below it, as in the GA2 worked example.
-- Delete these instructional comments (the <!-- ... --> blocks and lines) before submitting.
+  the corresponding ```bash code block, and the command's output in a plain ```
+  code block right below it -- these blocks are present in this template,
+  so you simply fill them in.
+  If a command doesn't print any output, you can leave the output block empty.
+- Delete instructional comments like this one as you go.
 -->
 
 # GA2 answers - `<your name>`
 
 ## Part A: Starting a Git repository
 
-### 1: Initialize Git repository
+### 1: Copy the template file and add your name
+
+<!-- Put your command in the bash code block below. -->
+<!-- Add your name to the header line at the very top of this file. -->
+
+```bash
+
+```
+
+### 2: Initialize a Git repository
 
 <!-- No command/output needed here -- we check the repo directly. -->
-
-### 2: Add a header to README
-
-<!-- Done at the very top of this file: replace "# GA2 answers - <your name>" with your own name. -->
 
 ### 3: Stage and commit README
 
@@ -27,7 +34,7 @@ GA2 README template.
 
 ### 4: Create `data`/`results` dirs and copy the GTF file
 
-<!-- Put your command in the bash code block below. -->
+<!-- Put your command(s) in the bash code block below. -->
 
 ```bash
 
@@ -41,7 +48,7 @@ The output of the command was:
 
 ```
 
-### 5: File size before/after decompression
+### 5: File size of `annot.gtf.gz`
 
 ```bash
 
@@ -53,9 +60,13 @@ The output of the command was:
 
 ```
 
+### 6: Decompress the GTF file and check its size
+
 ```bash
 gunzip data/annot.gtf.gz
 ```
+
+<!-- Put the command you used to check the size of annot.gtf below. -->
 
 ```bash
 
@@ -69,7 +80,21 @@ The output of the command was:
 
 *Answer*: The uncompressed file is approximately _____ times larger.
 
-### 6: Count genomic features (by eye)
+### 7: Total number of lines in `annot.gtf`
+
+```bash
+
+```
+
+The output of the command was:
+
+```
+
+```
+
+*Answer*: Total number of lines: _____
+
+### 8: Number of lines in the table section (header lines counted by eye)
 
 ```bash
 
@@ -82,27 +107,10 @@ The output of the command was:
 ```
 
 *Answer*: Number of header lines (counted by eye): _____
-*Answer*: Total number of genomic features: _____
 
-### 7: Count genomic features (`grep -v`)
+*Answer*: Number of lines in the table section: _____
 
-```bash
-
-```
-
-The output of the command was:
-
-```
-
-```
-
-*Answer*: Count of genomic features: _____
-
-### 8: Compare counts from Q6 and Q7
-
-*Answer*:
-
-### 9: Count distinct sequences, save to `results/scaffolds.txt`
+### 9: Number of lines in the table section (`grep -v`)
 
 ```bash
 
@@ -114,7 +122,9 @@ The output of the command was:
 
 ```
 
-### 10: Frequency table of feature types
+*Answer*: Number of lines in the table section: _____
+
+### 10: Count distinct sequences, save to `results/scaffolds.txt`
 
 ```bash
 
@@ -126,11 +136,23 @@ The output of the command was:
 
 ```
 
-### 11: Predict the output of `grep -c "gene"`
+*Answer*: Number of distinct sequences: _____
+
+### 11: Frequency table of feature types
+
+```bash
+
+```
+
+The output of the command was:
+
+```
+
+```
+
+### 12: Predict, then run `grep -c "gene"`
 
 *Answer* (prediction, before running): a / b / c / d
-
-### 12: Run `grep -c "gene"` and compare with Q7
 
 ```bash
 grep -c "gene" data/annot.gtf
@@ -142,7 +164,10 @@ The output of the command was:
 
 ```
 
-*Answer*: Was your prediction correct, and what does this comparison with Q7 tell you?
+*Answer*: Was your prediction correct, and what does the comparison with
+the number of genes in your frequency table from question 11 tell you?
+
+## Part C: Updating your Git repository
 
 ### 13: Check Git status
 
@@ -157,6 +182,8 @@ The output of the command was:
 ```
 
 ### 14: Create `.gitignore` and check status again
+
+<!-- You can create the file with a command or in VS Code; include your git status command and its output. -->
 
 ```bash
 
@@ -174,7 +201,7 @@ The output of the command was:
 
 <!-- No command/output needed here -- we check the repo directly. -->
 
-## Part C: Exploring the FASTQ files with Unix data tools
+## Part D: Exploring the FASTQ files with Unix data tools
 
 ### 16: Copy the FASTQ file
 
@@ -216,7 +243,7 @@ The output of the command was:
 
 *Answer*: Number of reads: _____
 
-### 19: Reads with >=10 consecutive Ns
+### 19: Reads with at least 10 consecutive `N`s
 
 ```bash
 
@@ -228,12 +255,20 @@ The output of the command was:
 
 ```
 
+*Answer*: Number of reads with at least 10 consecutive `N`s: _____
+
 ### 20: Stage and commit README again
 
 <!-- No command/output needed here -- we check the repo directly. -->
 
 ## Bonus
 
-### 21: Concepts/commands you don't (fully) understand
+### 21: Why do the counts from questions 8 and 9 differ?
+
+<!-- Add any commands you ran and their output in code blocks, as above. -->
+
+*Answer*:
+
+### 22: Concepts/commands you don't (fully) understand
 
 *Answer*:
