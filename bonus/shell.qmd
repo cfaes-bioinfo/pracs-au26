@@ -1,8 +1,9 @@
 ---
-title: "Misc. advanced Unix shell"
-subtitle: "Optional self-study content alongside week 3"
+title: "More Unix shell:<br>wildcards, brace expansion, `find` & `xargs`"
+subtitle: "Optional self-study content"
 pagetitle: "Advanced shell"
-date: 2026-09-05
+date: 2026-09-21
+date-modified: last-modified
 author:
   - name: Jelmer Poelstra
     orcid: 0000-0002-3514-7462
@@ -13,12 +14,18 @@ author:
       - name: Dept. of Plant Pathology, Ohio State University
         url: https://plantpath.osu.edu
 other-links:
-  - text: "Week 3 overview"
+  - text: "Week 4 overview"
     icon: check2-all
-    href: w3_overview.html
+    href: ../week04/w4_overview.html
+  - text: "w4b: Shell files I"
+    icon: book
+    href: ../week04/w4b_shell-files1.html
+  - text: "w4c: Shell files II"
+    icon: book
+    href: ../week04/w4c_shell-files2.html
 bibliography: ../references.bib
 language:
-  title-block-published: "Presented on"
+  title-block-published: "Published on"
   title-block-modified: "Page last modified"
 ---
 
@@ -26,26 +33,43 @@ language:
 
 <br>
 
+## Introduction
+
+This page contains optional self-study material that builds on
+this week's shell lectures ([w4b](../week04/w4b_shell-files1.qmd)
+and [w4c](../week04/w4c_shell-files2.qmd)):
+
+- [Other shell wildcards](#other-shell-wildcards)
+- [Brace expansion](#brace-expansion)
+- [The `find` command to find files](#the-find-command-to-find-files)
+- [`xargs` to repeat commands](#xargs-to-repeat-commands)
+
+Run the examples from your `week04/sandbox` dir,
+where you will create dummy files to practice on.
+
 ## Other shell wildcards
 
-In the first session on working with files in the Unix shell,
-you learned about
-[globbing (selecting files) with the `*` wildcard](week03/w3b_shellfiles.qmd#wildcard-expansion-globbing).
+In w4b, you learned about
+[globbing (selecting files) with the `*` wildcard](../week04/w4b_shell-files1.qmd#globbing).
 While not as frequently used as `*`, a few other shell wildcards exist.
 Here is a complete overview of shell wildcards:
 
-| Wildcard   | Matches |
-|------------|---------------------------|
-| *          | Any number of any character, including nothing |
-| ?          | Any single character
-| [] and [^] | One or none (`^`) of the "character class" within the brackets
+| Wildcard | Matches |
+|----------|---------------------------|
+| `*`      | Any number of any characters, including none |
+| `?`      | Exactly one of any character |
+| `[...]`  | Exactly one of the characters listed in the brackets |
+| `[^...]` | Exactly one character that is *not* listed in the brackets |
+
+: {.striped .hover}
 
 <hr style="height:1pt; visibility:hidden;" />
 
 To get set up, create some dummy FASTQ files to practice with:
 
 ```sh
-# (You should be in /fs/ess/PAS3493/people/$USER/week03/sandbox)
+# (You should be in /fs/ess/PAS3493/people/$USER/week04/sandbox)
+# (If you did the w4b globbing section, these files already exist)
 touch sample1_R1.fastq sample1_R2.fastq
 touch sample2_R1.fastq sample2_R2.fastq
 touch sample3_R1.fastq sample3_R2.fastq
@@ -98,27 +122,37 @@ to match files for `sample1` and `sample2` using only a character class with **`
   sample1_R1.fastq  sample1_R2.fastq  sample2_R1.fastq  sample2_R2.fastq
   ```
 
-::: callout-warning
-### Note: `[]` works on "single-character" ranges only: `[0-9]` works but `[10-13]` does not.
-:::
-
 These examples may seem trivial,
 but you can use these techniques to easily operate on selections among 100s or
 1000s of files.
 
+<hr style="height:1pt; visibility:hidden;" />
+
+::: callout-warning
+#### A character class always matches a single character
+So `[10-13]` does *not* mean "10 through 13": it is read as
+"one character that is `1`, `0`-`1`, or `3`".
+To match multi-digit numbers,
+use separate patterns (e.g. `sample1[0-3]*`) or brace expansion (next section).
+:::
+
+
 ## Brace expansion
 
-Whereas *wildcard expansion* looks for corresponding files and expands to whichever
-files are _present_,
-**brace expansion** with `{}`, is another type of shell expansion and it instead
-expands to whatever you tell it to.
+Brace expansion with `{}` is another type of shell expansion,
+but it works very differently from wildcards:
+a wildcard expands only to names of files that _already exist_,
+whereas brace expansion expands to whatever you tell it to,
+whether or not such files exist.
+That makes brace expansion the tool for **creating** many files or dirs with
+`mkdir` and `touch`, and wildcards the tool for _selecting_ existing ones.
 
 For example, use `..` within `{}` to indicate ranges of numbers or letters:
 
 - Create 30 directories, one for each day in September:
 
   ```bash
-  # Note that it understands the indication of zero-padding of single digits:
+  # Writing '01' keeps the leading zero, so that alphabetical order = date order:
   mkdir -p 2026-09-{01..30}
 
   ls 2026-09*
@@ -127,14 +161,14 @@ For example, use `..` within `{}` to indicate ranges of numbers or letters:
   2026-09-01  2026-09-04  2026-09-07  2026-09-10  2026-09-13  2026-09-16  2026-09-19  2026-09-22  2026-09-25  2026-09-28
   2026-09-02  2026-09-05  2026-09-08  2026-09-11  2026-09-14  2026-09-17  2026-09-20  2026-09-23  2026-09-26  2026-09-29
   2026-09-03  2026-09-06  2026-09-09  2026-09-12  2026-09-15  2026-09-18  2026-09-21  2026-09-24  2026-09-27  2026-09-30
-```
+  ```
 
 - Create 6 empty files:
 
   ```bash
   touch fig-1{A..F}.png
 
-   ls fig-*
+  ls fig-*
   ```
   ```bash-out
   fig-1A.png  fig-1B.png  fig-1C.png  fig-1D.png  fig-1E.png  fig-1F.png
@@ -164,143 +198,121 @@ treatment-Df_temp-med  treatment-Kr_temp-med  treatment-Tr_temp-med
 ::: exercise
 #### {{< fa user-edit >}} Exercise: Brace expansion and wildcards
 
-1. Move back into `data/fastq/` and remove all (remaining) files in there in one go.
+a. Your sandbox still contains the `sample1`--`sample3` FASTQ files.
+   Predict the output of each of these commands, then run them to check:
 
-<details><summary>Click for the solution</summary>
+   ```bash
+   ls sample{1..4}_R1.fastq
+   ls sample[1-4]_R1.fastq
+   ```
 
-```sh
-cd data/fastq/   # Assuming you were still in /fs/ess/PAS3493/people/$USER/week03/zmays-snps
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
 
-# (You don't have to use the -v flag)
-rm -v *fastq
-```
-```bash-out
-removed ‘sample3_R1.fastq’
-removed ‘sample3_R2.fastq’
-```
+   ```bash-out
+   ls: cannot access 'sample4_R1.fastq': No such file or directory
+   sample1_R1.fastq  sample2_R1.fastq  sample3_R1.fastq
+   ```
+   ```bash-out
+   sample1_R1.fastq  sample2_R1.fastq  sample3_R1.fastq
+   ```
 
-</details>
+   Brace expansion doesn't check which files exist, so `ls` received four file names,
+   including `sample4_R1.fastq`, which it couldn't find.
+   The character class is a wildcard and therefore only expands to existing files.
+   </details>
 
-2. Using *brace expansion* and the **`touch`** command,
-  create empty `R1` and `R2` FASTQ files for 100 samples with IDs from `001` to `100`:
-  `sample<ID>_R1.fastq` and `sample<ID>_R2.fastq`.
+b. Using brace expansion and the `touch` command,
+   create empty `R1` and `R2` FASTQ files for 100 samples with IDs from `001` to `100`:
+   `sample<ID>_R1.fastq` and `sample<ID>_R2.fastq`.
 
-<details><summary>Click for the solution</summary>
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
 
-```bash
-touch sample{001..100}_R{1,2}.fastq
+   ```bash
+   touch sample{001..100}_R{1,2}.fastq
 
-ls
-```
-```bash-out
-sample001_R1.fastq  sample026_R1.fastq  sample051_R1.fastq  sample076_R1.fastq
-sample001_R2.fastq  sample026_R2.fastq  sample051_R2.fastq  sample076_R2.fastq
-sample002_R1.fastq  sample027_R1.fastq  sample052_R1.fastq  sample077_R1.fastq
-sample002_R2.fastq  sample027_R2.fastq  sample052_R2.fastq  sample077_R2.fastq
-sample003_R1.fastq  sample028_R1.fastq  sample053_R1.fastq  sample078_R1.fastq
-sample003_R2.fastq  sample028_R2.fastq  sample053_R2.fastq  sample078_R2.fastq
-sample004_R1.fastq  sample029_R1.fastq  sample054_R1.fastq  sample079_R1.fastq
-sample004_R2.fastq  sample029_R2.fastq  sample054_R2.fastq  sample079_R2.fastq
-sample005_R1.fastq  sample030_R1.fastq  sample055_R1.fastq  sample080_R1.fastq
-sample005_R2.fastq  sample030_R2.fastq  sample055_R2.fastq  sample080_R2.fastq
-sample006_R1.fastq  sample031_R1.fastq  sample056_R1.fastq  sample081_R1.fastq
-sample006_R2.fastq  sample031_R2.fastq  sample056_R2.fastq  sample081_R2.fastq
-sample007_R1.fastq  sample032_R1.fastq  sample057_R1.fastq  sample082_R1.fastq
-sample007_R2.fastq  sample032_R2.fastq  sample057_R2.fastq  sample082_R2.fastq
-sample008_R1.fastq  sample033_R1.fastq  sample058_R1.fastq  sample083_R1.fastq
-sample008_R2.fastq  sample033_R2.fastq  sample058_R2.fastq  sample083_R2.fastq
-sample009_R1.fastq  sample034_R1.fastq  sample059_R1.fastq  sample084_R1.fastq
-sample009_R2.fastq  sample034_R2.fastq  sample059_R2.fastq  sample084_R2.fastq
-sample010_R1.fastq  sample035_R1.fastq  sample060_R1.fastq  sample085_R1.fastq
-sample010_R2.fastq  sample035_R2.fastq  sample060_R2.fastq  sample085_R2.fastq
-sample011_R1.fastq  sample036_R1.fastq  sample061_R1.fastq  sample086_R1.fastq
-sample011_R2.fastq  sample036_R2.fastq  sample061_R2.fastq  sample086_R2.fastq
-sample012_R1.fastq  sample037_R1.fastq  sample062_R1.fastq  sample087_R1.fastq
-sample012_R2.fastq  sample037_R2.fastq  sample062_R2.fastq  sample087_R2.fastq
-sample013_R1.fastq  sample038_R1.fastq  sample063_R1.fastq  sample088_R1.fastq
-sample013_R2.fastq  sample038_R2.fastq  sample063_R2.fastq  sample088_R2.fastq
-sample014_R1.fastq  sample039_R1.fastq  sample064_R1.fastq  sample089_R1.fastq
-sample014_R2.fastq  sample039_R2.fastq  sample064_R2.fastq  sample089_R2.fastq
-sample015_R1.fastq  sample040_R1.fastq  sample065_R1.fastq  sample090_R1.fastq
-sample015_R2.fastq  sample040_R2.fastq  sample065_R2.fastq  sample090_R2.fastq
-sample016_R1.fastq  sample041_R1.fastq  sample066_R1.fastq  sample091_R1.fastq
-sample016_R2.fastq  sample041_R2.fastq  sample066_R2.fastq  sample091_R2.fastq
-sample017_R1.fastq  sample042_R1.fastq  sample067_R1.fastq  sample092_R1.fastq
-sample017_R2.fastq  sample042_R2.fastq  sample067_R2.fastq  sample092_R2.fastq
-sample018_R1.fastq  sample043_R1.fastq  sample068_R1.fastq  sample093_R1.fastq
-sample018_R2.fastq  sample043_R2.fastq  sample068_R2.fastq  sample093_R2.fastq
-sample019_R1.fastq  sample044_R1.fastq  sample069_R1.fastq  sample094_R1.fastq
-sample019_R2.fastq  sample044_R2.fastq  sample069_R2.fastq  sample094_R2.fastq
-sample020_R1.fastq  sample045_R1.fastq  sample070_R1.fastq  sample095_R1.fastq
-sample020_R2.fastq  sample045_R2.fastq  sample070_R2.fastq  sample095_R2.fastq
-sample021_R1.fastq  sample046_R1.fastq  sample071_R1.fastq  sample096_R1.fastq
-sample021_R2.fastq  sample046_R2.fastq  sample071_R2.fastq  sample096_R2.fastq
-sample022_R1.fastq  sample047_R1.fastq  sample072_R1.fastq  sample097_R1.fastq
-sample022_R2.fastq  sample047_R2.fastq  sample072_R2.fastq  sample097_R2.fastq
-sample023_R1.fastq  sample048_R1.fastq  sample073_R1.fastq  sample098_R1.fastq
-sample023_R2.fastq  sample048_R2.fastq  sample073_R2.fastq  sample098_R2.fastq
-sample024_R1.fastq  sample049_R1.fastq  sample074_R1.fastq  sample099_R1.fastq
-sample024_R2.fastq  sample049_R2.fastq  sample074_R2.fastq  sample099_R2.fastq
-sample025_R1.fastq  sample050_R1.fastq  sample075_R1.fastq  sample100_R1.fastq
-sample025_R2.fastq  sample050_R2.fastq  sample075_R2.fastq  sample100_R2.fastq
-```
-</details>
+   ls sample???_R?.fastq
+   ```
+   ```bash-out
+   sample001_R1.fastq  sample026_R1.fastq  sample051_R1.fastq  sample076_R1.fastq
+   sample001_R2.fastq  sample026_R2.fastq  sample051_R2.fastq  sample076_R2.fastq
+   sample002_R1.fastq  sample027_R1.fastq  sample052_R1.fastq  sample077_R1.fastq
+   sample002_R2.fastq  sample027_R2.fastq  sample052_R2.fastq  sample077_R2.fastq
+   # [...output truncated...]
+   ```
+   </details>
 
-------
+c. Now remove the six *original* FASTQ files (`sample1`--`sample3`)
+   with a single `rm` command that leaves all 200 new files alone.
+   Why would `rm sample1*` be a bad idea here?
 
-3. **_Bonus:_** Count the number of "`R1`" files by first using `ls` with a globbing
-  pattern that only selects R1 files, and then piping the `ls` output into **`wc -l`**.
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
 
-<details><summary>Click for the solution</summary>
+   ```bash
+   ls sample?_R?.fastq    # Always check first!
+   rm sample?_R?.fastq
+   ```
 
-```bash
-# wc -l will count the number of lines, i.e. the number of files
-# (Note that this works properly even though raw ls output may
-# put multiple files on 1 line.)
-ls *R1*fastq | wc -l
-```
-```bash-out
-100
-```
+   Because `?` matches *exactly one* character,
+   `sample?_` matches `sample1_` but not `sample001_`.
+   (`rm sample[1-3]_*` would also work.)
 
-</details>
+   `rm sample1*` would remove `sample1_R1.fastq` and `sample1_R2.fastq`,
+   but also `sample100_R1.fastq` and `sample100_R2.fastq`,
+   as well as `sample1.txt` if you still have it from the w4b exercise.
+   </details>
 
-4. **_Bonus:_** Copy all files *except the two for "`sample100`"* into a new
-  directory called `selection` --- use a wildcard to do the move with a single command.
-  (You will first need to create the new dir separately.)
+d. **_Bonus:_** Count the number of R1 files by first using `ls` with a globbing
+   pattern that only selects R1 files, and then piping the `ls` output into `wc -l`.
 
-<details><summary>Click for the solution</summary>
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
 
-First create the `selection` dir:
+   ```bash
+   ls *R1*fastq | wc -l
+   ```
+   ```bash-out
+   100
+   ```
 
-```sh
-mkdir selection
-```
+   You may wonder how this works, since `ls` puts several files on each line.
+   It only does that when it prints to your screen:
+   when its output goes into a pipe, `ls` prints one file per line.
+   </details>
 
-Method 1 --- Exclude sample numbers starting with a 1:
+e. **_Bonus:_** Copy all FASTQ files *except the two for `sample100`* into a new
+   dir called `selection`, using a single `cp` command with a wildcard.
+   (You will first need to create the new dir separately.)
 
-```bash
-cp sample[^1]* selection/
-```
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
 
-Method 2 --- Other way around; include sample numbers starting with a 0:
+   First create the `selection` dir:
 
-```bash
-cp sample0* selection/
-```
+   ```bash
+   mkdir selection
+   ```
 
-</details>
+   Method 1 --- Exclude sample numbers starting with a 1:
+
+   ```bash
+   cp sample[^1]* selection/
+   ```
+
+   Method 2 --- Other way around; include sample numbers starting with a 0:
+
+   ```bash
+   cp sample0* selection/
+   ```
+   </details>
 :::
 
 ## The `find` command to find files
 
 ### Two problems you may run into
 
-Consider the following examples from @buffalo2015 of problems you may run into.
+Consider the following two problems you may run into, adapted from @buffalo2015.
 Say that you try to pipe `ls` output into the imaginary program `process_fastq`,
 which can operate on multiple FASTQ files at once, taking each as an argument:
 
-```sh
+```
 ls *.fastq | process_fastq
 ```
 
@@ -308,7 +320,7 @@ Any spaces in the listed file names would lead to trouble here,
 since those file names would be erroneously split into separate arguments.
 A solution would be to use direct globbing:
 
-```sh
+```
 process_fastq *.fastq
 ```
 
@@ -317,12 +329,13 @@ if the number of globbed files is very high, you may get an error that the
 "*argument list is too long*".
 
 **The `find` and `xargs` commands can deal with both of these problems.**
-More generally, these commands are useful for:
+More generally, they are useful for:
 
-- `find`: file searching and processing beyond `ls`'s capabilities
+- `find`: file searching and processing beyond `ls`'s capabilities.
 - `xargs`: multi-file and parallel processing without loops.
 
-Let's create some files to try these commands:
+Let's create a small dummy project to try these commands,
+modeled on the maize SNP project from @buffalo2015:
 
 ```sh
 mkdir -p zmays-snps/{data/seqs,scripts,analysis}
@@ -333,18 +346,18 @@ touch zmays-snps/data/seqs/zmays{A,B,C}_R{1,2}.fastq
 
 The basic syntax for `find` is:
 
-```bash
+```
 find [path] [expression-1] [expression-2] ...
 ```
 
-`find` will print all files by default, like `ls` --
+`find` will print all files by default, like `ls` ---
 but unlike `ls`, it is recursive by default:
 
 ```sh
 find zmays-snps
 ```
 ```bash-out
-zmays-snps/
+zmays-snps
 zmays-snps/data
 zmays-snps/data/seqs
 zmays-snps/data/seqs/zmaysC_R1.fastq
@@ -385,18 +398,23 @@ First, you can use `-type` as an expression to limit results by file type:
 # "-type f" to only match regular files (not, e.g., dirs)
 find data/seqs -name "zmaysB*fastq" -type f
 ```
+```bash-out
+data/seqs/zmaysB_R1.fastq
+data/seqs/zmaysB_R2.fastq
+```
 
 In the previous command, the two expressions were implicitly connected with
 a logical *and*:
 the resulting matches had to be regular files and also had to have
-`_zmaysB*fastq_` in the name.
+`zmaysB*fastq` in the name.
 You can connect expressions _explicitly_ using the `-and` operator...
 
 ```sh
 find data/seqs -name "zmaysB*fastq" -and -type f
 ```
 ```bash-out
-TBA
+data/seqs/zmaysB_R1.fastq
+data/seqs/zmaysB_R2.fastq
 ```
 
 ...or the `-or` operator:
@@ -405,18 +423,31 @@ TBA
 find data/seqs -name "zmaysA*fastq" -or -name "zmaysC*fastq"
 ```
 ```bash-out
-TBA
+data/seqs/zmaysA_R1.fastq
+data/seqs/zmaysA_R2.fastq
+data/seqs/zmaysC_R1.fastq
+data/seqs/zmaysC_R2.fastq
 ```
 
 You can negate expressions with `!` ---
 though you must quote the `!` so it doesn't get evaluated by the shell:
 
 ```sh
-# Find regular fies that do NOT match "zmaysC*fastq"
+# Find regular files that do NOT match "zmaysC*fastq"
 find data/seqs -type f "!" -name "zmaysC*fastq"
 ```
 ```bash-out
-TBA
+data/seqs/zmaysA_R1.fastq
+data/seqs/zmaysA_R2.fastq
+data/seqs/zmaysB_R1.fastq
+data/seqs/zmaysB_R2.fastq
+```
+
+If the quoted `"!"` looks cryptic, you can use the equivalent `-not` instead,
+which doesn't need quotes:
+
+```sh
+find data/seqs -type f -not -name "zmaysC*fastq"
 ```
 
 As another negation example,
@@ -429,10 +460,18 @@ touch data/seqs/zmays{A,C}_R{1,2}-temp.fastq
 find data/seqs -type f "!" -name "zmaysC*fastq" -and "!" -name "*-temp*"
 ```
 ```bash-out
-TBA
+data/seqs/zmaysA_R1.fastq
+data/seqs/zmaysA_R2.fastq
+data/seqs/zmaysB_R1.fastq
+data/seqs/zmaysB_R2.fastq
 ```
 
-:::callout-note
+The output is identical to that of the previous command,
+even though four new `-temp` files now exist:
+the `zmaysC` ones were excluded by the first negated expression,
+and the `zmaysA` ones by the second.
+
+::: {.callout-note collapse="true"}
 #### If `!` gets evaluated by the shell, then what does it do?
 
 So what does a `!` mean to the shell?
@@ -444,9 +483,39 @@ for example, to re-execute your most recent command, use the following:
 ```
 :::
 
-### Examples selecting based on file size and last-modified data
+### Selecting files by size and last-modified date
 
-TBA
+With `-size`, you can select files by their size,
+using `+` for "larger than" and `-` for "smaller than",
+and a `k`, `M`, or `G` suffix for kilobytes, megabytes, or gigabytes.
+For example, to find unusually large FASTQ files in the practice dataset:
+
+```sh
+find /fs/ess/PAS3493/people/$USER/garrigos/fastq -size +24M
+```
+```bash-out
+/fs/ess/PAS3493/people/jelmer/garrigos/fastq/S71_R1.fastq.gz
+/fs/ess/PAS3493/people/jelmer/garrigos/fastq/S71_R2.fastq.gz
+```
+
+A related option is `-empty`, which is handy to spot output files
+that were created but never filled, e.g. because an analysis step failed:
+
+```sh
+# (All the dummy files you created with 'touch' are empty, so this lists them all)
+find data/seqs -type f -empty
+```
+
+With `-mmin` (minutes) and `-mtime` (days),
+you can select files by when they were last modified:
+
+```sh
+# Files modified less than 60 minutes ago:
+find data/seqs -mmin -60
+
+# Files modified more than 30 days ago:
+find /fs/ess/PAS3493/people/$USER -type f -mtime +30
+```
 
 ### Running commands on `find`'s results
 
@@ -468,44 +537,100 @@ With `-exec`, you can use any command to operate on the files that you found.
 Finally, note that for the common operation of deleting files, a shortcut exists:
 
 ```sh
-find zmays-snps/data/seqs -name "*-temp.fastq" -delete
+find data/seqs -name "*-temp.fastq" -delete
 ```
 
-## The `xargs` command to repeat commands without loops
+::: exercise
+#### {{< fa user-edit >}} Exercise: `find`
+
+a. The practice dataset contains gzip-compressed (`.gz`) files of more than one type.
+   Using a single `find` command,
+   list all `.gz` files in `garrigos` that are *not* FASTQ files.
+
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
+
+   ```bash
+   find /fs/ess/PAS3493/people/$USER/garrigos -name "*.gz" "!" -name "*.fastq.gz"
+   ```
+   ```bash-out
+   /fs/ess/PAS3493/people/jelmer/garrigos/ref/annot.gtf.gz
+   ```
+   </details>
+
+b. Say that your working dir contains a file called `notes.gz`,
+   and you forget the quotes around the pattern:
+
+   ```bash
+   # [Hypothetical - don't run]
+   find /fs/ess/PAS3493/people/$USER/garrigos -name *.gz
+   ```
+
+   What would happen, and why?
+
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
+
+   Recall from w4b that the shell expands wildcards _before_ the command runs.
+   The shell therefore replaces `*.gz` with `notes.gz`,
+   the only matching file in your working dir,
+   and `find` receives `-name notes.gz`.
+   It then looks only for files that are named exactly `notes.gz`,
+   and finds nothing in `garrigos`.
+
+   Quoting the pattern prevents the shell from expanding it,
+   so `find` receives the `*` and does the matching itself.
+   </details>
+:::
+
+## `xargs` to repeat commands
 
 `xargs` is to be read/pronounced as `x-args`, where "*args*" means "*arguments*".
-
 This command passes arguments, supplied via standard in, on to another command.
-For example...
+For example, first recreate the temporary files, then remove them with `xargs`:
 
 ```sh
+touch data/seqs/zmays{A,C}_R{1,2}-temp.fastq
+
 find data/seqs -name "*-temp.fastq" | xargs rm
 ```
 
-...is equivalent to the following,
+The above command is equivalent to the following,
 where `rm` receives the very same list of files as its arguments:
 
 ```sh
+# [Don't run this - for illustration only]
 rm data/seqs/*-temp.fastq
 ```
 
-However, with `xargs`, you can bypass the problem of a *maximum number of arguments* to `rm`.
-Specifically, you can easily pass one argument at a time with `-n 1`:
+Unlike the glob, though, `xargs` won't run into the *argument list too long* error:
+if the list of files is too long for a single command,
+`xargs` automatically splits it up and runs `rm` several times.
 
-```sh
-find data/seqs -name "*-temp.fastq" | xargs -n 1 rm
-```
+Two other useful `xargs` options are:
 
-This command runs `rm` as many times as there are `*-temp.fastq` files.
+- `-I {}` to put each item at a specific place in the command,
+  e.g. when the file name should not be the last argument:
+
+  ```sh
+  mkdir -p backup
+  find data/seqs -name "*_R1.fastq" | xargs -I {} cp {} backup/
+  ```
+
+- `-P` to run several commands in parallel,
+  combined here with `-n 1` to process one file per command:
+
+  ```sh
+  # [Don't run this - for illustration only]
+  # Compress FASTQ files with gzip, up to 4 files at a time:
+  find fastq_dir -name "*.fastq" | xargs -n 1 -P 4 gzip
+  ```
 
 ### `xargs` versus `find -exec`
 
 By using `xargs` instead of `find -exec`,
 you separate the process that finds the files you want to operate on,
 from the actual operations.
-
 This can be beneficial, such as when you want to carefully inspect a list of files
-doing anything --- for example:
+before doing anything --- for example:
 
 - Create some dummy files to practice on:
 
@@ -532,11 +657,10 @@ doing anything --- for example:
   cat files-to-delete.txt | xargs rm
   ```
 
-### `find` => `xargs` and spaces in file names
+### `find | xargs` and spaces in file names
 
-As always, spaces in file names can trip you up --
+As always, spaces in file names can trip you up ---
 but you were promised a solution with `find` and `xargs`!
-
 However, out of the box, the below does in fact fail:
 
 ```sh
@@ -553,7 +677,7 @@ rm: cannot remove 'B.txt': No such file or directory
 
 The solution is to use `-print0` with `find`,
 so it prints files with a "null byte" as the delimiter.
-Then, you also need to tell `xargs` about this, using `-0`:
+Additionally, you need to tell `xargs` about the null-byte delimiter using `-0`:
 
 ```sh
 find . -name "samples [AB].txt" -print0 | xargs -0 rm -v
@@ -562,3 +686,53 @@ find . -name "samples [AB].txt" -print0 | xargs -0 rm -v
 removed './samples A.txt'
 removed './samples B.txt'
 ```
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: `xargs`
+
+a. Predict the output of each of these two commands, then run them to check:
+
+   ```bash
+   find data/seqs -name "*_R1.fastq" | xargs echo
+   find data/seqs -name "*_R1.fastq" | xargs -n 1 echo
+   ```
+
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
+
+   ```bash-out
+   data/seqs/zmaysA_R1.fastq data/seqs/zmaysB_R1.fastq data/seqs/zmaysC_R1.fastq
+   ```
+   ```bash-out
+   data/seqs/zmaysA_R1.fastq
+   data/seqs/zmaysB_R1.fastq
+   data/seqs/zmaysC_R1.fastq
+   ```
+
+   In the first command, `xargs` runs `echo` once with all three file names
+   as arguments, so they are printed on a single line.
+   In the second command, `-n 1` makes `xargs` run `echo` three times,
+   with one file name each time.
+   </details>
+
+b. Before running a command like `find ... | xargs rm`,
+   how could you use `echo` to see exactly what would be run,
+   without removing anything?
+
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
+
+   Put `echo` in front of the actual command:
+
+   ```bash
+   find data/seqs -name "*_R1.fastq" | xargs echo rm
+   ```
+   ```bash-out
+   rm data/seqs/zmaysA_R1.fastq data/seqs/zmaysB_R1.fastq data/seqs/zmaysC_R1.fastq
+   ```
+
+   Now `xargs` runs `echo`, which prints the full `rm` command instead of running it.
+   This kind of "dry run" is a good habit before running `xargs`
+   with a destructive command.
+   </details>
+:::
+
+<br>

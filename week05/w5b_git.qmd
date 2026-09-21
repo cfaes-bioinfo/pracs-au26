@@ -17,7 +17,7 @@ other-links:
   - text: "Week 5 overview"
     icon: check2-all
     href: w5_overview.html
-  - text: "w5a: Git intro (slides)"
+  - text: "w5a: Version control intro (slides)"
     icon: easel
     href: w5a_git-intro.html
   - text: "w5c: Remotes on GitHub"
@@ -101,7 +101,7 @@ and won't ever have to be redone unless you want to make changes.
 
 These steps are all done with `git config --global`:
 
-1. Make your name known to Git,
+1. Make your **name** known to Git,
    since it will be recorded in every commit you make ---
    your actual first and last name (***not** your OSC or GitHub username!*):
 
@@ -109,7 +109,7 @@ These steps are all done with `git config --global`:
    git config --global user.name 'John Doe'
    ```
 
-2. Make your email address known
+2. Make your **email** address known
    (_should match the address associated with your GitHub account,_
    _if you already created one_):
 
@@ -117,7 +117,7 @@ These steps are all done with `git config --global`:
    git config --global user.email 'doe.391@osu.edu'
    ```
 
-3. Set a default text editor for Git.
+3. Set a default **text editor** for Git.
    (Git may occasionally open a text editor for you.
    Even though we're using VS Code,
    here it is better to select a text editor that runs in the shell, like `nano`^[
@@ -130,14 +130,15 @@ These steps are all done with `git config --global`:
    git config --global core.editor "nano -w"
    ```
 
-4. Change the default "branch" name to `main`
-   (Git's default is still the older `master`, whereas GitHub uses `main`):
+4. Change the default "**branch**" name to `main`
+   (Git's default is still the older `master`, whereas GitHub uses `main`)^[
+    We'll talk a bit about what branches are later on.]:
 
    ```sh
    git config --global init.defaultBranch main
    ```
 
-5. Finally, check whether you successfully changed the settings:
+5. Finally, **print** your current settings to check whether you successfully changed them:
 
    ```sh
    git config --global --list
@@ -175,11 +176,9 @@ and VS Code's Git functionality will work with the repo you'll create here.
 open each project's dir as the folder in VS Code.)
 
 1. Click {{< fa bars >}} &rarr; `File` &rarr; `Open Folder`.
-
 2. Type/select `/fs/ess/PAS3493/people/<user>/week05/evo`,
    replacing `<user>` with your user name.
    _This will cause VS Code to reload._
-
 3. Open a new terminal and check that you are in the `evo` dir:
 
    ```sh
@@ -202,9 +201,9 @@ git init
 Initialized empty Git repository in /fs/ess/PAS3493/people/jelmer/week05/evo/.git/
 ```
 
-Can you confirm that this hidden `.git` dir is there?
+Can you confirm that this hidden dir is there?
 The `ls` command will show hidden files and dirs with the `-a` option,
-and indeed, the `.git` dir is there:
+and indeed, the `.git` dir is present:
 
 ```bash
 # (ls -a will also show the current dir "." and the parent dir "..")
@@ -256,13 +255,16 @@ Git reports that you:
 ::: {.callout-note collapse="true"}
 #### The "not a git repository" error _(Click to expand)_
 
-If you run a Git command, like `git status`, outside of a repo, you'll get this error:
+If you run a Git command, like `git status`,
+outside of an existing Git repository, you'll get this error:
 
 ```bash-out-solo
 fatal: not a git repository (or any of the parent directories): .git
 ```
 
 That usually just means that you're in the wrong dir: check with `pwd`.
+The bigger point is that Git commands only work inside a Git repository,
+not in any other directory.
 :::
 
 ### Your first Git commit
@@ -294,7 +296,7 @@ But as mentioned in the intro slides, Git does not automatically start "tracking
 that is, it won't automatically include all files that are in your dir in the repository.
 Instead, it tells you the file is "Untracked" and gives a hint on how to add it to the repository.
 
-**Start tracking the file and stage it in one go** with `git add`:
+Start **tracking** the file and **stage** it in one go with `git add`:
 
 ``` sh
 git add origin.txt
@@ -346,9 +348,9 @@ You've made your first commit!
 Here is another way of visualizing how changes are staged and committed in Git ---
 and of the three areas that files can be in:
 
-1. The **working tree (or working dir)** is where you make changes to files.
-2. The **staging area (or Index)** is where you stage changes to be included in the next commit.
-3. The **repository (or commit history)** is where committed changes are stored.
+1. The **working tree** (also called working dir) is where you make changes to files.
+2. The **staging area** (also called **Index**) is where you stage changes to be included in the next commit.
+3. The **commit history** is where committed changes are stored.
    It has many "layers" of commits, and you can go back to any of them at any time.
 
 ![](/img/git-do2.png){fig-align="center" width="55%" .no-border fig-alt="A diagram of the process of adding and committing changes with Git commands" .lightbox}
@@ -427,7 +429,7 @@ and make a first commit containing a single file, `notes.md`.
 In which order should you run the commands below?
 _(Only figure out the order --- don't run these commands.)_
 
-```bash
+```{.bash code-line-numbers="true"}
 git commit -m "Start notes"
 git init
 cd myproject
@@ -599,14 +601,13 @@ That seems more convenient than separately `git add`ing files before committing.
 However, rather than committing everything at once (say, at the end of each day),
 it's good practice to make each commit a unit of progress worth saving ---
 and as such, to **create separate commits for distinct changes**.
-For example, say you use `git status` to check which files you've changed
-since your last commit, and you find that you have:
+
+For example, say you use `git status` and find that since your last commit you have:
 
 - Updated a README file to include more information about your samples.
 - Worked on a script to run quality control of sequence files.
 
-These are completely unrelated changes,
-and it's **not** recommended to include both in a single commit.
+These are unrelated changes, and it's **not** recommended to include both in a single commit.
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise 2: Separate commits
@@ -688,10 +689,10 @@ Having these files reported every time you run `git status` can get annoying and
 make it harder to spot changes and untracked files that you _do_ want to add.
 More importantly, it makes it easy to commit such files by accident ---
 and once a large data file has been committed,
-it stays in the repo's history even if you later delete it.
+it stays in the repo's history even if you later delete it (!).
 
-To deal with this, you can **tell Git not to pay attention to certain files** by adding
-file names and wildcard selections to a special file called `.gitignore`.
+To deal with this, you can **tell Git not to pay attention to certain files** by
+adding file names and wildcard selections to a special file called `.gitignore`.
 
 As an example,
 let's start by adding some types of content you would not want to commit
@@ -775,8 +776,15 @@ data/
 
 The first line makes Git ignore everything in the `data` dir,
 and the second makes it ignore everything that ends in a `~`.
-That is, `.gitignore` files accept the same **wildcard patterns** as the shell,
-so `*` matches any string of characters.
+That is:
+
+- `.gitignore` files accept the same **wildcard patterns** as the shell,
+  so `*` matches any string of characters.
+
+- But unlike wildcards in the shell, which only match files in the current dir,
+  these patterns apply **across the entire repo**:
+  `*~` will also match files ending in `~` in any subdir
+  (and `data/` will match a `data` dir at any level).
 
 ::: {.callout-tip collapse="true"}
 #### It doesn't matter _how_ you change files _(Click to expand)_
@@ -823,7 +831,7 @@ git commit -m "Added a gitignore file"
    *.log
    ```
 
-   Which of these new files would Git _not_ ignore?
+   Which of these new files would Git now ignore?
 
    a) `results/counts.tsv`
    b) `run.log`
@@ -833,7 +841,7 @@ git commit -m "Added a gitignore file"
    <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-   Only **d)**.
+   It would ignore all except **d)**.
    `results/counts.tsv` is inside an ignored dir, and both `.log` files match `*.log`.
    Note that c) is ignored too: patterns like `*.log` (and `results/`, too)
    match in any dir of the repo, not just in the top-level dir.
@@ -842,7 +850,7 @@ git commit -m "Added a gitignore file"
 
 2. Say that you add the line `todo.txt` to the `.gitignore` file of your
    `evo` repo, and then append another line to `todo.txt`.
-   Would `git status` then report that `todo.txt` was modified?
+   What do you think, would `git status` then report that `todo.txt` was modified?
 
    <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
@@ -859,7 +867,7 @@ git commit -m "Added a gitignore file"
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: callout-tip
-#### Good project file organization makes ignoring files easy
+#### Good project file organization makes ignoring files easier
 
 If you keep your data and results in their own top-level dirs, as recommended in week 2,
 the two lines `data/` and `results/` in your `.gitignore` file are all you need to ignore them.
@@ -957,7 +965,7 @@ those changes are gone for good --- Git cannot undo a `git restore`.
 ::: exercise
 #### {{< fa user-edit >}} Exercise 5: What can Git restore?
 
-In which of these situations can `git restore` **not** get back what you lost?
+In which of these situations can `git restore` get back what you lost?
 
 a) You accidentally removed a new file that you had never added with `git add`.
 b) You accidentally removed a whole dir of committed files with `rm -r`.
@@ -967,7 +975,7 @@ c) You had edited a committed file without staging or committing those edits,
 <!----
 <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-The correct answers are **a)** and **c)**.
+The only correct answer is **b)**.
 Git can only restore versions of files that it has stored.
 It never stored anything for the file in a), nor for the uncommitted edits in c):
 there, `git restore` would only give you the last committed version.
@@ -976,7 +984,7 @@ In b), `git restore <dirname>` brings back the whole dir.
 ---->
 :::
 
-## VS Code Git functionality
+## VS Code's Git functionality
 
 VS Code has built-in Git functionality,
 which can be more user-friendly than the Git command-line interface,
@@ -1034,13 +1042,14 @@ of the wide side bar.
 (The icon should have an encircled `1` inside it,
 because we made one change since the last commit!)
 
-The side bar should now show two sections --- **CHANGES** at the top and
-**GRAPH** at the bottom --- which together replicate the Git functionality we
-have so far used on the command line. Starting with the bottom one:
+The side bar should now show two sections,
+**CHANGES** at the top and **GRAPH** at the bottom,
+which together replicate the Git functionality we have so far used on the command line.
+Starting with the bottom one:
 
 <hr style="height:1pt; visibility:hidden;" />
 
-- "**GRAPH**" (bottom) --- this shows a visual representation of the commit
+- "**GRAPH**" (bottom) --- shows a visual representation of the commit
   history of the repo, similar to `git log --oneline`.
 
 :::
@@ -1054,8 +1063,8 @@ have so far used on the command line. Starting with the bottom one:
 ::: {.columns}
 ::: {.column}
 
-- "**CHANGES**" (top) --- here, you can see the files that have been modified since
-  the last commit. You can stage changes, make commits, and more.
+- "**CHANGES**" (top) --- shows the files that have been modified since the last commit.
+  You can stage changes, make commits, and more.
   You can also click on a file name to see the specific changes made to that file,
   which we'll do now.
 
@@ -1067,7 +1076,7 @@ have so far used on the command line. Starting with the bottom one:
    which has an **`M`** (for "modified") next to it,
    as shown in the screenshot on the right.
 
-2. Then, your editor should show a nice overview of the changes made to the file,
+2. Then, your editor should show a nice **overview of the changes made** to the file,
    with the old version on the left, the new version on the right,
    and changes highlighted in color (green for additions, red for deletions) ---
    as shown in the screenshot below:
@@ -1094,7 +1103,7 @@ showing the old version on the left and the new version on the right.
 ::: {.callout-note collapse="true"}
 #### Showing changes on the command line with `git diff` *(Click to expand)*
 
-The `git diff` command shows changes made to tracked files.
+The `git diff` command also shows changes made to tracked files.
 By default, for each file, it shows changes between the **working tree**
 and either the last commit or the stage/Index, depending on whether you have staged the file.
 
@@ -1139,7 +1148,7 @@ Two more notes on `git diff`:
 ### Staging and committing
 
 Finally, let's commit the change that you made to the to-do list,
-now using the Source Control side bar:
+now using the Source Control side bar instead of Git commands:
 
 1. Hover over `todo.txt` under **Changes**,
    and click the **`+`** icon that appears to stage the file.
