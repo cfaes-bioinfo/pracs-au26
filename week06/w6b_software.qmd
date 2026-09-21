@@ -164,39 +164,41 @@ Activity Bar, with the Extensions icon (bottom) highlighted.
 ## Intermezzo II: The FastQC software
 
 As an example piece of bioinformatics software,
-we will use FastQC (@andrews2010) in this session.
+we will use FastQC [@andrews2010] in this session.
 FastQC is a ubiquitous tool for **quality control of FASTQ files**:
 Running FastQC or a similar program is the first step in nearly any
-high-throughput sequencing project.
-FastQC is also a good introductory example of a CLI tool.
+high-throughput sequencing project,
+and it's is a good introductory example of a CLI tool.
 
 For each FASTQ file that it analyzes,
 FastQC outputs an **HTML file** that you can open in your browser with about a
 dozen graphs showing different QC (Quality Control) metrics.
 The most important one is this per-base quality score graph:
 
-![A FastQC per-base quality score graph for files with reasonably good quality reads. The y-axis shows Phred quality scores (higher is better, see also the color-coding) and the x-axis shows the position along the read.](../img/fastqc_good.png){fig-align="center" width="70%" fig-alt="An example FastQC per-base quality graph." .lightbox}
+![A FastQC per-base quality score graph for files with reasonably good quality reads.<br>The y-axis shows Phred quality scores (higher is better, see also the color-coding),<br>and the x-axis shows the position along the read.](../img/fastqc_good.png){fig-align="center" width="70%" fig-alt="An example FastQC per-base quality graph." .lightbox}
 
-## Loading software at OSC with Lmod modules
+## Loading software at OSC using modules
 
-As discussed in the previous lecture,
-much of the software installed at OSC can only be used after its
-**module is explicitly loaded**.
+As discussed in the previous lecture, much of the software installed at OSC can
+only be used after its **module is explicitly loaded**.
 You can load, unload, and search for available software modules using the
 `module` command.
 
+::: {.callout-warning appearance="simple"}
+The three OSC clusters mostly have the same software installed,
+but there are some differences.
+:::
+
 ### Searching for available modules
 
-OSC OnDemands has a [Module Browser](https://ondemand.osc.edu/pun/sys/dashboard/module-browser)
+OSC OnDemand has a [Module Browser](https://ondemand.osc.edu/pun/sys/dashboard/module-browser)
 that you can use to search for available software modules.
-
-Most clusters have the same software installed, but there are some differences.
-
 You can also search for available software in the shell
 using two subtly different `module` commands:
 
 - `module spider` lists all installed modules.
-- `module avail` lists modules that *can be directly loaded* given the current environment
+- `module avail` lists modules that can be **loaded directly** given the current
+  shell environment
   (i.e., when taking into account which other software has been loaded,
   which can make a difference).
 
@@ -220,19 +222,18 @@ module spider fastqc
 ```
 
 We can see that `fastqc` is available, namely version `0.12.1`
-(that is, the module is printed as `<software>/<version>`).
+(the module is printed as `<software>/<version>`).
 
 ::: {.callout-warning}
 #### Case-sensitivity
-These two search commands are not case-sensitive -- but `module load`,
-covered below, _is_ case-sensitive.
+These two search commands are not case-sensitive,
+but `module load` (below) _is_ case-sensitive.
 :::
 
 ### Loading modules
 
-All other Lmod software functionality is also accessed using `module` commands.
+Other module software functionality is also accessed using `module` commands.
 For instance, to make a program available to you, use the `load` command.
-
 But first, let's confirm that it is not possible to use FastQC before doing so:
 
 ```bash
@@ -245,14 +246,14 @@ Failed to search for file: GDBus.Error:org.freedesktop.DBus.Error.NameHasNoOwner
 
 Notes on the above command:
 
-- The command to run FastQC is `fastqc`
+- The command to run FastQC is `fastqc`.
 - Like the shell commands you've learned so far, `fastqc` has many options,
-  and we can pass FASTQ files as arguments.
-- To test for the program's availability, we simply ran `fastqc -v`,
-  which prints the FastQC version.
+  and files (here, FASTQ files) can be passed as arguments.
+- To test for the program's availability, we ran `fastqc -v`,
+  which would print the FastQC version if it were available.
 
-Now, load the module --
-specify the module name and its version exactly as `module spider` printed it:
+Now, load the module by specifying the module name and its version exactly
+as `module spider` printed it:
 
 ```bash
 module load fastqc/0.12.1
@@ -267,26 +268,22 @@ fastqc -v
 FastQC v0.12.1
 ```
 
-Success! 🥳
+Success! [🥳]{style="font-size: 1.2em;"}
 
 ### Final notes on modules
 
 Module loading does **not persist across shell sessions**.
 Whenever you are in a fresh shell session
 (including but not limited to after you log into OSC for the day),
-you'll have to reload any modules you want to use!
-And when you run a program that is in a module using a shell script,
-include the `module load` command in the script --
-we'll see this next week.
+you'll have to reload any modules you want to use.
 
 Here, we only covered the very basics of using `module`.
-To learn a bit more, you can read the boxes below.
-In class, we will not go into further detail:
-for programs like FastQC that are available as modules,
-the basics above are all you need,
-and for other programs, we will use containers.
+Since not all software is available as modules,
+we will focus more closely on the more universal approach of using containers,
+which has the added benefit of being more reproducible.
+That said, to learn a bit more about modules, you can read the boxes below.
 
-::: {.callout-tip collapse="true"}
+::: {.callout-note collapse="true"}
 #### Other `module` commands  _(Click to expand)_
 
 - To **check which modules are loaded**, use `module list`.
@@ -299,7 +296,7 @@ and for other programs, we will use containers.
   ```
   ```{.bash-out}
   Currently Loaded Modules:
-    1) intel-oneapi-mkl/2023.2.0   2) intel/2021.10.0   3) mvapich/3.0   4) modules/sp2024   5) fastqc/0.12.1
+    1) intel-oneapi-mkl/2023.2.0   2) intel/2021.10.0   3) mvapich/4.1   4) modules/sp2024   5) fastqc/0.12.1
   ```
 
 - Occasionally, when you run into conflicting (mutually incompatible) modules,
@@ -316,8 +313,10 @@ and for other programs, we will use containers.
 :::
 
 ::: {.callout-note collapse="true"}
-#### Another `module load` example: two-step procedure with R _(Click to expand)_
+#### Another `module load` example: R _(Click to expand)_
 
+If you're familiar with R, you may only have used it within RStudio,
+but R can also be started from the command line.
 First, test if R is available without loading anything:
 
 ```bash
@@ -333,87 +332,48 @@ Nope. Is it available as a module?
 module spider R
 ```
 ```bash-out
-------------------------------------------------------------------------------------------------------------------------------------------------------------
-  R: R/4.4.0
-------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  R:
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+     Versions:
+        R/4.4.0
+        R/4.5.2
      Other possible modules matches:
-        amber, app_code_server, app_jupyter, blender, connectome-workbench, darshan-runtime, darshan-util, deepemhancer, fmriprep, freesurfer, ...
+        amber  app_code_server  app_jupyter  app_marimo  benchmark  blender  connectome-workbench  cryosparc-worker  darshan-runtime  darshan-util  deepemhancer  fmriprep  freesurfer  gromacs  gurobi  ibamr  ior  libjpeg-turbo  linaro-forge  mricrogl  mriqc  ...
 
-    You will need to load all module(s) on any one of the lines below before the "R/4.4.0" module is available to load.
-
-      gcc/12.3.0
-
-    Help:
-      R is 'GNU S', a freely available language and environment for
-      statistical computing and graphics which provides a wide variety of
-      statistical and graphical techniques: linear and nonlinear modelling,
-      statistical tests, time series analysis, classification, clustering,
-      etc. Please consult the R project homepage for further information.
-
-------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   To find other possible module matches execute:
 
       $ module -r spider '.*R.*'
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  For detailed information about a specific "R" package (including how to load the modules) use the module's full name.
+  Note that names that have a trailing (E) are extensions provided by other modules.
+  For example:
+
+     $ module spider R/4.5.2
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
-Yes, so let's try to load it:
+Let's load the most recent version, currently `4.5.2`:
 
 ```bash
-module load R/4.4.0
-```
-```bash-out
-Lmod has detected the following error:  These module(s) or extension(s) exist but cannot be loaded as requested: "R/4.4.0"
-
-   You encountered this error for one of the following reasons:
-   1. Missing version specification: On Ascend, you must specify an available version.
-   2. Missing required modules: Ensure you have loaded the appropriate compiler and MPI modules.
-
-   Try: "module spider R/4.4.0" to view available versions or required modules.
-
-   If you need further assistance, please contact oschelp@osc.edu with the subject line "lmod error: R/4.4.0"
+module load R/4.5.2
 ```
 
-That didn't work.
-Carefully reading the earlier message printed by `module spider`,
-it appears you first need to load the module `gcc/12.3.0` before you can load R.
-Specifically, it said:
-
-```bash-out
-    You will need to load all module(s) on any one of the lines below before the "R/4.4.0" module is available to load.
-
-      gcc/12.3.0
-```
-
-Therefore, let's try to load `gcc` along with `R` --
-you can use the command below to load both at the same time:
-
-```bash
-module load gcc/12.3.0 R/4.4.0
-```
-```bash-out
-Lmod is automatically replacing "intel/2021.10.0" with "gcc/12.3.0".
-
-
-Due to MODULEPATH changes, the following have been reloaded:
-  1) mvapich/3.0
-```
-
-Finally, let's check that R works:
+Next, let's check that R works:
 
 ```bash
 R
 ```
 ```bash-out
-R version 4.4.0 (2024-04-24) -- "Puppy Cup"
-Copyright (C) 2024 The R Foundation for Statistical Computing
+R version 4.5.2 (2025-10-31) -- "[Not] Part in a Rumble"
+Copyright (C) 2025 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
-
-  Natural language support but running in an English locale
 
 R is a collaborative project with many contributors.
 Type 'contributors()' for more information and
@@ -434,25 +394,7 @@ type `q()` or use the general keyboard shortcut for exiting,
 ::: exercise
 #### {{< fa user-edit >}} Exercise: Modules
 
-1. Search for the program MultiQC^[
-   MultiQC summarizes the outputs of FastQC and many other bioinformatics programs.]
-   -- is it available?
-
-   <!----
-   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
-
-   No, it isn't available!
-
-   ```bash
-   module spider multiqc
-   ```
-   ```bash-out
-   Lmod has detected the following error:  Unable to find: "multiqc".
-   ```
-   </details>
-   ---->
-
-2. Search for the program STAR^[
+1. Search for the program STAR^[
    STAR is an RNA-Seq aligner that we will use to align the reads from our
    example dataset to our reference genome.]
    -- is it available?
@@ -481,8 +423,8 @@ type `q()` or use the general keyboard shortcut for exiting,
    </details>
    ---->
 
-3. Load the STAR module and test whether you can use the program
-   by running `STAR` (without adding any options).
+2. Load the STAR module and test whether you can use the program
+   by running `STAR` (in this case, without adding any options).
 
    <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
@@ -505,47 +447,29 @@ type `q()` or use the general keyboard shortcut for exiting,
    </details>
    ---->
 
-4. Predict what each of the following will do, and then check whether you were right:
-   a. `module load STAR/2.7.10b`
-   b. `module unload star/2.7.10b`, followed by `STAR`
+3. Use `module spider` to see if the program Salmon^[
+   Salmon is a tool for quantifying transcript abundance from RNA-Seq data.]
+   is available. Then, look for Salmon in the OnDemand Module Browser.
+   Why is it not available as a module?
 
    <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-   a. You get an error, because `module load` is case-sensitive:
-      the module name is lowercase `star`,
-      even though the command that it provides is uppercase `STAR`.
-   b. You get a "command not found" error:
-      after unloading its module, STAR is no longer available.
-
-   </details>
-   ---->
-
-5. _Bonus:_ Open a Unix shell on the Cardinal cluster:
-   in OnDemand, click "Clusters" in the blue top bar,
-   and then "Cardinal Shell Access".
-   Also check there whether STAR is available and which versions --
-   does it differ from the situation on Pitzer?
-
-   <!----
-   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
-
-   Yes, two different versions are available on Cardinal,
-   including a more recent version than on Pitzer:
+   No, it isn't available as a module!
 
    ```bash
-   module spider star
+   module spider salmon
    ```
    ```bash-out
-   -----------------------------------------------------------------------------
-   star:
-   --------------------------------------------------------------------------------
-     Versions:
-        star/2.7.10b
-        star/2.7.11b
-     Other possible modules matches:
-        starccm
+   Lmod has detected the following error:  Unable to find: "salmon".
    ```
+
+   It's listed in the OnDemand Module Browser, but if you click on it,
+   you will see that it is only available on the Cardinal cluster,
+   which is not the cluster we are using.
+
+   ![](/img/ondemand-modules-salmon.png){fig-align="center" width="80%" fig-alt="A screenshot showing that Salmon is only available on the Cardinal cluster." .lightbox}
+
    </details>
    ---->
 
@@ -553,42 +477,14 @@ type `q()` or use the general keyboard shortcut for exiting,
 
 ## A practical example: running FastQC on a FASTQ file
 
-We will run FastQC using the module we loaded earlier.
-Module loading does not persist across shell sessions,
-so to be sure FastQC is available, (re)load the module:
-
-```bash
-module load fastqc/0.12.1
-```
-
+Now that we've loaded the FastQC module, let's try to run it on a FASTQ file.
 To analyze a FASTQ file with default FastQC settings,
-the command is simply `fastqc` followed by the FASTQ file path --
-and we could use one of the FASTQ files in our Garrigos practice data set:
+the command is simply `fastqc` followed by the FASTQ file path ---
+and we could use one of the FASTQ files in our @garrigós2025 practice data set:
 
 ``` bash
 # [Don't run this]
 fastqc ../garrigos/fastq/S63_R1.fastq.gz
-```
-
-To shorten subsequent commands,
-let's start by assigning the FASTQ file path to a variable:
-
-```bash
-FASTQ_R1=../garrigos/fastq/S63_R1.fastq.gz
-```
-
-```bash
-ls -lh "$FASTQ_R1"
-```
-```bash-out
--rw-rw----+ 1 jelmer PAS0471 21M Sep  9 13:46 ../garrigos/fastq/S63_R1.fastq.gz
-```
-
-With that, the above command becomes:
-
-```bash
-# [Don't run this]
-fastqc "$FASTQ_R1"
 ```
 
 However, an annoying default behavior of FastQC is that it writes its output files
@@ -598,8 +494,9 @@ this means mixing your raw data with your results, which we don't want!
 ### Changing the output directory?
 
 To figure out how to change that behavior,
-consider that many standard shell commands and bioinformatics tools alike
-have an option `-h` and/or `--help` to print usage information to the screen.
+consider that --- as you already know from standard shell commands ---
+most bioinformatics tools also have a `-h` and/or `--help` option
+that prints usage information to the screen.
 Let's try that:
 
 ``` bash
@@ -622,8 +519,9 @@ SYNOPSIS
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise: FastQC help and output dir
-Look at FastQC's help info,
-and figure out which option can be used to specify a custom output directory.
+
+1. Look at FastQC's help info, and figure out which option can be used to specify
+   a custom output directory.
 
 <!----
 <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
@@ -643,6 +541,20 @@ fastqc -h
 </details>
 ---->
 
+2. Adding that option, what would the full command be to run FastQC on the
+   `S63_R1.fastq.gz` file, and write the output files to a `results/fastqc` dir?
+
+
+<!----
+<details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+```bash
+fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
+```
+
+</details>
+---->
+
 :::
 
 ### The final FastQC command
@@ -655,7 +567,7 @@ try to run the following FastQC command:
 mkdir -p results/fastqc
 
 # Now we run FastQC:
-fastqc --outdir results/fastqc "$FASTQ_R1"
+fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
 ```
 ``` bash-out
 Started analysis of S63_R1.fastq.gz
