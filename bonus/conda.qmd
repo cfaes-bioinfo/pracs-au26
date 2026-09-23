@@ -23,6 +23,9 @@ other-links:
   - text: "w6b: Using software"
     icon: book
     href: ../week06/w6b_software.html
+  - text: "Week 6 exercises"
+    icon: pencil
+    href: ../week06/w6_exercises.html
 language:
   title-block-published: "Published on"
   title-block-modified: "Page last modified"
@@ -30,31 +33,48 @@ language:
 
 ----------------------------------------------------------------------------------------------------
 
-<br>
+<hr style="height:1pt; visibility:hidden;" />
+<hr style="height:1pt; visibility:hidden;" />
 
-## Conda basics
+## Introduction to Conda
 
 Conda can create so-called **environments** in which you can install
 one or more software packages.
+Compared to containers (see the comparison in [w6a](../week06/w6a_osc.qmd)),
+Conda works especially well when you want to combine several programs in a single
+environment, or when you want to add programs to an existing environment later.
 
-As you'll learn below, as long as a program is available in one of the online Conda
-repositories (and this is nearly always the case for open-source bioinformatics programs),
-then installing it:
+::: {.callout-tip appearance="simple"}
+This makes Conda particularly handy for bioinformatics "utilities"
+like SeqKit, SAMtools, and BEDTools,
+which you will often want to use **interactively** (not just in scripts),
+and where you may want to **pipe** the output of one program into another.
+With all of them in one active environment,
+you can simply type `samtools ... | seqkit ...`,
+whereas with containers,
+every command would need its own `apptainer exec ...` prefix.
+:::
+
+Conda installs programs from the same online software repositories that the
+Seqera containers you used in [w6b](../week06/w6b_software.qmd) were built from ---
+recall the `bioconda::` and `conda-forge::` prefixes of the container search hits.
+So, any program with a `bioconda::` or `conda-forge::` hit in the Seqera search
+can also be installed with Conda.
+As you'll learn below, installing a program with Conda:
 
 - Is quite straightforward
-- Is very uniform, i.e. done with a procedure that is nearly identical regardless
-  of the program you are installing
-- Doesn't require adminastrative privileges
+- Is very uniform (the procedure is nearly identical for any program)
+- Doesn't require administrative privileges
 
-Under the hood,
-a Conda environment is "merely" a directory that includes the executable (binary)
-files for the program or programs in question.
+Under the hood, a Conda environment is "merely" a **directory** that includes
+the **executable** (binary) files for the program or programs in question.
 When you activate a Conda environment,
 that directory will be added to the collection of locations that the computer
-checks when you try to run a program by entering a command (the `$PATH`).
+checks when you try to run a program by entering a command
+(this is called the `$PATH`).
 
-Like Lmod modules, Conda has a main command (`conda`) and several sub-commands
-(`deactivate`, `create`, `install`, `update`).
+Like with modules, Conda has a main command (`conda`) and several sub-commands
+(e.g. `create`, `activate`, `deactivate`, and `install`).
 For example, to activate an environment, you would use `conda activate`.
 But before you can do so, you need to create an environment.
 
@@ -66,12 +86,23 @@ Before you can use Conda in any way,
 you always need to load OSC's Miniconda module first:
 
 ```bash
+module load miniconda3/25.11.1-py312
+```
+
+::: {.callout-warning appearance="simple"}
+As of September 2026, the above version is only available on Pitzer.
+You should be on Pitzer now, but if/when you are on one of the other clusters,
+load this module instead:
+
+```bash
 module load miniconda3/24.1.2-py310
 ```
 
+:::
+
 ### One-time Conda configuration
 
-Before you can create our own environments,
+Before you can create your own environments,
 you should first do some one-time configuration[^6].
 The configuration will set the **Conda "channels"** (basically, software repositories)
 you want to use when installing programs.
@@ -85,10 +116,16 @@ We can do this configuration with the `config` sub-command ---
 run the following in your shell:
 
 ```bash
-conda config --add channels defaults     # Added first => lowest priority
-conda config --add channels bioconda
+conda config --add channels bioconda     # Added first => lowest priority
 conda config --add channels conda-forge  # Added last => highest priority
+conda config --set channel_priority strict
 ```
+
+<!----
+We don't add Anaconda's `defaults` channel:
+Bioconda no longer recommends it (mixing it with conda-forge causes conflicts),
+and its terms of service can require a paid license for large organizations.
+---->
 
 Check whether the configuration was successfully saved:
 
@@ -96,23 +133,22 @@ Check whether the configuration was successfully saved:
 conda config --get channels
 ```
 ``` {.bash-out}
---add channels 'defaults'   # lowest priority
---add channels 'bioconda'
+--add channels 'bioconda'   # lowest priority
 --add channels 'conda-forge'   # highest priority
 ```
 
 ### Example: Creating an environment for TrimGalore
 
-You will create a Conda environment for the program TrimGalore,
-which can trim and filter FASTQ files,
-and does not have a system-wide installation at OSC.
+Now, you will create a Conda environment for the program **TrimGalore**,
+which can trim and filter reads in FASTQ files,
+but does not have a system-wide installation at OSC.
 
-Here is the command to all at once create a new Conda environment
-and install TrimGalore into that environment:
+Here is a command that creates a new Conda environment
+and installs TrimGalore into it, all at once:
 
 ```bash
 # [Don't run this - we'll modify this a bit below]
-conda create -y -n trim_galore bioconda::trim-galore
+conda create -y -n trim-galore bioconda::trim-galore
 ```
 
 Let's break that command down:
@@ -129,24 +165,23 @@ Let's break that command down:
 
 By default, Conda will install the **latest available version** of a program.
 If you create an entirely new environment for a program, like we're doing here,
-that default should always apply.
+that default will almost always apply.
 But if you're installing into an environment that already contains other programs,
 it's _possible_ that due to compatibility issues, it will install a different version.
 
-If you want to be explicit about the version you want to install,
-add the version number after **`=`** following the package name,
-and you may then also want to include that version number in
-the Conda environment's name -- try this:
+If you want to explicitly **specify a version** to install,
+add the version number after **`=`** following the package name.
+In that case, you may also want to include that version number in
+the Conda environment's name, as in the below example, which you can run:
 
 ```bash
-conda create -y -n trim_galore-0.6.10 bioconda::trim-galore=0.6.10
+conda create -y -n trim-galore-2.3.0 bioconda::trim-galore=2.3.0
 ```
 ```{.bash-out}
 Retrieving notices: ...working... done
 Channels:
  - conda-forge
  - bioconda
- - defaults
 Platform: linux-64
 Collecting package metadata (repodata.json): done
 Solving environment: done
@@ -168,7 +203,7 @@ Executing transaction: done
 #
 # To activate this environment, use
 #
-#     $ conda activate trim-galore-0.6.10
+#     $ conda activate trim-galore-2.3.0
 #
 # To deactivate an active environment, use
 #
@@ -183,80 +218,91 @@ Minor variations on the `conda create` command above can be used to install
 almost any program for which a Conda package is available,
 which is the vast majority of open-source bioinformatics programs!
 
-However, you may wonder how you would know:
+To find out whether a program is available, what the channel and package name are,
+and which versions exist, you can use the same
+[Seqera Containers search](https://seqera.io/containers) you used in
+[w6b](../week06/w6b_software.qmd):
+for example, searching for Cutadapt gives a `bioconda::cutadapt` hit,
+and its dropdown menu lists the available versions.
 
-- Whether the program is available and what the name of its Conda package is
-- Which Conda channel we should use
-- Which versions are available
-
-To find this out, a good strategy is to simply Google the program name together with
-"conda", e.g. "cutadapt conda" if I wanted to install the Cutadapt program.
-Let's see that in action:
-
-![](../img/conda_google.png){fig-align="center" width="80%" fig-alt="A screenshot of Google searh results for 'conda cutadapt'" .lightbox}
-
-Click on that first link (in my experience, it is always the first Google hit):
-
-![](../img/conda_website2.png){fig-align="center" width="65%" fig-alt="A screenshot of the Conda page for Cutadapt" .lightbox}
-
-### Building the installation command from the online info
-
-When you're "building" you installation command,
-you can take as a template the first of the two example installation we saw above.
-In this case, that was: `conda install bioconda::cutadapt`.
-
-You may notice the `install` subcommand, which we didn't see yet.
-This command would install Cutadapt into _the currently activated Conda environment_.
-Since our strategy here is to create a separate environment for each program,
-installing a program into whatever environment is currently active is not a great idea.
-
-You _can_ use the `install` command with a new environment,
-but then you would first have to create an "empty" environment,
-and _then_ run the install command.
-However, we saw above that we can do all of this in a single command.
-
-To build this create-plus-install command, all we need to do is replace `install`
-in the example command on the Conda website by `create -y -n <env-name>`.
-Then, your full command (without version specification) will be:
+Then, that `bioconda::cutadapt` goes at the end of the `conda create` command:
 
 ```bash
 # [Don't run this - example command]
 conda create -y -n cutadapt bioconda::cutadapt
 ```
 
-To see which **version** of the software will be installed by default,
-and to see which older versions are available:
+And to specify a version, add it after an `=`, e.g. `bioconda::cutadapt=5.1`.
+
+::: {.callout-note collapse="true"}
+#### Alternative: Google and the Anaconda website _(Click to expand)_
+
+Each Conda package also has a page on the Anaconda website,
+which is usually the top hit when you Google the program name together with "conda",
+e.g. "cutadapt conda":
+
+![](../img/conda_google.png){fig-align="center" width="90%" fig-alt="A screenshot of Google search results for 'conda cutadapt'" .lightbox}
+
+::: legend2
+Screenshot of Google search results for "conda cutadapt".
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
+
+![](../img/conda_website2.png){fig-align="center" width="65%" .no-border fig-alt="A screenshot of the Conda page for Cutadapt" .lightbox}
+
+::: legend2
+Screenshot of the Conda page for Cutadapt.
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
+
+The first of the example installation commands shown there,
+`conda install bioconda::cutadapt`, uses the `install` subcommand.
+This installs a program into _the currently active_ Conda environment,
+which is usually not what you want: it's better to give each program
+(or set of programs) a new, dedicated environment.
+
+To turn this into a create-plus-install command like the ones above,
+simply replace `install` with `create -y -n <env-name>`:
+
+```bash
+# [Don't run this - example command]
+conda create -y -n cutadapt bioconda::cutadapt
+```
+
+The Anaconda page also shows which version will be installed by default,
+and which older versions are available:
 
 ![](../img/conda_website_version.png){fig-align="center" width="70%" fig-alt="An annotated screenshot of version options on the Conda website" .lightbox}
-
-For almost any other program,
-you can use the exact same procedure to find the Conda package and install it!
+:::
 
 ## Activating Conda environments
 
-As mentioned above, these environments are (de)activated much like with the Lmod system.
-But while the term "load" is used for Lmod modules,
-the term and command **`activate`** is used for Conda environments ---
+As mentioned above, these environments are activated much like with modules.
+But while the term "load" is used for modules,
+the term and command `activate` is used for Conda environments ---
 it means the same thing.
 
-Now, you should be able to activate the environment
-(using just its name -- see the box below):
+You should be able to **activate** the environment we just created
+(using just its name; more on that [below](#where-conda-environments-are-stored)):
 
 ```bash
-conda activate trim_galore-0.6.10
+conda activate trim-galore-2.3.0
 ```
 ```{.bash-out}
-(trim_galore-0.6.10) [jelmer@p0085 jelmer]$
+(trim-galore-2.3.0) [jelmer@p0085 jelmer]$
 ```
 
 :::{.callout-tip appearance="simple"}
 When you have an active Conda environment,
-its name is displayed in front of your prompt, as shown above!
+its name is displayed as part of your prompt, as shown above!
 :::
 
-After you have activated the _trimgalore_ environment,
-you should be able to use the program.
-To test this, simply run the `trim_galore` command with the `--help` option:
+With the TrimGalore environment activated, you should be able to use the program.
+To test this, simply run the `trim_galore` command
+(note the underscore: the command name differs from the package name)
+with the `--help` option:
 
 ```bash
 trim_galore --help
@@ -270,13 +316,14 @@ trim_galore [options] <filename(s)>
 # [...truncated...]
 ```
 
-Unlike Lmod / `module load`,
+Unlike `module load`,
 Conda will by default only keep **a single environment active**.
 Therefore, when you have environment A active and then activate environment B,
-the program(s) in environment A will no longer be available.
+the active environment will **switch** to B,
+and the program(s) in environment A will no longer be available.
 
 ::: {.callout-note collapse="true"}
-#### The `--stack` option does enable you having multiple Conda environments active _(Click to expand)_
+#### Having multiple environments active with `--stack` _(Click to expand)_
 
 If you want to have multiple Conda environments active at the same time,
 you can do so with the `--stack` option:
@@ -284,13 +331,13 @@ you can do so with the `--stack` option:
 1. Activate the TrimGalore environment, if it isn't already active:
 
    ```bash
-   conda activate trim_galore-0.6.10
+   conda activate trim-galore-2.3.0
    ```
 
 2. "Stack" a MultiQC environment of mine:
 
    ```bash
-   conda activate --stack /fs/ess/PAS0471/jelmer/conda/multiqc
+   conda activate --stack /fs/ess/PAS3493/share/conda/multiqc
    ```
 
 3. Check that you can use both programs --- output not shown,
@@ -303,27 +350,34 @@ you can do so with the `--stack` option:
    ```
 :::
 
+::: callout-note
+#### Deactivating environments
+
+To deactivate the currently active environment,
+run `conda deactivate` (no environment name needed):
+
+```bash
+conda deactivate
+```
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
+
 ::: exercise
 #### {{< fa user-edit >}} Exercise: Create and activate a FastQC environment
 
-The version of FastQC on OSC (0.11.8) is not the latest one (0.12.1).
-Let's assume that you really need the latest version for your analysis:
+OSC has a module for FastQC version 0.12.1.
+But say that you want to exactly reproduce an analysis from a paper
+that used FastQC version 0.11.9.
 
-1. Create a Conda environment for FastQC and install FastQC version 0.12.1 into it.
+1. Create a Conda environment with FastQC version 0.11.9.
 
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-   When you don't specify the version, the latest one should be installed ---
-   at least when you're using a "fresh" environment (there could be complicating
-   factors if you already had other software in the same environment):
-
    ```bash
-   module load miniconda3/24.1.2-py310
-   conda create -y -n fastqc -c bioconda fastqc
+   module load miniconda3/25.11.1-py312
+   conda create -y -n fastqc-0.11.9 bioconda::fastqc=0.11.9
    ```
-
-   But to be more explicit, you could replace the `fastqc` at the end of the line
-   with `fastqc=0.12.1`.
    </details>
 
 2. Activate the environment and check that you have the correct version of FastQC.
@@ -331,47 +385,67 @@ Let's assume that you really need the latest version for your analysis:
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
    ```bash
-   conda activate fastqc
+   conda activate fastqc-0.11.9
    fastqc --version
    ```
    ```bash-out
-   FastQC v0.12.1
+   FastQC v0.11.9
    ```
+   </details>
+
+3. With the environment still active, run `module load fastqc/0.12.1`.
+   Which version do you predict `fastqc --version` will report now?
+   Check your prediction.
+   (Hint: think about what both `conda activate` and `module load` do to your `$PATH`.)
+
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+   It will report version 0.12.1.
+   Both `conda activate` and `module load` add a directory to the _start_ of
+   your `$PATH`, and the shell runs the first `fastqc` it finds there.
+   So whichever you activated or loaded _last_ wins.
+   To avoid confusion like this,
+   don't mix modules and Conda environments that provide the same program.
    </details>
 :::
 
 ## Managing your Conda environments
 
-### Practical environment management
+### Where Conda environments are stored
 
 You may have noticed that above,
-we merely gave the environment we created a _name_
-(`trim_galore` or `trim_galore-0.6.10`),
-and did not tell Conda _where_ to put this environment.
+we merely gave the environment we created a name
+(`trim-galore-2.3.0`),
+and did not tell Conda **where** to put this environment.
 Similarly, we were able to activate the environment with just its name.
-Conda assigns a **personal default directory for its environments**,
-typically `~/.conda` or `~/miniconda`.
 
-To use a different location for individual environments,
-you can use the `-p` (instead of `-n`) option -- for example:
+Conda puts environments in a **personal default directory**,
+which at OSC is `~/.conda/envs` (see the `conda env list` output below).
+To instead put an environment in a location of your choice,
+use the `-p` (for "prefix", i.e. path) option instead of `-n` ---
+for example, to create the environment inside a project directory:
 
 ```bash
 # [Don't run this]
-conda create -y -p /fs/scratch/PAS3493/$USER/conda/trim-galore bioconda::trim-galore
+conda create -y -p /fs/ess/PAS3493/people/$USER/my_project/software/conda/trim-galore \
+    bioconda::trim-galore
 ```
 
-When you do this, you will in most cases have to use `-p <path>` also when you
-_activate_ the environment.
+When you do this, you will have to pass the path to the environment
+(rather than a name) when you _activate_ it:
+
+```bash
+# [Don't run this]
+conda activate /fs/ess/PAS3493/people/$USER/my_project/software/conda/trim-galore
+```
+
+As explained [below](#project-specific-environments),
+this is the approach I recommend for your research projects.
 
 ::: {.callout-tip appearance="simple"}
-When you want to load someone else's Conda environments
+When you want to activate **someone else's Conda environment**
 (this is possible as long as you have read-access to that dir!),
-you'll always have to specify the full path to environment's dir.
-:::
-
-::: {.callout-tip appearance="simple"}
-If you want to change the default location for your Conda environments,
-see [this page](https://docs.conda.io/projects/conda/en/stable/user-guide/configuration/use-condarc.html).
+you'll always have to specify the full path to the environment's directory.
 :::
 
 To see which Conda environments you have, run `conda env list`:
@@ -380,13 +454,13 @@ To see which Conda environments you have, run `conda env list`:
 conda env list
 ```
 ```bash-out
-trim_galore-0.6.10       /users/PAS0471/jelmer/.conda/envs/trim_galore-0.6.10
+trim-galore-2.3.0       /users/PAS0471/jelmer/.conda/envs/trim-galore-2.3.0
 ```
 
 To remove a Conda environment, use `conda env remove`:
 
 ```bash
-conda env remove -n trim_galore-0.6.10
+conda env remove -n trim-galore-2.3.0
 ```
 
 ::: {.callout-note collapse="true"}
@@ -397,81 +471,146 @@ conda env remove -n trim_galore-0.6.10
   even if you only actively installed one program:
 
   ```bash
-  conda list -p /fs/ess/PAS0471/jelmer/conda/multiqc
+  conda list -n trim-galore-2.3.0
   ```
 
 - Export a plain-text "YAML" file that contains the instructions to recreate
   your currently-active environment (useful for reproducibility!)
 
   ```bash
-  conda env export > my_env.yml
+  conda env export --from-history > my_env.yml
   ```
+
+  The `--from-history` option only includes the packages you explicitly asked for
+  (with their versions, if you specified them), rather than every dependency with
+  platform-specific build details ---
+  which makes the file much more likely to work on another computer.
 
   And you can use the following to create a Conda environment from such a YAML file:
 
   ```bash
-  conda env create -n my_env --force --file my_env.yml
+  conda env create -n my_env --file my_env.yml
+  ```
+
+- Downloaded packages are cached in `~/.conda/pkgs`, even for environments
+  you created elsewhere with `-p`. This cache can grow large,
+  so if you're running low on space in your Home directory, clear it with:
+
+  ```bash
+  conda clean --all
   ```
 :::
 
-### One environment for each ...?
+### Project-specific environments
 
-There are two reasonable ways to organize your Conda environments:
+There are a number of ways to organize your Conda environments,
+but I recommend that you create
+**Conda environments that are specific to a research project**,
+rather than reusing environments across projects.
+That way, each project has its own record of exactly which software
+(and which versions) it used,
+and updating or breaking an environment for one project can't affect your other projects.
+This does have the downside of requiring more disk space and time to set up each project,
+but it provides better reproducibility and maintainability.
 
-- **Have one environment for each program**
-  - Easier to keep an overview of what you have installed
-  - No need to reinstall the same program across different projects
-  - Less risk of running into problems with your environment due to mutually
-    incompatible software and complicated dependency situations
+Within a project, there are two reasonable ways to organize your environments:
 
-- **Have one environment for each research project**
+- **A single environment for the project**
   - You just need to activate that one environment when you're working on
     your project.
-  - Easier when you need to share your entire project with someone else
-    (or yourself) on a different (super)computer.
+  - The project's software setup is described by a single environment
+    (and can be exported to a single YAML file).
+  - But the more programs you install into one environment,
+    the higher the risk of running into problems due to mutually
+    incompatible software and complicated dependency situations.
+    Therefore, this works best for projects that only use a handful of programs.
 
-Even though it might seem easier, a third alternative,
-to simply install all programs across all projects in one single environment,
-is _not_ recommended. This doesn't benefit reproducibility,
-and your environment is likely to stop functioning properly sooner or later.
+- **Multiple environments for the project**, e.g. one for each program
+  or for each analysis step
+  - Less risk of dependency problems, and each environment is quick to create.
+  - You can update or replace one program without touching the others.
+  - But you need to activate the right environment at each step,
+    e.g. in each of your scripts.
+
+::: {.callout-warning appearance="simple"}
+What is _not_ recommended is simply installing all programs across all
+your projects into one single environment.
+Even though this might seem easier, it doesn't benefit reproducibility,
+and your environment is likely to stop functioning sooner or later.
+:::
+
+#### Put your environments inside your project directory
+
+To make your environments project-specific,
+**create them inside your project directory with `-p`** ---
+for example, in a `software/conda` subdirectory with one or more environments,
+as in the [example above](#where-conda-environments-are-stored).
+This has several advantages:
+
+- It is always clear which environments belong to which project,
+  and your scripts can refer to them with the path to the environment.
+- Other members of your group who have access to the project directory
+  can use the same environments.
+- You avoid filling up your Home directory, which has limited storage space.
+- When you archive or remove a project, its software goes along with it.
+
+::: {.callout-note collapse="true"}
+#### Using Conda environments in shell scripts
+Once you start writing shell scripts (week 7) and Slurm batch jobs (week 9),
+don't rely on whatever module or environment happens to be active in your shell
+when you run the script. Instead, include both steps inside the script itself,
+so the script is self-contained and reproducible:
+
+```bash
+module load miniconda3/25.11.1-py312
+conda activate /fs/ess/PAS3493/people/$USER/my_project/software/conda/trim-galore
+```
+
+If this gives an error like `CondaError: Run 'conda init' before 'conda activate'`,
+use `source activate <env>` instead of `conda activate <env>`.
+:::
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Create a Nextflow + nf-core environment
+#### {{< fa user-edit >}} Exercise: A project environment with two programs
 
-Later in the course, you'll work with Nextflow and the affiliated community
-project nf-core, which are typically used together.
-As practice, create a single Conda environment with both Nextflow and the
-nf-core tools installed into it.
+FastQC and MultiQC are often used together.
+Following the recommendation above, create a single Conda environment
+with both programs, inside a `software/conda` subdirectory
+of your personal directory in the course project, `/fs/ess/PAS3493/people/$USER`.
+Call the environment `qc`.
 
-<details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+1. Create the environment. You can install multiple programs in one go by
+   listing them one after the other.
 
-```bash
-module load miniconda3/24.1.2-py310
-conda create -y -n nextflow-23.10 -c bioconda nextflow=23.10.1 nf-core=2.13.1
-```
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-Check that it works:
+   ```bash
+   module load miniconda3/25.11.1-py312
+   conda create -y -p /fs/ess/PAS3493/people/$USER/software/conda/qc \
+       bioconda::fastqc bioconda::multiqc
+   ```
+   </details>
 
-```bash
-conda activate nextflow-23.10
-nextflow -v
-```
-```bash-out
-nextflow version 23.10.1.5891
-```
-```bash
-nf-core --version
-```
-```bash-out
-                                          ,--./,-.
-          ___     __   __   __   ___     /,-._.--~\
-    |\ | |__  __ /  ` /  \ |__) |__         }  {
-    | \| |       \__, \__/ |  \ |___     \`-._,-`-,
-                                          `._,._,'
+2. Activate the environment and check that both programs work.
 
-    nf-core/tools version 2.13.1 - https://nf-co.re
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-nf-core, version 2.13.1
-```
-</details>
+   ```bash
+   conda activate /fs/ess/PAS3493/people/$USER/software/conda/qc
+   fastqc --version
+   multiqc --version
+   ```
+   </details>
+
+3. Run `conda list` and look for the packages `openjdk` and `python`.
+   You didn't ask for either of them, so why were they installed?
+
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+   They are dependencies: FastQC is written in Java (`openjdk` provides Java),
+   and MultiQC is written in Python.
+   Conda automatically installs everything a program needs to run ---
+   which is also why environments can contain many more packages
+   than you explicitly installed.
+   </details>
 :::

@@ -36,12 +36,12 @@ format:
 
 ## Where we're heading
 
-In this and the next few weeks, you will learn to run
-command-line bioinformatics programs at OSC step by step:
+Step by step, in this and the next few weeks,\
+you'll learn to run command-line bioinformatics programs at OSC:
 
 <hr style="height:1pt; visibility:hidden;" />
 
-1. More general information about OSC _(this lecture)_
+1. A deeper dive into OSC _(this lecture)_
 2. How to use software at OSC, including programs that aren't installed _(next lecture)_
 3. How to write shell scripts _(next week)_
 4. How to submit shell scripts as "batch jobs" _(in week 9)_
@@ -119,7 +119,7 @@ Core
   perform a computing task, like running a bioinformatics program.
 
 - At the same time, many programs can use **multiple cores** for a single run,
-  which can speed things up considerably.
+  which can speed them up considerably.
 
 :::
 ::: {.column width="6%"}
@@ -149,10 +149,37 @@ A job's resource usage is measured in **core hours**.
 For example, using 2 cores for 2 hours = 4 core hours.
 :::
 
-::: {.callout-warning appearance="simple"}
-TODO - add visualization or at least explanation of how nodes can be used
-by independent jobs, each of which can use one or more cores.
+## One node, several jobs
+
+A node is usually **shared by several jobs**, each of which has reserved some of its cores:
+
+<div style="display:flex; gap:8px; justify-content:center; margin:0.6em 0 0.2em 0;">
+<div style="width:90px; height:90px; border-radius:8px; background:var(--color-blue); color:white; display:flex; align-items:center; justify-content:center; font-size:0.9em;">Job A</div>
+<div style="width:90px; height:90px; border-radius:8px; background:var(--color-blue); color:white; display:flex; align-items:center; justify-content:center; font-size:0.9em;">Job A</div>
+<div style="width:90px; height:90px; border-radius:8px; background:var(--color-amber); color:white; display:flex; align-items:center; justify-content:center; font-size:0.9em;">Job B</div>
+<div style="width:90px; height:90px; border-radius:8px; background:var(--color-amber); color:white; display:flex; align-items:center; justify-content:center; font-size:0.9em;">Job B</div>
+<div style="width:90px; height:90px; border-radius:8px; background:var(--color-amber); color:white; display:flex; align-items:center; justify-content:center; font-size:0.9em;">Job B</div>
+<div style="width:90px; height:90px; border-radius:8px; background:var(--color-amber); color:white; display:flex; align-items:center; justify-content:center; font-size:0.9em;">Job B</div>
+<div style="width:90px; height:90px; border-radius:8px; background:#d9dde0; color:#555; display:flex; align-items:center; justify-content:center; font-size:0.9em;">free</div>
+<div style="width:90px; height:90px; border-radius:8px; background:#d9dde0; color:#555; display:flex; align-items:center; justify-content:center; font-size:0.9em;">free</div>
+</div>
+
+<hr style="height:7pt; visibility:hidden;" />
+
+::: legend2
+A node with 8 cores (real Pitzer nodes have 40--48):<br>
+Job A has 2 cores, Job B has 4, and 2 cores are free.
 :::
+
+. . .
+
+<br>
+
+When you request resources,
+the Slurm scheduler looks for a node with enough free cores.
+
+As such, **smaller requests** (fewer cores, less time) may start more quickly
+than **larger ones**, especially when the cluster is heavily used.
 
 -----
 
@@ -177,15 +204,13 @@ C) The job ran, and it **ended after 1 hour**.
 A) 8 cores × 3 hours = **24 core hours**.
 
 B) **No**: you're billed for the cores you _reserved_, whether or not they were used.
-   So, request multiple cores only if the program your run can actually use them.
+   So, request multiple cores only if the program you run can actually use them.
 
 C) **Yes**: OSC only bills for the time a job actually ran,
    so 8 cores × 1 hour = **8 core hours**.
 
 </details>
 ---->
-
-<hr style="height:1pt; visibility:hidden;" />
 
 What does this tell you about how many cores and hours to request?
 
@@ -253,7 +278,7 @@ don't confuse this with file *storage*.
 
 ### [Memory (RAM)]{style="display:block; text-align:center;"}
 
-- The data a computer has actively "loaded" or in use.
+- The data a computer is actively using.
 - Accessed orders of magnitude faster than data on disk.
 - E.g., heavily used when you play a game or have many browser tabs open.
 
@@ -270,8 +295,8 @@ don't confuse this with file *storage*.
 . . .
 
 ::: {.callout-tip appearance="simple"}
-When your computer freezes, it's typically because memory is full,
-and it starts using disk storage as "virtual memory", which is much slower.
+When your computer **freezes**, memory is often full, and it starts using disk
+storage as "virtual memory", which is much slower.
 :::
 :::
 :::
@@ -281,46 +306,19 @@ and it starts using disk storage as "virtual memory", which is much slower.
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: {.callout-note appearance="simple"}
-Bioinformatics programs may load input data into memory for fast access,
+**Bioinformatics programs** may load input data into memory for fast access,
 and hold intermediate results there too.
 With large datasets, they may need 10s–100s of GBs of memory.
 :::
 
-## Memory
+. . .
 
-TODO - Add visualization or explanation of memory on cores.
-
-## Quiz
-
-::: callout-quiz
-::: callout-note
-#### True or false?
-
-A) If a program crashes because it runs out of memory,
-   moving your files to a location with a larger storage quota will fix it.
-
-B) Requesting 8 cores instead of 1 will make any program run about 8× faster.
-
-C) A file you created while connected to Pitzer can also be accessed from Cardinal.
-
-<hr style="height:1pt; visibility:hidden;" />
-
-<!-----
-<details><summary> {{< fa square-check >}} &nbsp; &nbsp; _Click for the answers_</summary>
-
-A) **False**: memory (RAM) is not storage.
-   You would need to request more memory, possibly on a `largemem` node.
-
-B) **False**: the program has to support using multiple cores,
-   and even then, the speed-up is usually less than proportional.
-
-C) **True**: file systems are shared among OSC's clusters.
-
-</details>
-
-<hr style="height:1pt; visibility:hidden;" />
------->
+::: {.callout-note appearance="simple"}
+At OSC, available memory is **proportional** to the number of cores you request
+(often 4 GB per core).
 :::
+
+::: footer
 :::
 
 # OSC Projects {background-color="#A7B1B7"}
@@ -343,7 +341,7 @@ OSC bills **Projects** (not individual users), and only for two things:
 ::: {.column width="30%" .box-amber .fragment data-fragment-index="2"}
 ### Compute
 
-- Compute node usage
+- Compute node usage.
 
 - Charged per core hour.
 
@@ -365,14 +363,15 @@ OSC bills **Projects** (not individual users), and only for two things:
 
 ::: {.callout-note appearance="simple"}
 Prices for academic usage are generally low, but a Project using dozens of TBs
-and tens of thousands of core hours could be charged over a thousand dollars per year.
+and tens of thousands of core hours would still be charged over a thousand dollars
+per year.
 :::
 
 ## Using and managing OSC Projects
 
-In this course, we exclusively use the course's OSC Project `PAS3493`.
+In this course, we only use the course's OSC Project `PAS3493`.
 For your own research, you would likely use a Project specific to a research
-project or grant, or your lab's general-use Project.
+project, or your lab's general-use Project.
 
 <hr style="height:1pt; visibility:hidden;" />
 
@@ -383,9 +382,9 @@ project or grant, or your lab's general-use Project.
 
 In practice, "using" a Project means:
 
-- Storing data in its `/fs/ess` and/or `/fs/scratch` dirs.
-- Selecting the Project when starting compute jobs,
-  like Code Server and (later in the course) batch jobs.
+- **Storage**: Storing data in its `/fs/ess` and/or `/fs/scratch` dirs.
+- **Compute**: Selecting the Project when starting compute jobs,
+  like VS Code (Code Server) and (later in the course) batch jobs.
 
 :::
 ::: {.column width="6%"}
@@ -395,9 +394,9 @@ In practice, "using" a Project means:
 
 ### [Managing a Project]{style="display:block; text-align:center;"}
 
-Generally only done by PIs
+Generally **only PIs** can do this
 ([more info](https://www.osc.edu/supercomputing/portals/client_portal/projects_budgets_and_charge_accounts){target="_blank"}).
-Project administrators can, among others:
+Project admins can, among others:
 
 - Manage the compute budget and `/fs/ess` storage allocation.
 - Add users to the Project.
@@ -409,15 +408,26 @@ Project administrators can, among others:
 
 ## Storage areas: overview
 
-An expanded version of the table from Week 2:
+Let's start by recapping what we learned in Week 2 about the three main storage
+areas at OSC:
 
 <hr style="height:1pt; visibility:hidden;" />
 
-| Area        | Path           | Quota              | Backed up? | Auto-purged?  | One for each... |
-| ------------ | -------------- | ------------------ | ---------- | ------------- | --------------- |
-| **Home**     | `/users/`      | 500 GB / 1 M files | Yes        | No            | User            |
+::: {.columns}
+::: {.column width="53%"}
 
-: {.striped .hover tbl-colwidths="[12, 16, 21, 15, 17, 19]"}
+| Area        | Path           | One for each... |
+| ----------- | -------------- | --------------- |
+| **Home**    | `/users/`      | User            |
+| **Project** | `/fs/ess/`     | OSC Project     |
+| **Scratch** | `/fs/scratch/` | OSC Project     |
+
+: {.striped .hover tbl-colwidths="[25, 35, 40]"}
+
+:::
+::: {.column width="47%"}
+:::
+:::
 
 ## Storage areas: overview
 
@@ -425,12 +435,11 @@ An expanded version of the table from Week 2:
 
 <hr style="height:1pt; visibility:hidden;" />
 
-| Area        | Path           | Quota              | Backed up? | Auto-purged?  | One for each... |
-| ----------- | -------------- | ------------------ | ---------- | ------------- | --------------- |
-| **Home**    | `/users/`      | 500 GB / 1 M files | Yes        | No            | User            |
-| **Project** | `/fs/ess/`     | Flexible           | Yes        | No            | OSC Project     |
+| Area     | Quota                        | Backed up?   | Auto-purged? | I/O Speed        | Billed      |
+| -------- | ---------------------------- | ------------ | ------------ | ---------------- | ----------- |
+| **Home** | [500 GB / 1 M files]{.amber} | [Yes]{.teal} | [No]{.teal}  | [Slower]{.amber} | [No]{.teal} |
 
-: {.striped .hover tbl-colwidths="[12, 16, 21, 15, 17, 19]"}
+: {.striped .hover tbl-colwidths="[13, 22, 16, 19, 15, 15]"}
 
 ## Storage areas: overview
 
@@ -438,61 +447,35 @@ An expanded version of the table from Week 2:
 
 <hr style="height:1pt; visibility:hidden;" />
 
-| Area        | Path           | Quota              | Backed up? | Auto-purged?  | One for each... |
-| ----------- | -------------- | ------------------ | ---------- | ------------- | --------------- |
-| **Home**    | `/users/`      | 500 GB / 1 M files | Yes        | No            | User            |
-| **Project** | `/fs/ess/`     | Flexible           | Yes        | No            | OSC Project     |
-| **Scratch** | `/fs/scratch/` | 100 TB             | No         | After 60 days | OSC Project     |
+| Area        | Quota                        | Backed up?   | Auto-purged? | I/O Speed        | Billed        |
+| ----------- | ---------------------------- | ------------ | ------------ | ---------------- | ------------- |
+| **Home**    | [500 GB / 1 M files]{.amber} | [Yes]{.teal} | [No]{.teal}  | [Slower]{.amber} | [No]{.teal}   |
+| **Project** | [Flexible]{.teal}            | [Yes]{.teal} | [No]{.teal}  | [Slower]{.amber} | [Yes]{.amber} |
 
-: {.striped .hover tbl-colwidths="[12, 16, 21, 15, 17, 19]"}
+: {.striped .hover tbl-colwidths="[13, 22, 16, 19, 15, 15]"}
+
+## Storage areas: overview
+
+An expanded version of the table from Week 2:
+
+<hr style="height:1pt; visibility:hidden;" />
+
+| Area        | Quota                        | Backed up?   | Auto-purged?            | I/O Speed        | Billed        |
+| ----------- | ---------------------------- | ------------ | ----------------------- | ---------------- | ------------- |
+| **Home**    | [500 GB / 1 M files]{.amber} | [Yes]{.teal} | [No]{.teal}             | [Slower]{.amber} | [No]{.teal}   |
+| **Project** | [Flexible]{.teal}            | [Yes]{.teal} | [No]{.teal}             | [Slower]{.amber} | [Yes]{.amber} |
+| **Scratch** | [100 TB]{.teal}              | [No]{.amber} | [After 60 days]{.amber} | [Faster]{.teal}  | [No]{.teal}   |
+
+: {.striped .hover tbl-colwidths="[13, 22, 16, 19, 15, 15]"}
 
 . . .
 
 <br><br>
 
 ::: {.callout-note appearance="simple"}
-There is a fourth storage area, _compute_, that is on compute nodes and is deleted
-when a job ends.\
+There is a **fourth** storage area, _compute_,
+that is directly tied to compute jobs (deleted when a job ends).\
 In practice, this is rarely needed in bioinformatics, and we won't use it in this course.
-:::
-
-## When are different storage areas useful?
-
-::: {.columns}
-::: {.column width="30%" .box-blue .fragment data-fragment-index="1"}
-### Project
-
-- **Drawbacks**: storage is billed (per TB per month),
-  and read/write ("I/O") is slower than on Scratch.
-
-- **Useful for**: everything you want to keep long-term:
-  raw data, scripts, documentation, and key results.
-
-:::
-::: {.column width="3%"}
-:::
-::: {.column width="30%" .box-amber .fragment data-fragment-index="2"}
-### Scratch
-
-- **Drawbacks**: temporary and not backed up.
-
-- **Useful for**: analysis of large datasets,
-  thanks to effectively unlimited space and faster I/O.
-
-  For those: run analyses here, then copy key files to the Project dir.
-
-:::
-::: {.column width="3%"}
-:::
-::: {.column width="30%" .box-teal .fragment data-fragment-index="3"}
-### Home
-
-- **Drawbacks**: limited space that can't be expanded,
-  and harder to share files with collaborators.
-
-- **Useful for**: files you use across projects, like some software.
-
-:::
 :::
 
 ## Quiz: Storage areas
@@ -531,6 +514,38 @@ C) Scratch files that haven't been accessed for 60 days are purged,
 :::
 :::
 
+## For what are different storage areas useful?
+
+::: {.columns}
+::: {.column width="30%" .box-blue}
+### Project
+
+- Project-related files you want to keep long-term:
+  raw data, scripts, documentation, and key results.
+
+:::
+::: {.column width="3%"}
+:::
+::: {.column width="30%" .box-amber .fragment data-fragment-index="1"}
+### Scratch
+
+- Temporary storage of intermediate results and raw outputs for analyses
+  of large datasets.
+
+- For those: run analyses here, then copy key files to the Project dir.
+
+:::
+::: {.column width="3%"}
+:::
+::: {.column width="30%" .box-teal .fragment data-fragment-index="2"}
+### Home
+
+- Files you use across projects, like some software.
+- Experimentation outside of specific projects.
+
+:::
+:::
+
 ## Storage areas: misc. notes
 
 - **Hidden files in the Home dir**\
@@ -554,87 +569,15 @@ C) Scratch files that haven't been accessed for 60 days are purged,
   OSC's clusters share the entire file system, so you can access your files in
   the exact same way regardless of which cluster you're connected to.
 
-# The Clusters menu at OnDemand {background-color="#A7B1B7"}
-
-## System status
-
-In OnDemand's "**Clusters**" dropdown menu,
-click on the item at the bottom, "**`System Status`**":
-
-![](/img/ondemand_systemstatus_select.png){fig-align="center" width="40%" fig-alt="A screenshot of the options in the OSC OnDemand Clusters dropdown menu." .lightbox}
-
-This page shows the live usage of the three clusters,
-and gives a good idea of the scale of the supercomputer center (***next slide***).
-
-----
-
-![](/img/ondemand_systemstatus.png){fig-align="center" width="100%" fig-alt="A screenshot of the OSC Ondemand System Status page showing live cluster usage." .lightbox}
-
-::: footer
-:::
-
-## Side note: Why have multiple clusters?
-
-OSC buys a new cluster every few years and retires the oldest one,
-so the clusters differ in age and hardware:
-
-- **Pitzer** (2018, expanded in 2020)
-- **Ascend** (2022, with many GPU nodes)
-- **Cardinal** (2024, the newest)
-
-Rolling out clusters this way is beneficial, for example, because it keeps some
-hardware always up to date while avoiding downtime for the entire center.
-
-## Direct Unix shell access
-
-The **Clusters** dropdown menu gives direct access to a Unix shell on any of the
-three clusters.
-
-- While we use Code Server in the course to access a shell,
-  the Clusters dropdown can occasionally be useful as a quicker access point.
-- Be aware that you will be on a login node, so you have less leeway in terms of
-  memory and CPU usage than on a compute node for testing purposes.
-
-![](../img/ondemand_shell-cardinal.png){fig-align="center" width="60%" fig-alt="A screenshot of a Unix shell opened via the Clusters menu on OSC OnDemand." .lightbox}
-
-::: footer
-:::
-
-## Module Browser
-
-TBA
-
-## Contacting OSC to get help
-
-Open a support case in the [OSC Service Center](https://support.osc.edu){target="_blank"}
-(log in with your OSC credentials), or email **<oschelp@osc.edu>**,
-with questions like:
-
-- Problems with your account
-- Installing or using specific software
-- Why your jobs keep failing
-
-They are usually quite quick to respond!
-
-. . .
-
-<br>
-
-::: callout-tip
-### Citing OSC
-When you use OSC, it's good practice to **acknowledge and cite OSC** in your papers ---
-see their [citation page](https://www.osc.edu/resources/getting_started/citation){target="_blank"}.
-:::
-
 # Using software at OSC {background-color="#A7B1B7"}
 
 ## Omics analyses use many programs
 
 A typical omics data analysis workflow consists of a sequence of specialized
 bioinformatics programs (a.k.a. software or tools).
-For example, the RNA-Seq workflow we'll go through:
+For example, the RNA-seq workflow we'll go through:
 
-![](../img/rnaseq-wf-3.png){fig-align="center" width="53%" fig-alt="A diagram showing the steps in an RNA-Seq analysis pipeline." .lightbox}
+![](../img/rnaseq-wf-3.png){fig-align="center" width="53%" fig-alt="A diagram showing the steps in an RNA-seq analysis pipeline." .lightbox}
 
 ::: footer
 :::
@@ -659,12 +602,12 @@ For example, the RNA-Seq workflow we'll go through:
 
 ### [Modules]{style="display:block; text-align:center;"}
 
-- OSC has installed a number of more specialized software,
-  including many bioinformatics programs.
+- OSC has also installed many more specialized programs,
+  including bioinformatics tools.
 
 - You can use such a program after **loading its "module"** using the `module` command.
 
-- But: The collection of installed software at OSC is not comprehensive,
+- **But:** The collection of installed software at OSC is not comprehensive,
   and program versions are not always the most recent.
 
 :::
@@ -697,11 +640,10 @@ is often not possible at OSC:
 
 - **Containers**: Self-contained software packages that can be distributed.
 
-- Both:
+- **Both**:
   - Bypass the dependency and administrator privilege issues.
-  - Make it easy to switch between versions of the same software,
-    or to use mutually incompatible software.
-  - Are highly **reproducible**.
+  - Make it easy to switch between versions or use mutually incompatible software.
+  - Are good for reproducibility.
 
 :::
 :::
@@ -713,25 +655,40 @@ is often not possible at OSC:
 
 The two approaches are quite different, both conceptually and in practice:
 
-| Aspect          | Conda                                | Container                      |
-| --------------- | ------------------------------------ | ------------------------------ |
-| Setup           | Install once, then load              | Download file, run directly    |
-| Combining tools | Easier                               | Harder                         |
-| Reliability     | Installs can be slow or fail         | Quick and reliable to obtain   |
-| Files           | Many small files (may hit OSC quota) | Single file                    |
-| Portability     | Less portable                        | Highly portable & reproducible |
+| Aspect           | Conda                            | Containers                             |
+| ---------------- | -------------------------------- | -------------------------------------- |
+| Obtaining a tool | Install it                       | Download a file                        |
+| Running a tool   | [Load, then run as usual]{.teal} | [With a long command "prefix"]{.amber} |
+| Combining tools  | [Easier]{.teal}                  | [Harder]{.amber}                       |
 
-: {.striped .hover tbl-colwidths="[20, 40, 40]"}
+: {.striped .hover tbl-colwidths="[20, 42, 38]"}
 
-<br>
+## Conda versus containers
+
+The two approaches are quite different, both conceptually and in practice:
+
+
+| Aspect           | Conda                                          | Containers                              |
+| ---------------- | ---------------------------------------------- | --------------------------------------- |
+| Obtaining a tool | Install it                                     | Download a file                         |
+| Running a tool   | [Load, then run as usual]{.teal}               | [With a long command "prefix"]{.amber}  |
+| Combining tools  | [Easier]{.teal}                                | [Harder]{.amber}                        |
+| Reliability      | [Installs can be slow or fail]{.amber}         | [Quick and reliable to obtain]{.teal}   |
+| Files            | [Many small files (may hit OSC quota)]{.amber} | [Single file]{.teal}                    |
+| Portability      | [Less portable]{.amber}                        | [Highly portable & reproducible]{.teal} |
+
+: {.striped .hover tbl-colwidths="[20, 42, 38]"}
+
+<hr style="height:10pt; visibility:hidden;" />
+
+. . .
 
 ::: {.callout-tip}
-#### What is available?
-Generally, the same set of programs is available through Conda and as containers,
-all of which is free, open-source software.
-If a program isn't available, it **tends to** be a sign it's outdated,
-poorly maintained, or poorly documented, and better avoided anyway
-(exceptions exist).
+#### What programs/tools are available?
+The same set of programs is available through Conda and as containers,
+all of which is **free and open-source**.
+Missing programs tend to be better avoided anyway
+(poorly maintained, etc. --- exceptions exist).
 :::
 
 ::: footer
@@ -741,25 +698,108 @@ poorly maintained, or poorly documented, and better avoided anyway
 
 The two approaches are quite different, both conceptually and in practice:
 
-| Aspect          | Conda                                | Container                      |
-| --------------- | ------------------------------------ | ------------------------------ |
-| Setup           | Install once, then load              | Download file, run directly    |
-| Combining tools | Easier                               | Harder                         |
-| Reliability     | Installs can be slow or fail         | Quick and reliable to obtain   |
-| Files           | Many small files (may hit OSC quota) | Single file                    |
-| Portability     | Less portable                        | Highly portable & reproducible |
+| Aspect           | Conda                                          | Containers                              |
+| ---------------- | ---------------------------------------------- | --------------------------------------- |
+| Obtaining a tool | Install it                                     | Download a file                         |
+| Running a tool   | [Load, then run as usual]{.teal}               | [With a long command "prefix"]{.amber}  |
+| Combining tools  | [Easier]{.teal}                                | [Harder]{.amber}                        |
+| Reliability      | [Installs can be slow or fail]{.amber}         | [Quick and reliable to obtain]{.teal}   |
+| Files            | [Many small files (may hit OSC quota)]{.amber} | [Single file]{.teal}                    |
+| Portability      | [Less portable]{.amber}                        | [Highly portable & reproducible]{.teal} |
 
-: {.striped .hover tbl-colwidths="[20, 40, 40]"}
+: {.striped .hover tbl-colwidths="[20, 42, 38]"}
 
-<br>
+<hr style="height:10pt; visibility:hidden;" />
 
 ::: {.callout-note}
 #### What will we use?
-In the next lecture, you'll learn to use modules and containers,
+We'll next practice with modules and containers,
 while Conda is covered in [an optional self-study page](/bonus/conda.qmd){target="_blank"}.
 :::
 
 ::: footer
+:::
+
+# The Clusters menu at OnDemand {background-color="#A7B1B7"}
+
+## System status
+
+In OnDemand's "**Clusters**" dropdown menu,
+click on the item at the bottom, "**`System Status`**":
+
+![](/img/ondemand_systemstatus_select.png){fig-align="center" width="40%" fig-alt="A screenshot of the options in the OSC OnDemand Clusters dropdown menu." .lightbox}
+
+This page shows the live usage of the three clusters,
+and gives a good idea of the scale of the supercomputer center (***next slide***).
+
+----
+
+![](/img/ondemand_systemstatus.png){fig-align="center" width="100%" fig-alt="A screenshot of the OSC Ondemand System Status page showing live cluster usage." .lightbox}
+
+::: footer
+:::
+
+## Side note
+
+::: callout-note
+#### Why have multiple clusters?
+
+OSC buys a new cluster every few years and retires the oldest one,\
+so the clusters differ in age and hardware:
+
+- **Pitzer** (2018, expanded in 2020)
+- **Ascend** (2022, with many GPU nodes)
+- **Cardinal** (2024, the newest)
+
+Rolling out clusters this way is for example beneficial because it keeps some\
+hardware always up to date while avoiding downtime for the entire center.
+:::
+
+## Direct Unix shell access
+
+The **Clusters** dropdown menu gives direct access to a Unix shell on any of the
+three clusters.
+
+- In the course, we use VS Code (Code Server) to access a shell,\
+  but the Clusters dropdown can occasionally be useful as a **quicker access** point.
+- Be aware that you will be on a **login node**, so only run light tasks there!
+
+![](../img/ondemand_shell-cardinal.png){fig-align="center" width="67%" fig-alt="A screenshot of a Unix shell opened via the Clusters menu on OSC OnDemand." .lightbox}
+
+::: footer
+:::
+
+## Module Browser
+
+OnDemand has a
+[**Module Browser**](https://ondemand.osc.edu/pun/sys/dashboard/module-browser){target="_blank"}
+to search the software that OSC has installed as "modules" ---
+more on modules in the next lecture.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+![](/img/ondemand-module-browser.png){fig-align="center" width="100%" fig-alt="A screenshot of the OSC OnDemand Module Browser page." .lightbox}
+
+## Contacting OSC to get help
+
+Open a support case in the [OSC Service Center](https://support.osc.edu){target="_blank"}
+(log in with your OSC credentials),\
+or email **<oschelp@osc.edu>**, with questions like:
+
+- Problems with your account
+- Installing or using specific software
+- Why your jobs keep failing
+
+They are usually quite quick to respond!
+
+. . .
+
+<br>
+
+::: callout-tip
+### Citing OSC
+When you use OSC, it's good practice to **acknowledge and cite OSC** in your papers ---
+see their [citation page](https://www.osc.edu/resources/getting_started/citation){target="_blank"}.
 :::
 
 # Questions? {background-color="#A7B1B7" .unlisted}
@@ -772,7 +812,7 @@ while Conda is covered in [an optional self-study page](/bonus/conda.qmd){target
 
 ## Other ways to get software at OSC
 
-- **Email OSC Help**\
+- **Contact OSC Help**\
   They may be able to help with your installation, or,
   for commonly used software, may be willing to do a system-wide installation
   (i.e., make it available as a module).

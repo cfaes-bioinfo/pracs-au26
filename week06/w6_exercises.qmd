@@ -43,15 +43,15 @@ bibliography: ../references.bib
 
 In Exercise 1, you'll practice with the GitHub material from last week
 that wasn't part of Graded Assignment 2.
-In Exercises 2-5, you'll practice with this week's material:
-you'll explore OSC's login and compute nodes, plan resource usage,
+In Exercises 2-4, you'll practice with this week's material:
+you'll explore OSC's login and compute nodes,
 and find and run software with modules and containers.
 
 ### Setting up
 
 1. Start a VS Code session through OSC OnDemand in the folder
-   `/fs/ess/PAS3493/people/<user>`.
-2. For Exercises 2-5, navigate to the `week06` dir that you used in the
+   `/fs/ess/PAS3493/people/$USER`.
+2. For Exercises 2-4, navigate to the `week06` dir that you used in the
    [w6b lecture](./w6b_software.qmd).
 3. _Optional_: Create and use a Markdown file to keep notes on what you're doing.
 
@@ -71,10 +71,12 @@ go over those again.
    This will be the remote counterpart of the Git repo you made as
    part of last week's assignment.
    You can give the GitHub repo any name you want.
+   As in the lecture, don't let GitHub add a README or any other files.
 
 2. In the terminal in VS Code, navigate to your dir for last week's assignment.
    Then, use Git commands to set up a connection between the Git repo
    and the GitHub counterpart.
+   <!-- TODO: add alternative using the VS Code functionality -->
 
 3. Push your local repo to the online counterpart.
 
@@ -83,8 +85,8 @@ go over those again.
 
 5. Open a GitHub Issue for your repo:
    on the GitHub page for your repo, click the Issues tab and then "New Issue".
-   In the box where you can type your issue (i.e., the body), tag both instructors.
-   (Don't try to do this in the title of the issue, it only works in the body.)
+   In the box where you can type your issue, tag both instructors.
+   (Don't try to do this in the title of the issue: it only works in the body.)
    For example:
 
    ```markdown
@@ -102,36 +104,26 @@ go over those again.
 
 ## Exercise 2: Login versus compute nodes
 
-1. In your VS Code terminal, run the command `hostname`,
-   which prints the name of the node (computer) that you're on.
+In GA1, you found out that your VS Code session runs on a compute node.
+Here, you'll compare it with a login node, and see what node names can tell you.
 
-2. In OnDemand, open a shell via "Clusters" > "Cardinal Shell Access",
-   and run `hostname` there, too.
+1. In OnDemand, open a shell via "Clusters" > "Cardinal Shell Access".
+   Before running anything: do you expect to be on a login node or a compute node?
 
-3. Which of the two is a login node, and which one is a compute node?
-   How can you tell, and why is your VS Code session on that type of node?
+2. Run `hostname`, which prints the name of the node that you're on
+   (like `echo $HOSTNAME` that you used in GA1),
+   both in this Cardinal shell and in your VS Code terminal.
+   What in each node name tells you whether it is a login node or a compute node?
+   And which cluster is each node part of?
+
+3. Why does the Cardinal shell put you on a login node,
+   whereas your VS Code session is on a compute node?
 
 4. In the Cardinal shell, navigate to `/fs/ess/PAS3493/people/$USER` and list its contents.
    Do you see the same files as in VS Code, even if your VS Code session is running
    on a different cluster? Why?
 
-## Exercise 3: Planning resources
-
-You have RNA-Seq data for 40 samples, and you want to align the reads
-with an alignment program.
-On a test sample, the program ran for 30 minutes with 16 reserved cores.
-
-1. If you align all 40 samples one after the other, with 16 cores each,
-   how many core hours will this use?
-
-2. You then read in the program's documentation that it doesn't benefit
-   from more than 8 cores.
-   How many of the core hours from question 1 were wasted?
-
-3. To be safe, you set a time limit of 2 hours per sample, rather than 45 minutes.
-   Does that make your jobs more expensive?
-
-## Exercise 4: The software version you need
+## Exercise 3: The software version you need
 
 You want to compare your results with those of a published study
 that used FastQC version **0.11.9**,
@@ -139,35 +131,39 @@ so you want to use that exact version.
 
 1. Is FastQC 0.11.9 available as an OSC module?
 
-2. Get a Seqera container with FastQC 0.11.9,
-   and assign its URL to a variable called `FASTQC_OLD_CONTAINER`.
+2. Get the URL of a Seqera container with FastQC 0.11.9.
 
 3. Check the FastQC version using the container.
    Then, in the same terminal, load the `fastqc/0.12.1` module and run `fastqc -v`
    both with and without the container.
    Which version do you get in each case, and why?
 
-## Exercise 5: Summarize FastQC results with MultiQC
+## Exercise 4: Summarize FastQC results with MultiQC
 
-As you saw in class, the program MultiQC is not available as an OSC module.
-MultiQC summarizes the results of FastQC and many other bioinformatics programs,
-across samples, in a single report.
+MultiQC is a program that summarizes the results of FastQC
+and many other bioinformatics programs across samples, in a single report.
 
-1. Using the FastQC module, run FastQC on _both_ FASTQ files of sample S64
+1. Is MultiQC available as an OSC module?
+   Check with `module spider`, and then also search for it in the
+   OnDemand Module Browser, which covers all OSC clusters.
+
+2. Using the FastQC module, run FastQC on _both_ FASTQ files of sample S64
    with a _single_ command, writing the output to `results/fastqc`.
    (Hint: FastQC accepts multiple FASTQ files, and you can use a glob.)
 
-2. Get a Seqera container with MultiQC,
-   assign its URL to a variable called `MULTIQC_CONTAINER`,
-   and use the container to run `multiqc --version`.
+3. Get a Seqera container with MultiQC,
+   and use it to run `multiqc --version`.
 
-3. Using MultiQC's help info, figure out how to run MultiQC on your `results/fastqc` dir,
+4. Using MultiQC's help info, figure out how to run MultiQC on your `results/fastqc` dir,
    with its output files in `results/multiqc`. Then, run it.
 
-4. List the output files, then download the HTML report and open it.
+5. List the output files, then open the HTML report in VS Code
+   (right-click > "Open Preview", as in the lecture).
    How does it compare to the individual FastQC reports?
+   <!-- TODO: check that the MultiQC report looks OK in the HTML Preview extension -->
 
-5. _Bonus_: Get a single Seqera container with both FastQC and MultiQC,
+
+6. Get a single Seqera container with both FastQC and MultiQC,
    and check that you can run both programs with it.
 
 ## Solutions
@@ -214,16 +210,13 @@ git push
 
 ### Exercise 2
 
-<details><summary>**1.-2.** `hostname` in VS Code and in the Cardinal shell</summary>
+<details><summary>**1.** Your prediction</summary>
 
-In VS Code:
+You should expect to be on a **login node** (see the answer to question 3 for why).
 
-```bash
-hostname
-```
-```bash-out
-p0231.ten.osc.edu
-```
+</details>
+
+<details><summary>**2.** Node names</summary>
 
 In the Cardinal shell:
 
@@ -234,15 +227,29 @@ hostname
 cardinal-login01.hpc.osc.edu
 ```
 
+In VS Code:
+
+```bash
+hostname
+```
+```bash-out
+p0231.ten.osc.edu
+```
+
 _(Your exact node names will differ.)_
+
+- The Cardinal shell is on a **login node**, as you can tell from the `login` in its name,
+  and it is on the **Cardinal** cluster, as the name also says.
+- VS Code is on a **compute node**, whose name is a letter followed by digits:
+  the `p` means it is part of the **Pitzer** cluster.
 
 </details>
 
-<details><summary>**3.** Login node versus compute node</summary>
+<details><summary>**3.** Why a login node versus a compute node</summary>
 
-The Cardinal shell is on a **login node**, as you can tell from the `login` in its name.
-VS Code is on a **compute node**:
-when you start a Code Server session, you request a compute job,
+The "Clusters" shell connects you directly to the cluster,
+without requesting any resources, so you land on a login node.
+By contrast, when you start a Code Server session, you request a compute job,
 and the job scheduler assigns your session to a compute node.
 
 </details>
@@ -260,32 +267,6 @@ because all of OSC's nodes and clusters share the same file systems.
 </details>
 
 ### Exercise 3
-
-<details><summary>**1.** Core hours for all samples</summary>
-
-16 cores × 0.5 hours × 40 samples = **320 core hours**.
-
-</details>
-
-<details><summary>**2.** Wasted core hours</summary>
-
-Only 8 of the 16 reserved cores were used,
-so the other 8 were idle:
-8 cores × 0.5 hours × 40 samples = **160 core hours**,
-or half of the total!
-
-</details>
-
-<details><summary>**3.** A generous time limit</summary>
-
-No: OSC only bills for the time a job actually ran,
-so each run still costs 30 minutes' worth of core hours.
-On the other hand, a time limit that is _too short_ would be a problem,
-because your job would be stopped before the program finished.
-
-</details>
-
-### Exercise 4
 
 <details><summary>**1.** Is FastQC 0.11.9 available as a module?</summary>
 
@@ -312,18 +293,15 @@ and then proceed as shown in the lecture
 (don't forget to select `Singularity`).
 
 Your URL will look like
-`oras://community.wave.seqera.io/library/fastqc:0.11.9--<hash>`:
-
-```bash
-FASTQC_OLD_CONTAINER=oras://community.wave.seqera.io/library/fastqc:0.11.9--<hash>
-```
+`oras://community.wave.seqera.io/library/fastqc:0.11.9--<hash>`.
 
 </details>
 
 <details><summary>**3.** Which version do you get?</summary>
 
 ```bash
-apptainer exec "$FASTQC_OLD_CONTAINER" fastqc -v
+apptainer exec oras://community.wave.seqera.io/library/fastqc:0.11.9--<hash> \
+  fastqc -v
 ```
 ```bash-out
 FastQC v0.11.9
@@ -332,7 +310,8 @@ FastQC v0.11.9
 ```bash
 module load fastqc/0.12.1
 
-apptainer exec "$FASTQC_OLD_CONTAINER" fastqc -v
+apptainer exec oras://community.wave.seqera.io/library/fastqc:0.11.9--<hash> \
+  fastqc -v
 fastqc -v
 ```
 ```bash-out
@@ -349,9 +328,25 @@ Without the container, you get the version from the loaded module.
 
 </details>
 
-### Exercise 5
+### Exercise 4
 
-<details><summary>**1.** Run FastQC on both S64 files</summary>
+<details><summary>**1.** Is MultiQC available as a module?</summary>
+
+No:
+
+```bash
+module spider multiqc
+```
+```bash-out
+Lmod has detected the following error:  Unable to find: "multiqc".
+```
+
+MultiQC is not listed in the OnDemand Module Browser either,
+so it isn't available as a module on any of the OSC clusters.
+
+</details>
+
+<details><summary>**2.** Run FastQC on both S64 files</summary>
 
 ```bash
 module load fastqc/0.12.1
@@ -360,7 +355,7 @@ fastqc --outdir results/fastqc ../garrigos/fastq/S64_R*.fastq.gz
 
 </details>
 
-<details><summary>**2.** Get a MultiQC container and check the version</summary>
+<details><summary>**3.** Get a MultiQC container and check the version</summary>
 
 At <https://seqera.io/containers>, search for `multiqc`,
 add the `bioconda::multiqc` hit, and proceed as shown in the lecture.
@@ -368,32 +363,33 @@ Your URL will look like
 `oras://community.wave.seqera.io/library/multiqc:<version>--<hash>`:
 
 ```bash
-MULTIQC_CONTAINER=oras://community.wave.seqera.io/library/multiqc:<version>--<hash>
-apptainer exec "$MULTIQC_CONTAINER" multiqc --version
+apptainer exec oras://community.wave.seqera.io/library/multiqc:<version>--<hash> \
+  multiqc --version
 ```
 
 </details>
 
-<details><summary>**3.** Run MultiQC</summary>
+<details><summary>**4.** Run MultiQC</summary>
 
 MultiQC's help info shows that it takes a dir with results as an argument,
 and that it has an option `-o`/`--outdir` to specify the output dir:
 
 ```bash
-apptainer exec "$MULTIQC_CONTAINER" multiqc --help
+apptainer exec oras://community.wave.seqera.io/library/multiqc:<version>--<hash> \
+  multiqc --help
 ```
 
 So, you can run MultiQC as follows ---
 unlike FastQC, MultiQC will create the output dir for you:
 
 ```bash
-apptainer exec "$MULTIQC_CONTAINER" \
+apptainer exec oras://community.wave.seqera.io/library/multiqc:<version>--<hash> \
   multiqc --outdir results/multiqc results/fastqc
 ```
 
 </details>
 
-<details><summary>**4.** MultiQC output</summary>
+<details><summary>**5.** MultiQC output</summary>
 
 ```bash
 ls -lh results/multiqc
@@ -410,16 +406,19 @@ especially when you have dozens of samples.
 
 </details>
 
-<details><summary>**5.** _Bonus_: A container with both FastQC and MultiQC</summary>
+<details><summary>**6.** A container with both FastQC and MultiQC</summary>
 
 At <https://seqera.io/containers>, add both `bioconda::fastqc` and
 `bioconda::multiqc` before clicking `Get Container`.
 Then:
 
 ```bash
-QC_CONTAINER=oras://community.wave.seqera.io/library/fastqc_multiqc:<hash>
-apptainer exec "$QC_CONTAINER" fastqc -v
-apptainer exec "$QC_CONTAINER" multiqc --version
+apptainer exec oras://community.wave.seqera.io/library/fastqc_multiqc:<hash> \
+  fastqc -v
+apptainer exec oras://community.wave.seqera.io/library/fastqc_multiqc:<hash> \
+  multiqc --version
 ```
 
 </details>
+
+<br>
