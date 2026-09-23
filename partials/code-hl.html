@@ -1,0 +1,26 @@
+<script>
+(function () {
+  // Line highlighting for code blocks on regular (HTML) pages, e.g.
+  //   ```{.bash hl-lines="2,4-5"}
+  // (Quarto's own code-line-numbers="2,4-5" highlighting only works in
+  // revealjs slides). Pandoc passes the attribute through as
+  // data-hl-lines on div.sourceCode, and wraps each line in its own
+  // <span>; this adds the .hl-line class (styled in styles.css) to the
+  // listed lines. Numbers are the displayed line numbers, so with
+  // startFrom="12", hl-lines="13" is the block's second line. Wired in via
+  // format.html.include-after-body in _quarto.yml.
+  document.querySelectorAll("div.sourceCode[data-hl-lines]").forEach(function (div) {
+    var lines = div.querySelectorAll("pre > code > span");
+    var first = parseInt(div.dataset.startfrom || "1", 10);
+    div.dataset.hlLines.split(",").forEach(function (part) {
+      var ends = part.trim().split("-").map(Number);
+      var from = ends[0];
+      var to = ends.length > 1 ? ends[1] : from;
+      for (var n = from; n <= to; n++) {
+        var line = lines[n - first];
+        if (line) line.classList.add("hl-line");
+      }
+    });
+  });
+})();
+</script>
