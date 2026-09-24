@@ -17,8 +17,8 @@ other-links:
   - text: "Week 6 overview"
     icon: check2-all
     href: w6_overview.html
-  - text: "w6a: A closer look at OSC"
-    icon: book
+  - text: "w6a: OSC - beyond the basics (slides)"
+    icon: easel
     href: w6a_osc.html
   - text: "Week 6 exercises"
     icon: pencil
@@ -47,7 +47,7 @@ As we discussed in the [previous lecture](w6a_osc.qmd),
 you can use software at OSC by loading "modules" with system-wide installations,
 or by using containers or Conda.
 In this session, you will learn to use **modules** and **containers**,
-while [an optional-reading page covers Conda](../bonus/conda.qmd).
+while [an optional self-study page covers Conda](../bonus/conda.qmd).
 
 We'll use the program **FastQC** to illustrate how to use modules and containers,
 so along the way, you'll also learn what FastQC does and how to run it.
@@ -70,7 +70,7 @@ VS Code extensions are small programs that add extra functionality to the IDE.
 We'll install several of these during the course,
 starting now with a VS Code extension for **viewing HTML files**,
 since we'll need to look at an HTML file later in this lecture
-(without this extension, HTML files would only open as plaint-text source documents).
+(without this extension, HTML files would only open as plain-text source documents).
 
 1. In the Activity Bar, click the **Extensions icon** at the bottom
    (see screenshot on the right).
@@ -216,12 +216,12 @@ Whenever you are in a fresh shell session
 you'll have to reload any modules you want to use.
 
 Here, we only covered the very basics of using `module`.
-Since not all software is available as modules,
-we will instead focus on the more universal approach of using containers,
-which has the added benefit of improved reproducibility and portability^[
-  With portable, we mean that something that works on one computer will also work
+Modules are convenient, but not all software is available as a module.
+Containers are a more universal approach, with the added benefit of
+improved reproducibility and portability^[
+  By portable, we mean that something that works on one computer will also work
   on another computer.
-].
+] --- as you'll see below.
 That said, for some additional information about modules, see the boxes below.
 
 ::: {.callout-note collapse="true"}
@@ -366,11 +366,26 @@ type `q()` or use the general keyboard shortcut for exiting,
    </details>
    ---->
 
-2. Load the STAR module and test whether you can use the program
+2. The command to run STAR is `STAR`, in uppercase.
+   Try loading the module with an uppercase name too, i.e. `module load STAR/<version>`
+   (with the version you found above). What happens, and why?
+   Then, load the module correctly and test whether you can use the program
    by running the command `STAR` (in this case, without adding any options).
 
    <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+   This fails, because `module load` is case-sensitive and the module name
+   is lowercase `star`, even though the command is uppercase `STAR`:
+
+   ```bash
+   module load STAR/2.7.10b
+   ```
+   ```bash-out
+   Lmod has detected the following error:  The following module(s) are unknown: "STAR/2.7.10b"
+   ```
+
+   The correct command is:
 
    ```bash
    module load star/2.7.10b
@@ -446,7 +461,7 @@ fastqc ../garrigos/fastq/S63_R1.fastq.gz
 However, an annoying default behavior of FastQC is that it writes its output files
 in the same dir that contains the input FASTQ files ---
 this means mixing your raw data with your results,
-which, as we discussed in [Week 2](/week02/w2a_project-org.qmd), we don't want!
+which, as we discussed in [week 2](/week02/w2a_project-org.qmd), we don't want!
 
 To figure out how to change that behavior,
 consider that (as you already know from standard shell commands!) most bioinformatics
@@ -630,6 +645,13 @@ Finally, a few notes on the behavior of bioinformatics programs like FastQC:
 
 As discussed in the previous lecture,
 containers are a great way to use programs that aren't available as OSC modules.
+
+You can think of a container as a small, separate computer system that contains
+only the program(s) it was built with, plus everything those programs need to run
+(so-called "dependencies").
+Because it brings along its own dependencies,
+a container works the same way on any computer that can run containers.
+
 We'll use pre-built containers from the **Seqera Containers webpage**,
 which provides a wide range of bioinformatics tools in containerized form.
 It even allows you to easily build custom containers with multiple programs installed.
@@ -927,10 +949,7 @@ Analysis complete for S63_R1.fastq.gz
 
 ### What happens when you run `apptainer exec`?
 
-You can think of a container as a small, separate computer system that contains
-only the program(s) it was built with, plus everything those programs need to run
-(so-called "dependencies").
-
+Recall that a container is like a small, separate computer system.
 When you run `apptainer exec <container-URI> <command>`,
 the command is executed **inside the container**:
 
@@ -1018,10 +1037,32 @@ on a computer at another institution, or at OSC five years from now.
    ```
 
    They would need a container that includes MultiQC ---
-   you'll get one in this week's exercises.
+   you'll get one in Graded Assignment 3.
 
    </details>
 
+:::
+
+::: {.callout-note collapse="true"}
+#### What if a program isn't available as a module or container? _(Click to expand)_
+
+As mentioned above, nearly all bioinformatics programs are available through
+Seqera Containers.
+But if you do run into a program that isn't, you have two other options:
+
+- **Contact OSC Help**\
+  They may be able to help you install the program yourself, or,
+  for commonly used software, may be willing to do a system-wide installation
+  (i.e., make it available as a module).
+  See the [previous lecture](w6a_osc.qmd) for how to contact them.
+
+- **Install the software "manually"**\
+  In the best case, you can download a directly functioning executable,
+  but more commonly you need to "compile" (build) the program.
+  This can get very tricky at OSC,
+  because you don't have administrator privileges
+  and will often run into issues with dependencies
+  (other software that the program depends on).
 :::
 
 ## In closing

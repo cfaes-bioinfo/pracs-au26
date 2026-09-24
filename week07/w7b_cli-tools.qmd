@@ -40,12 +40,12 @@ language:
 
 ### Learning goals
 
-Now that you've learned the basics of shell scripts,
-we will here focus on using them to run bioinformatics programs with command-line
-interfaces (CLIs), and on running them many times with loops.
+In the previous session, you wrote a basic shell script to run FastQC for a single
+FASTQ file.
+Here, we will finalize that script, and focus on running it many times with loops.
 Specifically, you will learn:
 
-- By means of example, how to write a shell script that runs FastQC
+- How to add "logging" statements to a shell script
 - How `for` loops work
 - How to use a `for` loop to loop over files and run a shell script many times
 
@@ -120,111 +120,14 @@ as it provides a record of what you did,
 and can easily be reorganized into a reproducible protocol of your workflow.
 You will continue to use **Markdown files** for this purpose.
 
-## Running FastQC with a shell script
+## Your FastQC script
 
-Instead of running FastQC interactively, like we did previously for practice,
-we'll want to write a script that runs it.
-As described above, our script will deliberately run FastQC on only one FASTQ file.
+### The script so far
 
-### Quick overview of our approach
+In the previous session, you wrote the following script to run FastQC,
+which should be saved at `scripts/fastqc.sh`:
 
-Because we want to run the script for one FASTQ file at a time,
-your script needs to **accept a FASTQ file name as an argument**.
-Additionally, you will use an argument for the output dir,
-because it is a good idea to keep that flexible as well.
-With code to copy the placeholder variables containing the command-line arguments,
-that part of the script would look like this:
-
-```bash
-# [Don't copy or run this]
-# Copy the placeholder variables
-fastq="$1"
-outdir="$2"
-
-# Run FastQC
-fastqc --outdir "$outdir" "$fastq"
-```
-
-You could run such a script as follows for a single FASTQ file:
-
-```bash
-# [Don't copy or run this]
-# Syntax: 'bash <script-path> <argument1> <argument2>'
-bash scripts/fastqc.sh ../garrigos/fastq/S63_R2.fastq.gz results/fastqc
-```
-
-Let's dive into this and create a complete script and run it ---
-first for one file like above, and then for all files with a loop.
-
-### Creating an initial script
-
-We saw some code to run FastQC inside a script,
-to which we should add some "boilerplate" but important code:
-
-- The shebang line and strict Bash settings:
-
-  ```bash
-  #!/bin/bash
-  set -euo pipefail
-  ```
-
-- A line to load the relevant OSC software module:
-
-  ```bash
-  module load fastqc/0.12.1
-  ```
-
-- A line to create the output directory if it doesn't yet exist:
-
-  ```bash
-  mkdir -p "$outdir"
-  ```
-
-  :::{.callout-tip collapse="true"}
-  #### About the `-p` option to `mkdir` _(Click to expand)_
-
-  Using `mkdir`'s `-p` option does two things at once,
-  both of which are very useful when including this command in a script:
-
-  - It will enable `mkdir` to create multiple levels of directories at once
-    (i.e., to act recursively):
-    by default, `mkdir` errors out if the parent directory/ies of the
-    specified directory don't yet exist.
-
-    ```bash
-    mkdir newdir1/newdir2
-    ```
-    ```{.bash-out}
-    mkdir: cannot create directory ‘newdir1/newdir2’: No such file or directory
-    ```
-
-    ```bash
-    # This successfully creates both directories:
-    mkdir -p newdir1/newdir2
-    ```
-
-  - If the directory already exists, with `-p`,
-    `mkdir` won't do anything and won't return an error.
-    Without this option, `mkdir` would return an error,
-    which would in turn lead the script to abort (given our `set` settings):
-
-    ```bash
-    mkdir newdir1/newdir2
-    ```
-    ```{.bash-out}
-    mkdir: cannot create directory ‘newdir1/newdir2’: File exists
-    ```
-
-    ```bash
-    # This does nothing since the dirs already exist
-    mkdir -p newdir1/newdir2
-    ```
-  :::
-
-With those additions, your partial script looks like this
-_(don't copy or run this yet -- we'll add to it later)_:
-
-```bash
+```{.bash .file filename="scripts/fastqc.sh"}
 #!/bin/bash
 set -euo pipefail
 
@@ -242,12 +145,19 @@ mkdir -p "$outdir"
 fastqc --outdir "$outdir" "$fastq"
 ```
 
-Notice that this script to run a CLI tool is very similar to our "toy scripts"
-from the previous sessions: mostly boilerplate code with
+Because the script accepts the FASTQ file and output dir as arguments,
+it deliberately runs FastQC for only one FASTQ file at a time ---
+for example:
+
+```bash
+# [Don't run this yet]
+bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
+```
+
+Notice that this script consists mostly of boilerplate code, with
 **just a single command to run our program of interest.**
 Therefore, you can adopt this script as a template for scripts that run other
 command-line programs, and will generally only need minor modifications!
-
 
 ### Add some "logging" statements
 
@@ -314,13 +224,7 @@ A couple of notes about the lines that were added to the script above:
 - For scripts that run bioinformatics tools,
   it's a good idea **to include a line to print the program version**.
 
-{{< fa user-edit >}} Create a script to run FastQC:
-
-```bash
-touch scripts/fastqc.sh
-```
-
-Open the script, and paste the code from the box above into it.
+{{< fa user-edit >}} _Update your `scripts/fastqc.sh` script with the code from the box above._
 
 ### Running your FastQC script for 1 file
 
