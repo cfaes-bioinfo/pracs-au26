@@ -299,13 +299,64 @@ module spider R
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ```
 
-Let's load the most recent version, currently `4.5.2`:
+Let's try to load the most recent version, currently `4.5.2`:
 
 ```bash
 module load R/4.5.2
 ```
+```bash-out
+Lmod has detected the following error:  These module(s) or extension(s) exist but cannot be loaded as requested: "R/4.5.2"
+   You encountered this error for one of the following reasons:
+   1. Missing version specification: On Pitzer, you must specify an available version.
+   2. Missing required modules: Ensure you have loaded the appropriate compiler and MPI modules.
+   Try: "module spider R/4.5.2" to view available versions or required modules.
+   If you need further assistance, please contact oschelp@osc.edu with the subject line "lmod error: R/4.5.2"
+```
 
-Next, let's check that R works:
+Didn't work! As the error message suggests,
+let's use `module spider` specifically on this version:
+
+```bash
+module spider R/4.5.2
+```
+```bash-out
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+  R: R/4.5.2
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    You will need to load all module(s) on any one of the lines below before the "R/4.5.2" module is available to load.
+      gcc/12.3.0
+
+    Help:
+      R is 'GNU S', a freely available language and environment for
+      statistical computing and graphics which provides a wide variety of
+      statistical and graphical techniques: linear and nonlinear modelling,
+      statistical tests, time series analysis, classification, clustering,
+      etc. Please consult the R project homepage for further information.
+```
+
+So, it appears you first need to load the module `gcc/12.3.0` before you can load
+R/4.5.2.
+
+Therefore, let's try to load `gcc` along with `R` --
+you can use the command below to load both at the same time:
+
+```bash
+module load gcc/12.3.0 R/4.5.2
+```
+```bash-out
+Lmod is automatically replacing "intel/2021.10.0" with "gcc/12.3.0".
+Due to MODULEPATH changes, the following have been reloaded:
+  1) mvapich/4.1
+```
+
+(`gcc` and `intel` are two different _compilers_ --
+programs that translate code into a runnable program.
+OSC has one of these two compilers loaded by default,
+and different pieces of software are built with (and need) only one of them.
+Since we explicitly loaded `gcc` above,
+the module system swapped out the default `intel` compiler for it.)
+
+Finally, let's check that R now indeed is available:
 
 ```bash
 R

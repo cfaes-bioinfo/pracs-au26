@@ -1,8 +1,7 @@
 ---
 title: "Shell scripting III -- tips and tricks"
-subtitle: "Week 7 -- Lecture C"
+subtitle: "Week 7 -- Self-study"
 pagetitle: "w7c: Shell tips & tricks"
-date: 2026-10-07
 date-modified: last-modified
 author:
   - name: Jelmer Poelstra
@@ -27,7 +26,6 @@ other-links:
     icon: pencil-square
     href: ../GA/GA3.html
 language:
-  title-block-published: "Presented on"
   title-block-modified: "Page last modified"
   other-links-title: "Also this week"
 ---
@@ -40,126 +38,24 @@ language:
 
 ### Learning goals
 
-In this short lecture,
-you'll learn a few final Unix shell tips and tricks that are especially
-useful in a shell scripting context:
+This is a **self-study page** that we won't go through together in class.
+It covers a few Unix shell tips and tricks that are especially useful
+in a shell scripting context:
 
 - Parameter expansion -- and using this in the context of looping over samples
-  (pairs of FASTQ files) rather than individual files
+  (pairs of FASTQ files) rather than individual files.
+  This goes into more detail than the
+  [brief introduction in class](./w7b_cli-tools.qmd#looping-over-samples).
 - Command substitution to save the output of commands
 - `basename` and `dirname` to extract parts of file paths
+- Renaming many files at once with a loop
 
 ### Getting ready
 
 1. At <https://ondemand.osc.edu>,
    start a VS Code session in `/fs/ess/PAS3493/people/$USER`
 2. In the terminal, navigate to your `week07` dir
-3. **Open your `README.md` from the [last class](./w7b_cli-tools.qmd)**
-
-### Prelude
-
-::: exercise
-#### {{< fa user-edit >}} Loop exercises
-
-Given these files:
-
-```bash
-mkdir sandbox
-touch sandbox/file1.txt sandbox/S1_R1.fastq.gz sandbox/S1_R2.fastq.gz
-```
-
-- What do you expect the output of this loop to be?
-
-  ```bash
-  for file in sandbox/*fastq.gz; do
-      echo "I have found file $file"
-  done
-  ```
-
-- And of this loop?
-
-  ```bash
-  for file in sandbox/f*; do
-      echo "$f"
-  done
-  ```
-
-  <details><summary>_Click for the solution_</summary><p>
-  Look closely: the loop variable is `file`, but the `echo` line uses `$f` --
-  a variable that was never assigned.
-  Because we're at the interactive prompt rather than in a script with
-  `set -u`, the shell doesn't complain about the unset variable --
-  it just silently treats it as an empty string.
-  So the loop prints one empty line for each matching file.
-
-  This is exactly the kind of silent failure that `set -u` protects you
-  from: in a script with strict Bash settings, this typo would cause an
-  immediate error instead of silently doing the wrong thing.
-  </p></details>
-:::
-
-::: {.callout-tip collapse="true"}
-### Why is there "`; do`" in a `for` loop? _(Click to expand)_
-
-You may find the `; do` at the end of the first line of the `for` loop to be odd.
-What is that all about?
-
-First, a semicolon is a way to enter multiple commands on a single line --
-for example, the line below would first run `ls` and then `echo "Hello"`:
-
-```bash
-ls; echo "Hello"
-```
-
-_(So, `;` can be thought of as a counterpart to `\`, which allows you to spread a single command_
-_across multiple lines: with a `;`, you can have multiple commands on a single line.)_
-
-As such, you could also write `for` loops like so...
-
-```bash
-for file in sandbox/*fastq.gz
-do
-    echo "$file"
-done
-```
-
-...and some people prefer that variant.
-You can do it either way, but we will continue to demonstrate the `; do` variant.
-:::
-
-### Testing the Shellcheck extension
-
-1. Create a new script `scripts/shellcheck-test.sh` and open it.
-2. If Shellcheck works, you should immediately see a small red squiggly line
-   on the first line -- and when you hover over that, the following warning:
-
-![Above: Shellcheck will show a red squiggly line if the shell script is empty. <br>Below: Hover over the squiggly line to see what this warning is about.](../img/shellcheck-shebang1.png){fig-align="center" width="50%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-![](../img/shellcheck-shebang2.png){fig-align="center" width="80%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-3. So, Shellcheck wants you to add a shebang line, and once you do so,
-   the squiggly line disappears:
-
-![](../img/shellcheck-shebang3.png){fig-align="center" width="65%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-4. That was one example of a handy Shellcheck tip.
-   Another is when you have assigned a variable, but don't use (reference it):
-
-![Above: Shellcheck will show an orange squiggly line when you've assigned a variable that you don't use. <br> Below: Hovering over the line again tells you the reason for the warning.](../img/shellcheck-variable1.png){fig-align="center" width="50%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-![](../img/shellcheck-variable2.png){fig-align="center" width="70%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-5. Referencing the variable in question makes the squiggly line disappear:
-
-![](../img/shellcheck-variable3.png){fig-align="center" width="50%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-6. Conversely, when you reference a variable that hasn't been assigned:
-
-![](../img/shellcheck-variable5.png){fig-align="center" width="70%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-7. These tips can be extremely useful!
-   Also in cases where you e.g. make a typo in a variable name,
-   or renamed a variable but didn't do so consistently.
+3. Open your `README.md` from the [w7b lecture](./w7b_cli-tools.qmd)
 
 ## Parameter expansion -- and looping over samples
 
@@ -177,8 +73,9 @@ How can you loop over pairs of FASTQ files? There are two main ways:
   R2 file within the loop. This can be done because the R1 and R2 file names
   should be identical other than the read-direction identifier (`R1`/`R2`).
 
-Below, we will use the second method --
-but first, you need to learn about parameter expansion.
+Below, we will use the second method,
+which you already saw [in class](./w7b_cli-tools.qmd#looping-over-samples) ---
+but first, let's take a closer look at parameter expansion.
 
 ### Parameter expansion
 
@@ -271,7 +168,7 @@ echo "$fastq_R2"
 Using parameter expansion,
 you can create a loop that iterates over R1 FASTQ files only,
 and then infers the corresponding R2 file name.
-*In this week's exercises, you will do this for the program TrimGalore.*
+*In [next week's exercises](../week08/w8_exercises.qmd), you will do this for the program TrimGalore.*
 For now, here is an example with an imaginary `trim_mock.sh` script:
 
 ```bash
@@ -286,7 +183,7 @@ done
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Bonus exercise: Run a script with a per-sample loop
+#### {{< fa user-edit >}} Exercise: Run a script with a per-sample loop
 
 - Write a script `scripts/trim_mock.sh` that accepts three arguments:
   an R1 FASTQ file, an R2 FASTQ file, and an output dir.
@@ -368,52 +265,6 @@ done
   </details>
 :::
 
-### The current protocol Markdown file
-
-As a side note, after adding the code to loop over samples and run the mock trimming
-script, your protocol Markdown file for this dummy project should look like what's
-shown below.
-This will hopefully give you an idea how you can use a Markdown file to keep a record
-of the "top-level" code^[
-As opposed to the code tucked away in each individual script, like `fastqc.sh`.]
-needed to run the steps in your project.
-
-````markdown
-# RNA-seq data analysis
-
-## General information
-
-- Author: Jelmer Poelstra
-- Date: 2026-10-07
-- Environment: Pitzer cluster at OSC via VS Code
-- Working dir: `/fs/ess/PAS3493/people/<user>/week07`
-
-## Project background
-
-This project is ...
-
-## Protocol
-
-### Step 1 - Run FastQC for each FASTQ file:
-
-```bash
-for fastq in ../garrigos/fastq/*fastq.gz; do
-    bash scripts/fastqc.sh "$fastq" results/fastqc
-done
-```
-
-### Step 2 - Run the trim_mock.sh script for each _sample_
-
-Loop over R1 files only, and infer the R2 file name:
-
-```bash
-for R1 in ../garrigos/fastq/*_R1.fastq.gz; do
-    R2=${R1/_R1/_R2}
-    bash scripts/trim_mock.sh "$R1" "$R2" results/trim_mock
-done
-```
-````
-
 ## Command substitution
 
 Command substitution allows you to **store the output of a command in a variable**.
@@ -472,7 +323,7 @@ Let's use that in a command substitution:
 today=$(date +%F)
 touch README_"$today".txt
 
-ls
+ls README_*
 ```
 ```{.bash-out}
 README_2026-09-07.txt
@@ -609,32 +460,6 @@ R2_out="$outdir"/$(basename "$R2_in")
 trimmer2 --in1 "$R1_in" --in2 "$R2_in" --out1 "$R1_out" --out2 "$R2_out"
 ```
 
-## Keyboard shortcuts
-
-A [Week 3 page](../week03/w3a_shell-basics.qmd#keyboard-shortcuts) included a table
-with Unix shell keyboard shortcuts.
-Here are some of those that you may not yet be using,
-but that are very helpful to work more efficiently in the shell:
-
-| Windows                                     | Mac                                           | Function                                                                   |
-| ------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------- |
-| <kbd>Ctrl</kbd> + <kbd>→</kbd>/<kbd>←</kbd> | <kbd>option</kbd> + <kbd>→</kbd>/<kbd>←</kbd> | Move cursor word-by-word                                                   |
-| <kbd>Ctrl</kbd> + <kbd>A</kbd>              | _(same)_                                      | Go to beginning of line                                                    |
-| <kbd>Ctrl</kbd> + <kbd>E</kbd>              | _(same)_                                      | Go to end of line                                                          |
-| <kbd>Ctrl</kbd> + <kbd>U</kbd>              | _(same)_                                      | Cut from cursor to beginning of line                                       |
-| <kbd>Ctrl</kbd> + <kbd>K</kbd>              | _(same)_                                      | Cut from cursor to end of line                                             |
-| <kbd>Ctrl</kbd> + <kbd>W</kbd>              | _(same)_                                      | Cut word before cursor                                                     |
-| <kbd>Ctrl</kbd> + <kbd>Y</kbd>              | _(same)_                                      | Paste ("yank") text that was cut with one of the three cut shortcuts above |
-| <kbd>Alt</kbd> + <kbd>.</kbd>               | <kbd>Esc</kbd> + <kbd>.</kbd>                 | Paste/retrieve last argument of previous command (extremely useful!)       |
-
-: {.striped .hover}
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: Test these keyboard shortcuts
-Type multiple words in the terminal and then test the above keyboard shortcuts
-one by one.
-:::
-
 ## Renaming files with loops
 
 Sometimes, you need to rename many files in a systematic/repetitive way.
@@ -662,13 +487,13 @@ touch sandbox/sample{01..50}.sam
 Check the names of the files you created and how many there are:
 
 ```bash
-ls sandbox
+ls sandbox/*.sam
 ```
 ```bash-out
-sample01.sam
-sample02.sam
-sample03.sam
-sample04.sam
+sandbox/sample01.sam
+sandbox/sample02.sam
+sandbox/sample03.sam
+sandbox/sample04.sam
 # [...output truncated...]
 ```
 ```bash
@@ -762,19 +587,23 @@ done
 # [...output truncated...]
 ```
 
-## Recap and next steps
+::: {.callout-tip}
+#### Keyboard shortcuts
+Also, don't forget about the Unix shell keyboard shortcuts from the
+[week 3 table](../week03/w3a_shell-basics.qmd#keyboard-shortcuts):
+especially shortcuts like <kbd>Ctrl</kbd>+<kbd>A</kbd>/<kbd>E</kbd>
+(go to the beginning/end of the line) and <kbd>Alt</kbd>/<kbd>Esc</kbd>+<kbd>.</kbd>
+(retrieve the last argument of the previous command) can save you a lot of time.
+:::
 
-In this lecture, you've picked up a set of Unix shell "tricks" that will make
-your scripts more powerful and your day-to-day shell use more efficient,
-including:
+## Recap
+
+On this page, you've picked up a set of Unix shell "tricks" that will make
+your scripts more powerful, including:
 
 - Parameter expansion to manipulate file names and other strings in variables
 - Command substitution to use the output of one command as input to another
 - `basename` and `dirname` to extract parts of a path
-- Useful keyboard shortcuts for editing and navigating the command line
 - Using loops together with these tricks, e.g. to rename many files at once
-
-Next week, we'll look at how you can use generative AI tools to help you
-write and improve shell scripts.
 
 <br>
