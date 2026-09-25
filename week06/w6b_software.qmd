@@ -161,10 +161,10 @@ module spider fastqc
 We can see that `fastqc` is available, namely version `0.12.1`
 (the module is printed as `<software>/<version>`).
 
-::: {.callout-warning}
+::: {.callout-note}
 #### Case-sensitivity
-These two search commands are not case-sensitive,
-but `module load` (below) _is_ case-sensitive.
+These two search commands are not case-sensitive:
+for example, `module spider FastQC` would also find the `fastqc` module.
 :::
 
 ### Loading modules
@@ -335,9 +335,9 @@ module spider R/4.5.2
 ```
 
 So, it appears you first need to load the module `gcc/12.3.0` before you can load
-R/4.5.2.
+`R/4.5.2`.
 
-Therefore, let's try to load `gcc` along with `R` --
+Therefore, let's try to load `gcc` along with `R` ---
 you can use the command below to load both at the same time:
 
 ```bash
@@ -349,7 +349,7 @@ Due to MODULEPATH changes, the following have been reloaded:
   1) mvapich/4.1
 ```
 
-(`gcc` and `intel` are two different _compilers_ --
+(`gcc` and `intel` are two different _compilers_ ---
 programs that translate code into a runnable program.
 OSC has one of these two compilers loaded by default,
 and different pieces of software are built with (and need) only one of them.
@@ -590,7 +590,7 @@ tools also have a `-h` and/or `--help` option that prints usage information to t
    Specified output directory 'results/fastqc/' does not exist
    ```
 
-   So, let's create the output dir first, and then rerun the exact same command:
+   So, let's create the output dir first, and then rerun the command:
 
    ``` bash
    mkdir -p results/fastqc
@@ -670,12 +670,22 @@ tools also have a `-h` and/or `--help` option that prints usage information to t
    which should open the HTML file in a new tab in VS Code^[
    thanks to the HTML Preview extension we installed earlier.].
 
-6. Explore the file.
-   Which graphs do you understand, and which ones don't you understand?
+6. Explore the file. The "Summary" on the left gives each graph a
+   green check (pass), orange exclamation mark (warning), or red cross (fail).
+   Did any graphs get a warning or fail?
+   Pick one, and try to figure out from the graph what FastQC is flagging.
 
 7. Open the second HTML file (for the `R2` file) in a new tab,
    and compare it to the first one. What are the main differences you observe?
 
+:::
+
+::: {.callout-tip}
+#### Don't take FastQC's flags at face value
+FastQC's pass/warn/fail thresholds assume random genomic DNA sequences.
+For other data types, some "failures" are expected: for example, RNA-seq data
+typically gets a warning or fail for _Sequence Duplication Levels_,
+since highly expressed genes produce many identical reads.
 :::
 
 Finally, a few notes on the behavior of bioinformatics programs like FastQC:
@@ -1036,9 +1046,9 @@ on a computer at another institution, or at OSC five years from now.
   A container, on the other hand, can be run on any computer with a container platform
   like Apptainer or Docker.
 
-- **Reproducibility:** A module that exists today may not exist in the future,
-  or it may be updated to a new version.
-  A container image doesn't change:
+- **Reproducibility:** OSC periodically retires older modules as it updates its software,
+  so a module you use today may no longer exist in a few years.
+  A container image, on the other hand, doesn't change:
   the link you used will always give you the exact same program version(s).
   You can also save the container image file (`.sif`) to keep it yourself.
 
@@ -1071,8 +1081,8 @@ on a computer at another institution, or at OSC five years from now.
 
    </details>
 
-2. A labmate wants to check which version of MultiQC (a program that summarizes FastQC results)
-   they have, and runs the command below. It fails --- why?
+2. A labmate wants to check the version of MultiQC (a program that summarizes FastQC results),
+   and runs the command below. It fails --- why?
 
    ```bash
    apptainer exec oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960 \
