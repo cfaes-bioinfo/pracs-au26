@@ -40,23 +40,8 @@ language:
 
 ### Learning Goals
 
-#### This week and the next two weeks
-
 This week, you will learn how to write shell scripts to run programs
 with command-line interfaces (CLIs), like various bioinformatics tools.
-
-The end goal is to be able to submit shell scripts as "batch jobs" at OSC,
-which e.g. allows you to run them simultaneously many times!
-This is extremely useful because with omics analysis,
-it's common to have to run the same step for many samples in parallel.
-To get there, you still need to learn about the following topics:
-
-1. The basics of shell scripts, using a script to run FastQC as an example _(this session)_
-2. Running a script many times with loops _(next session)_
-3. Submitting batch jobs with Slurm _(in week 9)_
-
-#### This session
-
 In this session, we will talk about:
 
 - What shell scripts are
@@ -64,6 +49,7 @@ In this session, we will talk about:
 - Boilerplate shell script header lines: shebang and safe settings
 - Shell variables
 - Command-line arguments to scripts
+- "Logging" statements that report what a script is doing
 
 ### Getting ready
 
@@ -74,29 +60,13 @@ In this session, we will talk about:
 3. **Within the `week07` dir, create a dir `scripts`** (but don't navigate there).
 4. _Optional: Create a new Markdown file for class notes and save it in your `week07` dir._
 
-#### Add a VS Code keyboard shortcut
+#### Install the Shellcheck VS Code extension {#install-shellcheck}
 
-Add a keyboard shortcut to send code from your editor pane to the terminal.
-That way, you don't have to copy-and-paste code into the terminal when you've
-typed it in the editor^[
-This is the same type of behavior that you may be familiar with from RStudio.]:
+Shellcheck is really useful VS Code extension that checks your shell scripts for
+errors and bad practices. Install it:
 
-1. Click {{< fa cog >}} (bottom-left) > `Keyboard Shortcuts`.
-2. Type "Run Selected Text" in the search box, and you should see the option
-   "_Terminal: Run Selected Text in Active Terminal_".
-3. Click on that line, then add the shortcut <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.^[
-   Don't worry about any warnings that other keybindings exist for this shortcut.]
-
-#### Install the Shellcheck extension {#install-shellcheck}
-
-The Shellcheck VS Code extension checks your shell scripts for errors and bad
-practices, and can be incredibly useful.
-But in VS Code Server, there is currently an odd problem with it,
-so after installing it, you'll need a work-around to get it to function:
-
-1. In the narrow side bar,
-   click on the Extensions icon to switch the wide side bar to Extensions
-2. Search for **shellcheck** (by *timonwong*) and install it.
+1. In the narrow side bar, click on the Extensions icon.
+2. In the wide side bar, search for **shellcheck** (by *timonwong*) and install it.
 
 ::: {.callout-tip}
 #### More VS Code tips and tricks
@@ -106,11 +76,11 @@ see [this optional self-study page on VS Code](../bonus/vscode.qmd).
 
 ## Shell scripts
 
-Many bioinformatics tools/programs/software used to analyze omics data
-are run from the command line.
+Many bioinformatics programs to analyze omics data are run from the command line.
 In other words, they have a command-line interface (**CLI**).
-We can run them using commands that are structurally **very similar** to those of
-basic Unix shell commands --- uou saw an example of this when we ran FastQC last week.
+We can run them using commands that are structurally very **similar** to those of
+basic Unix shell commands ---
+you saw an example of this when we ran FastQC last week.
 
 However, we've been running shell commands in an "interactive" manner:
 typing or pasting them into the shell and then pressing <kbd>Enter</kbd>.
@@ -123,17 +93,20 @@ plain-text files that contain shell code.
 Some general reasons why it can be beneficial to use shell scripts
 instead of running code interactively line-by-line:
 
-- It is a good way to save and organize your code.
-- You can easily rerun scripts and re-use them in similar contexts.
+- It is a good way to **save and organize** your code.
+- You can easily **rerun** scripts and **re-use** them in similar contexts.
 
 And importantly for our purposes at OSC,
-we can **submit scripts as "batch jobs"**, which allows us to:
+we can submit scripts as **"batch jobs"**, which allows us to:
 
-- Run scripts "remotely" without needing to stay connected to the running process,
-  or even to be connected at all to it:
-  we can submit a script, log out from OSC and shut down our computer, and it will still run.
-- Easily run analyses that take many hours or even multiple days.
-- Run a script many times _simultaneously_, such as for different files/samples.
+- Easily perform **long-running** analyses (taking many hours or even multiple days).
+- Run analyses **many times simultaneously**, such as for different files/samples.
+- Run analyses while being able to **disconnect** from the system.
+  We can submit a script, log out from OSC and shut down our computer,
+  and it will still run.
+
+We'll talk about batch jobs in two weeks,
+and will start learning about shell scripts today.
 
 ::: {.callout-tip collapse="true"}
 #### Recap: Bash vs. shell _(Click to expand)_
@@ -154,7 +127,7 @@ and can be run with the `bash` command.
 ### A script to run FastQC
 
 In the previous lecture, you ran FastQC for a FASTQ file
-by typing the following commands directly in the terminal:
+by executing the following commands directly in the terminal:
 
 ```bash
 # [Don't run this -- this is a recap from last week]
@@ -194,6 +167,7 @@ fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
 Shell scripts mostly contain the same Unix shell code you have become familiar with.
 As such, this file with three commands (and some comments)
 constitutes a **functional shell script**!
+
 One way of running the script is by typing `bash` followed by the path to the script:
 
 ```bash
@@ -208,15 +182,16 @@ Approx 15% complete for S63_R1.fastq.gz
 Analysis complete for S63_R1.fastq.gz
 ```
 
-That worked!
-But if Shellcheck is working, you should see a red squiggly line on the first
-line of your script.
-Hover over it to see the warning: Shellcheck wants you to add a "shebang" line,
-which you'll learn about in a moment.
+That worked! But if Shellcheck is working,
+you should see a red squiggly line on the first line of your script.
+Hover over it to see the warning:
+Shellcheck wants you to add a "shebang" line, which you'll learn about in a moment.
 Keep an eye out for these squiggly lines ---
 Shellcheck will also flag things like typos in variable names.
 
-::: {.callout-tip collapse="true"}
+_TODO add screenshot for fastqc.sh here_
+
+::: {.callout-note collapse="true"}
 #### Shellcheck in action: screenshots _(Click to expand)_
 
 - Shellcheck shows a red squiggly line when a script has no shebang line,
@@ -249,59 +224,59 @@ Shellcheck will also flag things like typos in variable names.
 
 A couple of notes about the commands in the script:
 
-- **Loading the module in the script**\
+- **The module is loaded in the script**\
   Recall that loaded modules don't persist across shell sessions.
   By loading the module inside the script,
   the script will work regardless of whether you have loaded the module in your terminal.
   This will also be important when you run scripts as batch jobs later.
 
-- **Creating the output dir with `mkdir -p`**\
+- **The output dir is created with `mkdir -p`**\
   Recall that FastQC won't create the output dir for you.
   Using `mkdir -p` inside the script ensures that the output dir exists,
   whether or not it existed before running the script
   --- see the box below for details.
 
-:::{.callout-tip collapse="true"}
-#### About the `-p` option to `mkdir` _(Click to expand)_
+  :::{.callout-tip collapse="true"}
+  #### More about the `-p` option to `mkdir` _(Click to expand)_
 
-Using `mkdir`'s `-p` option does two things at once,
-both of which are very useful when including this command in a script:
+  Using `mkdir`'s `-p` option does two things at once,
+  both of which are very useful when including this command in a script:
 
-- It will enable `mkdir` to create multiple levels of directories at once
-  (i.e., to act recursively):
-  by default, `mkdir` errors out if the parent directory/ies of the
-  specified directory don't yet exist.
+  - It will enable `mkdir` to create multiple levels of directories at once
+    (i.e., to act recursively):
+    by default, `mkdir` errors out if the parent directory/ies of the
+    specified directory don't yet exist.
 
-  ```bash
-  mkdir newdir1/newdir2
-  ```
-  ```{.bash-out}
-  mkdir: cannot create directory ‘newdir1/newdir2’: No such file or directory
-  ```
+    ```bash
+    mkdir newdir1/newdir2
+    ```
+    ```{.bash-out}
+    mkdir: cannot create directory ‘newdir1/newdir2’: No such file or directory
+    ```
 
-  ```bash
-  # This successfully creates both directories:
-  mkdir -p newdir1/newdir2
-  ```
+    ```bash
+    # This successfully creates both directories:
+    mkdir -p newdir1/newdir2
+    ```
 
-- If the directory already exists, with `-p`,
-  `mkdir` won't do anything and won't return an error.
-  Without this option, `mkdir` would return an error,
-  which would in turn make the script stop
-  (given the settings you'll learn about below):
+  - If the directory already exists, with `-p`,
+    `mkdir` won't do anything and won't return an error.
+    Without this option, `mkdir` would return an error,
+    which would in turn make the script stop
+    (given the settings you'll learn about below):
 
-  ```bash
-  mkdir newdir1/newdir2
-  ```
-  ```{.bash-out}
-  mkdir: cannot create directory ‘newdir1/newdir2’: File exists
-  ```
+    ```bash
+    mkdir newdir1/newdir2
+    ```
+    ```{.bash-out}
+    mkdir: cannot create directory ‘newdir1/newdir2’: File exists
+    ```
 
-  ```bash
-  # This does nothing since the dirs already exist
-  mkdir -p newdir1/newdir2
-  ```
-:::
+    ```bash
+    # This does nothing since the dirs already exist
+    mkdir -p newdir1/newdir2
+    ```
+  :::
 
 Next, you'll learn about two header lines that are good practice to
 add to every shell script.
@@ -309,7 +284,7 @@ add to every shell script.
 ### Shebang line
 
 A so-called "_shebang_" line is used as the first line of a script to
-indicate **which computer language the script uses**:
+indicate **which computer language** the script uses:
 
 ```sh
 #!/bin/bash
@@ -326,19 +301,24 @@ Some default settings of the Bash shell are bad ideas inside scripts:
 
 - A script **keeps running after a command fails**,
   executing all remaining lines anyway.
-  At best, this wastes time, but it can also produce results that are wrong ---
-  and if your script prints a lot of output,
+  At best, this wastes time, but it can also produce results downstream of the
+  error that are wrong --- and if your script prints a lot of output,
   you may not even notice the error message.
 - When you **reference a non-existent ("unset") variable**,
   the shell silently replaces it with nothing
   (you'll learn more about variables below).
 
-Therefore, you should add the following line to your shell scripts,
-which will change these to safer settings:
+To make the script safer and error out when such things happen,
+add the following line near the top of your shell scripts:
 
 ```bash
 set -euo pipefail
 ```
+
+You'll see these settings in action later in this session.
+
+::: {.callout-note collapse="true"}
+#### What does each of these options do? _(Click to expand)_
 
 With these settings, **the script stops** with an error message if:
 
@@ -346,8 +326,7 @@ With these settings, **the script stops** with an error message if:
 - `-u` --- a non-existent variable is referenced.
 - `-o pipefail` --- a command in a shell "pipeline" (e.g., `sort | uniq`) fails.
 
-You don't need to remember these details: simply start every script with this line.
-You'll see these settings in action later in this session.
+:::
 
 ### Adding the header lines to your script
 
@@ -355,7 +334,7 @@ Add the two discussed header lines to your `fastqc.sh` script,
 so it will now contain the following:
 
 ```{.bash .file filename="scripts/fastqc.sh"}
-#!/bin/bash
+#!/bin/bash  #TODO check color in script
 set -euo pipefail
 
 # Load the OSC module for FastQC
@@ -382,13 +361,18 @@ Analysis complete for S63_R1.fastq.gz
 ```
 
 That didn't change anything to the output,
-but at least we confirmed that the script still works.
+but we confirmed that the script still works.
 
 ::: {.callout-note collapse="true"}
 #### Can I run scripts without the `bash` command? _(Click to expand)_
 
-It's possible to execute scripts by only typing their path
--- for example:
+By default, you need to run a script with the `bash` command,
+like `bash scripts/fastqc.sh`.
+When doing so, you are telling the computer to run the script with Bash
+(and the shebang line is actually ignored;
+Bash will be used to run the script regardless of what the shebang line says).
+
+It's possible to execute scripts by only typing their path, using syntax like:
 
 ```bash
 # If the script is in a different dir:
@@ -400,21 +384,21 @@ scripts/fastqc.sh
 
 To be able to do this, the script:
 
-1. Needs to have a _shebang_ line so the computer knows which language to
-   execute the script with.
-2. Needs to be "executable".
-   You can do that by changing the file permissions, e.g.:
+1. Must have a _shebang_ line so the computer knows which language to execute
+   the script with.
+2. Must be "executable". You can make it executable by running:
 
-  ```bash
-  # Add 'execute permissions' for fastqc.sh:
-  chmod +x fastqc.sh
-  ```
+   ```bash
+   # Add 'execute permissions' for fastqc.sh:
+   chmod +x fastqc.sh
+   ```
 
-**Why do you need `./` in the example above when the script is in your working dir?**\
-The `./` is necessary to make explicit that you're referring to a file name.
-Without it (running just `fastqc.sh`),
-the shell would look for a command or program of that name, and wouldn't find it.
-With yet another step,
+----
+
+Finally, why do you need `./` in the second example above (`./fastqc.sh`),
+where the script is in your working dir?
+The `./` is necessary to make explicit that you're referring to a file name
+and not a command. With yet another step,
 it _is_ possible to add your script to the computer's registry of commands/programs,
 but we won't cover that here (Google `$PATH` if you're curious).
 :::
@@ -426,61 +410,63 @@ run FastQC for the file `S63_R1.fastq.gz`,
 with output going to `results/fastqc`.
 These file paths are "**hard-coded**" in the script:
 to run FastQC for the R2 file of the same sample, or for any other sample,
-you would have to edit the script every time.
-You'll fix this in two steps:
+you would have to create a new script or edit the script every time.
+
+Instead, it would be better to make the script **flexible** so that it can run
+FastQC for any FASTQ file, with output going to any output dir.
+We'll do this in two steps:
 
 1. Using **shell variables** to define the file paths only once,
    at the top of the script.
 2. Using **command-line arguments** to pass the file paths to the script
-   when you run it --- so you won't have to edit the script at all.
+   when you run it, so you won't have to edit the script at all.
 
 ## Shell variables
 
 ### Variables
 
-Variables are truly ubiquitous in programming.
-They are typically used for items that:
+In week 2, you learned about environment variables like `$USER` and `$HOME`,
+which are pre-set by the system.
+But you can also define your own variables in the shell and in scripts,
+which is especially useful for items that:
 
 - Are referred to repeatedly and/or
-- Are subject to change.
+- Are subject to change
 
-These tend to be _settings_ like the paths to input and output files,
-and parameter values for programs.
-Using variables makes it easier to **change such settings** and makes it possible
-to write **scripts that are flexible** depending on user input.
-We have already seen some handy applications of variables,
-like the environment variable `$USER`, which contains your user name.
+For example, variables may be useful for **settings** like the paths to input and
+output files and parameter values for programs.
+When using variables, these can be changed in **one place** (the variable definition)
+instead of having to change them in multiple places throughout your code.
 
 #### Assigning and referencing variables
 
 To **assign** a value to a variable in the shell, use the syntax `variable_name=value`:
 
 ```bash
-# Assign the value "beach" to a variable with the name "location":
-location=beach
+# Assign the value "inoculated" to a variable with the name "treatment":
+treatment=inoculated
 
 # Assign the value "200" to a variable with the name "nr_samples":
 nr_samples=200
 ```
 
-:::{.callout-warning}
-##### Note: there can't be spaces around the equals sign (`=`)!
+:::{.callout-warning appearance="simple"}
+No spaces are allowed around the equals sign: `treatment = inoculated` fails.
 :::
 
-To **reference** a variable (i.e., to access its value):
+To **reference** a variable (i.e., to access its value) by its name:
 
-- You need to put a dollar sign `$` in front of its name.
-- It is good practice to double-quote (`"..."`) variable names^[
-  We'll talk more about quoting later.].
+- Always put a dollar sign `$` in front of it: `treatment` becomes `$treatment`.
+- To be safe, also double-quote it: `$treatment` becomes `"$treatment"`.
 
 As before with the environment variables `$USER` and `$HOME`,
-we'll use the `echo` command to see what values our variables contain:
+use `echo` to see what values your variables contain:
 
 ```bash
-echo "$location"
+echo "$treatment"
 ```
 ```{.bash-out}
-beach
+inoculated
 ```
 
 ```bash
@@ -502,73 +488,31 @@ ls -lh "$input_file"
 -rw-rw----+ 1 jelmer PAS0471 21M Sep  9 13:46 ../garrigos/fastq/S63_R1.fastq.gz
 ```
 
-::: {.callout-note collapse="true"}
-#### In case you're familiar with R: syntax comparison _(Click to expand)_
-
-- Assigning and printing the value of a variable **in R**:
-
-  ``` r
-  x <- 5
-  x
-  ```
-  ``` r-out
-  [1] 5
-  ```
-
-- Assigning and printing the value of a variable **in the Unix shell**:
-
-  ``` bash
-  x=5
-  echo $x
-  ```
-  ``` bash-out
-  5
-  ```
-
-Differences are that in the Unix shell:
-
-- There cannot be any **spaces** around the **`=`** in `x=5`.
-- You need a **`$` prefix** to *reference* (but not to *assign*) variables
-  in the shell^[
-  Because of this, anytime you see a word/string that starts with a `$` in the shell,
-  you can safely assume that it is a variable.].
-- You need the **`echo`** command, a general command to print text,
-  to print the value of `$x` (cf. in R).
-:::
+<hr style="height:1pt; visibility:hidden;" />
 
 ### Variable names
 
-In the shell, variable names:
+Some rules for variable names in the shell --- they:
 
 - **Can** contain letters, numbers, and underscores
 - **Cannot** contain spaces, periods (`.`), dashes (`-`), or other special symbols^[
   Compare this with the situation for file names,
   which ideally do not contain spaces and special characters either,
-  but in which `-` and `.` _are_ recommended.].
-- **Cannot start** with a number
+  but in which `-` and `.` _are_ recommended.]
+- **Cannot _start_** with a number
 
-Try to make your variable names descriptive,
-like `$input_file` above, as opposed to say `$x` and `$myvar`.
-There are multiple ways of distinguishing words in the absence of spaces,
-such as `$inputFile` and `$input_file`:
-I prefer the latter, which is called "snake case".
-
-::: {.callout-tip collapse="true"}
-#### Case and environment variables _(Click to expand)_
-All-uppercase variable names are pretty commonly used ---
-and recall that so-called environment variables such as `$USER` and `$HOME`
-are always in uppercase.
-
-My preferred approach is to use lowercase for variables and uppercase for what
-we may call "constants", like when you "hard-code" certain file paths or settings.
-That means you include them e.g. in a script without allowing them to be set from outside --
-more on this later.
-:::
+Ideally, variable names are descriptive, like `$input_file` above and not cryptic
+like `$x`.
+Like with file names, you can distinguish words using capitalization
+("camelCase", `$inputFile`) or underscores ("snake case", `$input_file`).
+In this course, we'll use lowercase variable names ---
+the box at the end of the [arguments section](#constants) explains when uppercase
+can be useful.
 
 ### Quoting variables
 
-I have mentioned that it is good practice to quote variables
-(i.e. to use `"$myvar"` instead of `$myvar`).
+I have mentioned that it is **good practice to quote variables**
+(i.e. to use `"$location"` instead of `$location`).
 So what can happen if you don't do this?
 
 Let's start by making and moving into a dir to create some messy files:
@@ -578,75 +522,169 @@ mkdir sandbox
 cd sandbox
 ```
 
-If a variable's **value contains spaces**:
+Here's what happens if you don't quote a variable whose **value contains spaces**:
 
-  ```sh
-  # Assign a string with spaces to variable 'today', and print its value:
-  today="Tue, Mar 26"
-  echo $today
+1. Say that you have a variable `today`, and its value contains spaces:
+
+   ```sh
+   today="Tue, Mar 26"
+   echo $today
+   ```
+   ```bash-out
+   Tue, Mar 26
+   ```
+
+2. Next, you try to create a file with a name that includes this variable,
+   but you don't quote it:
+
+   ```bash
+   touch README_$today.txt
+
+   # (Using the -1 option to ls will print each entry on its own line)
+   ls -1
+   ```
+   ```bash-out
+    26.txt
+   Mar
+   README_Tue,
+   ```
+
+3. Oops! The shell performed "field splitting" to split the value into three
+   separate units --- as a result, **three files** were created.
+   This can be avoided by quoting the variable:
+
+   ```sh
+   touch README_"$today".txt
+   ls -1
+   ```
+   ```bash-out
+   README_Tue, Mar 26.txt
+   ```
+
+Additionally, without quoting,
+you can't always indicate **where a variable name ends** ---
+explore this in the following exercise.
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 1: Where does a variable name end?
+
+First, assign a sample ID to a variable:
+
+```bash
+sample_id="A1"
+```
+
+For each command below, first predict what it will print,
+and then run it to check your prediction.
+
+1. `echo $sample_id.fastq.gz`
+
+2. `echo $sample_id_R1.fastq.gz` (the intent is to print `A1_R1.fastq.gz`)
+
+3. `echo "Processing sample: $sample_ID"`
+
+Finally:
+
+4. Fix the command from item 2 so that it prints `A1_R1.fastq.gz`.
+
+<!----
+<details><summary>Click here for the solutions</summary>
+
+1. This works as intended, because a period can't be part of a variable name,
+   so the shell knows that the variable name is `sample_id`:
+
+   ```bash-out
+   A1.fastq.gz
+   ```
+
+2. This prints only `.fastq.gz`!
+   Underscores and letters _can_ be part of a variable name,
+   so the shell looked for a variable called `sample_id_R1`.
+   That variable doesn't exist, and the shell **silently replaced it with nothing**:
+
+   ```bash-out
+   .fastq.gz
+   ```
+
+3. Variable names are case-sensitive, so `$sample_ID` is a different,
+   non-existent variable. Again, the shell doesn't complain,
+   it just replaces it with nothing:
+
+   ```bash-out
+   Processing sample:
+   ```
+
+   This is why the `set -u` setting you added to your script is so useful:
+   it makes a script fail with an error message instead.
+
+4. Quote the variable, so that the shell knows where the variable name ends:
+
+   ```bash
+   echo "$sample_id"_R1.fastq.gz
+   ```
+   ```bash-out
+   A1_R1.fastq.gz
+   ```
+
+</details>
+---->
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
+
+:::{.callout-note collapse="true"}
+#### Quoting as "escaping" --- and double vs. single quotes _(Click to expand)_
+
+By double-quoting a variable, you essentially escape ("turn off")
+the default special meaning of the space as a **field separator**,
+asking the shell to interpret it instead as a **literal space**.
+
+Similarly, double quotes will escape **other special characters** in the shell,
+like shell wildcards. Compare:
+
+- Due to shell expansion, this will show all files in the current working dir:
+
+  ```bash
+  echo *
   ```
-  ```bash-out
+  ```{.bash-out}
+  26.txt Mar README_Tue, README_Tue, Mar 26.txt
+  ```
+
+- But with the `*` enclosed in double quotes,
+  it will simply print the literal "*" character:
+
+  ```bash
+  echo "*"
+  ```
+  ```{.bash-out}
+  *
+  ```
+
+However, double quotes do **not** turn off the special meaning of `$`
+(which is to denote a string as a variable):
+
+- With **double quotes**, the shell will still interpret `$today` as a variable:
+
+  ```bash
+  echo "$today"
+  ```
+  ```{.bash-out}
   Tue, Mar 26
   ```
 
+- With **single quotes**, the shell will interpret `$today` literally as a string,
+  and not as a variable:
+
   ```bash
-  # Try to create a file with a name that includes this variable:
-  touch README_$today.txt
-
-  # (Using the -1 option to ls will print each entry on its own line)
-  ls -1
+  echo '$today'
   ```
-  ```bash-out
-  26.txt
-  Mar
-  README_Tue,
+  ```{.bash-out}
+  $today
   ```
 
-Oops! The shell performed "field splitting" to split the value into three
-separate units --- as a result, **three files** were created.
-This can be avoided by quoting the variable:
-
-```sh
-touch README_"$today".txt
-ls -1
-```
-```bash-out
-README_Tue, Mar 26.txt
-```
-
-Additionally, without quoting,
-you can't explicitly indicate **where a variable name ends**:
-
-```sh
-# Start by cleaning the directory
-rm *
-
-# We intend to create a file named 'README_Tue, Mar 26_final.txt'
-touch README_$today_final.txt
-ls -1
-```
-```bash-out
-README_.txt
-```
-
-The shell looked for a (non-existent) variable `$today_final`
-instead of `$today`,
-since it includes all characters until it hits one that can't be part
-of a variable name: here, the period.
-Quoting solves this, too:
-
-```sh
-touch README_"$today"_final.txt
-ls -1
-```
-```bash-out
-README_Tue, Mar 26_final.txt
-```
-
-```bash
-# Move out of the 'sandbox' dir (back to /fs/ess/PAS3493/people/$USER/week07)
-cd ..
-```
+<hr style="height:1pt; visibility:hidden;" />
+:::
 
 ::: {.callout-tip collapse="true"}
 #### Curly braces notation: `${myvar}` _(Click to expand)_
@@ -683,55 +721,9 @@ ls
 ```bash-out
 'README_Tue, Mar 26_final.txt'
 ```
-:::
-
-:::{.callout-note collapse="true"}
-#### Quoting as "escaping" -- and double vs. single quotes _(Click to expand)_
-
-By double-quoting a variable,
-you are essentially escaping (or "turning off")
-the default special meaning of the _space as a field separator_,
-and are asking the shell to interpret it as a _literal space_.
-
-Similarly, double quotes will escape other "special characters",
-such as shell wildcards. Compare:
-
-```bash
-# Due to shell expansion, this will echo/list all files in the current working dir
-echo *
-```
-```{.bash-out}
-26.txt Mar README_Tue, README_Tue, Mar 26.txt
-```
-
-```bash
-# This will simply print the literal "*" character
-echo "*"
-```
-```{.bash-out}
-*
-```
-
-However, double quotes do **not** turn off the special meaning of `$`
-(which is to denote a string as a variable):
-
-```bash
-echo "$today"
-```
-```{.bash-out}
-Tue, Mar 26
-```
-
-...but **_single quotes_** will:
-
-```bash
-echo '$today'
-```
-```{.bash-out}
-$today
-```
 
 <hr style="height:1pt; visibility:hidden;" />
+
 :::
 
 ### Using variables in your FastQC script
@@ -760,54 +752,58 @@ fastqc --outdir "$outdir" "$fastq"
 This is an improvement:
 the file paths are now clearly defined in one place at the top of the script,
 and the output dir, which is used twice, would only need to be changed once.
+
 But you would still need to edit the script to run it for a different FASTQ file.
-That's where command-line arguments come in.
+Let's see how we can make this more flexible using command-line arguments.
 
 ## Command-line arguments for scripts
 
 When you run a script, you can pass arguments to it,
-such as a file to operate on.
-This allows you to make **scripts that are flexible** when it comes to inputs,
-outputs, and possibly other settings.
-That way, you don't have to hard-code such variable things inside the script,
-and can for example run a script many times in parallel to dramatically speed
-up your analysis.
-All shell scripts that we will write in this course will accept arguments.
+such as an input file and an output dir.
+That way, **one script can process any file** without being edited.
+And you can run the same script for many files at once (in parallel),
+which can dramatically speed up your analysis.
+All shell scripts we'll write in this course will accept arguments.
 
 ### Executing a script with arguments
 
 Executing a script with arguments
-is much like when you provide a command like `ls` with arguments,
-separated by spaces:
+is just like providing a command like `ls` with arguments:
 
-```bash
-# [Don't run any of this, these are just syntax examples]
+- Pass two file names as arguments to `ls`:
 
-# Pass 2 filenames as arguments to ls:
-ls data/sampleA.fastq.gz data/sampleB.fastq.gz
+  ```{.norun}
+  ls data/sampleA.fastq.gz data/sampleB.fastq.gz
+  ```
 
-# Pass 2 arguments, an input file and an output dir, to a script:
-bash scripts/fastqc.sh data/sampleA.fastq.gz results/fastqc
-```
+- Pass two arguments, an input file and an output dir, to a script:
 
-### Positional parameters
+  ```{.norun}
+  bash scripts/fastqc.sh data/sampleA.fastq.gz results/fastqc
+  ```
 
-Inside the script, any command-line arguments that you pass to it are
-**automatically available in variables**,
-the so-called "positional parameters".
-Specifically:
+### Accessing arguments inside the script
 
-- Any first argument will be assigned to the variable **`$1`**.
-- Any second argument will be assigned to **`$2`**.
-- Any third argument will be assigned to **`$3`**, and so on.
+Inside the script, any arguments you pass are
+**automatically assigned** to variables named after their position:
 
-So, in the `fastqc.sh` example command above,
-`$1` would contain `data/sampleA.fastq.gz` and `$2` would contain `results/fastqc`.
+- Any **first** argument will be assigned to the variable `$1`
+  (above: `data/sampleA.fastq.gz`).
+- Any **second** argument will be assigned to `$2`
+  (above: `results/fastqc`).
+- Any **third** argument will be assigned to `$3` --- _and so on_.
 
-However, even though they are made available,
-these variables are **not used** automatically.
-So, unless you include code in the script to do something with these variables,
-nothing happens with them.
+However, beyond just being assigned, these variables are **not used** automatically.
+Let's see how we can use them.
+
+:::{.callout-note}
+#### Other variables that are automatically available inside scripts
+
+- **`$#`** contains the _number_ of command-line arguments passed to the script.
+- **`$0`** contains the script's file name^[
+  Though this does not work when you submit scripts as Slurm batch jobs,
+  and we will therefore not use this feature.].
+:::
 
 ### Using arguments in your FastQC script
 
@@ -834,9 +830,13 @@ fastqc --outdir "$outdir" "$fastq"
 Only the two lines that define `$fastq` and `$outdir` changed:
 their values now come from the command line instead of being hard-coded.
 
-While you _could_ use the `$1`-style variables throughout your script
-(e.g., you could have `fastqc --outdir "$2" "$1"`),
-I recommend always copying them to descriptively named variables like we did here.
+You _could_ use the `$1`-style variables throughout your script, like so:
+
+```{.bash .file filename="fastqc.sh (alternative - don't use)"}
+fastqc --outdir "$2" "$1"
+```
+
+But I recommend always copying them to descriptively named variables like we did here.
 This is better because:
 
 - It will make your script **easier to understand** for others and for your future self.
@@ -844,6 +844,11 @@ This is better because:
 
 Now, you can run the script for any FASTQ file without editing it ---
 for example, for both FASTQ files of sample `S63`:
+
+```bash
+# Move out of the 'sandbox' dir (back to /fs/ess/PAS3493/people/$USER/week07)
+cd ..
+```
 
 ```bash
 bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
@@ -867,7 +872,10 @@ Analysis complete for S63_R2.fastq.gz
 
 #### Safe settings in action
 
-What happens if you forget to pass arguments to the script?
+Our script currently **requires** two arguments: the input FASTQ file and the output dir.
+No default values are set for these variables, so if you forget to pass them,
+the script won't be able to run successfully.
+Let's see what happens exactly if you don't pass arguments to the script:
 
 ```bash
 bash scripts/fastqc.sh
@@ -876,7 +884,7 @@ bash scripts/fastqc.sh
 scripts/fastqc.sh: line 8: $1: unbound variable
 ```
 
-Thanks to `set -u`, the script stops right away,
+Thanks to our safe settings with `set`, the script stops right away,
 with an error message that tells you exactly what went wrong:
 the variable `$1` doesn't exist ("is unbound").
 Without this setting, the script would have continued with empty values
@@ -884,40 +892,70 @@ for `$fastq` and `$outdir`,
 leading to much more confusing error messages downstream.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: A script with two arguments
+#### {{< fa user-edit >}} Exercise 2: A script with two arguments
 
-Create a script `scripts/printname.sh` with the following contents:
+1. Create a script `scripts/printname.sh` with the following contents:
 
-```{.bash .file filename="scripts/printname.sh"}
-#!/bin/bash
-set -euo pipefail
+   ```{.bash .file filename="scripts/printname.sh"}
+   #!/bin/bash
+   set -euo pipefail
 
-first_name="$1"
-last_name="$2"
+   first_name="$1"
+   last_name="$2"
 
-echo "This script will print a first and a last name"
-echo "First name: $first_name"
-echo "Last name: $last_name"
-```
+   echo "This script will print a first and a last name"
+   echo "First name: $first_name"
+   echo "Last name: $last_name"
+   ```
 
-Then, run the script, passing the arguments `John` and `Doe` to it:
+2. What do you think the script's output will be when you run it with the arguments
+   `John` and `Doe` like so:
 
-```bash
-bash scripts/printname.sh John Doe
-```
-```{.bash-out}
-This script will print a first and a last name
-First name: John
-Last name: Doe
-```
+   ```bash
+   bash scripts/printname.sh John Doe
+   ```
 
-In each scenario that is described below, think about what might happen.
-Then, run the script as instructed in the scenario to test your prediction.
+   <!----
+   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
 
-1. After commenting out the line with `set` settings,
+   ```bash
+   bash scripts/printname.sh John Doe
+   ```
+   ```{.bash-out}
+   This script will print a first and a last name
+   First name: John
+   Last name: Doe
+   ```
+
+   </details>
+   ---->
+
+Next, in each of the two scenarios described below, think about what might happen.
+After you have thought about it,
+run the script as instructed in the scenario to test your prediction.
+
+3. Double-quoting the entire name, e.g. `bash scripts/printname.sh "John Doe"`.
+
+   <!----
+   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
+   Because we are quoting `"John Doe"`, both names are passed _as a single argument_,
+   and both names end up in `$1`, the "first name".
+   Then, because no second argument was passed,
+   the script stops when trying to copy `$2`:
+
+   ```bash
+   bash scripts/printname.sh "John Doe"
+   ```
+   ```bash-out
+   scripts/printname.sh: line 5: $2: unbound variable
+   ```
+   </details>
+   ---->
+
+4. After "commenting out" the line with `set` settings,
    running the script without passing arguments to it.
 
-   <details><summary>Click here to learn what "commenting out" means</summary>
+   <details><summary> {{< fa lightbulb >}} Click here to learn what "commenting out" means.</summary>
    You can deactivate a line of code without removing it
    by inserting a `#` as the first character of that line.
    This is often referred to as "commenting out" code.
@@ -930,7 +968,7 @@ Then, run the script as instructed in the scenario to test your prediction.
    </details>
 
    <!----
-   <details><summary>Click here for the solution</summary>
+   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
    The script will run in its entirety and not throw any errors,
    because we are now using default Bash settings such that referencing
    non-existent variables does not throw an error.
@@ -953,51 +991,29 @@ Then, run the script as instructed in the scenario to test your prediction.
    </details>
    ---->
 
-2. Double-quoting the entire name when you run the script,
-   e.g.: `bash scripts/printname.sh "John Doe"`.
-   _(To get back to where you were, first remove the `#` you inserted in the script_
-   _in step 1 above to reactivate the `set` line.)_
-
-   <!----
-   <details><summary>Click here for the solution</summary>
-   Because we are quoting `"John Doe"`, both names are passed _as a single argument_,
-   and both names end up in `$1`, the "first name".
-   Then, because no second argument was passed,
-   the script stops when trying to copy `$2`:
-
-   ```bash
-   bash scripts/printname.sh "John Doe"
-   ```
-   ```bash-out
-   scripts/printname.sh: line 5: $2: unbound variable
-   ```
-   </details>
-   ---->
 :::
 
-::: {.callout-note collapse="true"}
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-warning collapse="true"}
 #### Why ignoring non-existent variables can be dangerous _(Click to expand)_
 
 The shell's default behavior of ignoring the referencing of unset variables can
-lead to accidental file removal as follows:
+lead to accidental file removal in a couple of ways. Here are two examples:
 
 - Using a variable, you try to remove temporary files whose names start with `temp_`:
 
-  ```bash
-  # NOTE: DO NOT run this!
+  ```{.norun}
   temp_prefix="temp_"
   rm "$tmp_prefix"*
   ```
 
 - Using a variable, you try to remove a temporary directory:
 
-  ```bash
-  # NOTE: DO NOT run this!
+  ```{.norun}
   tempdir=output/tmp
   rm -rf $tmpdir/*
   ```
-
-<details><summary> Above, the text specified the _intent_ of the commands. What would have actually happened? _(Click to expand)_</summary>
 
 In both examples, there is a similar typo: `temp` vs. `tmp`,
 which means that we are referencing a (likely) non-existent variable.
@@ -1005,34 +1021,167 @@ which means that we are referencing a (likely) non-existent variable.
 - In the first example,
   `rm "$tmp_prefix"*` would have been interpreted as `rm *`,
   because the non-existent variable is simply ignored.
-  Therefore, we would have **removed all files in the current working directory**.
+  Therefore, we would have removed all files in the current working directory.
 
 - In the second example, along similar lines,
   `rm -rf $tmpdir/*` would have been interpreted as `rm -rf /*`.
-  Horrifyingly, this would **attempt to remove the entire filesystem**:
-  recall that a leading `/` in a path is a computer's root directory.
+  This would attempt to remove the computer's entire filesystem:
+  recall that a leading `/` in a path is a computer's root directory
   (`-r` makes the removal _recursive_ and `-f` _forces_ removal).
-
-</details>
 
 These kinds of accidents are especially likely to happen inside scripts,
 where it is common to use variables and to work non-interactively.
 
 But before you get too scared of doing terrible damage, note that at OSC,
-you would not be able to remove any essential files
+you would not be able to remove any essential files,
 since you don't have the permissions to do so.
 On your own computer, this could be more genuinely dangerous, though even there,
 you would not be able to remove operating system files without requesting "admin" rights.
 :::
 
-:::{.callout-note}
-#### Other variables that are automatically available inside scripts:
+[]{#constants}
 
-- **`$#`** contains the _number_ of command-line arguments passed to the script.
-- **`$0`** contains the script's file name^[
-  Though this does not work when you submit scripts as Slurm batch jobs,
-  and we will therefore not use this feature.].
+::: {.callout-tip collapse="true"}
+#### Hard-coded settings as "constants" _(Click to expand)_
+
+We've made our FastQC script accept arguments,
+instead of "hard-coding" variable things like inputs and outputs in the script itself.
+
+You can also use arguments for _settings_ like bioinformatics program options
+you may want to vary among different runs of the script,
+or relatedly, for information about your data like read length.
+If you don't hard-code these options in your script but have arguments for them,
+it is easier to re-use your script in different contexts.
+
+But there is a balance to be struck,
+and you can also "hobble" your script with a confusing array of arguments.
+When you do hard-code potentially variable things in your script,
+it's still a good idea to store them in variables that you clearly define
+**at the top of your script**.
+For example, a quality threshold for a program,
+or the URL to an Apptainer container that you use in the script:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# Settings and constants
+MIN_QUAL=30
+FASTQC_CONTAINER=oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
+```
+
+Such variables can be referred to as "**constants**":
+they make the script easier to maintain (e.g., if you use the value in multiple
+places), but unlike variables that get their values from arguments,
+they can't be changed from outside the script.
+
+My preferred approach is to use **uppercase** for constants
+and **lowercase** for all other variables, so the two are easy to tell apart.
+But this is far from universal: it is also fairly common to use uppercase
+for all shell variables --- and recall that environment variables
+such as `$USER` and `$HOME` are always in uppercase.
 :::
+
+## "Logging" statements
+
+### Add logging statements to your script
+
+It is often useful to have your shell script report or "log" what it is doing.
+For instance:
+
+- At what date and time was the script run.
+- Which arguments were passed to the script.
+- What are the designated output dirs/files.
+- Perhaps even summaries of the output (we won't do this here).
+
+This information can help with troubleshooting and record-keeping.
+(One thing to keep in mind is that later,
+when you submit scripts as batch jobs,
+such logging output will not be printed to screen but will end up in text files.
+Therefore, you can store those text files along with other output files to keep
+detailed records of what you did!)
+
+Let's add some code to the FastQC script to make it produce logging information:
+
+```{.bash .file filename="scripts/fastqc.sh"}
+#!/bin/bash
+set -euo pipefail
+
+# Load the OSC module for FastQC
+module load fastqc/0.12.1
+
+# Copy the placeholder variables
+fastq="$1"
+outdir="$2"
+
+# Initial logging
+echo "# Starting script fastqc.sh"
+date
+echo "# Input FASTQ file:   $fastq"
+echo "# Output dir:         $outdir"
+echo
+
+# Create the output dir if needed
+mkdir -p "$outdir"
+
+# Run FastQC
+fastqc --outdir "$outdir" "$fastq"
+
+# Final logging
+echo
+echo "# Used FastQC version:"
+fastqc --version
+echo
+echo "# Successfully finished script fastqc.sh"
+date
+```
+
+A couple of notes about the lines that were added to the script above:
+
+- A "marker line" `Successfully finished script` indicates that the end of the
+  script was reached. This is useful because of your `set` settings:
+  seeing this line printed means that **no errors were encountered**.
+
+- Running `date` at the beginning and end of the script is one way to be able to
+  see **how long** the script took to run, and to keep a record of **when** it was run.
+
+- Printing the **input file names** can be particularly useful for troubleshooting.
+
+- The lines that only have `echo` will simply print a blank line,
+  basically as a separator between sections.
+
+- For scripts that run bioinformatics tools,
+  it's a good idea to include a line that prints the **program version**.
+
+{{< fa user-edit >}} _Update your `scripts/fastqc.sh` script with the code from the box above._
+
+### Run your final FastQC script
+
+Run your FastQC script again for one FASTQ file:
+
+```bash
+bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
+```
+```bash-out
+# Starting script fastqc.sh
+Thu Sep 25 13:53:13 EDT 2025
+# Input FASTQ file:   ../garrigos/fastq/S63_R1.fastq.gz
+# Output dir:         results/fastqc
+
+Started analysis of S63_R1.fastq.gz
+Approx 5% complete for S63_R1.fastq.gz
+# [...output truncated...]
+Analysis complete for S63_R1.fastq.gz
+
+# Used FastQC version:
+FastQC v0.12.1
+
+# Successfully finished script fastqc.sh
+Thu Sep 25 13:53:19 EDT 2025
+```
+
+Nice! We got some logging information, and can for example tell that the script
+took only 6 seconds to run for this small FASTQ file.
 
 ## Recap and next steps
 
@@ -1041,12 +1190,11 @@ using a script that runs FastQC as an example.
 As you've seen, shell scripts mostly consist of "regular" Unix shell code,
 but with some added bells and whistles like:
 
-- Boilerplate shell script header lines: shebang and safe settings
-- Variables, to clearly define settings like file paths in one place
-- Command-line arguments, which are available in variables in the script
-  and make the script flexible without having to edit it
+- Boilerplate shell script **header lines**: shebang and safe settings.
+- *Variables*, to clearly define settings like file paths in one place.
+- **Command-line arguments**, which are available in variables in the script
+  and make the script flexible.
+- **Logging statements**, which report what the script is doing.
 
-In the next lecture,
-you will add "logging" statements to your FastQC script,
-and learn how to write loops to easily run a script many times,
-such as for every FASTQ file in a dataset.
+In the next class, you will learn how to write loops to easily run a script many times,
+such as for every FASTQ file or every sample in a dataset.

@@ -40,13 +40,11 @@ language:
 
 This is a **self-study page** that we won't go through together in class.
 It covers a few Unix shell tips and tricks that are especially useful
-in a shell scripting context:
+in a shell scripting context, and builds on the variables, loops,
+and parameter expansion you learned about in the
+[w7a](./w7a_scripts1.qmd) and [w7b](./w7b_scripts2.qmd) lectures:
 
-- Parameter expansion -- and using this in the context of looping over samples
-  (pairs of FASTQ files) rather than individual files. _TODO - also covered in class - rephrase this_
-  This goes into more detail than the
-  [brief introduction in class](./w7b_scripts2.qmd#looping-over-samples).
-- **Command substitution** to save the output of commands.
+- Command substitution to save the output of commands.
 - Extract parts of file paths with `basename` and `dirname`.
 - Renaming many files at once with a loop.
 
@@ -55,219 +53,10 @@ in a shell scripting context:
 1. At <https://ondemand.osc.edu>,
    start a VS Code session in `/fs/ess/PAS3493/people/$USER`.
 2. In the terminal, navigate to your `week07` dir.
-3. Open your `README.md` from the [w7b lecture](./w7b_scripts2.qmd).
-
-## Parameter expansion -- and looping over samples
-
-In some cases, you can't simply loop over all files like we have done so far.
-For example, in many tools that process paired-end FASTQ files,
-the corresponding R1 and R2 files for each sample must be processed together.
-That is, the tool is not run separately for each FASTQ file,
-but for each sample, i.e. each _pair_ of FASTQ files.
-
-How can you loop over pairs of FASTQ files? There are two main ways:
-
-- Create a list of **sample IDs**,
-  loop over these IDs, and find the pair of FASTQ files with matching names.
-- Loop over the **R1 files only** and then "infer" the name of the corresponding
-  R2 file within the loop. This can be done because the R1 and R2 file names
-  should be identical other than the read-direction identifier (`R1`/`R2`).
-
-Below, we will use the second method,
-which you already saw [in class](./w7b_scripts2.qmd#looping-over-samples) ---
-but first, let's take a closer look at parameter expansion.
-
-### Parameter expansion
-
-With "parameter expansion",
-where parameter is another word for variable,
-you can search-and-replace text in your variable's values.
-For example:
-
-- Let's start by assigning a short DNA sequence to a variable so that you can
-  practice parameter expansion in the next step:
-
-  ```bash
-  dna_seq="AAGTTCAT"
-  echo "$dna_seq"
-  ```
-  ```bash-out
-  AAGTTCAT
-  ```
-
-- Now, use parameter expansion to replace all `T`s with `U`:
-
-  ```bash
-  echo "${dna_seq//T/U}"
-  ```
-  ```bash-out
-  AAGUUCAU
-  ```
-
-- You can also assign the result of the parameter expansion back to a variable:
-
-  ```bash
-  rna_seq="${dna_seq//T/U}"
-  echo "$rna_seq"
-  ```
-  ```bash-out
-  AAGUUCAU
-  ```
-
-So, the syntax for this type of parameter expansion is `${var_name//<search>/<replace>}` ---
-let's deconstruct that:
-
-1. You reference the variable using the "full notation" with braces: here, `${dna_seq}`
-2. You add two forward slashes after the variable name, and then the search pattern: here, `//T`
-3. After another forward slash, enter the replacement: here, `/U`
-
-_(If you only want to replace the first match,_
-_use a single forward slash after the variable name: `${var_name/<search>/<replace>}`.)_
-
-<hr style="height:1pt; visibility:hidden;" />
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: Get the R2 file name with parameter expansion
-
-File names of corresponding R1 and R2 FASTQ files should be identical other than
-the part that indicates the read direction,
-which is typically `_R1`/`_R2`^[But in some cases, e.g., just `_1` / `_2`.].
-
-After assigning the file name `../garrigos/fastq/S63_R1.fastq.gz` to a variable,
-as shown below,
-add the parameter expansion to obtain the name of the corresponding R2 file
-to the second line:
-
-```bash
-fastq_R1=../garrigos/fastq/S63_R1.fastq.gz
-fastq_R2=
-```
-
-<details><summary>_Click for the solution_</summary><p>
-Make sure you use `_R1`/`_R2` and not just `R1`/`R2`:
-with other datasets, the string "R1" may also occur in the sample ID (e.g. `ERR1234`)!
-
-```bash
-fastq_R1=../garrigos/fastq/S63_R1.fastq.gz
-fastq_R2=${fastq_R1/_R1/_R2}
-```
-
-Test that it worked:
-
-```bash
-echo "$fastq_R2"
-```
-```bash-out
-../garrigos/fastq/S63_R2.fastq.gz
-```
-</p></details>
-:::
-
-### A per-sample loop
-
-Using parameter expansion,
-you can create a loop that iterates over R1 FASTQ files only,
-and then infers the corresponding R2 file name.
-*In [next week's exercises](../week08/w8_exercises.qmd), you will do this for the program TrimGalore.*
-For now, here is an example with an imaginary `trim_mock.sh` script:
-
-```bash
-# [Don't run this]
-for R1 in ../garrigos/fastq/*_R1.fastq.gz; do
-  R2=${R1/_R1/_R2}
-  # 'trim_mock.sh' takes 3 arguments: R1 FASTQ, R2 FASTQ, output dir
-  bash scripts/trim_mock.sh "$R1" "$R2" results/trim
-done
-```
-
-<hr style="height:1pt; visibility:hidden;" />
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: Run a script with a per-sample loop
-
-- Write a script `scripts/trim_mock.sh` that accepts three arguments:
-  an R1 FASTQ file, an R2 FASTQ file, and an output dir.
-  You can use your `fastqc.sh` script as a template, but this script
-  should mock-run the fictional `trimmer` program as follows:
-
-  ```bash
-  # Mock-run the tool: by prefacing the command with 'echo',
-  # the command will merely be printed, not run
-  echo trimmer --in1 "$R1" --in2 "$R2" --outdir "$outdir"
-  ```
-
-  <details><summary>_Click for the solution_</summary>
-  ```bash
-  #!/bin/bash
-  set -euo pipefail
-
-  # Copy the placeholder variables
-  R1=$1
-  R2=$2
-  outdir=$3
-
-  # Create the output dir if needed
-  mkdir -p "$outdir"
-
-  # Initial reporting
-  echo "# Starting script trim_mock.sh"
-  date
-  echo "# Input R1 file:       $R1"
-  echo "# Input R2 file:       $R2"
-  echo "# Output dir:          $outdir"
-  echo
-
-  # Mock-run the tool
-  echo trimmer --in1 "$R1" --in2 "$R2" --outdir "$outdir"
-
-  # Final reporting
-  echo
-  echo "# Successfully finished script trim_mock.sh"
-  date
-  ```
-  </details>
-
-- Add an entry to your `README.md` file to loop over all R1 FASTQ files and
-  run the `trim_mock.sh` script for each sample.
-
-  <details><summary>Solution</summary>
-
-  ````markdown
-  ### Step 2 - Run the trim_mock.sh script for each _sample_
-
-  We will loop over R1 files only, and infer the R2 file name:
-
-  ```bash
-  for R1 in ../garrigos/fastq/*_R1.fastq.gz; do
-      R2=${R1/_R1/_R2}
-      bash scripts/trim_mock.sh "$R1" "$R2" results/trim_mock
-  done
-  ```
-  ````
-
-  ```bash-out
-  # Starting script trim_mock.sh
-  Thu Sep 25 14:05:10 EDT 2025
-  # Input R1 file:       ../garrigos/fastq/S63_R1.fastq.gz
-  # Input R2 file:       ../garrigos/fastq/S63_R2.fastq.gz
-  # Output dir:          results/trim_mock
-
-  trimmer --in1 ../garrigos/fastq/S63_R1.fastq.gz --in2 ../garrigos/fastq/S63_R2.fastq.gz --outdir results/trim_mock
-
-  # Successfully finished script trim_mock.sh
-  Thu Sep 25 14:05:10 EDT 2025
-
-  # Starting script trim_mock.sh
-  Thu Sep 25 14:05:10 EDT 2025
-  # Input R1 file:       ../garrigos/fastq/S64_R1.fastq.gz
-  # [...output truncated...]
-  ```
-  </details>
-:::
 
 ## Command substitution
 
-Command substitution allows you to **store the output of a command in a variable**.
+Command substitution allows you to store the **output of a command in a variable**.
 This is especially useful in scripts and loops.
 Let's see an example.
 As you know, the `date` command will print the current date and time:
@@ -279,8 +68,8 @@ date
 Thu Sep 11 14:52:22 EDT 2025
 ```
 
-If you try to store the output of `date` like below, it doesn't work --
-the literal string "date" is stored instead:
+If you try to store the output of `date` like below, it doesn't work ---
+instead, the literal string "date" is stored:
 
 ```bash
 today=date
@@ -302,13 +91,12 @@ Thu Sep 11 14:54:11 EDT 2025
 ```
 
 A practical example of using command substitution is when you want to
-**automatically include the current date in a file name**.
+**automatically** include the current date in a file name.
 Here, "automatic" refers to being able to use the same command regardless of the
-actual date -- e.g., you could use it in a script you could run at any point.
+actual date --- e.g., you could use it in a script you could run at any point.
 
-But first, note that you can use `date +%F` to get `YYYY-MM-DD` format without the time,
-which would be a lot more suitable to include in a filename than the regular `date`
-output:
+Let's first learn how to get the current date in a format that is suitable for file names.
+`date +%F` will print the date in `YYYY-MM-DD` format and without the time:
 
 ```bash
 date +%F
@@ -317,23 +105,29 @@ date +%F
 2026-09-07
 ```
 
-Let's use that in a command substitution:
+- Let's use that in a command substitution:
 
-```bash
-today=$(date +%F)
-touch README_"$today".txt
+  ```bash
+  today=$(date +%F)
+  touch README_"$today".txt
+  ```
 
-ls README_*
-```
-```{.bash-out}
-README_2026-09-07.txt
-```
+- Check if it worked:
+
+  ```bash
+  ls README_*
+  ```
+  ```{.bash-out}
+  README_2026-10-05.txt
+  ```
+
+<hr style="height:1pt; visibility:hidden;" />
 
 ::: callout-note
 #### Or insert the command substitution on the fly
-It is even possible to do this all in one go,
-by using the command substitution `$(date +%F)` _directly_ in our
-`touch` command, rather than first assigning it to a variable:
+It is even possible to do this all in one go, by using the command substitution
+`$(date +%F)` directly in your `touch` command,
+rather than first assigning it to a variable:
 
 ```bash
 touch README_"$(date +%F)".txt
@@ -344,47 +138,39 @@ touch README_"$(date +%F)".txt
 #### {{< fa user-edit >}} Exercise: Command substitution
 
 Say that you want to count and report the number of FASTQ files in a directory
-in a generalized, programmatic way.
-To do the actual counting, this command will work:
-
-```bash
-ls ../garrigos/fastq/*fastq.gz | wc -l
-```
-```{.bash-out}
-44
-```
-
-Now, use command substitution to store the output of the last command in a variable,
-and then use an `echo` command to print the following:
+in a generalized, programmatic way --- like inside a script.
+Write a command that will count the number of FASTQ files in `../garrigos/fastq/`,
+use command substitution to store the result in a variable,
+and then use `echo` to print the following:
 
 ```bash-out-solo
-The dir has 44 files
+The input dir has 44 files, now processing...
 ```
 
-_To be clear, `44` should be stored in and printed from_
-_a variable and you should not be typing that character yourself!_
+<details><summary> {{< fa lightbulb >}} _Click for some hints_</summary>
 
-<details><summary>_Click for a hint_</summary>
+- You can count the number of FASTQ files with a by piping the output of
+  `ls` to `wc -l`.
 
-Your final `echo` command should look something like this:
+- Your final `echo` command should look something like this:
 
-```bash
-echo "The dir has $n_files files"
-```
+  ```bash
+  echo "The input dir has $n_files files, now processing..."
+  ```
 
-So, try to store the file count produced by the command in the variable `$n_files`.
+  So, try to store the file count produced by the command in the variable `$n_files`.
 
 </details>
 
-<details><summary>_Click for the solution_</summary>
+<details><summary> {{< fa check-circle >}} _Click for the solution_</summary>
 
 ```bash
 n_files=$(ls ../garrigos/fastq/*fastq.gz | wc -l)
 
-echo "The dir has $n_files files"
+echo "The input dir has $n_files files, now processing..."
 ```
 ```{.bash-out}
-The dir has 44 files
+The input dir has 44 files, now processing...
 ```
 
 **Note:**
@@ -397,16 +183,31 @@ although that shouldn't pose a problem inside `echo` statements.
 :::
 
 
-## `basename` and `dirname` to extract parts of paths
+## Commands to extract parts of paths
 
 In loops and other contexts where you are working with file names programmatically,
 it is common to have a file path from which you want to extract just the
-"file name part".
-For example, we can think of the path `data/fastq/sample1_R1.fastq` as consisting
-of a directory part (`data/fastq/`) and a file name part (`sample1_R1.fastq`).
+"file name part" and/or the "directory part":
 
-Running the `basename` command on a path will strip any directories and
-just return the file name:
+| Path                                | Directory part       | File name part     |
+| ----------------------------------- | -------------------- | ------------------ |
+| `data/fastq/sample1_R1.fastq`       | `data/fastq/`        | `sample1_R1.fastq` |
+| `../garrigos/fastq/S63_R1.fastq.gz` | `../garrigos/fastq/` | `S63_R1.fastq.gz`  |
+
+: {.striped}
+
+<hr style="height:1pt; visibility:hidden;" />
+
+Running the `dirname` command on a path will return the directory part of that path:
+
+```sh
+dirname ../garrigos/fastq/S63_R1.fastq.gz
+```
+```bash-out
+../garrigos/fastq
+```
+
+Similarly, `basename` will strip any directories and just return the file name:
 
 ```sh
 basename ../garrigos/fastq/S63_R1.fastq.gz
@@ -424,21 +225,12 @@ basename ../garrigos/fastq/S63_R1.fastq.gz .fastq.gz
 S63_R1
 ```
 
-If you instead want the directory part of a path, use the `dirname` command:
+Here is an example of how you might use `basename` in practice.
+You want to define output files in a script,
+and those should have the same names as the input files, but be placed in a different dir.
 
-```sh
-dirname ../garrigos/fastq/S63_R1.fastq.gz
-```
-```bash-out
-../garrigos/fastq
-```
-
-One practical application of `basename` is the following.
-Say you want to define output files in a script,
-and those should have the same name as the input files
-(but will go into a different dir).
-That in turn could be useful because some programs allow or require you to define
-output file names instead of just an output dir.
+This may happen because some programs allow or require you to define output file names
+instead of just an output dir.
 Here is an example with a fictional program `trimmer2` where the arguments
 `--out1` and `--out2` must be used to specify the output file names:
 
@@ -452,13 +244,34 @@ R2_in=$2
 outdir=$3
 
 # Define the output file names: we want the input and output file names
-# to be the same - they should just be in different dirs
+# to be the same - they should just be in different dirs:
 R1_out="$outdir"/$(basename "$R1_in")
 R2_out="$outdir"/$(basename "$R2_in")
 
 # Run a (fictional) program that takes output file paths as arguments:
 trimmer2 --in1 "$R1_in" --in2 "$R2_in" --out1 "$R1_out" --out2 "$R2_out"
 ```
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-note collapse="true"}
+#### Getting the full path with `realpath` _(Click to expand)_
+
+A related command is `realpath`, which turns a relative path into an
+**absolute (full) path**:
+
+```sh
+realpath ../garrigos/fastq/S63_R1.fastq.gz
+```
+```bash-out
+/fs/ess/PAS3493/people/jane/garrigos/fastq/S63_R1.fastq.gz
+```
+
+This can be useful when you want to record exactly which files were used ---
+for example, by printing the full input file paths in a script's log output,
+which will then be unambiguous regardless of where the script was run from.
+
+:::
 
 ## Renaming files with loops
 
@@ -467,9 +280,9 @@ This is relatively common with omics data files,
 as you will often have separate files for each sample,
 and you may have many dozens of samples.
 
-Manually renaming these one-by-one is tedious as well as error-prone and irreproducible.
-There are many different ways to rename many files in a programmatic way in the shell --
-admittedly none as easy as one might have hoped.
+Manually renaming these one-by-one is tedious, error-prone, and not reproducible.
+There are many different ways to rename many files in a programmatic way in the
+shell --- though admittedly, none as easy as one might have hoped.
 Here, we'll use the `basename` command and a `for` loop.
 
 ### Create a set of dummy files to work with
@@ -509,45 +322,75 @@ You'll have to rename them before moving on to the next step in your analysis.
 
 ### Rename a single file using variables
 
-We will start with seeing how you could rename a single file _inside_ a loop,
-which is using _variables_ --
-since you'd loop over the original files,
-each file path would be in a variable like so:
+When renaming files in a loop, you will typically use variables to store the
+original and new file paths.
+Let's practice that first with a single file, before we put it in a loop.
 
-```bash
-old_path=sandbox/sample01.sam
-```
+- Your old file path is:
 
-Next, you can build the new file path and then also save that in a variable:
+  ```bash
+  old_path=sandbox/sample01.sam
+  ```
 
-```bash
-# Save the filename without the extension using command substitution:
-file_id=$(basename "$old_path" .sam)
-# Next, create the new file path
-new_path=sandbox/"$file_id".bam
-```
+- You extract the file ID from the old path using `basename` and store it in a variable:
 
-::: {.callout-tip appearance="simple"}
-Or in one step:
-```bash
-new_path=sandbox/$(basename "$old_path" .sam).bam
-```
-:::
+  ```bash
+  # Save the filename without the extension using command substitution:
+  file_id=$(basename "$old_path" .sam)
 
-And using these variables, the `mv` command to do the renaming would be:
+  # Check that it worked:
+  echo "$file_id"
+  ```
+  ```bash-out
+  sample01
+  ```
 
-```bash
-# Don't run this - we'll do this in a loop next
+- Now, you can save the new file path in a variable, using that file ID:
+
+  ```bash
+  new_path=sandbox/"$file_id".bam
+
+  # Check that it worked:
+  echo "$new_path"
+  ```
+  ```bash-out
+  sandbox/sample01.bam
+  ```
+
+- And using these variables, the `mv` command to do the renaming would be:
+
+```{.bash .norun}
+# (We'll do this in a loop later, so for now, don't actually run it)
 mv -v "$old_path" "$new_path"
 ```
+
+::: {.callout-tip collapse="true"}
+#### Alternative ways to build the new path _(Click to expand)_
+
+- We used a two-step approach above for clarity,
+  but you can also do it in one step with `basename`:
+
+  ```bash
+  new_path=sandbox/$(basename "$old_path" .sam).bam
+  ```
+
+- Alternatively, you could go a different route and use
+  [parameter expansion](./w7b_scripts2.qmd#parameter-expansion):
+
+  ```bash
+  new_path=${old_path/.sam/.bam}
+  ```
+
+:::
 
 ### Loop over all files
 
 Now, we'll loop over all files and add the renaming code inside the loop.
 Before actually renaming,
-let's use the trick with `echo` to just print the command instead of executing it.
-That is useful in contexts like this, so you can check what you're doing is correct,
-given that your command has variables:
+let's first use `echo` to just print the command instead of executing it.
+That is useful in contexts like this, so you can check what you're doing is correct
+(given that your command has variables,
+it's not always obvious what the final command will look like):
 
 ```sh
 for old_path in sandbox/*.sam; do
@@ -567,7 +410,7 @@ mv -v sandbox/sample04.sam sandbox/sample04.bam
 # [...output truncated...]
 ```
 
-Finally, actually do the renaming by removing `echo`:
+Finally, actually perform the renaming by removing `echo`:
 
 ```bash
 for old_path in sandbox/*.sam; do
@@ -586,24 +429,5 @@ done
 ‘sandbox/sample04.sam’ -> ‘sandbox/sample04.bam’
 # [...output truncated...]
 ```
-
-::: {.callout-tip}
-#### Keyboard shortcuts
-Also, don't forget about the Unix shell keyboard shortcuts from the
-[week 3 table](../week03/w3a_shell-basics.qmd#keyboard-shortcuts):
-especially shortcuts like <kbd>Ctrl</kbd>+<kbd>A</kbd>/<kbd>E</kbd>
-(go to the beginning/end of the line) and <kbd>Alt</kbd>/<kbd>Esc</kbd>+<kbd>.</kbd>
-(retrieve the last argument of the previous command) can save you a lot of time.
-:::
-
-## Recap
-
-On this page, you've picked up a set of Unix shell "tricks" that will make
-your scripts more powerful, including:
-
-- Parameter expansion to manipulate file names and other strings in variables
-- Command substitution to use the output of one command as input to another
-- `basename` and `dirname` to extract parts of a path
-- Using loops together with these tricks, e.g. to rename many files at once
 
 <br>
