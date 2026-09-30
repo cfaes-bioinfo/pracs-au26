@@ -60,17 +60,31 @@ In this session, we will talk about:
 3. **Within the `week07` dir, create a dir `scripts`** (but don't navigate there).
 4. _Optional: Create a new Markdown file for class notes and save it in your `week07` dir._
 
+::: {.columns}
+::: {.column}
+
 #### Install the Shellcheck VS Code extension {#install-shellcheck}
 
-Shellcheck is really useful VS Code extension that checks your shell scripts for
+Shellcheck is a really useful VS Code extension that checks your shell scripts for
 errors and bad practices. Install it:
 
 1. In the narrow side bar, click on the Extensions icon.
 2. In the wide side bar, search for **shellcheck** (by *timonwong*) and install it.
 
+
+:::
+::: {.column}
+
+<br>
+
+![](/img/shellcheck-install.png){fig-align="center" width="90%" fig-alt="A screenshot showing the Shellcheck extension in the VS Code extensions marketplace." .lightbox}
+
+:::
+:::
+
 ::: {.callout-tip}
 #### More VS Code tips and tricks
-For many more tips, like useful keyboard shortcuts, settings, and extensions,
+For many more tips, like on useful keyboard shortcuts, settings, and extensions,
 see [this optional self-study page on VS Code](../bonus/vscode.qmd).
 :::
 
@@ -114,12 +128,11 @@ So far, we've mostly talked about the Unix _shell_ and _shell_ scripts.
 From today onwards, we'll also see the term "Bash" more.
 
 Recall the difference we talked about in the Unix shell intro session:
-**there are multiple Unix shell language variants and the specific one we've been**
-**using is the Bash shell** (which is by far the most common).
+there are multiple Unix shell language variants and the specific one we've been
+using is Bash (which is by far the most common).
 
 Our shell scripts are therefore in the Bash language,
-can be specifically called Bash scripts,
-and can be run with the `bash` command.
+can be specifically called Bash scripts, and can be run with the `bash` command.
 :::
 
 ## A first shell script
@@ -129,8 +142,7 @@ and can be run with the `bash` command.
 In the previous lecture, you ran FastQC for a FASTQ file
 by executing the following commands directly in the terminal:
 
-```bash
-# [Don't run this -- this is a recap from last week]
+```{.bash .norun}
 module load fastqc/0.12.1
 mkdir -p results/fastqc
 fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
@@ -182,47 +194,7 @@ Approx 15% complete for S63_R1.fastq.gz
 Analysis complete for S63_R1.fastq.gz
 ```
 
-That worked! But if Shellcheck is working,
-you should see a red squiggly line on the first line of your script.
-Hover over it to see the warning:
-Shellcheck wants you to add a "shebang" line, which you'll learn about in a moment.
-Keep an eye out for these squiggly lines ---
-Shellcheck will also flag things like typos in variable names.
-
-_TODO add screenshot for fastqc.sh here_
-
-::: {.callout-note collapse="true"}
-#### Shellcheck in action: screenshots _(Click to expand)_
-
-- Shellcheck shows a red squiggly line when a script has no shebang line,
-  and hovering over it tells you why:
-
-  ![](../img/shellcheck-shebang1.png){fig-align="center" width="50%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-  ![](../img/shellcheck-shebang2.png){fig-align="center" width="80%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-- Once you add a shebang line, the squiggly line disappears:
-
-  ![](../img/shellcheck-shebang3.png){fig-align="center" width="65%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-- Shellcheck shows an orange squiggly line when you've assigned a variable
-  that you don't use:
-
-  ![](../img/shellcheck-variable1.png){fig-align="center" width="50%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-  ![](../img/shellcheck-variable2.png){fig-align="center" width="70%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-  Referencing the variable makes the squiggly line disappear:
-
-  ![](../img/shellcheck-variable3.png){fig-align="center" width="50%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-- Conversely, Shellcheck warns you when you reference a variable
-  that hasn't been assigned --- for example, because of a typo in its name:
-
-  ![](../img/shellcheck-variable5.png){fig-align="center" width="70%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-:::
-
-A couple of notes about the commands in the script:
+Nice! A couple of notes about the commands in the script:
 
 - **The module is loaded in the script**\
   Recall that loaded modules don't persist across shell sessions.
@@ -278,10 +250,30 @@ A couple of notes about the commands in the script:
     ```
   :::
 
+- **The file paths are relative to your working dir, not to the script**\
+  Relative paths in a script, like `results/fastqc` and `../garrigos/...`,
+  are interpreted relative to your working dir at the time you _run_ the script ---
+  not relative to where the script itself is stored.
+  That's why we run the script from within `week07`, as `bash scripts/fastqc.sh`.
+  If you instead ran it from within the `scripts` dir (`bash fastqc.sh`),
+  FastQC would fail to find the input file.
+
 Next, you'll learn about two header lines that are good practice to
 add to every shell script.
 
 ### Shebang line
+
+If Shellcheck is working,
+you should see a red squiggly line on the first line of your script:
+
+![](/img/shellcheck-fastqc-shebang.png){fig-align="center" width="45%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
+
+Hover over it to see the warning:
+Shellcheck wants you to add a "shebang" line.
+(More generally, keep an eye out for these squiggly lines ---
+Shellcheck will also flag things like typos in variable names.)
+
+![](/img/shellcheck-fastqc-shebang2.png){fig-align="center" width="80%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
 
 A so-called "_shebang_" line is used as the first line of a script to
 indicate **which computer language** the script uses:
@@ -334,7 +326,7 @@ Add the two discussed header lines to your `fastqc.sh` script,
 so it will now contain the following:
 
 ```{.bash .file filename="scripts/fastqc.sh"}
-#!/bin/bash  #TODO check color in script
+#!/bin/bash
 set -euo pipefail
 
 # Load the OSC module for FastQC
@@ -360,7 +352,7 @@ Approx 5% complete for S63_R1.fastq.gz
 Analysis complete for S63_R1.fastq.gz
 ```
 
-That didn't change anything to the output,
+That didn't change the output,
 but we confirmed that the script still works.
 
 ::: {.callout-note collapse="true"}
@@ -390,7 +382,7 @@ To be able to do this, the script:
 
    ```bash
    # Add 'execute permissions' for fastqc.sh:
-   chmod +x fastqc.sh
+   chmod +x scripts/fastqc.sh
    ```
 
 ----
@@ -425,7 +417,7 @@ We'll do this in two steps:
 
 ### Variables
 
-In week 2, you learned about environment variables like `$USER` and `$HOME`,
+In [week 3](../week03/w3a_shell-basics.qmd), you learned about environment variables like `$USER` and `$HOME`,
 which are pre-set by the system.
 But you can also define your own variables in the shell and in scripts,
 which is especially useful for items that:
@@ -451,7 +443,8 @@ nr_samples=200
 ```
 
 :::{.callout-warning appearance="simple"}
-No spaces are allowed around the equals sign: `treatment = inoculated` fails.
+No spaces are allowed around the equals sign: `treatment = inoculated` fails,
+because the shell would try to run a command called `treatment`.
 :::
 
 To **reference** a variable (i.e., to access its value) by its name:
@@ -505,14 +498,14 @@ Ideally, variable names are descriptive, like `$input_file` above and not crypti
 like `$x`.
 Like with file names, you can distinguish words using capitalization
 ("camelCase", `$inputFile`) or underscores ("snake case", `$input_file`).
-In this course, we'll use lowercase variable names ---
-the box at the end of the [arguments section](#constants) explains when uppercase
-can be useful.
+In this course, we'll use lowercase variable names,
+but the box at the end of the [arguments section](#constants) explains when
+uppercase can be useful.
 
 ### Quoting variables
 
 I have mentioned that it is **good practice to quote variables**
-(i.e. to use `"$location"` instead of `$location`).
+(i.e. to use `"$treatment"` instead of `$treatment`).
 So what can happen if you don't do this?
 
 Let's start by making and moving into a dir to create some messy files:
@@ -544,7 +537,7 @@ Here's what happens if you don't quote a variable whose **value contains spaces*
    ls -1
    ```
    ```bash-out
-    26.txt
+   26.txt
    Mar
    README_Tue,
    ```
@@ -558,7 +551,10 @@ Here's what happens if you don't quote a variable whose **value contains spaces*
    ls -1
    ```
    ```bash-out
-   README_Tue, Mar 26.txt
+    26.txt
+    Mar
+    README_Tue,
+   'README_Tue, Mar 26.txt'
    ```
 
 Additionally, without quoting,
@@ -705,10 +701,10 @@ variable name begins and ends, although it does not prevent field splitting:
 ```sh
 touch README_${today}_final.txt
 
-ls
+ls -1 *final*
 ```
 ```bash-out
-26_final.txt  Mar  README_Tue,
+26_final.txt
 ```
 
 But you can combine curly braces and quoting:
@@ -716,9 +712,10 @@ But you can combine curly braces and quoting:
 ```sh
 touch README_"${today}"_final.txt
 
-ls
+ls -1 *final*
 ```
 ```bash-out
+ 26_final.txt
 'README_Tue, Mar 26_final.txt'
 ```
 
@@ -785,7 +782,8 @@ is just like providing a command like `ls` with arguments:
 ### Accessing arguments inside the script
 
 Inside the script, any arguments you pass are
-**automatically assigned** to variables named after their position:
+**automatically assigned** to variables named after their position
+(we'll call these _placeholder variables_):
 
 - Any **first** argument will be assigned to the variable `$1`
   (above: `data/sampleA.fastq.gz`).
@@ -793,8 +791,8 @@ Inside the script, any arguments you pass are
   (above: `results/fastqc`).
 - Any **third** argument will be assigned to `$3` --- _and so on_.
 
-However, beyond just being assigned, these variables are **not used** automatically.
-Let's see how we can use them.
+However, the script won't **use** these variables unless you reference them in your code.
+Let's see how to do that.
 
 :::{.callout-note}
 #### Other variables that are automatically available inside scripts
@@ -869,6 +867,40 @@ Approx 5% complete for S63_R2.fastq.gz
 [...output truncated...]
 Analysis complete for S63_R2.fastq.gz
 ```
+
+::: {.callout-note collapse="true"}
+#### Shellcheck and variables _(Click to expand)_
+
+<!----
+- Shellcheck shows a red squiggly line when a script has no shebang line,
+  and hovering over it tells you why:
+
+  ![](../img/shellcheck-shebang1.png){fig-align="center" width="50%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
+
+  ![](../img/shellcheck-shebang2.png){fig-align="center" width="80%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
+
+- Once you add a shebang line, the squiggly line disappears:
+
+  ![](../img/shellcheck-shebang3.png){fig-align="center" width="65%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
+
+---->
+
+- Shellcheck shows an orange squiggly line when you've assigned a variable
+  that you don't use:
+
+  ![](../img/shellcheck-variable1.png){fig-align="center" width="50%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
+
+  ![](../img/shellcheck-variable2.png){fig-align="center" width="70%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
+
+  Referencing the variable makes the squiggly line disappear:
+
+  ![](../img/shellcheck-variable3.png){fig-align="center" width="50%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
+
+- Conversely, Shellcheck warns you when you reference a variable
+  that hasn't been assigned --- for example, because of a typo in its name:
+
+  ![](../img/shellcheck-variable5.png){fig-align="center" width="70%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
+:::
 
 #### Safe settings in action
 
@@ -991,6 +1023,28 @@ run the script as instructed in the scenario to test your prediction.
    </details>
    ---->
 
+5. What do you expect the output to be when you run the script as follows?
+
+   ```bash
+   bash scripts/printname.sh "$USER" '$USER'
+   ```
+
+   _Hint: see the box on double vs. single quotes above._
+
+   <!----
+   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
+   The shell expands variables _before_ passing arguments to the script,
+   so the first argument is your username.
+   The single quotes prevent that expansion, so the second argument is the literal string `$USER`:
+
+   ```bash-out
+   This script will print a first and a last name
+   First name: jelmer
+   Last name: $USER
+   ```
+   </details>
+   ---->
+
 :::
 
 <hr style="height:1pt; visibility:hidden;" />
@@ -1059,7 +1113,7 @@ When you do hard-code potentially variable things in your script,
 it's still a good idea to store them in variables that you clearly define
 **at the top of your script**.
 For example, a quality threshold for a program,
-or the URL to an Apptainer container that you use in the script:
+or the URI of an Apptainer container that you use in the script:
 
 ```bash
 #!/bin/bash
@@ -1089,9 +1143,9 @@ such as `$USER` and `$HOME` are always in uppercase.
 It is often useful to have your shell script report or "log" what it is doing.
 For instance:
 
-- At what date and time was the script run.
-- Which arguments were passed to the script.
-- What are the designated output dirs/files.
+- The date and time at which the script was run.
+- The arguments that were passed to the script.
+- The designated output dirs/files.
 - Perhaps even summaries of the output (we won't do this here).
 
 This information can help with troubleshooting and record-keeping.
@@ -1115,10 +1169,10 @@ fastq="$1"
 outdir="$2"
 
 # Initial logging
-echo "# Starting script fastqc.sh"
+echo "Starting script fastqc.sh"
 date
-echo "# Input FASTQ file:   $fastq"
-echo "# Output dir:         $outdir"
+echo "Input FASTQ file:   $fastq"
+echo "Output dir:         $outdir"
 echo
 
 # Create the output dir if needed
@@ -1129,10 +1183,10 @@ fastqc --outdir "$outdir" "$fastq"
 
 # Final logging
 echo
-echo "# Used FastQC version:"
+echo "Used FastQC version:"
 fastqc --version
 echo
-echo "# Successfully finished script fastqc.sh"
+echo "Successfully finished script fastqc.sh"
 date
 ```
 
@@ -1163,20 +1217,20 @@ Run your FastQC script again for one FASTQ file:
 bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
 ```
 ```bash-out
-# Starting script fastqc.sh
+Starting script fastqc.sh
 Thu Sep 25 13:53:13 EDT 2025
-# Input FASTQ file:   ../garrigos/fastq/S63_R1.fastq.gz
-# Output dir:         results/fastqc
+Input FASTQ file:   ../garrigos/fastq/S63_R1.fastq.gz
+Output dir:         results/fastqc
 
 Started analysis of S63_R1.fastq.gz
 Approx 5% complete for S63_R1.fastq.gz
 # [...output truncated...]
 Analysis complete for S63_R1.fastq.gz
 
-# Used FastQC version:
+Used FastQC version:
 FastQC v0.12.1
 
-# Successfully finished script fastqc.sh
+Successfully finished script fastqc.sh
 Thu Sep 25 13:53:19 EDT 2025
 ```
 
@@ -1191,7 +1245,7 @@ As you've seen, shell scripts mostly consist of "regular" Unix shell code,
 but with some added bells and whistles like:
 
 - Boilerplate shell script **header lines**: shebang and safe settings.
-- *Variables*, to clearly define settings like file paths in one place.
+- **Variables**, to clearly define settings like file paths in one place.
 - **Command-line arguments**, which are available in variables in the script
   and make the script flexible.
 - **Logging statements**, which report what the script is doing.

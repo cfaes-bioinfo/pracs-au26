@@ -180,9 +180,9 @@ Failed to search for file: GDBus.Error:org.freedesktop.DBus.Error.NameHasNoOwner
 ```
 
 These error messages tell us that the `fastqc` command is not currently available.
-Also, the `-v` option is a common option that prints the program version,
-so if the command were available,
-it would have printed the FastQC version instead of an error message.
+If it were available, this command would have printed the FastQC version instead,
+since many programs print their version with `-v` and/or `--version`^[
+But not all: for example, you've seen that `grep -v` does something very different.].
 
 Now, load the module by specifying the module name and its version exactly
 as `module spider` printed it:
@@ -209,22 +209,23 @@ Whenever you are in a fresh shell session
 (including but not limited to after you log into OSC for the day),
 you'll have to reload any modules you want to use.
 
-Here, we only covered the very basics of using `module`.
 Modules are convenient, but not all software is available as a module.
 Containers are a more universal approach, with the added benefit of
 improved reproducibility and portability^[
   By portable, we mean that something that works on one computer will also work
   on another computer.
 ] --- as you'll see below.
-That said, for some additional information about modules, see the boxes below.
+
+Here, we only covered the very basics of using `module` ---
+see the boxes below for some more information.
 
 ::: {.callout-note collapse="true"}
 #### Other `module` commands  _(Click to expand)_
 
 - To **check which modules are loaded**, use `module list`.
-  Its output also includes _automatically_ loaded modules ---
+  Its output also includes modules that OSC loads _by default_ in every shell ---
   for example, after loading `fastqc/0.12.1`,
-  it may show something like the below, with 5 different modules loaded:
+  it may show something like the below, where only the last one was loaded by you:
 
   ```bash
   module list
@@ -345,8 +346,8 @@ Due to MODULEPATH changes, the following have been reloaded:
 
 (`gcc` and `intel` are two different _compilers_ ---
 programs that translate code into a runnable program.
-OSC has one of these two compilers loaded by default,
-and different pieces of software are built with (and need) only one of them.
+OSC loads the `intel` compiler by default,
+but each program is built with (and needs) one specific compiler.
 Since we explicitly loaded `gcc` above,
 the module system swapped out the default `intel` compiler for it.)
 
@@ -378,6 +379,7 @@ Type 'q()' to quit R.
 Now you're in the R console ---
 type `q()` or use the general keyboard shortcut for exiting,
 <kbd>Ctrl</kbd>+<kbd>D</kbd>, to exit R.
+(If R asks whether to "Save workspace image", type `n` and press <kbd>Enter</kbd>.)
 :::
 
 ::: exercise
@@ -491,7 +493,7 @@ type `q()` or use the general keyboard shortcut for exiting,
 ## Running a FastQC analysis
 
 Now that we've loaded the FastQC module,
-let's try to put it to use with one of @garrigós2025 FASTQ files.
+let's try to put it to use with one of the FASTQ files from @garrigós2025.
 
 Recall that your copy of the data is in `/fs/ess/PAS3493/people/$USER/garrigos`,
 so from your working dir `/fs/ess/PAS3493/people/$USER/week06`,
@@ -622,8 +624,8 @@ tools also have a `-h` and/or `--help` option that prints usage information to t
    ```
    ``` bash-out
    total 512K
-   -rw-rw----+ 1 jelmer PAS0471 241K Mar 21 09:53 S63_R1_fastqc.html
-   -rw-rw----+ 1 jelmer PAS0471 256K Mar 21 09:53 S63_R1_fastqc.zip
+   -rw-rw----+ 1 jelmer PAS0471 241K Sep 30 09:53 S63_R1_fastqc.html
+   -rw-rw----+ 1 jelmer PAS0471 256K Sep 30 09:53 S63_R1_fastqc.zip
    ```
 
    </details>
@@ -660,10 +662,10 @@ tools also have a `-h` and/or `--help` option that prints usage information to t
    ```
    ``` bash-out
    total 1008K
-   -rw-rw----+ 1 jelmer PAS0471 241K Mar 21 09:53 S63_R1_fastqc.html
-   -rw-rw----+ 1 jelmer PAS0471 256K Mar 21 09:53 S63_R1_fastqc.zip
-   -rw-rw----+ 1 jelmer PAS0471 234K Mar 21 09:55 S63_R2_fastqc.html
-   -rw-rw----+ 1 jelmer PAS0471 244K Mar 21 09:55 S63_R2_fastqc.zip
+   -rw-rw----+ 1 jelmer PAS0471 241K Sep 30 09:53 S63_R1_fastqc.html
+   -rw-rw----+ 1 jelmer PAS0471 256K Sep 30 09:53 S63_R1_fastqc.zip
+   -rw-rw----+ 1 jelmer PAS0471 234K Sep 30 09:55 S63_R2_fastqc.html
+   -rw-rw----+ 1 jelmer PAS0471 244K Sep 30 09:55 S63_R2_fastqc.zip
    ```
 
    Now, we have four files: two for each of our preceding successful FastQC runs.
@@ -676,7 +678,7 @@ tools also have a `-h` and/or `--help` option that prints usage information to t
    which should open the HTML file in a new tab in VS Code^[
    Thanks to the HTML Preview extension we installed earlier.
    If this fails, you can download the file using the "Download..." option,
-   which should also appear on a right-click, and opening it on your local machine.
+   which should also appear on a right-click, and open it on your local machine.
    ].
 
 6. **Explore the file**. The "Summary" on the left gives each graph a
@@ -684,7 +686,7 @@ tools also have a `-h` and/or `--help` option that prints usage information to t
    Take a look at one or more graphs that got a warning or fail,
    and try to figure out from the graph what FastQC is flagging
    (I'd recommend skipping the "Per Base Sequence Content" graph,
-   which is more complicated to interpret).
+   which is more complicated to interpret --- see also the box below this exercise).
 
    <details><summary> {{< fa lightbulb >}} _Click here for a hint._ </summary>
 
@@ -698,14 +700,29 @@ tools also have a `-h` and/or `--help` option that prints usage information to t
    and **compare** it to the first one.
    What are the main differences you observe?
 
+   <!----
+   <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+
+   The two reports are very similar, which is typical for paired-end reads.
+   The main difference is that the R2 reads have somewhat lower quality scores,
+   especially toward the end of the reads:
+   in Illumina paired-end sequencing, the reverse reads are sequenced after the
+   forward reads, and quality degrades as the sequencing run goes on.
+
+   </details>
+   ---->
+
 :::
 
-::: {.callout-tip}
-#### Don't take FastQC's flags at face value
-FastQC's pass/warn/fail thresholds assume random genomic DNA sequences.
-For other data types, some "failures" are expected: for example, RNA-seq data
-typically gets a warning or fail for _Sequence Duplication Levels_,
-since highly expressed genes produce many identical reads.
+::: {.callout-tip collapse="true"}
+#### Don't take FastQC's flags at face value _(Click to expand)_
+FastQC's pass/warn/fail thresholds assume a diverse library of random DNA fragments.
+For other data types, some "failures" are expected. For RNA-seq data, for example:
+
+- _Sequence Duplication Levels_ typically gets a warning or fail,
+  since highly expressed genes produce many identical reads.
+- _Per Base Sequence Content_ typically fails,
+  because library preparation makes the first ~10 bases of reads non-random.
 :::
 
 Finally, a few notes on the behavior of bioinformatics programs like FastQC:
@@ -739,10 +756,10 @@ It even allows you to easily build custom containers with multiple programs inst
 The containers can be downloaded as `.sif` files,
 which are so-called container "**images**" in the **Apptainer** format
 (Apptainer is the container platform that can be used at OSC).
-As such, running a program installed in a container is a two-step process:
+Using a program from Seqera Containers is a two-step process:
 
-1. Obtaining a link to the container image from the Seqera Containers webpage.
-2. Using the link to run the container image and access the software installed inside it.
+1. Get a link to the container image from the Seqera Containers webpage.
+2. Use that link to run the program inside the container image.
 
 We'll go over these steps below.
 
@@ -752,8 +769,9 @@ We'll go over these steps below.
 - **Container platforms**: Docker and Apptainer
   (formerly, and sometimes still, called Singularity)
   are the most widely used container platforms.
-  At supercomputers like OSC, only Apptainer can be used. But luckily,
-  it can convert container images that were produced for Docker on the fly.
+  Docker can't be used at OSC (or at most other supercomputers),
+  because it requires administrator privileges.
+  But luckily, Apptainer can convert container images made for Docker on the fly.
 
 - **Terminology**:
   - **Container image** ---
@@ -770,14 +788,14 @@ We'll go over these steps below.
   Seqera Containers is a free service by Seqera,
   the company behind the pipeline tool Nextflow (which we'll use later in the course).
 
-- **It doesn't distribute software itself**\
+- **It doesn't package software itself**\
   Seqera doesn't develop or package the programs you find there.
   Instead, it takes existing software packages from other repositories,
   builds container images with them on request,
   and hosts those images so you can download them.
 
 - **What is available?**\
-  All packages from two community-maintained repositories,
+  All packages from two community-maintained sources,
   which together contain the vast majority of bioinformatics software:
   - The **Conda** channels Bioconda (bioinformatics software) and
     conda-forge (general software).
@@ -866,7 +884,7 @@ In other cases, however, the container may still need to be built,
 and the box should say **"Fetching container"** for a while.
 This could take one or a few minutes,
 and even though the URI is made available immediately and won't change,
-you can only download/use the container once the "Container is ready".
+you can only download/use the container once the box says "Container is ready".
 
 If you use a URI before the container is ready, you get this type of error:
 
@@ -903,7 +921,7 @@ URI we obtained above:
 
 ```bash
 apptainer exec oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960 \
-  fastqc -v
+    fastqc -v
 ```
 ```bash-out
 INFO:    Downloading oras image
@@ -943,7 +961,7 @@ and will automatically use the downloaded version. Let's try it:
 
 ```bash
 apptainer exec oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960 \
-  fastqc -v
+    fastqc -v
 ```
 ```bash-out
 INFO:    Using cached SIF image
@@ -988,7 +1006,7 @@ your Home dir can get quite full.
   ```
   ```bash-out
   NAME                     DATE CREATED           SIZE             TYPE
-  sha256:e0c976cb2eca5fe   2026-09-20 19:08:51    383.99 MiB       oras
+  sha256:e0c976cb2eca5fe   2026-09-30 10:02:18    383.99 MiB       oras
 
   There are 1 container file(s) using 383.99 MiB and 0 oci blob file(s) using 0.00 KiB of space
   Total space used: 383.99 MiB
@@ -1008,7 +1026,7 @@ your Home dir can get quite full.
   (i.e., `apptainer exec <path-to-sif-file> <command>`) rather than the URI.
   But there is little benefit to doing so, since Apptainer already
   uses the cached image when you give it the URI.
-  And it reduces reproducibility: a URI works for anyone on any computer,
+  And it reduces portability: a URI works for anyone on any computer,
   whereas a path to a local file will only work for you on this computer.
 
   <hr style="height:1pt; visibility:hidden;" />
@@ -1065,8 +1083,8 @@ be open-source software or be poorly maintained (exceptions do exist).
 Therefore, unless you have a good reason to use a program you can't find,
 you should first consider finding an alternative that _is_ available.
 
-If you're sure you need to use a program that isn't available as a module or container,
-but that you are able to find a working version of, you have two options:
+If you're sure you need a program that isn't available as a module or container,
+you have two options:
 
 - **Contact OSC Help**\
   They may be able to help you install the program yourself, or,

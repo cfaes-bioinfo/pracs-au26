@@ -45,9 +45,9 @@ FASTQ file.
 Here, we will focus on running that script many times with loops.
 Specifically, you will learn:
 
-- How to keep a record of your analysis steps in Markdown files.
 - How `for` loops work.
 - How to use a `for` loop to loop over files and run a shell script many times.
+- How to keep a record of your analysis steps in Markdown files.
 - How to use parameter expansion to search-and-replace text in variables.
 - How to loop over _samples_ (pairs of FASTQ files) rather than individual files.
 
@@ -80,7 +80,9 @@ You will store that code in **Markdown files**, which then provide a record of w
 
 1. At <https://ondemand.osc.edu>, start a VS Code session in `/fs/ess/PAS3493/people/$USER`.
 2. In the terminal, navigate to your `week07` dir.
-3. **Create a new Markdown file** `week07/w7b.sh`.
+3. **Create a new file `w7b.sh`** in your `week07` dir,
+   in which you'll type the code for this session
+   (the `.sh` extension gives you shell syntax highlighting and Shellcheck).
 
 #### Add a VS Code keyboard shortcut
 
@@ -93,6 +95,10 @@ This is the same type of behavior that you may be familiar with from RStudio.]:
    "_Terminal: Run Selected Text in Active Terminal_".
 3. Click on that line, then add the shortcut <kbd>Ctrl</kbd>+<kbd>Enter</kbd> ^[
    Don't worry about any warnings that other keybindings exist for this shortcut.].
+
+When no text is selected, the shortcut sends the line your cursor is on.
+To run a multi-line command like a `for` loop, first select **all** of its lines.
+(If you get stuck at a `>` prompt, press <kbd>Ctrl</kbd>+<kbd>C</kbd>.)
 
 ## For loops
 
@@ -166,18 +172,18 @@ Fruit: plum
 The `echo` line ran three times, and each time,
 the variable `$fruit` contained a different fruit.
 
-What was actually run **under the hood** is the following ---
+**Under the hood**, the following was actually run by the shell ---
 three times, a value was assigned to `$fruit`, and then the `echo` command was run:
 
 ```{.bash .norun}
 fruit=apple
-echo "# Fruit: $fruit"
+echo "Fruit: $fruit"
 
 fruit=banana
-echo "# Fruit: $fruit"
+echo "Fruit: $fruit"
 
 fruit=plum
-echo "# Fruit: $fruit"
+echo "Fruit: $fruit"
 ```
 
 ### Multiple actions per iteration
@@ -187,8 +193,9 @@ you can perform multiple actions in each round of the loop:
 every line between `do` and `done` is run for every item.
 
 For the next example, we will count the number of characters in each fruit's name.
-In general, we can do that like so,
-where we add the `-n` option to `echo` to prevent it from adding a newline,
+Here's how to do that for a single word,
+where we add the `-n` option to `echo` to prevent it from adding a newline
+(which would otherwise be counted as a character too),
 and use the `-c` option of `wc` to count the number of characters rather than lines:
 
 ```bash
@@ -203,22 +210,22 @@ characters in its name:
 
 ````{.bash .file filename="w7b.sh"}
 for fruit in apple banana plum; do
-    echo "# Fruit: $fruit"
+    echo "Fruit: $fruit"
     echo "Number of characters:"
     echo -n "$fruit" | wc -c
     echo
 done
 ````
 ```bash-out
-# Fruit: apple
+Fruit: apple
 Number of characters:
 5
 
-# Fruit: banana
+Fruit: banana
 Number of characters:
 6
 
-# Fruit: plum
+Fruit: plum
 Number of characters:
 4
 
@@ -229,10 +236,10 @@ the loop completes all actions for one item before moving on to the next item.
 Here is what happened in each iteration:
 
 | Iteration (round) | Value of `$fruit` | Number of characters |
-|-----------|-------------------|----------------------|
-| 1st       | `apple`           | 5                    |
-| 2nd       | `banana`          | 6                    |
-| 3rd       | `plum`          | 6                    |
+| ----------------- | ----------------- | -------------------- |
+| 1st               | `apple`           | 5                    |
+| 2nd               | `banana`          | 6                    |
+| 3rd               | `plum`            | 4                    |
 
 : {.striped .hover}
 
@@ -268,12 +275,12 @@ On the first and last, unindented lines,
 :::
 
 ::: {.callout-tip collapse="true"}
-### Why is there "`; do`" in a `for` loop? _(Click to expand)_
+#### Why is there "`; do`" in a `for` loop? _(Click to expand)_
 
 You may find the `; do` at the end of the first line of the `for` loop to be odd.
 What is that all about?
 
-First, a semicolon is a way to enter multiple commands on a single line --
+First, a semicolon is a way to enter multiple commands on a single line ---
 for example, the line below would first run `ls` and then `echo "Hello"`:
 
 ```bash
@@ -310,8 +317,8 @@ for fastq_file in ../garrigos/fastq/S63_R1.fastq.gz ../garrigos/fastq/S63_R2.fas
 done
 ````
 ```bash-out
-Now processing file: S63_R1.fastq.gz
-Now processing file: S63_R2.fastq.gz
+Now processing file: ../garrigos/fastq/S63_R1.fastq.gz
+Now processing file: ../garrigos/fastq/S63_R2.fastq.gz
 ```
 
 However, typing out all file names is tedious and error-prone.
@@ -320,15 +327,15 @@ and then loop over that list, all in one line of code:
 
 ````{.bash .file filename="w7b.sh"}
 for fastq_file in ../garrigos/fastq/*fastq.gz; do
-    echo "# Running an analysis on $fastq_file"
+    echo "Running an analysis on $fastq_file"
     # [This is where you would put additional commands to process each FASTQ file]
 done
 ````
 ```bash-out
-# Running an analysis on ../garrigos/fastq/S63_R1.fastq.gz
-# Running an analysis on ../garrigos/fastq/S63_R2.fastq.gz
-# Running an analysis on ../garrigos/fastq/S64_R1.fastq.gz
-# Running an analysis on ../garrigos/fastq/S64_R2.fastq.gz
+Running an analysis on ../garrigos/fastq/S63_R1.fastq.gz
+Running an analysis on ../garrigos/fastq/S63_R2.fastq.gz
+Running an analysis on ../garrigos/fastq/S64_R1.fastq.gz
+Running an analysis on ../garrigos/fastq/S64_R2.fastq.gz
 # [...output truncated...]
 ```
 
@@ -384,25 +391,50 @@ touch sandbox/file1.txt sandbox/S1_R1.fastq.gz sandbox/S1_R2.fastq.gz
   immediate error instead of silently doing the wrong thing.
   </p></details>
   ---->
+
+- And of this loop? (Note that there are no `.bam` files in `sandbox`.)
+
+  ```bash
+  for file in sandbox/*.bam; do
+      echo "I have found file $file"
+  done
+  ```
+
+  <!----
+  <details><summary>_Click for the solution_</summary><p>
+  You might expect no output at all, since no files match the pattern.
+  But when a glob pattern doesn't match any files, the shell leaves the pattern as is,
+  so the loop runs once, with the literal string `sandbox/*.bam`:
+
+  ```bash-out
+  I have found file sandbox/*.bam
+  ```
+
+  So if you make a typo in a glob pattern in a loop that runs a script,
+  the script will be run once for a non-existent "file" ---
+  one more reason to print input file names in your scripts' logging output!
+  </p></details>
+  ---->
 :::
 
 :::{.exercise}
 #### {{< fa user-edit >}} Exercise 2: Another loop
 
-Modify the loop in the previous example to print the following for each FASTQ
+Modify the globbing loop above (the one printing "Running an analysis on ...")
+to print the following for each FASTQ
 file (output for 2 files shown):
 
 ```bash-out-solo
-# Running an analysis on ../garrigos/fastq/S63_R1.fastq.gz
-# File size:
+Running an analysis on ../garrigos/fastq/S63_R1.fastq.gz
+File size:
 -rw-rw----+ 1 jelmer PAS0471 21M Sep  9 13:46 ../garrigos/fastq/S63_R1.fastq.gz
-# Number of lines:
+Number of lines:
 2000000
 
-# Running an analysis on ../garrigos/fastq/S63_R2.fastq.gz
-# File size:
+Running an analysis on ../garrigos/fastq/S63_R2.fastq.gz
+File size:
 -rw-rw----+ 1 jelmer PAS0471 22M Sep  9 13:46 ../garrigos/fastq/S63_R2.fastq.gz
-# Number of lines:
+Number of lines:
 2000000
 ```
 
@@ -412,10 +444,10 @@ file (output for 2 files shown):
 
 ```bash
 for fastq_file in ../garrigos/fastq/*fastq.gz; do
-    echo "# Running an analysis on $fastq_file"
-    echo "# File size:"
+    echo "Running an analysis on $fastq_file"
+    echo "File size:"
     ls -lh "$fastq_file"
-    echo "# Number of lines:"
+    echo "Number of lines:"
     zcat "$fastq_file" | wc -l
     echo
 done
@@ -427,11 +459,10 @@ done
 
 ## A "protocol" Markdown file
 
-As discussed above, we want to run the script for each FASTQ file.
-We will write a "loop" to do so,
-and while that _could_ be directly typed in the terminal,
-it is more convenient and reproducible to put this in a Markdown file.
-That way, you will keep a record of your analysis steps.
+Next, we want to run our FastQC script for each FASTQ file using a loop.
+While you _could_ type that loop directly in the terminal,
+it is better to write it in a Markdown file:
+that way, you will keep a record of your analysis steps.
 
 For small projects, a simple "protocol" could be added to your main `README.md`.
 Let's practice with that by writing a README for the current analysis:
@@ -485,10 +516,10 @@ fastq="$1"
 outdir="$2"
 
 # Initial logging
-echo "# Starting script fastqc.sh"
+echo "Starting script fastqc.sh"
 date
-echo "# Input FASTQ file:   $fastq"
-echo "# Output dir:         $outdir"
+echo "Input FASTQ file:   $fastq"
+echo "Output dir:         $outdir"
 echo
 
 # Create the output dir if needed
@@ -499,17 +530,17 @@ fastqc --outdir "$outdir" "$fastq"
 
 # Final logging
 echo
-echo "# Used FastQC version:"
+echo "Used FastQC version:"
 fastqc --version
 echo
-echo "# Successfully finished script fastqc.sh"
+echo "Successfully finished script fastqc.sh"
 date
 ```
 
 </details>
 
 Recall that the script accepts one FASTQ file as an argument,
-so can only be run for one file at a time. For example:
+so it can only be run for one file at a time. For example:
 
 ```{.norun}
 bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
@@ -520,7 +551,9 @@ bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
 You will now loop over all FASTQ files in the `../garrigos/fastq` dir,
 and run your `fastqc.sh` script for each file.
 Add the following to your `README.md` file,
-and then run the code inside the code block:
+and then run the code inside the code block
+(this will take a few minutes to run for all 44 files ---
+feel free to stop it early by pressing <kbd>Ctrl</kbd>+<kbd>C</kbd>):
 
 ````{.markdown .file filename="README.md"}
 ### Step 1 - Run FastQC for each FASTQ file:
@@ -532,22 +565,22 @@ done
 ```
 ````
 ```bash-out
-# Starting script fastqc.sh
+Starting script fastqc.sh
 Thu Sep 25 13:58:21 EDT 2025
-# Input FASTQ file:   ../garrigos/fastq/S63_R1.fastq.gz
-# Output dir:         results/fastqc
+Input FASTQ file:   ../garrigos/fastq/S63_R1.fastq.gz
+Output dir:         results/fastqc
 
 Started analysis of S63_R1.fastq.gz
 Approx 5% complete for S63_R1.fastq.gz
 # [...output truncated...]
 
-# Successfully finished script fastqc.sh
+Successfully finished script fastqc.sh
 Thu Sep 25 13:58:26 EDT 2025
 
-# Starting script fastqc.sh
+Starting script fastqc.sh
 Thu Sep 25 13:58:26 EDT 2025
-# Input FASTQ file:   ../garrigos/fastq/S63_R2.fastq.gz
-# Output dir:         results/fastqc
+Input FASTQ file:   ../garrigos/fastq/S63_R2.fastq.gz
+Output dir:         results/fastqc
 
 Started analysis of S63_R2.fastq.gz
 Approx 5% complete for S63_R2.fastq.gz
@@ -559,9 +592,9 @@ You can hopefully see that this looping approach is quite powerful,
 allowing you to easily run a script many times.
 
 ::: callout-tip
-#### But: while concise and effective, our code is not (yet) running FastQC in parallel.
-However, this runs the `fastqc.sh` script **sequentially**:
-after it was run for the first FASTQ file, it will run for the second file,
+#### This loop runs the script sequentially, not in parallel
+The loop above runs the `fastqc.sh` script **sequentially**:
+only after it has finished for the first FASTQ file, it will run for the second file,
 and so on.
 If these had been full-size FASTQ files,
 it may have taken hours for this to finish.
@@ -596,7 +629,7 @@ where parameter is another word for variable,
 you can search-and-replace text in your variable's values.
 For example:
 
-- Start by assigning a short DNA sequence to a variable, as a an example for practice:
+- Start by assigning a short DNA sequence to a variable:
 
   ```bash
   dna_seq="AAGTTCAT"
@@ -606,7 +639,7 @@ For example:
   AAGTTCAT
   ```
 
-- Now, use parameter expansion to replace all `T`s with `U`:
+- Now, use parameter expansion to replace all `T`s with `U`s:
 
   ```bash
   echo "${dna_seq//T/U}"
@@ -676,6 +709,20 @@ echo "$fastq_R2"
 ```
 </p></details>
 ---->
+
+Next, a labmate suggests the shorter `fastq_R2=${fastq_R1/1/2}`.
+Does that give the correct result for this file?
+Would it still work if the sample were called `S61` instead of `S63`?
+
+<!----
+<details><summary>_Click for the solution_</summary><p>
+It works for `S63`, since the first `1` in the path happens to be the one in `R1`.
+But for `../garrigos/fastq/S61_R1.fastq.gz`,
+the `1` in the sample ID would be replaced instead,
+giving `../garrigos/fastq/S62_R1.fastq.gz` --- the R1 file of a different sample!
+So, make your search pattern as specific as possible, like `_R1`.
+</p></details>
+---->
 :::
 
 ### A per-sample loop
@@ -688,15 +735,15 @@ Here is a loop that runs once per sample, and prints the two file names for each
 ```bash
 for R1 in ../garrigos/fastq/*_R1.fastq.gz; do
     R2=${R1/_R1/_R2}
-    echo "# R1 file: $R1"
-    echo "# R2 file: $R2"
+    echo "R1 file: $R1"
+    echo "R2 file: $R2"
 done
 ```
 ```bash-out
-# R1 file: ../garrigos/fastq/S63_R1.fastq.gz
-# R2 file: ../garrigos/fastq/S63_R2.fastq.gz
-# R1 file: ../garrigos/fastq/S64_R1.fastq.gz
-# R2 file: ../garrigos/fastq/S64_R2.fastq.gz
+R1 file: ../garrigos/fastq/S63_R1.fastq.gz
+R2 file: ../garrigos/fastq/S63_R2.fastq.gz
+R1 file: ../garrigos/fastq/S64_R1.fastq.gz
+R2 file: ../garrigos/fastq/S64_R2.fastq.gz
 # [...output truncated...]
 ```
 
@@ -742,11 +789,11 @@ you'll write such a script for the program TrimGalore.
   outdir="$3"
 
   # Initial logging
-  echo "# Starting script trim_mock.sh"
+  echo "Starting script trim_mock.sh"
   date
-  echo "# Input R1 file:       $R1"
-  echo "# Input R2 file:       $R2"
-  echo "# Output dir:          $outdir"
+  echo "Input R1 file:       $R1"
+  echo "Input R2 file:       $R2"
+  echo "Output dir:          $outdir"
   echo
 
   # Create the output dir if needed
@@ -757,7 +804,7 @@ you'll write such a script for the program TrimGalore.
 
   # Final logging
   echo
-  echo "# Successfully finished script trim_mock.sh"
+  echo "Successfully finished script trim_mock.sh"
   date
   ```
   </details>
@@ -781,20 +828,20 @@ you'll write such a script for the program TrimGalore.
   ````
 
   ```bash-out
-  # Starting script trim_mock.sh
+  Starting script trim_mock.sh
   Thu Sep 25 14:05:10 EDT 2025
-  # Input R1 file:       ../garrigos/fastq/S63_R1.fastq.gz
-  # Input R2 file:       ../garrigos/fastq/S63_R2.fastq.gz
-  # Output dir:          results/trim_mock
+  Input R1 file:       ../garrigos/fastq/S63_R1.fastq.gz
+  Input R2 file:       ../garrigos/fastq/S63_R2.fastq.gz
+  Output dir:          results/trim_mock
 
   trimmer --in1 ../garrigos/fastq/S63_R1.fastq.gz --in2 ../garrigos/fastq/S63_R2.fastq.gz --outdir results/trim_mock
 
-  # Successfully finished script trim_mock.sh
+  Successfully finished script trim_mock.sh
   Thu Sep 25 14:05:10 EDT 2025
 
-  # Starting script trim_mock.sh
+  Starting script trim_mock.sh
   Thu Sep 25 14:05:10 EDT 2025
-  # Input R1 file:       ../garrigos/fastq/S64_R1.fastq.gz
+  Input R1 file:       ../garrigos/fastq/S64_R1.fastq.gz
   # [...output truncated...]
   ```
   </details>
