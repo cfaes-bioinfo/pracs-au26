@@ -113,10 +113,9 @@ Typically, the most important one is this per-base quality score graph:
 ## Loading software at OSC using modules
 
 As discussed in the previous lecture,
-much of the software installed at OSC can only be used after its
-**module is explicitly loaded**.
-You can search for available software modules and load them using the `module`
-command and its various subcommands.
+a lot of software installed at OSC can only be used after its
+**module is loaded**.
+You can find and load them using the `module` command and its various subcommands.
 
 ::: {.callout-warning appearance="simple"}
 The three OSC clusters mostly have the same software available through modules,
@@ -126,13 +125,12 @@ In this course, our VS Code sessions run on the Pitzer cluster.
 
 ### Searching for available modules
 
-OSC OnDemand has a [Module Browser](https://ondemand.osc.edu/pun/sys/dashboard/module-browser)
-that you can use to search for available software modules.
-You can also search for available software in the shell
-using two subtly different `module` commands:
+While OSC OnDemand has a [Module Browser](https://ondemand.osc.edu/pun/sys/dashboard/module-browser)
+to search for available software modules,
+you can also do so directly in the shell using two subtly different `module` commands:
 
 - `module spider` lists all modules.
-- `module avail` lists modules that can be **loaded directly** given the current
+- `module avail` lists modules that can be **loaded directly** given your current
   shell environment^[
   This takes into account which other software has been loaded,
   which can make a difference:
@@ -170,7 +168,8 @@ for example, `module spider FastQC` would also find the `fastqc` module.
 ### Loading modules
 
 To make a program available to you, use the `module load` command.
-But first, let's confirm that it is not possible to use FastQC **before doing so**:
+But first, let's confirm that the `fastqc` command, which is used to run FastQC,
+is **not** already available before doing so:
 
 ```bash
 fastqc -v
@@ -180,15 +179,10 @@ bash: fastqc: command not found...
 Failed to search for file: GDBus.Error:org.freedesktop.DBus.Error.NameHasNoOwner: Could not activate remote peer.
 ```
 
-Notes on the above command and its output:
-
-- The command to run FastQC is `fastqc`.
-- Like the shell commands you've learned so far, `fastqc` has many options,
-  and files (here, FASTQ files) can be passed as arguments.
-  To test whether the program is available,
-  we ran it with the `-v` option that would have simply printed the FastQC version
-  if it were available.
-- The error messages tell us that the `fastqc` command is not currently available.
+These error messages tell us that the `fastqc` command is not currently available.
+Also, the `-v` option is a common option that prints the program version,
+so if the command were available,
+it would have printed the FastQC version instead of an error message.
 
 Now, load the module by specifying the module name and its version exactly
 as `module spider` printed it:
@@ -387,16 +381,17 @@ type `q()` or use the general keyboard shortcut for exiting,
 :::
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 1: Modules
+#### {{< fa user-edit >}} Self-study exercise: Modules
 
 1. Check whether there is a module for the program **STAR**,
-   an aligner for RNA-seq data that we'll later use to align the @garrigós2025
-   reads to a reference genome.
+   an aligner for RNA-seq data that we'll later use to align the reads from
+   @garrigós2025 to a reference genome.
 
-   <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-   Yes, it's available:
+   Yes, it's available, but be careful: two modules with similar names are shown:
+   `star` and `starccm`. The one we want is the first one, `star`,
+   which is the actual RNA-seq aligner.
 
    ```bash
    module spider star
@@ -410,23 +405,36 @@ type `q()` or use the general keyboard shortcut for exiting,
     This module can be loaded directly: module load star/2.7.10b
     Help:
       STAR is an ultrafast universal RNA-seq aligner.
+
    --------------------------------------------------------------------------------
-   To find other possible module matches execute:
-      $ module -r spider '.*star.*'
+   starccm:
+   --------------------------------------------------------------------------------
+     Versions:
+        starccm/19.06.009-mixed
+        starccm/19.06.009
+
+   --------------------------------------------------------------------------------
+   For detailed information about a specific "starccm" package (including how to load the modules) use the module's full name.
+   Note that names that have a trailing (E) are extensions provided by other modules.
+   For example:
+
+   $ module spider starccm/19.06.009
    ```
+
    </details>
-   ---->
 
-2. The command to run STAR is `STAR`, in uppercase.
-   Try loading the module with an uppercase name too, i.e. `module load STAR/<version>`
-   (with the version you found above). What happens, and why?
-   Then, load the module correctly and test whether you can use the program
-   by running the command `STAR` (in this case, without adding any options).
+2. Load the module. Then, test whether you can use the program by running the
+   command `STAR` (in uppercase, and without adding any options).
 
-   <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
-   This fails, because `module load` is case-sensitive and the module name
+   Make sure to load the module with the correct case, as printed by `module spider`:
+
+   ```bash
+   module load star/2.7.10b
+   ```
+
+   For example, this fails, because `module load` is case-sensitive and the module name
    is lowercase `star`, even though the command is uppercase `STAR`:
 
    ```bash
@@ -436,10 +444,9 @@ type `q()` or use the general keyboard shortcut for exiting,
    Lmod has detected the following error:  The following module(s) are unknown: "STAR/2.7.10b"
    ```
 
-   The correct command is:
+   Then, to see if the program is available, run the command `STAR`:
 
    ```bash
-   module load star/2.7.10b
    STAR
    ```
    ```bash-out
@@ -454,14 +461,12 @@ type `q()` or use the general keyboard shortcut for exiting,
    To list all parameters, run STAR --help
    ```
    </details>
-   ---->
 
 3. Use `module spider` to see if the program **Salmon**^[
    Salmon is a tool for quantifying transcript abundance from RNA-seq data.]
    is available. Then, look for Salmon in the OnDemand Module Browser.
    Why did the former say it is not available, while the latter says it is?
 
-   <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
    No, it isn't available as a module!
@@ -480,7 +485,6 @@ type `q()` or use the general keyboard shortcut for exiting,
    ![](/img/ondemand-modules-salmon.png){fig-align="center" width="80%" fig-alt="A screenshot showing that Salmon is only available on the Cardinal cluster." .lightbox}
 
    </details>
-   ---->
 
 :::
 
@@ -509,23 +513,22 @@ the most basic command is simply `fastqc` followed by the file path:
 fastqc ../garrigos/fastq/S63_R1.fastq.gz
 ```
 
-However, an annoying default behavior of FastQC is that it writes its output files
+However, an annoying **default behavior** of FastQC is that it writes its output files
 in the same dir that contains the input FASTQ files ---
 this means mixing your raw data with your results,
 which, as we discussed in [week 2](/week02/w2a_project-org.qmd), we don't want!
 
-To figure out how to change that behavior,
+To figure out how to **change that behavior**,
 consider that (as you already know from standard shell commands!) most bioinformatics
 tools also have a `-h` and/or `--help` option that prints usage information to the screen.
 
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 2: FastQC help and output dir
+#### {{< fa user-edit >}} Exercise 1: FastQC help and output dir
 
-1. Run FastQC with the `-h` option to see its help info.
-   From the help info, figure out which option can be used to specify a
-   custom output directory.
+1. Run FastQC with the `-h` option to see its help info,
+   and use it to find the option for specifying a **custom output directory**.
 
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
@@ -555,8 +558,9 @@ tools also have a `-h` and/or `--help` option that prints usage information to t
 
    </details>
 
-2. Use this option to build the full command for a FastQC run on `S63_R1.fastq.gz`
-   that writes its output to `results/fastqc/`.
+2. Use the output dir option you found in the previous step to type out the
+   **complete command** for a FastQC run on `S63_R1.fastq.gz` that writes its output to
+   `results/fastqc/`.
 
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
@@ -572,10 +576,10 @@ tools also have a `-h` and/or `--help` option that prints usage information to t
 
    </details>
 
-3. Try running the command you wrote in the previous step.
-   Even if you got the command correct, you should have gotten an error.
+3. Run the command you wrote in the previous step.
+   Even if you got the command correct, this should result in an **error**.
    Try to understand the error message and fix the underlying issue,
-   then rerun the same command. Keep trying until it runs successfully.
+   then rerun FastQC.
 
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
@@ -625,9 +629,10 @@ tools also have a `-h` and/or `--help` option that prints usage information to t
    </details>
 
 4. Once your run for the R1 file has successfully completed,
-   run FastQC for the R2 FASTQ file of the same sample.
+   run FastQC for the **R2 FASTQ file** of the same sample.
    Do you use the same output dir or a different one?
 
+   <!----
    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
 
    It makes sense to use the same output dir.
@@ -664,19 +669,34 @@ tools also have a `-h` and/or `--help` option that prints usage information to t
    Now, we have four files: two for each of our preceding successful FastQC runs.
 
    </details>
+   ---->
 
 5. In the VS Code file explorer, find the two FastQC output HTML files.
-   Right-click on the first one (for the `R1` file) and click "Open Preview",
+   Right-click on the first one (for the `R1` file) and click "**Open Preview**",
    which should open the HTML file in a new tab in VS Code^[
-   thanks to the HTML Preview extension we installed earlier.].
+   Thanks to the HTML Preview extension we installed earlier.
+   If this fails, you can download the file using the "Download..." option,
+   which should also appear on a right-click, and opening it on your local machine.
+   ].
 
-6. Explore the file. The "Summary" on the left gives each graph a
+6. **Explore the file**. The "Summary" on the left gives each graph a
    green check (pass), orange exclamation mark (warning), or red cross (fail).
-   Did any graphs get a warning or fail?
-   Pick one, and try to figure out from the graph what FastQC is flagging.
+   Take a look at one or more graphs that got a warning or fail,
+   and try to figure out from the graph what FastQC is flagging
+   (I'd recommend skipping the "Per Base Sequence Content" graph,
+   which is more complicated to interpret).
+
+   <details><summary> {{< fa lightbulb >}} _Click here for a hint._ </summary>
+
+   Other than the "Per Base Sequence Content" graph, the other warnings and fails
+   mostly relate to an issue with these sequences that we had already identified
+   a few weeks ago.
+
+   </details>
 
 7. Open the second HTML file (for the `R2` file) in a new tab,
-   and compare it to the first one. What are the main differences you observe?
+   and **compare** it to the first one.
+   What are the main differences you observe?
 
 :::
 
@@ -974,6 +994,23 @@ your Home dir can get quite full.
   Total space used: 383.99 MiB
   ```
 
+- To **clear your cache**, i.e. remove all cached containers
+  (e.g., to free up space in your Home dir), run:
+
+  ```bash
+  apptainer cache clean
+  ```
+
+  This is harmless in the sense that any container you run again
+  will simply be re-downloaded.
+
+- You _can_ also run a container by referring to the **downloaded image file**
+  (i.e., `apptainer exec <path-to-sif-file> <command>`) rather than the URI.
+  But there is little benefit to doing so, since Apptainer already
+  uses the cached image when you give it the URI.
+  And it reduces reproducibility: a URI works for anyone on any computer,
+  whereas a path to a local file will only work for you on this computer.
+
   <hr style="height:1pt; visibility:hidden;" />
 
 :::
@@ -1006,13 +1043,13 @@ Analysis complete for S63_R1.fastq.gz
 
 Recall that a container is like a small, separate computer system.
 When you run `apptainer exec <container-URI> <command>`,
-the command is executed **inside the container**:
+the command is executed **inside** the container:
 
 - Therefore, it can **only use software** installed in the container ---
   which modules you have loaded doesn't matter.
 
-- However, your files that are outside of the container **are still accessible**:
-  at OSC, your Home dir and the `/fs/ess` and `/fs/scratch` dirs are automatically
+- However, you **_can_ access files** that are outside of the container: at OSC,
+  your Home dir and the `/fs/ess` and `/fs/scratch` dirs are automatically
   made available inside containers.
   That's why FastQC could read the FASTQ file and write to `results/fastqc` above.
 
