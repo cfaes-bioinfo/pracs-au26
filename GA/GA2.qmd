@@ -320,6 +320,409 @@ _(You don't need to commit your answer to these questions with Git, but you can 
     so far, but which you feel you do not (fully) understand.
     It helps to be specific about what you struggle with.
 
+## Solutions
+
+The commands below assume that your working dir is `/fs/ess/PAS3493/people/<user>/GA2`
+and that your copy of the @garrigós2025 data is in `/fs/ess/PAS3493/people/<user>/garrigos`.
+In the example output, `<user>` stands for your user name,
+and file dates, commit IDs, etc. will differ from yours.
+
+### Part A: Starting a Git repository
+
+<details><summary>**1.** Copy the template file and add your name.</summary>
+
+```bash
+cp /fs/ess/PAS3493/share/GA2/GA2_template.md README.md
+```
+
+Then, in the VS Code editor,
+change the level 1 header at the top of `README.md` to something like:
+
+```markdown
+# GA2 answers - Jane Doe
+```
+
+</details>
+
+<details><summary>**2.** Initialize a Git repository.</summary>
+
+```bash
+git init
+```
+```bash-out
+Initialized empty Git repository in /fs/ess/PAS3493/people/<user>/GA2/.git/
+```
+
+</details>
+
+<details><summary>**3.** Stage and commit the README file.</summary>
+
+```bash
+git add README.md
+git commit -m "Add README"
+```
+
+- Any commit message that describes the change is fine.
+- You could also have done this with the VS Code Source Control panel.
+
+</details>
+
+### Part B: Exploring the GTF file with Unix data tools
+
+<details><summary>**4.** Create `data` and `results` dirs and copy the GTF file.</summary>
+
+```bash
+mkdir data results
+cp ../garrigos/ref/annot.gtf.gz data/
+```
+
+Neither command prints any output.
+Using the absolute path to the GTF file
+(`/fs/ess/PAS3493/people/<user>/garrigos/ref/annot.gtf.gz`) is fine too.
+
+</details>
+
+<details><summary>**5.** Check the file size of `annot.gtf.gz`.</summary>
+
+```bash
+ls -lh data/annot.gtf.gz
+```
+```bash-out
+-rw-r--r-- 1 <user> PAS3493 5.1M Sep 25 14:02 data/annot.gtf.gz
+```
+
+The compressed file is **5.1 MB**.
+
+</details>
+
+<details><summary>**6.** Decompress the GTF file and compare file sizes.</summary>
+
+```bash
+gunzip data/annot.gtf.gz
+ls -lh data/annot.gtf
+```
+```bash-out
+-rw-r--r-- 1 <user> PAS3493 123M Sep 25 14:02 data/annot.gtf
+```
+
+The uncompressed file is 123 MB, which is roughly **24 times larger**
+than the compressed file (123 / 5.1 ≈ 24).
+That's a big difference, and the reason that large genomic files are typically
+stored in compressed form.
+
+</details>
+
+<details><summary>**7.** Count the total number of lines in `annot.gtf`.</summary>
+
+```bash
+wc -l data/annot.gtf
+```
+```bash-out
+408402 data/annot.gtf
+```
+
+The file has **408,402** lines in total.
+
+</details>
+
+<details><summary>**8.** Count the header lines by eye.</summary>
+
+```bash
+head -n 5 data/annot.gtf
+```
+```bash-out
+#gtf-version 2.2
+#!genome-build TS_CPP_V2
+#!genome-build-accession NCBI_Assembly:GCF_016801865.2
+#!annotation-source NCBI RefSeq GCF_016801865.2-RS_2022_12
+NC_068937.1     Gnomon  gene    2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id ""; db_xref "GeneID:120427725"; description "homeotic protein deformed"; gbkey "Gene"; gene "LOC120427725"; gene_biotype "protein_coding";
+```
+
+- There are **4** header lines, all starting with a `#`.
+- That leaves 408,402 - 4 = **408,398** lines for the table section.
+- Other commands to view the file, like `less -S data/annot.gtf`, are fine too.
+
+</details>
+
+<details><summary>**9.** Count the number of lines in the table section with `grep -v`.</summary>
+
+```bash
+grep -v "#" data/annot.gtf | wc -l
+```
+```bash-out
+408397
+```
+
+- This gives **408,397** lines: one less than in the previous question ---
+  see bonus question 21 for the explanation.
+- Instead of piping to `wc -l`, you can use `grep`'s `-c` option:
+  `grep -vc "#" data/annot.gtf`.
+- The quotes around `#` are needed:
+  without them, the shell interprets everything from the `#` onwards as a comment,
+  so `grep` wouldn't get a search pattern at all.
+
+</details>
+
+<details><summary>**10.** Count the distinct sequences and save them to `results/scaffolds.txt`.</summary>
+
+- First, exclude the header lines with `grep -v`.
+- Then, select the first column, which contains the sequence names, with `cut -f 1`.
+- To only keep distinct sequences, use `sort | uniq`, and write the output to a file.
+- Finally, count the number of lines in the resulting file with `wc -l`.
+
+```bash
+grep -v "#" data/annot.gtf | cut -f 1 | sort | uniq > results/scaffolds.txt
+wc -l results/scaffolds.txt
+```
+```bash-out
+167 results/scaffolds.txt
+```
+
+- There are **167** distinct sequences.
+- If you forgot `grep -v "#"`, you got 172:
+  the `#` lines don't contain any tabs, so `cut` prints them in full,
+  and each of these 5 lines is counted as an additional "sequence".
+- The file `results/scaffolds.txt` should start like this:
+
+  ```bash
+  head -n 4 results/scaffolds.txt
+  ```
+  ```bash-out
+  NC_015079.1
+  NC_068937.1
+  NC_068938.1
+  NC_068939.1
+  ```
+
+</details>
+
+<details><summary>**11.** Print a frequency table of feature types.</summary>
+
+The feature types are in the 3^rd^ column:
+
+```bash
+grep -v "#" data/annot.gtf | cut -f 3 | sort | uniq -c
+```
+```bash-out
+ 141444 CDS
+ 166177 exon
+  19673 gene
+  25864 start_codon
+  25892 stop_codon
+  29347 transcript
+```
+
+- So, for example, **19,673** genes have been annotated in this genome.
+- Adding `| sort -nr` to sort the table by count is a nice touch.
+
+</details>
+
+<details><summary>**12.** Predict, then run `grep -c "gene"`.</summary>
+
+```bash
+grep -c "gene" data/annot.gtf
+```
+```bash-out
+408397
+```
+
+- The correct answer is **b)**: this overcounts the number of genes.
+  The command returns 408,397, which is far more than the 19,673 genes in the
+  frequency table from question 11.
+- That's because nearly every line in the GTF file contains "gene"
+  in its 9^th^ (attributes) column, in `gene_id "..."` and `gene "LOC..."`.
+  In fact, 408,397 is exactly the number of table lines from question 9:
+  _every_ line in the table section matches.
+- The lesson: `grep` matches a pattern anywhere in a line,
+  so to count genes, you need to check the feature type column specifically,
+  as you did in question 11.
+- Regarding the other answers:
+  `grep` does _not_ only match whole words (unless you use its `-w` option),
+  and it doesn't care whether a file is tab-delimited.
+
+</details>
+
+### Part C: Updating your Git repository
+
+<details><summary>**13.** Check the status of your Git repository.</summary>
+
+```bash
+git status
+```
+```bash-out
+On branch main
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        data/
+        results/
+
+no changes added to commit (use "git add" and/or "git commit -a")
+```
+
+`README.md` has been modified since you committed it,
+and `data/` and `results/` are listed as untracked.
+
+</details>
+
+<details><summary>**14.** Create a `.gitignore` file and check the status again.</summary>
+
+```bash
+echo "data/" > .gitignore
+echo "results/" >> .gitignore
+git status
+```
+```bash-out
+On branch main
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        .gitignore
+
+no changes added to commit (use "git add" and/or "git commit -a")
+```
+
+- **Yes**, the `.gitignore` file is working:
+  `data/` and `results/` are no longer listed.
+  Instead, the new `.gitignore` file itself shows up as untracked.
+- Creating the `.gitignore` file in the VS Code editor is fine too.
+  Patterns like `data` and `results`, or `data/*` and `results/*`, also work.
+
+</details>
+
+<details><summary>**15.** Commit `.gitignore` and then `README.md` in separate commits.</summary>
+
+```bash
+git add .gitignore
+git commit -m "Add .gitignore"
+
+git add README.md
+git commit -m "Add answers for Part B"
+```
+
+You can check that these are two separate commits with `git log`.
+
+</details>
+
+### Part D: Exploring the FASTQ files with Unix data tools
+
+<details><summary>**16.** Copy the FASTQ file.</summary>
+
+```bash
+cp ../garrigos/fastq/S63_R1.fastq.gz data/
+```
+
+This command doesn't print any output.
+
+</details>
+
+<details><summary>**17.** Does the FASTQ file show up in `git status`?</summary>
+
+```bash
+git status
+```
+```bash-out
+On branch main
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+```
+
+- **No**, the FASTQ file doesn't show up,
+  because it is in the `data` dir, which is listed in `.gitignore`.
+- Whether `README.md` is listed as modified depends on whether you had already
+  added answers to it after your last commit.
+  If not, you'd see "nothing to commit, working tree clean".
+
+</details>
+
+<details><summary>**18.** How many reads does the FASTQ file contain?</summary>
+
+```bash
+zcat data/S63_R1.fastq.gz | wc -l
+```
+```bash-out
+2000000
+```
+
+- Each read takes up 4 lines in a FASTQ file,
+  so the file contains 2,000,000 / 4 = **500,000 reads**.
+- Running `wc -l data/S63_R1.fastq.gz` directly on the compressed file
+  returns 101,139, which is meaningless:
+  you need to count the lines of the decompressed output.
+
+</details>
+
+<details><summary>**19.** How many reads contain at least 10 consecutive `N`s?</summary>
+
+```bash
+zcat data/S63_R1.fastq.gz | grep -c "NNNNNNNNNN"
+```
+```bash-out
+32612
+```
+
+- **32,612** reads contain at least 10 consecutive `N`s.
+- A read with more than 10 consecutive `N`s also matches,
+  and is still counted only once, since `grep -c` counts matching _lines_.
+
+</details>
+
+<details><summary>**20.** Stage and commit the README file again.</summary>
+
+```bash
+git add README.md
+git commit -m "Add answers for Parts C and D"
+```
+
+</details>
+
+### Bonus
+
+<details><summary>**21.** Why do the counts from questions 8 and 9 differ?</summary>
+
+Use `grep`'s `-n` option to print line numbers along with each matching line:
+
+```bash
+grep -n "#" data/annot.gtf
+```
+```bash-out
+1:#gtf-version 2.2
+2:#!genome-build TS_CPP_V2
+3:#!genome-build-accession NCBI_Assembly:GCF_016801865.2
+4:#!annotation-source NCBI RefSeq GCF_016801865.2-RS_2022_12
+408402:###
+```
+
+- Besides the 4 header lines, the **last line of the file**, `###`,
+  also contains a `#`.
+  This line seems to function as an end-of-file marker.
+- It is not a header line, so you didn't count it as one in question 8,
+  but `grep -v "#"` _did_ exclude it in question 9:
+  408,402 - 5 = 408,397.
+- You could also have found this line by looking at the end of the file
+  with `tail data/annot.gtf`.
+
+</details>
+
+<details><summary>**22.** Concepts or commands you don't (fully) understand.</summary>
+
+There is no single correct answer here.
+
+</details>
+
+<br>
 
 <!----
 Removed:
