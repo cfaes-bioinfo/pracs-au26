@@ -1,0 +1,369 @@
+---
+draft: true
+title: "Graded Assignment 2: Answer key"
+pagetitle: "GA2 answers"
+number-sections: false
+---
+
+------
+
+<hr style="height:1pt; visibility:hidden;" />
+
+## Notes
+
+- Commands assume the working dir is `/fs/ess/PAS3493/people/$USER/GA2`,
+  with the @garrigós2025 data in `/fs/ess/PAS3493/people/$USER/garrigos`.
+  Equivalent paths (absolute, or otherwise relative) are fine.
+- Counts were verified on the files in the `cfaes-bioinfo/garrigos` GitHub repo.
+- Commands that were not covered in class (e.g. `sort -u`, `grep -o`, `awk`)
+  only count if a source is given --- see the "Gen-AI check" box in the assignment.
+- Questions 02, 03, 12, and 20 are graded with a repo check (see below),
+  so students don't need to include commands or output for these in their README.
+  Questions 11 and 14 do need `git status` output and answers in the README.
+
+## Git repo check
+
+Because the repos are owned by the students, Git may refuse to run in them
+("detected dubious ownership").
+To avoid this, run the following once (it only affects your own Git config):
+
+```bash
+git config --global --add safe.directory '*'
+```
+
+Then, run this for each student:
+
+```bash
+cd /fs/ess/PAS3493/people/<user>/GA2
+
+# Expect 4 commits: README (Q03), .gitignore (Q12), README (Q12), README (Q20),
+# each with only the expected file and a sensible message:
+git log --stat --format='%h %ad %s' --date=short
+
+# Q11: should list data/ and results/ (or equivalent patterns):
+cat .gitignore
+
+# data/ and results/ should not appear (a modified README.md is fine):
+git status --short
+
+# README as committed at the end of Part B (Q12)
+# (adjust HEAD~1 if the student made extra commits):
+git show HEAD~1:README.md | tail
+```
+
+Or loop over all students at once:
+
+```bash
+for dir in /fs/ess/PAS3493/people/*/GA2; do
+    echo "===== $dir"
+    git -C "$dir" log --stat --format='%h %ad %s' --date=short
+    echo "--- .gitignore:"
+    cat "$dir"/.gitignore
+    echo "--- status:"
+    git -C "$dir" status --short
+done > GA2_repo-check.txt
+```
+
+- Extra commits are fine, as long as the required ones are present.
+- A missing `GA2` dir, or no `.git` dir inside it, means no credit for 02, 03, 12, and 20.
+
+## Part A: Starting a Git repository
+
+**01.** Any Markdown header, e.g. `# Graded Assignment 2` at the top of `README.md`.
+
+**02.**
+
+```bash
+git init
+```
+
+**03.**
+
+```bash
+git add README.md
+git commit -m "Add README"
+```
+
+## Part B: Exploring the GTF file
+
+**04.**
+
+```bash
+cp ../garrigos/ref/annot.gtf.gz data/annot.gtf.gz
+```
+
+**05.**
+
+```bash
+ls -lh data/annot.gtf.gz
+gunzip data/annot.gtf.gz
+ls -lh data/annot.gtf
+```
+
+- Compressed: 5.1M; uncompressed: 122/123M
+- The uncompressed file is **~24 times larger**.
+  Accept anything in the range of roughly 20--25×,
+  or a correct absolute difference (~118 MB) with a statement about relative size.
+
+**06.**
+
+```bash
+wc -l data/annot.gtf
+```
+```bash-out
+408402 data/annot.gtf
+```
+
+- **4** header lines by eye (all starting with `#`).
+
+```bash
+grep -v "#" data/annot.gtf | wc -l
+```
+```bash-out
+408397
+```
+
+- `grep -vc "#" data/annot.gtf` is equally correct.
+
+**07.**
+
+- No: the difference is **5** lines, not 4.
+- The extra line is the **last line of the file**, which is `###`,
+  seems to function as an end-of-file marker.
+- Use the `-n` option to `grep` to print line numbers along with each match
+
+```bash
+grep -n "#" data/annot.gtf
+```
+```bash-out
+1:#gtf-version 2.2
+2:#!genome-build TS_CPP_V2
+3:#!genome-build-accession NCBI_Assembly:GCF_016801865.2
+4:#!annotation-source NCBI RefSeq GCF_016801865.2-RS_2022_12
+408402:###
+```
+
+- `tail data/annot.gtf` to find the line is also fine.
+- No table lines contain a `#`, so `grep -v "#"` is safe for this file.
+
+**08.**
+
+- Make sure to first exclude the header lines with `grep -v`
+- The first column contains the sequence name (`cut -f 1`)
+- To only keep distinct sequences, use `sort | uniq`
+- To get a count of the resulting list of distinct sequences, use `wc -l`
+
+```bash
+grep -v "#" data/annot.gtf | cut -f 1 | sort | uniq > results/scaffolds.txt
+wc -l results/scaffolds.txt
+```
+```bash-out
+167 results/scaffolds.txt
+```
+
+- **167** distinct sequences.
+- The file should start with:
+
+```bash-out
+NC_015079.1
+NC_068937.1
+NC_068938.1
+NC_068939.1
+```
+
+- Common mistake: forgetting `grep -v "#"` (gives 172, because the 5 `#` lines
+  are printed in full by `cut`).
+- Note: omitting `sort` happens to give the correct count (167) here,
+  because GTF lines are already grouped by sequence.
+  Accept it, but it would fail on unsorted input.
+
+**09.**
+
+```bash
+grep -v "#" data/annot.gtf | cut -f 3 | sort | uniq -c
+```
+```bash-out
+ 141444 CDS
+ 166177 exon
+  19673 gene
+  25864 start_codon
+  25892 stop_codon
+  29347 transcript
+```
+
+- Adding `| sort -nr` is fine.
+- Without `grep -v "#"`, five extra lines with count 1 appear --- deduct.
+
+**10.**
+
+- Correct answer: **b)**.
+  Nearly every line contains "gene" in its attributes column
+  (`gene_id "..."` and `gene "LOC..."`).
+  In fact, 408,397 is exactly the number of non-`#` lines:
+  every table line matches.
+- A correct command, which should return **19,673** (matches the Q09 table):
+
+```bash
+grep -v "#" data/annot.gtf | cut -f 3 | grep -c "gene"
+```
+```bash-out
+19673
+```
+
+- Variants that also work: `cut -f 3 data/annot.gtf | grep -c "gene"`
+  (header lines don't contain "gene") or `grep -wc` instead of `grep -c`.
+- Not correct: `grep -wc "gene" data/annot.gtf` (returns 408,349,
+  because `gene "LOC..."` in the attributes matches as a whole word).
+- Full credit requires both the correct letter and a working command.
+
+**11.**
+
+```bash
+git status
+```
+
+- Before: `README.md` modified; `data/` and `results/` untracked.
+
+```bash
+echo "data/" > .gitignore
+echo "results/" >> .gitignore
+git status
+```
+
+- After: only `.gitignore` (untracked) and `README.md` (modified) are listed ---
+  so `.gitignore` works.
+- Creating `.gitignore` in the VS Code editor is fine too.
+  Patterns like `data` / `results` or `data/*` / `results/*` are also acceptable.
+
+**12.**
+
+```bash
+git add .gitignore
+git commit -m "Add .gitignore"
+
+git add README.md
+git commit -m "Add answers for Part B"
+```
+
+- Should be two separate commits (check with `git log`).
+
+## Part C: Exploring the FASTQ file
+
+**13.**
+
+```bash
+cp ../garrigos/fastq/S63_R1.fastq.gz data/
+```
+
+**14.**
+
+- **No**, the FASTQ file doesn't show up in `git status`,
+  because it is in the `data` dir, which is listed in `.gitignore`.
+
+**15.**
+
+```bash
+zcat data/S63_R1.fastq.gz | wc -l
+```
+```bash-out
+2000000
+```
+
+- 2,000,000 / 4 = **500,000 reads**.
+- The answer needs the division by 4 for full credit.
+
+**16.**
+
+```bash
+zcat data/S63_R1.fastq.gz | grep -c "ACGT"
+```
+```bash-out
+100465
+```
+
+```bash
+zcat data/S63_R1.fastq.gz | grep -c "NNNNNNNNNN"
+```
+```bash-out
+32612
+```
+
+- **100,465** reads contain `ACGT`; **32,612** reads contain at least 10 consecutive `N`s.
+- Both parts are needed for full credit.
+
+**17.**
+
+```bash
+zcat data/S63_R1.fastq.gz | grep "@" | cut -d = -f 2 | sort | uniq -c | sort -nr
+```
+```bash-out
+ 303297 74
+ 123453 73
+  32678 35
+  28617 72
+   8483 71
+   1962 70
+    620 69
+    276 68
+     90 64
+     78 67
+     61 65
+     49 66
+# [...output truncated: 40 distinct read lengths in total...]
+```
+
+- Without `| sort -nr`, the table is sorted by read length (as text) --- also fine.
+- Key number for Q18: **32,678** reads of 35 bp.
+
+**18.**
+
+- The numbers are very similar: 32,678 reads of 35 bp versus 32,612 reads
+  with at least 10 `N`s.
+  This suggests that the 35-bp reads are (nearly) all "junk" reads consisting of `N`s.
+- Confirm by looking at some 35-bp reads:
+
+```bash
+zcat data/S63_R1.fastq.gz | grep -A 1 "length=35" | head
+```
+```bash-out
+@ERR10802863.11918285 11918285 length=35
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+--
+@ERR10802863.6436756 6436756 length=35
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+--
+# [...]
+```
+
+- FYI (not expected from students): only 69 of the 32,678 35-bp reads
+  lack a stretch of 10 `N`s, and a few non-35-bp reads do contain one.
+
+**19.**
+
+- Correct answer: **b)**.
+  `@` is a valid quality score character (it encodes a Phred score of 31),
+  so quality lines can contain --- or even start with --- an `@`.
+- Check for this file:
+
+```bash
+zcat data/S63_R1.fastq.gz | grep -c "@"
+```
+```bash-out
+500000
+```
+
+- This equals the number of reads from Q15, so in this file,
+  only the header lines contain an `@` and the assumption holds.
+- Full credit requires both the correct letter and the check.
+
+**20.**
+
+```bash
+git add README.md
+git commit -m "Add answers for Part C"
+```
+
+## Bonus
+
+**21.** Any two specific concepts or commands with some description of what is unclear.
+Award the full point for a genuine, specific answer.
