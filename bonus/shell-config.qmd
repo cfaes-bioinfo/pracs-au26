@@ -1,0 +1,298 @@
+---
+title: "Configuring your shell:<br>`$PATH`, `~/.bashrc`, and aliases"
+subtitle: "Optional self-study content for week 7"
+pagetitle: "Shell configuration"
+date: 2026-10-05
+date-modified: last-modified
+author:
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+    affiliation:
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://go.osu.edu/bioinformatics-core
+      - name: Dept. of Plant Pathology, Ohio State University
+        url: https://plantpath.osu.edu
+other-links:
+  - text: "Week 7 overview"
+    icon: check2-all
+    href: ../week07/w7_overview.html
+  - text: "w7a: Shell scripting I"
+    icon: book
+    href: ../week07/w7a_scripts1.html
+  - text: "w7b: Shell scripting II"
+    icon: book
+    href: ../week07/w7b_scripts2.html
+  - text: "Advanced shell scripting (optional)"
+    icon: book
+    href: shell-scripting.html
+language:
+  title-block-published: "Published on"
+  title-block-modified: "Page last modified"
+---
+
+----------------------------------------------------------------------------------------------------
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: callout-warning
+#### This document is still subject to change.
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
+
+## Introduction
+
+This page covers how the shell finds the programs you run (the `$PATH`),
+and how you can make lasting changes to your shell's settings
+using configuration files like `~/.bashrc`.
+
+_To run the commands on this page yourself, start a VS Code session at_
+_<https://ondemand.osc.edu> in `/fs/ess/PAS3493/people/$USER`._
+
+## `$PATH`: where the shell looks for programs
+
+### What is the `$PATH`?
+
+`$PATH` is an environment variable like `$HOME` and `$USER`,
+which you learned about in [week 3](../week03/w3a_shell-basics.qmd).
+It contains a list of directories,
+and whenever you type the name of a program,
+the shell searches these directories for an executable file with that name.
+This is why you can run programs without specifying the full path to their executable.
+
+To see where the executable for a command is located,
+you can use the `which` command:
+
+```bash
+which nano
+```
+```bash-out
+/usr/bin/nano
+```
+
+<!-- TODO: check the output above at OSC -->
+
+To check which directories are in your `$PATH`, you can simply `echo` it:
+
+```bash
+echo $PATH
+```
+
+<!-- TODO: add current OSC output (bash-out block) -->
+
+That output is hard to read,
+because the directories are separated by colons `:`.
+Let's make it a bit more readable by replacing the colons with newlines
+(`tr ":" "\n"`), and numbering the lines (`nl`):
+
+```bash
+echo $PATH | tr ":" "\n" | nl
+```
+
+<!-- TODO: add current OSC output (bash-out block), possibly truncated -->
+
+The order of the directories matters:
+the shell searches them from first to last,
+and runs the **first** matching executable that it finds.
+
+### Modules and Conda change your `$PATH`
+
+In [week 6](../week06/w6b_software.qmd), you saw that the `fastqc` command
+is not available until you load its module.
+Now you can understand what `module load` does: it adds the directory with
+FastQC's executable to the start of your `$PATH`:
+
+```bash
+which fastqc
+```
+
+<!-- TODO: add OSC output: "no fastqc in (...)" -->
+
+```bash
+module load fastqc/0.12.1
+which fastqc
+```
+
+<!-- TODO: add OSC output: path to the module's fastqc executable -->
+
+Activating a [Conda environment](conda.qmd) works the same way.
+
+### Changing your `$PATH`
+
+You can add a directory to your `$PATH` by assigning a new value to the variable
+that consists of the old value (`$PATH`), a colon, and the new directory:
+
+```bash
+# Add a dir to the END of the $PATH:
+export PATH="$PATH:$HOME/software/bin"
+
+# Or add a dir to the START of the $PATH:
+export PATH="$HOME/software/bin:$PATH"
+```
+
+::: {.callout-note collapse="true"}
+#### Some notes on the above commands _(Click to expand)_
+
+- `export` makes a variable available to programs that you run from your shell.
+  `$PATH` is already exported, so `export` is not strictly needed here,
+  but it is customary to include it.
+
+- We use `$HOME` rather than `~` because the shell does not expand `~`
+  inside double quotes.
+
+- Don't forget the `$PATH` part! If you were to run `PATH="$HOME/software/bin"`,
+  the shell would no longer find basic commands like `ls`.
+  If this happens, simply open a new terminal to start over.
+:::
+
+Like any variable you set in the shell,
+this change only affects your **current shell session**.
+To make it permanent, you'll need to add the line to a configuration file
+--- see [below](#shell-configuration-files).
+
+::: {.callout-tip collapse="true"}
+#### Running your own scripts like any other command _(Click to expand)_
+
+In [w7a](../week07/w7a_scripts1.qmd), you saw that a script in your working dir
+needs to be run as `./script.sh` when you don't use `bash script.sh`.
+If you put scripts with execute permissions in a directory that is in your `$PATH`,
+you can run them from anywhere just by typing their name, e.g.:
+
+```bash
+mkdir -p ~/software/bin
+cp scripts/fastqc.sh ~/software/bin
+chmod +x ~/software/bin/fastqc.sh
+export PATH="$PATH:$HOME/software/bin"
+
+# You can now run the script from any directory without specifying its path:
+fastqc.sh
+```
+
+For scripts that belong to a specific research project, though,
+it is better to keep them within the project dir and run them from there.
+:::
+
+<br>
+
+## Shell configuration files
+
+### `~/.bashrc` and `~/.bash_profile`
+
+Your Bash shell is configured by hidden text files in your Home dir.
+The two most important ones are:
+
+- `~/.bash_profile`, which is read by **login shells**:
+  the shell that you get when you first log in to a computer,
+  e.g. with `ssh`.
+- `~/.bashrc`, which is read by **non-login interactive shells**:
+  shells that you start after you're already logged in,
+  e.g. when you open another terminal.
+
+To avoid having to deal with this distinction,
+it is common to put all your settings in `~/.bashrc`,
+and to have `~/.bash_profile` run `~/.bashrc`.
+This is often already set up by default, which you can check as follows:
+
+```bash
+cat ~/.bash_profile
+```
+
+If the output contains a line like `. ~/.bashrc` or `source ~/.bashrc`
+(typically within an `if` statement),
+then `~/.bash_profile` runs `~/.bashrc`, and you only need to edit `~/.bashrc`.
+
+### What to put in your `~/.bashrc`
+
+To see what's currently in your `~/.bashrc`,
+use `cat` or open the file in VS Code:
+
+```bash
+cat ~/.bashrc
+```
+
+Some things that you can store in this file:
+
+- Changes to your `$PATH`, like the one in the [previous section](#changing-your-path).
+- Other environment variables, like the `$APPTAINER_CACHEDIR` variable
+  from [week 6](../week06/w6b_software.qmd#the-container-image-cache-storage).
+- Aliases: your own shortcuts for commands --- see [below](#aliases).
+- The look of your prompt.
+
+You can add a line to your `~/.bashrc` by editing it in VS Code,
+or by appending a line with `echo` and `>>`:
+
+```bash
+echo 'export PATH="$PATH:$HOME/software/bin"' >> ~/.bashrc
+```
+
+::: callout-warning
+#### Use single quotes with `echo` here!
+With double quotes, the shell would replace `$PATH` with its _current_ value
+before the line is written to the file.
+Single quotes make sure that the line is written exactly as shown,
+so that `$PATH` is expanded each time the file is read instead.
+:::
+
+Changes to your `~/.bashrc` take effect in **new** shells.
+To apply them to your current shell as well, run:
+
+```bash
+source ~/.bashrc
+```
+
+::: {.callout-tip collapse="true"}
+#### Some precautions when editing your `~/.bashrc` _(Click to expand)_
+
+- Make a backup before making changes:
+
+  ```bash
+  cp ~/.bashrc ~/.bashrc_backup
+  ```
+
+- A mistake in your `~/.bashrc` can cause errors every time you open a shell.
+  If that happens, fix or remove the problematic line,
+  or restore your backup.
+
+- Use `>>` to append, and not `>`, which would overwrite the entire file!
+:::
+
+<br>
+
+## Aliases
+
+An alias is a custom shortcut for a command.
+You create one with the `alias` command,
+followed by the alias name, an equals sign, and the full command in quotes:
+
+```bash
+alias ll='ls -lh'
+```
+
+From now on, typing `ll` will run `ls -lh`.
+You can also add further options and arguments when you use an alias:
+
+```bash
+ll -a data/
+```
+
+To see all aliases that are currently defined, run `alias` without arguments.
+Some aliases may already be defined by default ---
+for example, `ls` is often an alias for `ls --color=auto`.
+
+As with changes to your `$PATH`,
+aliases only last for the current shell session,
+unless you add them to your `~/.bashrc`:
+
+```bash
+echo "alias ll='ls -lh'" >> ~/.bashrc
+```
+
+::: callout-note
+#### Don't use aliases in scripts
+Aliases are a convenience for working interactively.
+They are not available in scripts by default,
+so always write out the full commands in scripts.
+:::
+
+<br>
