@@ -34,9 +34,18 @@ language:
 
 <hr style="height:1pt; visibility:hidden;" />
 
+<!----
+TODO before publishing:
+- Create /fs/ess/PAS3493/share/osc-compute-proxy.sh (contents shown below) and make it
+  readable for the class.
+- The setup with the proxy script on OSC (rather than a local one, as in the July 2026
+  workshop) is UNTESTED: test it on a Mac, on Windows (incl. whether plain `ssh` works
+  in ProxyCommand), and in Positron.
+---->
+
 ## Introduction
 
-So far, you've been connecting to OSC through the OnDemand webportal.
+So far, you've been connecting to OSC through the OnDemand web portal.
 However, there is another more basic and universal method to connect to
 remote computers: SSH, which is short for Secure Shell.
 An [optional self-study page on SSH](../bonus/ssh.qmd) shows you how to directly
@@ -44,26 +53,31 @@ use the `ssh` command in a terminal on your own computer to "move" to OSC within
 that terminal.
 
 This page, on the other hand, shows you how to connect a
-VS Code installation on your computer to OSC using a process called "SSH-tunneling".
+VS Code installation on your computer to OSC using a process called "SSH tunneling".
+This connects VS Code to OSC in such a way that not just the terminal but
+the entire program operates on OSC.
 **Being able to use your own VS Code installation at OSC**
 has several advantages over using VS Code Server through OnDemand, such as:
 
-1. You won't have to start a VS Code Server job every time
-2. Your connection will not have a time limit unlike VS Code Server jobs
-3. You can easily have multiple VS Code windows open at the same time
-4. You can use VS Code "proper" rather than the Server version which has slightly
-   reduced functionality^[especially the older versions that are installed at OSC]
+1. You won't have to fill out an OnDemand form every time
+2. You can easily have multiple VS Code windows open at the same time
+3. You can use VS Code "proper" rather than the Server version, which has slightly
+   reduced functionality^[Especially the older versions that are installed at OSC.]
    -- for example, you can use
    [GitHub Copilot's inline code suggestions](copilot.qmd) this way
+4. The same setup also works for [Positron](https://positron.posit.co),
+   an R (and Python) IDE that is built on VS Code
 
-The main downside is that you'll be on a **login node** rather than a compute node
-(see the warning box further down).
+We will set up two connections:
+one to a **compute node**, which is the one you should normally use,
+and one to a **login node**, as a fallback.
+Connecting to a compute node takes more setup, but avoids running VS Code
+(and anything you do in its terminal) on a login node.
+
 This page is entirely optional:
 everything in this course can be done with VS Code Server through OnDemand.
 
-## Set up your local VS Code to SSH tunnel into OSC
-
-### Setting up the connection
+## Install VS Code and the Remote Development extension
 
 1. **Install VS Code** on your own computer:
 
@@ -87,85 +101,88 @@ everything in this course can be done with VS Code Server through OnDemand.
    Once you found it, click on its `Install` button like you've done previously
    with other extensions.
 
-3. Open the VS Code Command Palette
-   (e.g. with <kbd>F1</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>)
-   and start typing "_Remote SSH_":
-   
-   - Among the options that pop up, select "**Remote-SSH: Add New SSH Host...**"
-     and specify your SSH connection:
-     `ssh <osc-username>@pitzer.osc.edu`, e.g. `ssh jelmer@pitzer.osc.edu`
-     ^[You'll have to do this separately for Cardinal if you want to be able to connect
-     to both clusters this way.]
-   
-   - In the "Select SSH configuration file to update" dialog that should pop up,
-     just select the first (top) option that shows up
+3. Open a terminal in VS Code (`Terminal` > `New Terminal`):
+   you'll need it in the steps below.
 
-4. You'll get a "Host Added!" pop-up in the bottom-right of your screen:
-   in that pop-up, click "**Connect**", and:
+## Set up the OSC connections
 
-   - When you get a message like that shown below, click "Continue":
-   
-     > "pitzer.osc.edu" has fingerprint <...>   
-     > Are you sure you want to continue?
-   
-   - Enter your password when you're prompted for it
-   - If you're asked about the operating system of the host, select **Linux**
+### The SSH configuration file
 
-5. Now, you're connected, and VS Code may give you some more pop-ups:
+1. Open the VS Code **Command Palette**
+   (<kbd>F1</kbd> or <kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>)
+   and start typing "_remote open_":
 
-   - If you're asked whether you "Trust the Authors" of such-and-such directory,
-     click "Yes".
-   - If there is a pop-up in the bottom-right asking you to update Git,
-     click "No" and check "Don't show again".
+   - Select "**Remote-SSH: Open SSH Configuration File...**"
+   - Then, select the top option, a file that contains the username you have on
+     your computer and ends in `.ssh/config`
 
-### Connecting from now on
+2. Paste the following into the SSH configuration file that opens:
 
-With the above one-time setup done,
-connecting to OSC with your local VS Code installation will be quick:
+   ::: {.panel-tabset}
+   ### Mac
 
-1. Open the VS Code Command Palette
-   (e.g. with <kbd>F1</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>)
-   and start typing "_SSH Connect_"
-   
-2. Click on "SSH: Connect to Host" and then select your Pitzer connection
+   ```markdown
+   Host osc-pitzer-login
+       User <osc-username>
+       HostName pitzer.osc.edu
 
-3. Enter your password
-   _(but this won't be necessary anymore after you do the below setup!)_
+   Host osc-pitzer-compute
+       User <osc-username>
+       ForwardAgent yes
+       StrictHostKeyChecking no
+       UserKnownHostsFile=/dev/null
+       ConnectTimeout 120
+       ProxyCommand ssh -o LogLevel=QUIET -o BatchMode=yes osc-pitzer-login ./osc-compute-proxy.sh
+   ```
 
-4. Like you've seen with VS Code Server, the program's default location is your Home dir,
-   and it is best to change this using the "File" > "Open Folder" option:
-   go to your `/fs/ess/PAS3493/people/$USER` dir.
+   ### Windows
 
-### Connecting from now on to previously opened folders
- 
-Conveniently, VS Code will remember folders that you've opened this way,
-and show them on the "Welcome" tab that is always displayed when you open the program.
-Test this:
+   ::: {.callout-important appearance="simple"}
+   These instructions are for Windows, click "Mac" above to see the Mac instructions.
+   (The only difference is the path to the `ssh` program in the last line.)
+   :::
 
-1. Completely quit VS Code
-2. Open it again, and under "Recent" on the Welcome tab,
-   look for your folder in `/fs/ess/PAS3493/`,
-   and click on that to connect to OSC and open that folder!
+   ```markdown
+   Host osc-pitzer-login
+       User <osc-username>
+       HostName pitzer.osc.edu
 
-::: {.callout-warning}
-#### You are now on a login node!
-Just be aware that you'll now be on a Login node
-(and not on a Compute node like when you use VS Code through OnDemand),
-so avoid running analyses directly in the terminal, and so on. 
+   Host osc-pitzer-compute
+       User <osc-username>
+       ForwardAgent yes
+       StrictHostKeyChecking no
+       UserKnownHostsFile=/dev/null
+       ConnectTimeout 120
+       ProxyCommand C:/Windows/System32/OpenSSH/ssh.exe -o LogLevel=QUIET -o BatchMode=yes osc-pitzer-login ./osc-compute-proxy.sh
+   ```
+   :::
+
+3. In both instances, change `<osc-username>` to your **OSC username**,
+   e.g. to `User jane`. Then, save the file.
+
+::: {.callout-note collapse="true"}
+#### What does this configuration do? _(Click to expand)_
+
+It defines two remote "hosts" at OSC that you can connect to:
+
+- `osc-pitzer-login` connects to a **login node** of OSC's Pitzer cluster.
+
+- `osc-pitzer-compute` connects to a **compute node** of OSC's Pitzer cluster.
+  You can't connect directly to a compute node, so this connection first goes to
+  a login node, and there runs a script (`osc-compute-proxy.sh`, see below)
+  that requests a compute job and then passes on the connection to the compute node
+  you've been assigned.
 :::
 
-## Avoid being prompted for your OSC password
+### Avoid being prompted for your OSC password
 
-If you take the following steps,
-you will no longer be prompted for your OSC password every time you connect to OSC
-with the above method (or with any other SSH-based method).
+Next, you'll set up an "SSH key pair",
+which lets OSC recognize your computer so you won't be prompted for your password.
+This is **required** for the compute node connection,
+and convenient for the login node connection and any other SSH connection to OSC.
 
-1. On your own computer, open a terminal application.
-   - On a Mac, you should have an app called "Terminal" and potentially other
-     options like "iTerm": any of these fill work
-   - On Windows 11+, this should be called the "Windows Terminal"
-
-2.  Generate a public-private SSH key-pair:
+1. In the VS Code terminal (_regardless of whether you're using Windows or Mac_),
+   generate an SSH key pair:
 
     ``` {.bash}
     ssh-keygen -t rsa
@@ -174,28 +191,176 @@ with the above method (or with any other SSH-based method).
     You'll get some output and will then be asked several questions,
     but in each case, you can just press <kbd>Enter</kbd> to select the default answer.
 
-3. Transfer the public key to OSC's Pitzer cluster:
+2. Transfer the public key to OSC, **replacing `<user>` with your OSC username**.
+   You'll be prompted for your OSC password.
 
    ::: {.panel-tabset}
-   ### Windows
-  
-   ```bash
-   cat ~/.ssh/id_rsa.pub | ssh <user>@pitzer.osc.edu 'mkdir -p .ssh && cat >> .ssh/authorized_keys'
-   ```
-  
    ### Mac
    ```bash
    # Replace <user> by your username, e.g. "ssh-copy-id jelmer@pitzer.osc.edu"
    ssh-copy-id <user>@pitzer.osc.edu
    ```
+
+   ### Windows
+
+   ```bash
+   # Replace <user> by your username, e.g. "jelmer@pitzer.osc.edu"
+   cat ~/.ssh/id_rsa.pub | ssh <user>@pitzer.osc.edu 'mkdir -p .ssh && cat >> .ssh/authorized_keys'
+   ```
    :::
 
-4. All done! Test if it works by connecting
+3. Test it: the following should print the name of a Pitzer login node,
+   _without_ asking for your password:
 
-<hr style="height:1pt; visibility:hidden;" />
+   ```bash
+   ssh osc-pitzer-login hostname
+   ```
 
-::: {.callout-tip appearance="minimal"}
-The same commands work for Cardinal, just replace `pitzer` with `cardinal` in the commands above
+### The proxy script at OSC
+
+The compute node connection runs a short "proxy script" in your Home dir at OSC.
+Copy it there by running the following command in your VS Code terminal:
+
+```bash
+ssh osc-pitzer-login 'cp /fs/ess/PAS3493/share/osc-compute-proxy.sh ~/ && chmod +x ~/osc-compute-proxy.sh'
+```
+
+This script contains the following:
+
+```bash
+#!/bin/bash
+exec salloc --quiet -A PAS3493 -t 300 bash -c 'nc $SLURM_NODELIST 22'
+```
+
+That is, it requests a compute job (`salloc`) for 300 minutes (5 hours)
+with the course's OSC Project `PAS3493`,
+and then connects to the compute node you were assigned (`nc ... 22`).
+
+::: {.callout-warning}
+#### After the course: change the OSC Project
+Once the course is over, you should no longer use the course's OSC Project.
+To change the Project, or the duration of your compute jobs,
+open `~/osc-compute-proxy.sh` at OSC and edit `PAS3493` and/or `300`.
 :::
+
+### Increase the connection timeout
+
+Because it can take a little while to get a compute job,
+you also need to increase the time VS Code will wait for a connection:
+open the VS Code **Settings** (cog wheel {{< fa cog >}} > `Settings`),
+search for `remote.SSH.connectTimeout`, and change its value from 15 to **300** (seconds).
+
+::: {.callout-note collapse="true"}
+#### Alternative: the proxy script on your own computer _(Click to expand)_
+
+In our July 2026 workshop, we used a proxy script on participants' own computers
+rather than at OSC.
+That setup was tested with VS Code and Positron on Mac and Windows,
+so use it if the above setup doesn't work for you.
+In that case, skip the "proxy script at OSC" step above, and:
+
+1. In the SSH configuration file, change the `ProxyCommand` line for `osc-pitzer-compute` to:
+
+   ::: {.panel-tabset}
+   ### Mac
+
+   ```markdown
+       ProxyCommand /Users/<computer-username>/.ssh/osc-compute-proxy.sh %h
+   ```
+
+   ### Windows
+
+   ```markdown
+       ProxyCommand C:/Users/<computer-username>/.ssh/osc-compute-proxy.cmd %h
+   ```
+   :::
+
+   where `<computer-username>` is your username on your computer
+   (it's also in the path to the SSH configuration file).
+
+2. Create the proxy script by running the following in the VS Code terminal:
+
+   ::: {.panel-tabset}
+   ### Mac
+
+   ```bash
+   cat > ~/.ssh/osc-compute-proxy.sh << 'EOF'
+   #!/bin/bash
+   exec ssh -o LogLevel=QUIET -o BatchMode=yes osc-pitzer-login \
+     "/usr/bin/salloc -A PAS3493 -t 300 /bin/bash -c 'nc \$SLURM_NODELIST 22'" 2>/dev/null
+   EOF
+
+   chmod +x ~/.ssh/osc-compute-proxy.sh
+   ```
+
+   ### Windows
+
+   ::: {.callout-important appearance="simple"}
+   This assumes you are using PowerShell, the default Windows shell in VS Code
+   (you should see "PowerShell" in the top right of the terminal).
+   If you are using Git Bash or WSL, use the Mac instructions instead.
+   :::
+
+   ```powershell
+   @'
+   @echo off
+   ssh -o LogLevel=QUIET -o BatchMode=yes osc-pitzer-login "/usr/bin/salloc -A PAS3493 -t 300 /bin/bash -lc 'nc $SLURM_NODELIST 22'"
+   '@ | Out-File -Encoding ascii "$env:USERPROFILE\.ssh\osc-compute-proxy.cmd"
+   ```
+   :::
+:::
+
+::: {.callout-tip}
+#### Connecting to other OSC clusters
+To also connect to Cardinal or Ascend, add additional entries to the SSH configuration file
+in which you replace `pitzer` by `cardinal` or `ascend`.
+(For the compute node connection, the `ProxyCommand` line should then refer to the
+matching login host, e.g. `osc-cardinal-login`.)
+:::
+
+## Connect to OSC
+
+### Connecting
+
+1. Open the Command Palette
+   (<kbd>F1</kbd> or <kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>),
+   start typing "_SSH connect_", and click on `Remote-SSH: Connect to Host...`
+
+2. Select **`osc-pitzer-compute`**.
+
+3. A new VS Code window will open.
+   The connection may take a little while (typically 5--30 seconds, but longer when
+   OSC is busy), because a compute job has to be requested and started.
+
+   - If you're asked about the operating system of the host, select **Linux**.
+   - If you're asked whether you "Trust the Authors" of the folder, click "Yes".
+   - If there is a pop-up in the bottom-right asking you to update Git,
+     click "No" and check "Don't show again".
+
+4. Like you've seen with VS Code Server, the program's default location is your Home dir,
+   and it is best to change this using `File` > `Open Folder`:
+   go to your `/fs/ess/PAS3493/people/$USER` dir.
+
+::: {.callout-important appearance="simple"}
+If the compute node connection fails or takes more than a few minutes,
+use the `osc-pitzer-login` connection instead --- but see the warning below.
+:::
+
+::: {.callout-warning}
+#### When connected to `osc-pitzer-login`, you are on a login node!
+With the login node connection, VS Code runs on a login node rather than on a compute node,
+so avoid running analyses directly in the terminal, and so on.
+:::
+
+### Connecting from now on to previously opened folders
+
+Conveniently, VS Code will remember folders that you've opened this way,
+and show them on the "Welcome" tab that is always displayed when you open the program.
+Test this:
+
+1. Completely quit VS Code
+2. Open it again, and under "Recent" on the Welcome tab,
+   look for your folder in `/fs/ess/PAS3493/`,
+   and click on that to connect to OSC and open that folder!
 
 <hr style="height:1pt; visibility:hidden;" />

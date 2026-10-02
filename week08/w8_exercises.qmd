@@ -43,17 +43,21 @@ The example program is TrimGalore, which we use in our RNA-seq analysis workflow
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: callout-important
-#### Exercises 1-4 without genAI, Exercise 5 with genAI
-Please do **Exercises 1-4 without any genAI assistance**,
-and only then move on to Exercise 5,
+#### Exercises 1-3 without genAI, Exercise 4 with genAI
+Please do **Exercises 1-3 without any genAI assistance**,
+and only then move on to Exercise 4,
 where you'll hand the script you wrote to a genAI assistant.
 
 This order is deliberate, and mirrors how we hope you'll keep using these tools:
-the "[0-to-90% problem](./w8a_genAI.qmd#pitfalls)" we discussed means that you can
+the "[0-to-90% problem](./w8a_genAI.qmd#/pitfalls)" we discussed means that you can
 only judge the last 10% --- whether the code is actually correct ---
 if you could have done a good part of the first 90% yourself.
 Writing the script first also gives you something concrete to compare
 the genAI output against.
+
+This is different from [the second lecture](./w8b_claude.qmd),
+where Claude wrote a script from scratch.
+At the end, you'll reflect on which approach gave you more confidence in the result.
 :::
 
 ![](../img/rnaseq-wf-3.png){fig-align="center" width="60%" fig-alt="A diagram showing the steps in an RNA-seq analysis pipeline." .lightbox}
@@ -96,8 +100,10 @@ Two advantages of TrimGalore are:
 ## Setting up
 
 1. At <https://ondemand.osc.edu>,
-   start a VS Code session in `/fs/ess/PAS3493/people/$USER`
-2. Create a dir `week08/exercises` **and navigate there** --
+   start a VS Code session, and open your `/fs/ess/PAS3493/people/$USER/week08` dir
+   as the VS Code folder, like in [the second lecture](./w8b_claude.qmd#prepare-a-dir-for-this-week)
+   (this way, Claude will also use your `CLAUDE.md` file in Exercise 4)
+2. Create a dir `exercises` (i.e., `week08/exercises`) **and navigate there** --
    this should be your working dir for the exercises
 3. Create a dir `scripts` (i.e., `week08/exercises/scripts`) but don't navigate there
 4. Create a file `README.md` for notes and answers
@@ -105,8 +111,8 @@ Two advantages of TrimGalore are:
    It's up to you whether you use the files you already have
    (`/fs/ess/PAS3493/people/$USER/garrigos`),
    or copy these FASTQ files into a `data` dir within `week08/exercises`.
-6. ***Optional:*** Create a Git repo and commit to it as appropriate while you
-   are doing the exercises.
+6. ***Optional:*** Your `week08` dir is already a Git repo (from the lecture):
+   commit to it as appropriate while you are doing the exercises.
    At the end, create a GitHub repo and push your local repo to the remote,
    optionally tagging `@kstarr791` and `@jelmerp` in an Issue.
 
@@ -259,30 +265,16 @@ giving you the opportunity to use multiple cores.
    E.g.: can you see any differences in overall sequence quality,
    and do the very short reads with only Ns appear to have been removed?
 
-## Exercise 4: Run your TrimGalore script for multiple samples
-
-1. In the README, write and run a `for` loop that will run your TrimGalore
-   script for FASTQ files from multiple samples.
-   Because you aren't yet submitting batch jobs (you'll do that next week!),
-   the script will run consecutively for each sample, so this will take a while.
-   Therefore, only loop over **the 7 sample IDs that start with `S6`**.
-   _(Make sure you are still running the script once per sample ---_
-   _see [this section of the w7b lecture](../week07/w7b_scripts2.qmd#looping-over-samples).)_
-
-2. Monitor the output printed to screen,
-   and check TrimGalore's output files once it's done.
-
-## Exercise 5: Now bring in genAI
+## Exercise 4: Now bring in genAI
 
 Now that you have a script that _you_ wrote and that you know works,
 let's see what a genAI assistant makes of it.
 
 ::: {.callout-note appearance="simple"}
-These exercises assume you're using GitHub Copilot in your own VS Code installation,
-as set up in [this bonus page](../bonus/vscode-local.qmd) and demonstrated in
-[this week's second lecture](./w8b_claude.qmd).
+These exercises assume you're using Claude in VS Code Server,
+as set up in [this week's second lecture](./w8b_claude.qmd).
 If that isn't working for you, you can do the same exercises by pasting your script
-into [Microsoft Copilot in the browser](./w8a_genAI.qmd#signing-in) --- but note
+into [Gemini in the browser](./w8a_genAI.qmd#/signing-in-to-gemini) --- but note
 that you then lose the automatic file context, so you'll have to provide more
 detail in your prompts.
 :::
@@ -291,12 +283,16 @@ Keep notes on all of the below in your `README.md`:
 for each prompt, record what you asked, what you got,
 and what you concluded after checking it.
 
-1. Open your `scripts/trimgalore.sh` in the editor,
-   open the Copilot chat sidebar in **"Ask" mode**,
-   and make sure the script is added as context.
-   Then ask it to review your script, for example:
+1. Open your `scripts/trimgalore.sh` in the editor and open the Claude panel.
+   Check that the script is added as context (you should see its name below the
+   prompt box), and that the permission mode is **Manual**.
+   Then ask Claude to review your script, for example:
 
-   > Review this shell script. Is it correct, and what would you improve?
+   > Review this shell script. What could be wrong with it, and what would you improve?
+   > Don't change the script yet.
+
+   _(Recall from [the first lecture](./w8a_genAI.qmd#/more-pitfalls) that asking_
+   _"Is this correct?" invites the model to simply tell you what you want to hear.)_
 
    Go through the suggestions one at a time:
    - Which suggestions do you agree with?
@@ -309,23 +305,41 @@ and what you concluded after checking it.
    > Add a check that both input FASTQ files exist, and exit with an informative
    > error message if they don't
 
-   Apply the change (in "Ask" mode, use the "Apply in Editor" button so you can
-   inspect the diff first), and then **test it**:
+   Claude will show you the proposed change as a diff:
+   read it before you accept it. Then, **test it**:
    run the script with a file name that doesn't exist and see what happens.
    Does it behave the way the AI claimed it would?
 
-3. Ask it to _explain_ a piece of code rather than write one.
-   For example, paste the `for` loop from Exercise 4 and ask:
+3. Now, ask Claude to write a `for` loop that runs your script for multiple samples:
 
-   > Explain what ${R1/_R1/_R2} does in this loop
+   > Write a for loop that runs scripts/trimgalore.sh for the 7 samples whose IDs
+   > start with S6, with output dir results/trimgalore. Add it to my README.md.
 
-   Does the explanation match what you observed when you ran the loop?
+   ::: {.callout-warning appearance="simple"}
+   **Don't run the loop yet!**
+   Because you aren't submitting batch jobs yet (you'll do that next week),
+   the script will run once for each sample in turn, which takes a while.
+   So you'll want to make sure the loop is right first.
+   :::
 
-4. Finally, ask it for something you genuinely don't know how to do yourself,
+   **Before** running it, check the loop against what you learned in
+   [the w7b lecture](../week07/w7b_scripts2.qmd#looping-over-samples):
+
+   - Does it run the script once per **sample**, rather than once per FASTQ file?
+   - Does it get the correct R2 file for each R1 file?
+     If you don't understand how it does this, ask Claude to explain that part.
+   - Does it only include the 7 `S6` samples?
+
+   Then, test the loop by putting `echo` before the `bash` command,
+   so that it only prints the commands it would run.
+   If those look right, remove the `echo` and run the loop for real,
+   and check TrimGalore's output files once it's done.
+
+4. Next, ask it for something you genuinely don't know how to do yourself,
    related to these exercises.
    Some ideas:
-   - Counting the number of reads in each trimmed FASTQ file and collecting the
-     results in a small summary table
+   - Comparing the file sizes of the FASTQ files before and after trimming,
+     in a small summary table
    - Summarizing all the `*_trimming_report.txt` files into one overview
    - Anything else you're curious about
 
@@ -334,11 +348,16 @@ and what you concluded after checking it.
    Whenever the AI suggests **command-line options** --- for TrimGalore or any other
    program --- look them up in that program's help info
    (e.g. `trim_galore --help`) before you believe them.
-   As we saw in [the first lecture this week](./w8a_genAI.qmd#example-prompts),
+   As we saw in [the first lecture this week](./w8a_genAI.qmd#/a-prompt-about-trimgalore),
    making up plausible-looking options that don't exist is one of the most common
    ways these tools fail in a bioinformatics context,
    and the failure is easy to miss because the output _looks_ authoritative.
    :::
+
+5. Finally, write a short reflection in your `README.md`:
+   in [the lecture](./w8b_claude.qmd), Claude wrote a script from scratch,
+   while here, you wrote the script yourself first.
+   Which approach gave you more confidence that the script is correct, and why?
 
 ::: {.callout-tip appearance="simple"}
 Hang on to your `trimgalore.sh` script --- you'll start from a very similar script
@@ -522,7 +541,9 @@ Yes, there are clear differences in:
 
 ### Exercise 4
 
-<details><summary> 1 - Run the script for multiple samples _(Click to expand)_</summary><p>
+Your genAI answers will vary, but here is what a correct loop for item 3 looks like.
+
+<details><summary> 3 - Run the script for multiple samples _(Click to expand)_</summary><p>
 
 Test the loop:
 
@@ -555,7 +576,7 @@ done
 ```
 </p></details>
 
-<details><summary> 2 - Check the output files _(Click to expand)_</summary>
+<details><summary> 3 - Check the output files _(Click to expand)_</summary>
 
 ```bash
 ls -lh results/trimgalore
