@@ -1,8 +1,8 @@
 ---
-title: "Configuring your shell:<br>`$PATH`, `~/.bashrc`, and aliases"
+title: "Configuring your shell"
 subtitle: "Optional self-study content for week 7"
 pagetitle: "Shell configuration"
-date: 2026-10-05
+date: 2026-10-02
 date-modified: last-modified
 author:
   - name: Jelmer Poelstra
@@ -35,20 +35,16 @@ language:
 
 <hr style="height:1pt; visibility:hidden;" />
 
-::: callout-warning
-#### This document is still subject to change.
-:::
-
-<hr style="height:1pt; visibility:hidden;" />
-
 ## Introduction
 
 This page covers how the shell finds the programs you run (the `$PATH`),
 and how you can make lasting changes to your shell's settings
 using configuration files like `~/.bashrc`.
 
-_To run the commands on this page yourself, start a VS Code session at_
-_<https://ondemand.osc.edu> in `/fs/ess/PAS3493/people/$USER`._
+### Setting up
+
+To run the commands on this page yourself, start a VS Code session at
+<https://ondemand.osc.edu> in `/fs/ess/PAS3493/people/$USER`.
 
 ## `$PATH`: where the shell looks for programs
 
@@ -61,25 +57,24 @@ and whenever you type the name of a program,
 the shell searches these directories for an executable file with that name.
 This is why you can run programs without specifying the full path to their executable.
 
-To see where the executable for a command is located,
+To see where the executable (binary) for a command is located,
 you can use the `which` command:
 
 ```bash
-which nano
+which git
 ```
 ```bash-out
-/usr/bin/nano
+/usr/bin/git
 ```
-
-<!-- TODO: check the output above at OSC -->
 
 To check which directories are in your `$PATH`, you can simply `echo` it:
 
 ```bash
 echo $PATH
 ```
-
-<!-- TODO: add current OSC output (bash-out block) -->
+```bash-out
+/apps/xalt/xalt/bin:/opt/mvapich2/intel/19.0/2.3.3/bin:/apps/gnu/8.4.0/bin:/opt/intel/19.0.5/itac_latest/bin:/opt/intel/19.0.5/advisor/bin64:/opt/intel/19.0.5/vtune_amplifier/bin64:/opt/intel/19.0.5/inspector_2019/bin64:/opt/intel/19.0.5/compilers_and_libraries_2019/linux/bin/intel64:/apps/software_usage:/usr/lib64/qt-3.3/bin:/opt/osc/bin:/opt/moab/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/ibutils/bin:/opt/ddn/ime/bin:/opt/puppetlabs/bin
+```
 
 That output is hard to read,
 because the directories are separated by colons `:`.
@@ -89,34 +84,78 @@ Let's make it a bit more readable by replacing the colons with newlines
 ```bash
 echo $PATH | tr ":" "\n" | nl
 ```
-
-<!-- TODO: add current OSC output (bash-out block), possibly truncated -->
+```bash-out
+     1  /apps/xalt/xalt/bin
+     2  /opt/mvapich2/intel/19.0/2.3.3/bin
+     3  /apps/gnu/8.4.0/bin
+     4  /opt/intel/19.0.5/itac_latest/bin
+     5  /opt/intel/19.0.5/advisor/bin64
+     6  /opt/intel/19.0.5/vtune_amplifier/bin64
+     7  /opt/intel/19.0.5/inspector_2019/bin64
+     8  /opt/intel/19.0.5/compilers_and_libraries_2019/linux/bin/intel64
+     9  /apps/software_usage
+    10  /usr/lib64/qt-3.3/bin
+    11  /opt/osc/bin
+    12  /opt/moab/bin
+    13  /usr/local/bin
+    14  /usr/bin
+    15  /usr/local/sbin
+    16  /usr/sbin
+    17  /opt/ibutils/bin
+    18  /opt/ddn/ime/bin
+    19  /opt/puppetlabs/bin
+```
 
 The order of the directories matters:
 the shell searches them from first to last,
 and runs the **first** matching executable that it finds.
 
-### Modules and Conda change your `$PATH`
+::: {.callout-note}
+#### Where do the directories in your `$PATH` come from?
 
-In [week 6](../week06/w6b_software.qmd), you saw that the `fastqc` command
-is not available until you load its module.
-Now you can understand what `module load` does: it adds the directory with
-FastQC's executable to the start of your `$PATH`:
+You never set any of these directories yourself, so where do they come from?
+They were added by different sources when your shell started:
+
+- **Standard Unix directories** like `/usr/bin` and `/usr/local/bin`
+  (lines 13–16) are part of the default `$PATH` on any Linux system,
+  and contain basic commands like `ls` and `git`.
+- **System-wide configuration files** that OSC has set up
+  (in `/etc/`, which run for every user when their shell starts)
+  add OSC-specific directories like `/opt/osc/bin` (line 11).
+- **Modules that OSC loads by default** add the directories at the start
+  (lines 1–8), like those for the Intel compilers.
+  You can see which modules are currently loaded with `module list`.
+- **Your own configuration files** like `~/.bashrc` can add directories as well
+  (more on these [below](#shell-configuration-files)).
+:::
+
+### Modules (and Conda) change your `$PATH`
+
+In [week 6](../week06/w6b_software.qmd),
+you saw that the `fastqc` command is not available until you load its module.
+Now you can better understand what `module load` does:
+it adds the directory with FastQC's executable to the start of your `$PATH`.
+
+Before loading the module, `which fastqc` shows that the shell cannot find it:
 
 ```bash
 which fastqc
 ```
+```bash-out
+/usr/bin/which: no fastqc in (/users/PAS0471/jelmer/micromamba/condabin:/apps/xalt/xalt/bin:/opt/mvapich2/intel/19.0/2.3.3/bin:/apps/gnu/8.4.0/bin:/opt/intel/19.0.5/itac_latest/bin:/opt/intel/19.0.5/advisor/bin64:/opt/intel/19.0.5/vtune_amplifier/bin64:/opt/intel/19.0.5/inspector_2019/bin64:/opt/intel/19.0.5/compilers_and_libraries_2019/linux/bin/intel64:/apps/software_usage:/usr/lib64/qt-3.3/bin:/opt/osc/bin:/opt/moab/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/ibutils/bin:/opt/ddn/ime/bin:/opt/puppetlabs/bin:/users/PAS0471/jelmer/software/bin/:/users/PAS0471/jelmer/.local/bin:/users/PAS0471/jelmer/software/quarto/quarto-1.10.15/bin)
+```
 
-<!-- TODO: add OSC output: "no fastqc in (...)" -->
+After loading the module, `which fastqc` shows the path to the executable:
 
 ```bash
 module load fastqc/0.12.1
 which fastqc
 ```
+```bash-out
+/apps/spack/0.21/cardinal/linux-rhel9-sapphirerapids/fastqc/gcc/11.3.1/0.12.1-ct5vuye/bin/fastqc
+```
 
-<!-- TODO: add OSC output: path to the module's fastqc executable -->
-
-Activating a [Conda environment](conda.qmd) works the same way.
+(Activating a [Conda environment](conda.qmd) works the same way.)
 
 ### Changing your `$PATH`
 
@@ -124,15 +163,20 @@ You can add a directory to your `$PATH` by assigning a new value to the variable
 that consists of the old value (`$PATH`), a colon, and the new directory:
 
 ```bash
-# Add a dir to the END of the $PATH:
+# Add a dir to the _end_ of the $PATH:
 export PATH="$PATH:$HOME/software/bin"
 
-# Or add a dir to the START of the $PATH:
+# Or add a dir to the _start_ of the $PATH:
 export PATH="$HOME/software/bin:$PATH"
 ```
 
-::: {.callout-note collapse="true"}
-#### Some notes on the above commands _(Click to expand)_
+Like any variable you set in the shell,
+this change only affects your **current shell session**.
+To make it permanent, you'll need to add the line to a configuration file
+--- see [below](#shell-configuration-files).
+
+::: {.callout-note}
+#### Some notes on the above commands
 
 - `export` makes a variable available to programs that you run from your shell.
   `$PATH` is already exported, so `export` is not strictly needed here,
@@ -145,11 +189,6 @@ export PATH="$HOME/software/bin:$PATH"
   the shell would no longer find basic commands like `ls`.
   If this happens, simply open a new terminal to start over.
 :::
-
-Like any variable you set in the shell,
-this change only affects your **current shell session**.
-To make it permanent, you'll need to add the line to a configuration file
---- see [below](#shell-configuration-files).
 
 ::: {.callout-tip collapse="true"}
 #### Running your own scripts like any other command _(Click to expand)_
@@ -173,34 +212,47 @@ For scripts that belong to a specific research project, though,
 it is better to keep them within the project dir and run them from there.
 :::
 
-<br>
-
 ## Shell configuration files
 
-### `~/.bashrc` and `~/.bash_profile`
+### The `~/.bashrc` file
 
-Your Bash shell is configured by hidden text files in your Home dir.
-The two most important ones are:
+Your Bash shell is configured by hidden text files in your Home dir,
+the most important of which is `~/.bashrc`.
+The commands in this file are run every time you start a new shell,
+so it is the place to store settings that you want to keep.
 
-- `~/.bash_profile`, which is read by **login shells**:
-  the shell that you get when you first log in to a computer,
-  e.g. with `ssh`.
-- `~/.bashrc`, which is read by **non-login interactive shells**:
-  shells that you start after you're already logged in,
-  e.g. when you open another terminal.
+::: {.callout-note collapse="true"}
+#### What about `~/.bash_profile`? _(Click to expand)_
 
-To avoid having to deal with this distinction,
+Strictly speaking, Bash reads different configuration files
+depending on the type of shell:
+
+| File              | Read by                      | Example                                                                           |
+| ----------------- | ---------------------------- | --------------------------------------------------------------------------------- |
+| `~/.bash_profile` | Login shells                 | The shell you get when you first log in.                                          |
+| `~/.bashrc`       | Non-login interactive shells | Shells you start when you're already logged in, e.g. by opening another terminal. |
+
+: {.striped}
+
+To avoid having to deal with this odd distinction,
 it is common to put all your settings in `~/.bashrc`,
 and to have `~/.bash_profile` run `~/.bashrc`.
-This is often already set up by default, which you can check as follows:
+At OSC, this is set up by default:
 
 ```bash
 cat ~/.bash_profile
 ```
+```bash-out
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+        . ~/.bashrc
+fi
+```
 
-If the output contains a line like `. ~/.bashrc` or `source ~/.bashrc`
-(typically within an `if` statement),
-then `~/.bash_profile` runs `~/.bashrc`, and you only need to edit `~/.bashrc`.
+This code checks whether `~/.bashrc` exists (`-f`), and if so, runs it
+(`.` is a shorthand for `source`).
+So, you only need to edit your `~/.bashrc`.
+:::
 
 ### What to put in your `~/.bashrc`
 
@@ -210,38 +262,83 @@ use `cat` or open the file in VS Code:
 ```bash
 cat ~/.bashrc
 ```
+```bash-out
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+        . /etc/bashrc
+fi
+
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
+# Path
+PATH=/apps/xalt/xalt/bin:/opt/mvapich2/intel/19.0/2.3.3/bin:/apps/gnu/8.4.0/bin:/opt/intel/19.0.5/itac_latest/bin:/opt/intel/19.0.5/advisor/bin64:/opt/intel/19.0.5/vtune_amplifier/bin64:/opt/intel/19.0.5/inspector_2019/bin64:/opt/intel/19.0.5/compilers_and_libraries_2019/linux/bin/intel64:/apps/software_usage:/usr/lib64/qt-3.3/bin:/opt/osc/bin:/opt/moab/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/ibutils/bin:/opt/ddn/ime/bin:/opt/puppetlabs/bin
+```
 
 Some things that you can store in this file:
 
 - Changes to your `$PATH`, like the one in the [previous section](#changing-your-path).
-- Other environment variables, like the `$APPTAINER_CACHEDIR` variable
+- Other **environment variables**, like the `$APPTAINER_CACHEDIR` variable
   from [week 6](../week06/w6b_software.qmd#the-container-image-cache-storage).
-- Aliases: your own shortcuts for commands --- see [below](#aliases).
-- The look of your prompt.
+- **Aliases**: your own shortcuts for commands --- see [below](#aliases).
+- The **look of your prompt**.
 
-You can add a line to your `~/.bashrc` by editing it in VS Code,
-or by appending a line with `echo` and `>>`:
+To make a change, open the file in VS Code
+(e.g. with `File` > `Open File...` and typing `~/.bashrc`),
+and add a line at the end.
+For example, to permanently add a directory to your `$PATH`:
 
-```bash
-echo 'export PATH="$PATH:$HOME/software/bin"' >> ~/.bashrc
+```{.bash .file filename="&#126;/.bashrc (excerpt)"}
+# Add my own software dir to the $PATH:
+export PATH="$PATH:$HOME/software/bin"
 ```
 
-::: callout-warning
-#### Use single quotes with `echo` here!
-With double quotes, the shell would replace `$PATH` with its _current_ value
-before the line is written to the file.
-Single quotes make sure that the line is written exactly as shown,
-so that `$PATH` is expanded each time the file is read instead.
-:::
-
-Changes to your `~/.bashrc` take effect in **new** shells.
-To apply them to your current shell as well, run:
+Changes to your `~/.bashrc` take effect in **new** shells,
+because the file is read when the shell starts.
+To apply changes you just made to your **current** shell as well, run:
 
 ```bash
 source ~/.bashrc
 ```
 
-::: {.callout-tip collapse="true"}
+::: {.callout-note collapse="true"}
+#### Why use the `source` command?
+
+`~/.bashrc` is really a shell script, so
+why not run it with `bash ~/.bashrc` instead of `source ~/.bashrc`?
+
+`bash ~/.bashrc` would run the file in a **new** shell,
+and any variables or aliases that it sets would disappear
+as soon as that shell exits.
+In contrast, `source` runs the commands in your **current** shell,
+so that its changes stick.
+:::
+
+::: {.callout-note collapse="true"}
+#### Adding a line to your `~/.bashrc` with `echo` instead _(Click to expand)_
+
+You can also add a line to your `~/.bashrc` without opening the file,
+by appending it with `echo` and `>>`:
+
+```bash
+echo 'export PATH="$PATH:$HOME/software/bin"' >> ~/.bashrc
+```
+
+Two things to watch out for:
+
+- Use `>>` to append, and not `>`, which would overwrite the entire file!
+
+- Use single quotes: with double quotes,
+  the shell would replace `$PATH` with its _current_ value
+  before the line is written to the file.
+  Single quotes make sure that the line is written exactly as shown,
+  so that `$PATH` is expanded each time the file is read instead.
+:::
+
+::: {.callout-warning collapse="true"}
 #### Some precautions when editing your `~/.bashrc` _(Click to expand)_
 
 - Make a backup before making changes:
@@ -253,46 +350,206 @@ source ~/.bashrc
 - A mistake in your `~/.bashrc` can cause errors every time you open a shell.
   If that happens, fix or remove the problematic line,
   or restore your backup.
-
-- Use `>>` to append, and not `>`, which would overwrite the entire file!
 :::
-
-<br>
 
 ## Aliases
 
 An alias is a custom shortcut for a command.
+Aliases save typing for commands you run often,
+especially ones with options you always use,
+and can help when you have trouble remembering long or complex commands.
+
 You create one with the `alias` command,
 followed by the alias name, an equals sign, and the full command in quotes:
 
 ```bash
-alias ll='ls -lh'
+alias l='ls -lh'
+l
+```
+```bash-out
+total 4.0K
+drwxrwx---+ 5 jelmer PAS0471 4.0K Oct  1 12:37 GA3
+drwxrwx---+ 6 jelmer PAS0471 4.0K Sep 14 14:41 garrigos
+drwxr-x---+ 3 jelmer PAS0471 4.0K Sep 11 15:04 week02
+drwxr-x---+ 2 jelmer PAS0471 4.0K Sep 11 15:32 week03
+drwxrwx---+ 6 jelmer PAS0471 4.0K Sep 25 15:20 week04
+drwxrwx---+ 4 jelmer PAS0471 4.0K Sep 28 15:44 week05
+drwxrwx---+ 2 jelmer PAS0471 4.0K Sep 30 14:14 week06
+drwxrwx---+ 4 jelmer PAS0471 4.0K Oct  1 12:09 week07
 ```
 
-From now on, typing `ll` will run `ls -lh`.
+From now on, typing `l` will run `ls -lh`.
+
 You can also add further options and arguments when you use an alias:
 
 ```bash
-ll -a data/
+# Add the alias
+alias ae='apptainer exec'
+
+# This will now do the same as `apptainer exec <image> <command>`:
+container="oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960"
+ae "$container" fastqc --version
+```
+```bash-out
+INFO:    Downloading oras image
+384.0MiB / 384.0MiB [=========================================================================================] 100 % 37.5 MiB/s 0s
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+FastQC v0.12.1
+```
+
+Or:
+
+```{.bash .norun}
+# Add the alias
+alias gcm='git commit -m'
+
+# This will now do the same as `git commit -m "Add new script"`:
+gcm "Add new script"
 ```
 
 To see all aliases that are currently defined, run `alias` without arguments.
-Some aliases may already be defined by default ---
-for example, `ls` is often an alias for `ls --color=auto`.
+OSC has defined a bunch of aliases for you by default,
+mostly related to coloring the output of commands like `ls` and `grep`:
+
+```bash
+alias
+```
+```bash-out
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias grep='grep --color=auto'
+alias l.='ls -d .* --color=auto'
+alias ll='ls -l --color=auto'
+alias ls='ls --color=auto'
+alias mc='. /usr/libexec/mc/mc-wrapper.sh'
+alias xzegrep='xzegrep --color=auto'
+alias xzfgrep='xzfgrep --color=auto'
+alias xzgrep='xzgrep --color=auto'
+alias zegrep='zegrep --color=auto'
+alias zfgrep='zfgrep --color=auto'
+alias zgrep='zgrep --color=auto'
+```
 
 As with changes to your `$PATH`,
 aliases only last for the current shell session,
 unless you add them to your `~/.bashrc`:
 
-```bash
-echo "alias ll='ls -lh'" >> ~/.bashrc
+```{.bash .file filename="&#126;/.bashrc (excerpt)"}
+alias ll='ls -lh'
 ```
 
-::: callout-note
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-warning}
 #### Don't use aliases in scripts
 Aliases are a convenience for working interactively.
 They are not available in scripts by default,
 so always write out the full commands in scripts.
 :::
 
-<br>
+## Customizing your prompt
+
+The look of your prompt is controlled by the variable `$PS1`.
+Let's see what it contains by default at OSC:
+
+```bash
+echo "$PS1"
+```
+```bash-out
+[\u@\h \W]\$
+```
+
+The backslash codes in there are replaced by the shell each time the prompt is shown.
+Here are some useful ones:
+
+| Code | Meaning                                                    |
+|------|------------------------------------------------------------|
+| `\u` | Your user name                                             |
+| `\h` | The name of the node you are on                            |
+| `\W` | The name of the working dir (without the rest of its path) |
+| `\w` | The full path to the working dir (with `~` for your Home dir) |
+| `\t` | The current time                                           |
+| `\n` | A new line                                                 |
+| `\$` | A `$` sign                                                 |
+
+: {.striped}
+
+<hr style="height:1pt; visibility:hidden;" />
+
+For example, a potentially useful change is to show the full path to your
+working dir, so you always know exactly where you are:
+
+```bash
+PS1='[\u@\h \w]\$ '
+```
+```bash-in-nocolor
+[jelmer@p0362 /fs/ess/PAS3493/people/jelmer]$
+```
+
+With a long path, there won't be much room left for your command on the same line.
+You can fix that with `\n`, so you type your commands on the next line:
+
+```bash
+PS1='[\u@\h \w]\n\$ '
+```
+```bash-in-nocolor
+[jelmer@p0362 /fs/ess/PAS3493/people/jelmer]
+$
+```
+
+You can also add color,
+which makes it easier to spot where the output of one command ends and the next
+command starts.
+For example, to make everything except the `$` bold and blue:
+
+```bash
+PS1='\[\e[1;34m\][\u@\h \w]\[\e[0m\]\n\$ '
+```
+```{=html}
+<pre class="bash-in-nocolor"><code><span style="color: #0057d9; font-weight: bold;">[jelmer@p0362 /fs/ess/PAS3493/people/jelmer]</span>
+$</code></pre>
+```
+
+Here, `\[\e[1;34m\]` switches to bold (`1`) blue (`34`) text,
+and `\[\e[0m\]` switches back to the default.
+Other color codes include `31` (red), `32` (green), `33` (yellow), and `35` (magenta).
+
+Finally, you may not care much about seeing your user name and node name
+all the time.
+If so, you can leave those out and only show the full path to your working dir.
+In the example below, the path is bold and blue (`1;34`),
+the `$` is bold and magenta (`1;35`),
+and the brackets are left in the default color:
+
+```bash
+PS1='[\[\e[1;34m\]\w\[\e[0m\]]\[\e[1;35m\]\$\[\e[0m\] '
+```
+```{=html}
+<pre class="bash-in-nocolor"><code>[<span style="color: #0057d9; font-weight: bold;">/fs/ess/PAS3493/people/jelmer</span>]<span style="color: #c000c0; font-weight: bold;">$</span></code></pre>
+```
+
+Like aliases, a change to `$PS1` only lasts for the current shell session.
+This makes it easy to experiment:
+if you don't like the result, just open a new shell.
+Once you're happy, add the line to your `~/.bashrc`:
+
+```{.bash .file filename="&#126;/.bashrc (excerpt)"}
+PS1='\[\e[1;34m\][\u@\h \w]\[\e[0m\]\n\$ '
+```
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-note collapse="true"}
+#### Why single quotes? _(Click to expand)_
+
+Inside single quotes, nothing is interpreted by the shell,
+so the backslash codes are stored in `$PS1` exactly as you typed them,
+and are then filled in anew each time the prompt is shown.
+With double quotes, some characters like `\$` would already be interpreted
+when you set the variable, which can give surprising results.
+
+The quotes also preserve the space after `\$`,
+which separates the prompt from the command you type.
+:::
+
+<hr style="height:1pt; visibility:hidden;" />

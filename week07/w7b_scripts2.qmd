@@ -47,7 +47,7 @@ Specifically, you will learn:
 
 - How `for` loops work.
 - How to use a `for` loop to loop over files and run a shell script many times.
-- How to keep a record of your analysis steps in Markdown files.
+- How to keep a record of your analysis steps in a Markdown file.
 - How to use parameter expansion to search-and-replace text in variables.
 - How to loop over _samples_ (pairs of FASTQ files) rather than individual files.
 
@@ -93,12 +93,14 @@ This is the same type of behavior that you may be familiar with from RStudio.]:
 1. Click {{< fa cog >}} (bottom-left) > `Keyboard Shortcuts`.
 2. Type "Run Selected Text" in the search box, and you should see the option
    "_Terminal: Run Selected Text in Active Terminal_".
-3. Click on that line, then add the shortcut <kbd>Ctrl</kbd>+<kbd>Enter</kbd> ^[
-   Don't worry about any warnings that other keybindings exist for this shortcut.].
+3. Click on that line, then add the shortcut <kbd>Ctrl</kbd>+<kbd>Enter</kbd>
+   (don't worry about any warnings that other keybindings exist for this action).
 
-When no text is selected, the shortcut sends the line your cursor is on.
-To run a multi-line command like a `for` loop, first select **all** of its lines.
-(If you get stuck at a `>` prompt, press <kbd>Ctrl</kbd>+<kbd>C</kbd>.)
+![](/img/vscode-enter-line-shortcut.png){fig-align="center" width="50%" fig-alt="A screenshot showing the VS Code keyboard shortcuts settings with the 'Run Selected Text in Active Terminal' option selected." .lightbox}
+
+(When no text is selected, the shortcut sends the line your cursor is on.
+To run a multi-line command like a `for` loop, first select all of its lines
+--- we'll practice this in class.)
 
 ## For loops
 
@@ -233,25 +235,17 @@ Number of characters:
 
 Notice that all four lines ran for `apple` before any of them ran for `banana`:
 the loop completes all actions for one item before moving on to the next item.
-Here is what happened in each iteration:
-
-| Iteration (round) | Value of `$fruit` | Number of characters |
-| ----------------- | ----------------- | -------------------- |
-| 1st               | `apple`           | 5                    |
-| 2nd               | `banana`          | 6                    |
-| 3rd               | `plum`            | 4                    |
-
-: {.striped .hover}
 
 ### Key points
 
-To recap some key things to understand about `for` loops:
+To recap some key things you should understand about `for` loops:
 
 - In each iteration of the loop, one element in the collection
   is being **assigned to the variable** specified after `for`.
 - The loop will run exactly **as many times** as there are items in the collection.
 - The indented lines' code is being **repeated**:
   all lines are run for one item before the loop moves on to the next.
+  (The indentation itself is optional for the shell, but makes loops much easier to read.)
 - The **variable name** is up to you.
   Like with other variables, try to choose a name that is descriptive.
 - Like with other variables, use a `$` when you reference (`echo $fruit`) but not
@@ -280,7 +274,8 @@ On the first and last, unindented lines,
 You may find the `; do` at the end of the first line of the `for` loop to be odd.
 What is that all about?
 
-First, a semicolon is a way to enter multiple commands on a single line ---
+First, let's see what a semicolon does in the first place.
+It's a way to enter multiple commands on a single line ---
 for example, the line below would first run `ls` and then `echo "Hello"`:
 
 ```bash
@@ -290,17 +285,18 @@ ls; echo "Hello"
 _(So, `;` can be thought of as a counterpart to `\`, which allows you to spread a single command_
 _across multiple lines: with a `;`, you can have multiple commands on a single line.)_
 
-As such, you could also write `for` loops like so:
+Alternatively, you could write `for` loops like so:
 
 ```bash
-for file in sandbox/*fastq.gz
+for fruit in apple banana plum
 do
-    echo "$file"
+    echo "Fruit: $fruit"
 done
 ```
 
 Some people prefer that variant.
-You can do it either way, but we will continue to demonstrate the `; do` variant.
+You can do it either way, but we will continue to demonstrate the `; do` variant,
+which is more symmetric, and saves a line of code.
 :::
 
 ### Combining loops and globbing
@@ -349,72 +345,66 @@ mkdir -p sandbox
 touch sandbox/file1.txt sandbox/S1_R1.fastq.gz sandbox/S1_R2.fastq.gz
 ```
 
-- What do you expect the output of this loop to be?
+What do you expect the output of each of the following loops to be?
 
-  ```bash
-  for file in sandbox/*fastq.gz; do
-      echo "I have found file $file"
-  done
-  ```
+```bash
+for file in sandbox/*fastq.gz; do
+    echo "I have found file $file"
+done
+```
 
-  <!----
-  <details><summary>_Click for the solution_</summary><p>
-  The glob only matches the two FASTQ files, so the loop runs twice:
+<!----
+<details><summary>_Click for the solution_</summary><p>
+The glob only matches the two FASTQ files, so the loop runs twice:
+```bash-out
+I have found file sandbox/S1_R1.fastq.gz
+I have found file sandbox/S1_R2.fastq.gz
+```
+</p></details>
+---->
 
-  ```bash-out
-  I have found file sandbox/S1_R1.fastq.gz
-  I have found file sandbox/S1_R2.fastq.gz
-  ```
-  </p></details>
-  ---->
+```bash
+for file in sandbox/f*; do
+    echo "$f"
+done
+```
 
-- And of this loop?
+<!----
+<details><summary>_Click for the solution_</summary><p>
+Look closely: the loop variable is `file`, but the `echo` line uses `$f` --
+a variable that was never assigned.
+Because we're at the interactive prompt rather than in a script with
+`set -u`, the shell doesn't complain about the unset variable --
+it just silently treats it as an empty string.
+So the loop prints one empty line for each matching file ---
+here, that is just `file1.txt`.
+This is exactly the kind of silent failure that `set -u` protects you
+from: in a script with strict Bash settings, this typo would cause an
+immediate error instead of silently doing the wrong thing.
+</p></details>
+---->
 
-  ```bash
-  for file in sandbox/f*; do
-      echo "$f"
-  done
-  ```
+```bash
+for file in sandbox/*.bam; do
+    echo "I have found file $file"
+done
+```
 
-  <!----
-  <details><summary>_Click for the solution_</summary><p>
-  Look closely: the loop variable is `file`, but the `echo` line uses `$f` --
-  a variable that was never assigned.
-  Because we're at the interactive prompt rather than in a script with
-  `set -u`, the shell doesn't complain about the unset variable --
-  it just silently treats it as an empty string.
-  So the loop prints one empty line for each matching file ---
-  here, that is just `file1.txt`.
+<!----
+<details><summary>_Click for the solution_</summary><p>
+You might expect no output at all, since no files match the pattern.
+But when a glob pattern doesn't match any files, the shell leaves the pattern as is,
+so the loop runs once, with the literal string `sandbox/*.bam`:
 
-  This is exactly the kind of silent failure that `set -u` protects you
-  from: in a script with strict Bash settings, this typo would cause an
-  immediate error instead of silently doing the wrong thing.
-  </p></details>
-  ---->
+```bash-out
+I have found file sandbox/*.bam
+```
 
-- And of this loop? (Note that there are no `.bam` files in `sandbox`.)
-
-  ```bash
-  for file in sandbox/*.bam; do
-      echo "I have found file $file"
-  done
-  ```
-
-  <!----
-  <details><summary>_Click for the solution_</summary><p>
-  You might expect no output at all, since no files match the pattern.
-  But when a glob pattern doesn't match any files, the shell leaves the pattern as is,
-  so the loop runs once, with the literal string `sandbox/*.bam`:
-
-  ```bash-out
-  I have found file sandbox/*.bam
-  ```
-
-  So if you make a typo in a glob pattern in a loop that runs a script,
-  the script will be run once for a non-existent "file" ---
-  one more reason to print input file names in your scripts' logging output!
-  </p></details>
-  ---->
+So if you make a typo in a glob pattern in a loop that runs a script,
+the script will be run once for a non-existent "file" ---
+one more reason to print input file names in your scripts' logging output!
+</p></details>
+---->
 :::
 
 :::{.exercise}
@@ -438,6 +428,11 @@ Number of lines:
 2000000
 ```
 
+Then, take a look at the line counts in your output:
+
+- How many reads does each file contain?
+- Why do the R1 and R2 files of a sample contain the same number of reads?
+
 <!----
 <hr style="height:1pt; visibility:hidden;" />
 <details><summary>Click for the solution</summary>
@@ -452,6 +447,14 @@ for fastq_file in ../garrigos/fastq/*fastq.gz; do
     echo
 done
 ```
+
+Each FASTQ file has 2,000,000 lines, and since each read takes up 4 lines,
+it contains 500,000 reads.
+R1 and R2 files of a sample always have the same number of reads,
+since they contain the forward and reverse reads of the same DNA fragments:
+each read in the R1 file has a "mate" in the R2 file, in the same order.
+This is also why many programs need to process the R1 and R2 files of a sample _together_,
+which we'll get back to below.
 </details>
 ---->
 
@@ -508,8 +511,8 @@ which should be saved at `scripts/fastqc.sh`.
 #!/bin/bash
 set -euo pipefail
 
-# Load the OSC module for FastQC
-module load fastqc/0.12.1
+# FastQC container
+CONTAINER=oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
 
 # Copy the placeholder variables
 fastq="$1"
@@ -525,13 +528,13 @@ echo
 # Create the output dir if needed
 mkdir -p "$outdir"
 
-# Run FastQC
-fastqc --outdir "$outdir" "$fastq"
+# Run FastQC with its container
+apptainer exec "$CONTAINER" fastqc --outdir "$outdir" "$fastq"
 
 # Final logging
 echo
 echo "Used FastQC version:"
-fastqc --version
+apptainer exec "$CONTAINER" fastqc --version
 echo
 echo "Successfully finished script fastqc.sh"
 date
@@ -565,7 +568,7 @@ done
 ````
 ```bash-out
 Starting script fastqc.sh
-Thu Sep 25 13:58:21 EDT 2025
+Wed Oct  7 13:58:21 EDT 2026
 Input FASTQ file:   ../garrigos/fastq/S63_R1.fastq.gz
 Output dir:         results/fastqc
 
@@ -574,10 +577,10 @@ Approx 5% complete for S63_R1.fastq.gz
 # [...output truncated...]
 
 Successfully finished script fastqc.sh
-Thu Sep 25 13:58:26 EDT 2025
+Wed Oct  7 13:58:26 EDT 2026
 
 Starting script fastqc.sh
-Thu Sep 25 13:58:26 EDT 2025
+Wed Oct  7 13:58:26 EDT 2026
 Input FASTQ file:   ../garrigos/fastq/S63_R2.fastq.gz
 Output dir:         results/fastqc
 
@@ -695,7 +698,7 @@ fastq_R2=
 
 ```bash
 fastq_R1=../garrigos/fastq/S63_R1.fastq.gz
-fastq_R2=${fastq_R1/_R1/_R2}
+fastq_R2="${fastq_R1/_R1/_R2}"
 ```
 
 Test that it worked:
@@ -709,7 +712,7 @@ echo "$fastq_R2"
 </p></details>
 ---->
 
-Next, a labmate suggests the shorter `fastq_R2=${fastq_R1/1/2}`.
+Next, a labmate suggests the shorter `fastq_R2="${fastq_R1/1/2}"`.
 Does that give the correct result for this file?
 Would it still work if the sample were called `S61` instead of `S63`?
 
@@ -733,7 +736,7 @@ Here is a loop that runs once per sample, and prints the two file names for each
 
 ```bash
 for R1 in ../garrigos/fastq/*_R1.fastq.gz; do
-    R2=${R1/_R1/_R2}
+    R2="${R1/_R1/_R2}"
     echo "R1 file: $R1"
     echo "R2 file: $R2"
 done
@@ -820,7 +823,7 @@ you'll write such a script for the program TrimGalore.
 
   ```bash
   for R1 in ../garrigos/fastq/*_R1.fastq.gz; do
-      R2=${R1/_R1/_R2}
+      R2="${R1/_R1/_R2}"
       bash scripts/trim_mock.sh "$R1" "$R2" results/trim_mock
   done
   ```
@@ -828,7 +831,7 @@ you'll write such a script for the program TrimGalore.
 
   ```bash-out
   Starting script trim_mock.sh
-  Thu Sep 25 14:05:10 EDT 2025
+  Wed Oct  7 14:05:10 EDT 2026
   Input R1 file:       ../garrigos/fastq/S63_R1.fastq.gz
   Input R2 file:       ../garrigos/fastq/S63_R2.fastq.gz
   Output dir:          results/trim_mock
@@ -836,10 +839,10 @@ you'll write such a script for the program TrimGalore.
   trimmer --in1 ../garrigos/fastq/S63_R1.fastq.gz --in2 ../garrigos/fastq/S63_R2.fastq.gz --outdir results/trim_mock
 
   Successfully finished script trim_mock.sh
-  Thu Sep 25 14:05:10 EDT 2025
+  Wed Oct  7 14:05:10 EDT 2026
 
   Starting script trim_mock.sh
-  Thu Sep 25 14:05:10 EDT 2025
+  Wed Oct  7 14:05:10 EDT 2026
   Input R1 file:       ../garrigos/fastq/S64_R1.fastq.gz
   # [...output truncated...]
   ```

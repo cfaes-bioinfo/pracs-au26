@@ -137,72 +137,123 @@ Our shell scripts are therefore in the Bash language,
 can be specifically called Bash scripts, and can be run with the `bash` command.
 :::
 
-## A first shell script
+## Your first shell scripts
 
-### A script to run FastQC
+Let's start with the simplest possible kind of script:
+one that contains a single command.
+Create a script `hello.sh` (shell scripts usually have the extension `.sh`)
+as follows:
+
+```bash
+# Create an empty file
+touch scripts/hello.sh
+```
+
+Open the file in your VS Code editor pane, and type or paste the following line
+inside the script, and save it:
+
+```{.bash .file filename="scripts/hello.sh"}
+echo "Hello world"
+```
+
+That's it --- this one-line file is a **functional shell script**!
+One way of running a script is by typing `bash` followed by the path to the script:
+
+```bash
+bash scripts/hello.sh
+```
+```{.bash-out}
+Hello world
+```
+
+Running the script has the exact same effect as typing `echo "Hello world"`
+directly in the terminal.
+Let's make one more very basic script and run it:
+
+```bash
+touch scripts/info.sh
+```
+
+```{.bash .file filename="scripts/info.sh"}
+date
+pwd
+```
+
+```bash
+bash scripts/info.sh
+```
+```{.bash-out}
+Mon Oct  5 14:13:31 EDT 2026
+/fs/ess/PAS3493/people/jelmer/week07
+```
+
+This shows the basic idea of a shell script:
+when you run it, its commands are executed one by one, from top to bottom,
+just as if you had typed them in the terminal.
+(Also note that `pwd` printed `week07`, not `week07/scripts`:
+commands in a script run in **your** working dir,
+not in the dir where the script is stored --- we'll come back to this.)
+
+In practice, you wouldn't bother writing a script for simple commands like these.
+Scripts pay off for commands that you want to save and rerun,
+and/or that take a long time to run, such as those that run bioinformatics tools.
+So let's move on to a more useful example.
+
+## A script to run FastQC
 
 In the previous lecture, you ran FastQC for a FASTQ file
 by executing the following commands directly in the terminal:
 
 ```{.bash .norun}
-module load fastqc/0.12.1
 mkdir -p results/fastqc
-fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
+apptainer exec oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960 \
+    fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
 ```
 
 Let's put these commands in a shell script instead.
-Create your first script, `fastqc.sh`
-(shell scripts usually have the extension `.sh`) as follows:
+Create a script `fastqc.sh`:
 
 ```bash
-# Create an empty file
 touch scripts/fastqc.sh
 ```
 
-A nice VS Code trick mentioned before is that if you hold <kbd>Ctrl</kbd> (Windows)
-/ <kbd>⌘</kbd> (Mac) while hovering over a file path in the terminal,
-the path should become underlined and you can click on it to open the file.
-Try that with the `fastqc.sh` script^[
-Alternatively, find the script in the file explorer in the side bar and click
-on it there.].
-Once the file is open in your editor pane, type or paste the following inside the script:
+Open the file and type or paste the following inside the script:
 
 ```{.bash .file filename="scripts/fastqc.sh"}
-# Load the OSC module for FastQC
-module load fastqc/0.12.1
-
 # Create the output dir if needed
 mkdir -p results/fastqc
 
-# Run FastQC
-fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
+# Run FastQC with its container
+apptainer exec oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960 \
+    fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
 ```
 
-Shell scripts mostly contain the same Unix shell code you have become familiar with.
-As such, this file with three commands (and some comments)
-constitutes a **functional shell script**!
-
-One way of running the script is by typing `bash` followed by the path to the script:
+Like your one-line scripts, this script simply contains shell commands ---
+two of them this time (the second one spread across two lines with `\`),
+plus some comments.
+Run it:
 
 ```bash
 bash scripts/fastqc.sh
 ```
 ```{.bash-out}
+INFO:    Using cached SIF image
+INFO:    gocryptfs not found, will not be able to use gocryptfs
 Started analysis of S63_R1.fastq.gz
 Approx 5% complete for S63_R1.fastq.gz
 Approx 10% complete for S63_R1.fastq.gz
 Approx 15% complete for S63_R1.fastq.gz
-[...output truncated...]
+# [...output truncated...]
 Analysis complete for S63_R1.fastq.gz
 ```
 
 Nice! A couple of notes about the commands in the script:
 
-- **The module is loaded in the script**\
-  Recall that loaded modules don't persist across shell sessions.
-  By loading the module inside the script,
-  the script will work regardless of whether you have loaded the module in your terminal.
-  This will also be important when you run scripts as batch jobs later.
+- **The container is specified in the script**\
+  Because the `fastqc` command is run with `apptainer exec` and the container URI,
+  the script contains everything needed to make FastQC available.
+  As such, the script works without any setup in your terminal,
+  which will also be important when you run scripts as batch jobs later.
 
 - **The output dir is created with `mkdir -p`**\
   Recall that FastQC won't create the output dir for you.
@@ -253,12 +304,9 @@ Nice! A couple of notes about the commands in the script:
   :::
 
 - **The file paths are relative to your working dir, not to the script**\
-  Relative paths in a script, like `results/fastqc` and `../garrigos/...`,
-  are interpreted relative to your working dir at the time you _run_ the script ---
+  Relative paths in a script, like `results/fastqc`,
+  are interpreted relative to your working dir at the time you run the script,
   not relative to where the script itself is stored.
-  That's why we run the script from within `week07`, as `bash scripts/fastqc.sh`.
-  If you instead ran it from within the `scripts` dir (`bash fastqc.sh`),
-  FastQC would fail to find the input file.
 
 Next, you'll learn about two header lines that are good practice to
 add to every shell script.
@@ -277,7 +325,7 @@ Shellcheck will also flag things like typos in variable names.)
 
 ![](/img/shellcheck-fastqc-shebang2.png){fig-align="center" width="80%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
 
-A so-called "_shebang_" line is used as the first line of a script to
+A so-called "_shebang_" line is used as the **very first line** of a script to
 indicate **which computer language** the script uses:
 
 ```sh
@@ -311,6 +359,13 @@ set -euo pipefail
 
 You'll see these settings in action later in this session.
 
+::: {.callout-tip appearance="simple"}
+The safe shell settings will apply to the lines of code in the script that
+**come after** the `set` command,
+which is why it's important to place the `set` command near the top of the script.
+This way, the settings will be in effect for the entire script.
+:::
+
 ::: {.callout-note collapse="true"}
 #### What does each of these options do? _(Click to expand)_
 
@@ -318,7 +373,8 @@ With these settings, **the script stops** with an error message if:
 
 - `-e` --- a command fails.
 - `-u` --- a non-existent variable is referenced.
-- `-o pipefail` --- a command in a shell "pipeline" (e.g., `sort | uniq`) fails.
+- `-o pipefail` --- _any_ command in a shell "pipeline" (e.g., `sort | uniq`) fails.
+  (Without this option, `-e` only notices failures of the _last_ command in a pipeline.)
 
 :::
 
@@ -331,14 +387,12 @@ so it will now contain the following:
 #!/bin/bash
 set -euo pipefail
 
-# Load the OSC module for FastQC
-module load fastqc/0.12.1
-
 # Create the output dir if needed
 mkdir -p results/fastqc
 
-# Run FastQC
-fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
+# Run FastQC with its container
+apptainer exec oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960 \
+    fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
 ```
 
 And run the script again
@@ -350,7 +404,7 @@ bash scripts/fastqc.sh
 ```{.bash-out}
 Started analysis of S63_R1.fastq.gz
 Approx 5% complete for S63_R1.fastq.gz
-[...output truncated...]
+# [...output truncated...]
 Analysis complete for S63_R1.fastq.gz
 ```
 
@@ -497,13 +551,14 @@ Some rules for variable names in the shell --- they:
   but in which `-` and `.` _are_ recommended.]
 - **Cannot _start_** with a number
 
-Ideally, variable names are descriptive, like `$input_file` above and not cryptic
-like `$x`.
+Ideally, variable names are descriptive,
+like `$input_file` above and not cryptic like `$x`.
+
 Like with file names, you can distinguish words using capitalization
 ("camelCase", `$inputFile`) or underscores ("snake case", `$input_file`).
-In this course, we'll use lowercase variable names,
-but the box at the end of the [arguments section](#constants) explains when
-uppercase can be useful.
+In this course, we'll mostly use lowercase variable names,
+except for "constants" in scripts, which we'll write in uppercase ---
+see the box at the end of the [arguments section](#constants).
 
 ### Quoting variables
 
@@ -511,7 +566,8 @@ I have mentioned that it is **good practice to quote variables**
 (i.e. to use `"$treatment"` instead of `$treatment`).
 So what can happen if you don't do this?
 
-Let's start by making and moving into a dir to create some messy files:
+Let's start by making and moving into a sandbox dir where we can create some
+messy files:
 
 ```bash
 mkdir sandbox
@@ -545,7 +601,7 @@ Here's what happens if you don't quote a variable whose **value contains spaces*
    README_Tue,
    ```
 
-3. Oops! The shell performed "field splitting" to split the value into three
+3. Oops! The shell performed "word splitting" to split the value into three
    separate units --- as a result, **three files** were created.
    This can be avoided by quoting the variable:
 
@@ -631,11 +687,13 @@ Finally:
 
 <hr style="height:1pt; visibility:hidden;" />
 
+[]{#quoting-box}
+
 :::{.callout-note collapse="true"}
 #### Quoting as "escaping" --- and double vs. single quotes _(Click to expand)_
 
 By double-quoting a variable, you essentially escape ("turn off")
-the default special meaning of the space as a **field separator**,
+the default special meaning of the space as a **word separator**,
 asking the shell to interpret it instead as a **literal space**.
 
 Similarly, double quotes will escape **other special characters** in the shell,
@@ -699,7 +757,7 @@ Tue, Mar 26
 ```
 
 Putting variable names between curly braces will also make it clear where the
-variable name begins and ends, although it does not prevent field splitting:
+variable name begins and ends, although it does not prevent word splitting:
 
 ```sh
 touch README_${today}_final.txt
@@ -728,15 +786,15 @@ ls -1 *final*
 
 ### Using variables in your FastQC script
 
-Now, let's change the FastQC script to use variables for the input file and the
-output dir:
+Now, let's change the FastQC script to use variables for the container URI,
+the input file, and the output dir:
 
 ```{.bash .file filename="scripts/fastqc.sh"}
 #!/bin/bash
 set -euo pipefail
 
-# Load the OSC module for FastQC
-module load fastqc/0.12.1
+# FastQC container
+CONTAINER=oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
 
 # Define the input file and output dir
 fastq=../garrigos/fastq/S63_R1.fastq.gz
@@ -745,13 +803,16 @@ outdir=results/fastqc
 # Create the output dir if needed
 mkdir -p "$outdir"
 
-# Run FastQC
-fastqc --outdir "$outdir" "$fastq"
+# Run FastQC with its container
+apptainer exec "$CONTAINER" fastqc --outdir "$outdir" "$fastq"
 ```
 
 This is an improvement:
-the file paths are now clearly defined in one place at the top of the script,
-and the output dir, which is used twice, would only need to be changed once.
+the container URI and file paths are now clearly defined in one place at the top
+of the script, and the output dir, which is used twice,
+would only need to be changed once.
+Also, the `apptainer exec` command has become short enough to fit on a single line.
+(Why is `CONTAINER` in uppercase? See the [box on "constants"](#constants) below.)
 
 But you would still need to edit the script to run it for a different FASTQ file.
 Let's see how we can make this more flexible using command-line arguments.
@@ -814,8 +875,8 @@ In your FastQC script, let's replace the hard-coded file paths with `$1` and `$2
 #!/bin/bash
 set -euo pipefail
 
-# Load the OSC module for FastQC
-module load fastqc/0.12.1
+# FastQC container
+CONTAINER=oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
 
 # Copy the placeholder variables
 fastq="$1"
@@ -824,8 +885,8 @@ outdir="$2"
 # Create the output dir if needed
 mkdir -p "$outdir"
 
-# Run FastQC
-fastqc --outdir "$outdir" "$fastq"
+# Run FastQC with its container
+apptainer exec "$CONTAINER" fastqc --outdir "$outdir" "$fastq"
 ```
 
 Only the two lines that define `$fastq` and `$outdir` changed:
@@ -834,7 +895,7 @@ their values now come from the command line instead of being hard-coded.
 You _could_ use the `$1`-style variables throughout your script, like so:
 
 ```{.bash .file filename="fastqc.sh (alternative - don't use)"}
-fastqc --outdir "$2" "$1"
+apptainer exec "$CONTAINER" fastqc --outdir "$2" "$1"
 ```
 
 But I recommend always copying them to descriptively named variables like we did here.
@@ -857,7 +918,7 @@ bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
 ```{.bash-out}
 Started analysis of S63_R1.fastq.gz
 Approx 5% complete for S63_R1.fastq.gz
-[...output truncated...]
+# [...output truncated...]
 Analysis complete for S63_R1.fastq.gz
 ```
 
@@ -867,7 +928,7 @@ bash scripts/fastqc.sh ../garrigos/fastq/S63_R2.fastq.gz results/fastqc
 ```{.bash-out}
 Started analysis of S63_R2.fastq.gz
 Approx 5% complete for S63_R2.fastq.gz
-[...output truncated...]
+# [...output truncated...]
 Analysis complete for S63_R2.fastq.gz
 ```
 
@@ -905,11 +966,13 @@ Analysis complete for S63_R2.fastq.gz
   ![](../img/shellcheck-variable5.png){fig-align="center" width="70%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
 :::
 
-#### Safe settings in action
+### Safe settings in action
 
-Our script currently **requires** two arguments: the input FASTQ file and the output dir.
-No default values are set for these variables, so if you forget to pass them,
-the script won't be able to run successfully.
+Our script currently **requires** two arguments:
+the input FASTQ file and the output dir.
+No default values are set for these variables,
+so if you forget to pass them to the script,
+it won't be able to run successfully.
 Let's see what happens exactly if you don't pass arguments to the script:
 
 ```bash
@@ -965,7 +1028,7 @@ leading to much more confusing error messages downstream.
    </details>
    ---->
 
-Next, in each of the two scenarios described below, think about what might happen.
+Next, in each of the three scenarios described below, think about what might happen.
 After you have thought about it,
 run the script as instructed in the scenario to test your prediction.
 
@@ -987,7 +1050,24 @@ run the script as instructed in the scenario to test your prediction.
    </details>
    ---->
 
-4. After "commenting out" the line with `set` settings,
+4. Passing three names, e.g. `bash scripts/printname.sh John Michael Doe`.
+
+   <!----
+   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
+   The script runs without errors, but prints the wrong last name:
+   the third argument, `Doe`, ends up in `$3`, which the script never uses.
+   Note that `set -u` doesn't help here:
+   it only catches references to _non-existent_ variables, not unused arguments.
+
+   ```bash-out
+   This script will print a first and a last name
+   First name: John
+   Last name: Michael
+   ```
+   </details>
+   ---->
+
+5. After "commenting out" the line with `set` settings,
    running the script without passing arguments to it.
 
    <details><summary> {{< fa lightbulb >}} Click here to learn what "commenting out" means.</summary>
@@ -1026,28 +1106,35 @@ run the script as instructed in the scenario to test your prediction.
    </details>
    ---->
 
-5. What do you expect the output to be when you run the script as follows?
+:::
 
-   ```bash
-   bash scripts/printname.sh "$USER" '$USER'
-   ```
+<hr style="height:1pt; visibility:hidden;" />
 
-   _Hint: see the box on double vs. single quotes above._
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise: Quoting arguments
 
-   <!----
-   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
-   The shell expands variables _before_ passing arguments to the script,
-   so the first argument is your username.
-   The single quotes prevent that expansion, so the second argument is the literal string `$USER`:
+What do you expect the output to be when you run your `printname.sh` script
+from Exercise 2 as follows?
+Make a prediction, then run it to check.
 
-   ```bash-out
-   This script will print a first and a last name
-   First name: jelmer
-   Last name: $USER
-   ```
-   </details>
-   ---->
+```bash
+bash scripts/printname.sh "$USER" '$USER'
+```
 
+_Hint: see the [box on double vs. single quotes](#quoting-box) above._
+
+<details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
+
+The shell expands variables _before_ passing arguments to the script,
+so the first argument is your username.
+The single quotes prevent that expansion, so the second argument is the literal string `$USER`:
+
+```bash-out
+This script will print a first and a last name
+First name: jelmer
+Last name: $USER
+```
+</details>
 :::
 
 <hr style="height:1pt; visibility:hidden;" />
@@ -1089,11 +1176,13 @@ which means that we are referencing a (likely) non-existent variable.
 These kinds of accidents are especially likely to happen inside scripts,
 where it is common to use variables and to work non-interactively.
 
-But before you get too scared of doing terrible damage, note that at OSC,
-you would not be able to remove any essential files,
-since you don't have the permissions to do so.
-On your own computer, this could be more genuinely dangerous, though even there,
-you would not be able to remove operating system files without requesting "admin" rights.
+Luckily, you can't remove system files this way, neither at OSC nor
+(without "admin" rights) on your own computer.
+But `rm -rf /*` would still remove **every file that you _do_ have permission to remove**.
+At OSC, that includes your Home dir and project dirs ---
+and since project files are often group-writable (see the `rw-rw----` in `ls -l` output),
+possibly also your labmates' files!
+This is one more reason to always use `set -u` in your scripts.
 :::
 
 []{#constants}
@@ -1101,42 +1190,24 @@ you would not be able to remove operating system files without requesting "admin
 ::: {.callout-tip collapse="true"}
 #### Hard-coded settings as "constants" _(Click to expand)_
 
-We've made our FastQC script accept arguments,
-instead of "hard-coding" variable things like inputs and outputs in the script itself.
+Our FastQC script gets the input file and output dir from arguments,
+but the container URI is still hard-coded in the script.
+That's fine: you _could_ also use arguments for settings like the container
+or program options (e.g., a quality threshold),
+but a long list of arguments makes a script confusing to use.
 
-You can also use arguments for _settings_ like bioinformatics program options
-you may want to vary among different runs of the script,
-or relatedly, for information about your data like read length.
-If you don't hard-code these options in your script but have arguments for them,
-it is easier to re-use your script in different contexts.
-
-But there is a balance to be struck,
-and you can also "hobble" your script with a confusing array of arguments.
-When you do hard-code potentially variable things in your script,
-it's still a good idea to store them in variables that you clearly define
-**at the top of your script**.
-For example, a quality threshold for a program,
-or the URI of an Apptainer container that you use in the script:
-
-```bash
-#!/bin/bash
-set -euo pipefail
-
-# Settings and constants
-MIN_QUAL=30
-FASTQC_CONTAINER=oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
-```
-
-Such variables can be referred to as "**constants**":
-they make the script easier to maintain (e.g., if you use the value in multiple
-places), but unlike variables that get their values from arguments,
+When you do hard-code settings that may change,
+store them in variables that you clearly define **at the top of your script**,
+like we did with `CONTAINER`.
+Such variables are often called "**constants**":
+they make the script easier to maintain,
+but unlike variables that get their values from arguments,
 they can't be changed from outside the script.
 
-My preferred approach is to use **uppercase** for constants
-and **lowercase** for all other variables, so the two are easy to tell apart.
-But this is far from universal: it is also fairly common to use uppercase
-for all shell variables --- and recall that environment variables
-such as `$USER` and `$HOME` are always in uppercase.
+In this course, we'll name constants in **uppercase** (e.g., `CONTAINER`)
+and most other variables in lowercase, so the two are easy to tell apart.
+(Conventions vary, though: some people use uppercase for all shell variables,
+and environment variables like `$USER` and `$HOME` are always uppercase.)
 :::
 
 ## "Logging" statements
@@ -1164,8 +1235,8 @@ Let's add some code to the FastQC script to make it produce logging information:
 #!/bin/bash
 set -euo pipefail
 
-# Load the OSC module for FastQC
-module load fastqc/0.12.1
+# FastQC container
+CONTAINER=oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
 
 # Copy the placeholder variables
 fastq="$1"
@@ -1181,13 +1252,13 @@ echo
 # Create the output dir if needed
 mkdir -p "$outdir"
 
-# Run FastQC
-fastqc --outdir "$outdir" "$fastq"
+# Run FastQC with its container
+apptainer exec "$CONTAINER" fastqc --outdir "$outdir" "$fastq"
 
 # Final logging
 echo
 echo "Used FastQC version:"
-fastqc --version
+apptainer exec "$CONTAINER" fastqc --version
 echo
 echo "Successfully finished script fastqc.sh"
 date
@@ -1221,20 +1292,24 @@ bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
 ```
 ```bash-out
 Starting script fastqc.sh
-Thu Sep 25 13:53:13 EDT 2025
+Mon Oct  5 14:23:13 EDT 2026
 Input FASTQ file:   ../garrigos/fastq/S63_R1.fastq.gz
 Output dir:         results/fastqc
 
+INFO:    Using cached SIF image
+INFO:    gocryptfs not found, will not be able to use gocryptfs
 Started analysis of S63_R1.fastq.gz
 Approx 5% complete for S63_R1.fastq.gz
 # [...output truncated...]
 Analysis complete for S63_R1.fastq.gz
 
 Used FastQC version:
+INFO:    Using cached SIF image
+INFO:    gocryptfs not found, will not be able to use gocryptfs
 FastQC v0.12.1
 
 Successfully finished script fastqc.sh
-Thu Sep 25 13:53:19 EDT 2025
+Mon Oct  5 14:23:19 EDT 2026
 ```
 
 Nice! We got some logging information, and can for example tell that the script

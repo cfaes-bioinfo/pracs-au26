@@ -1,0 +1,221 @@
+---
+title: "Coding with an AI agent in VS Code"
+subtitle: "Week 8 - lecture B"
+pagetitle: "w8b: Claude in VS Code"
+date: 2026-10-14
+date-modified: last-modified
+author:
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+    affiliation:
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://go.osu.edu/bioinformatics-core
+      - name: Dept. of Plant Pathology, Ohio State University
+        url: https://plantpath.osu.edu
+number-sections: true
+bibliography: ../references.bib
+other-links:
+  - text: "Week 8 overview"
+    icon: check2-all
+    href: w8_overview.html
+  - text: "w8a: Using generative AI"
+    icon: book
+    href: w8a_genAI.html
+  - text: "Week 8 exercises"
+    icon: pencil
+    href: w8_exercises.html
+language:
+  title-block-published: "Presented on"
+  title-block-modified: "Page last modified"
+  other-links-title: "Also this week"
+---
+
+----------------------------------------------------------------------------------------------------
+
+<br>
+
+<!----
+OUTLINE / DRAFT -- bullets are notes for what each section should cover.
+Example prompts are reused from the 2025 Copilot lecture (now bonus/copilot.qmd),
+whose screenshots can serve as a model for which screenshots to retake here.
+Things to verify before class are marked TODO.
+---->
+
+## Introduction
+
+### Learning goals
+
+In this lecture, you will learn how to:
+
+- Set up and use the Claude extension in VS Code Server at OSC
+- Use Claude to ask questions about, write, and edit code
+- Let Claude act as an "agent" that runs commands and works across files ---
+  and keep that safe with permission settings and Git
+- Give Claude standing instructions with a `CLAUDE.md` file
+
+### Why Claude in VS Code Server?
+
+- Recap from w8a: browser chat → in-IDE chat → agents
+- Why this setup:
+  - University-compliant usage, so the data privacy rules from w8a
+    work in our favor here (TODO: exact wording once key provisioning is settled)
+  - Runs inside our familiar VS Code Server, so on a **compute node** ---
+    matters once the agent starts running commands
+  - No extra local setup
+- What it does _not_ do: inline "ghost text" suggestions as you type
+  - Briefly explain what those are (1-2 screenshots from the bonus page)
+  - Pointer to the [bonus page on GitHub Copilot](../bonus/copilot.qmd)
+  - Teaching rationale, briefly: chat/agent output is something you
+    review deliberately, while ghost text is easy to accept without reading
+
+## Getting set up
+
+### Start VS Code Server and install the extension
+
+- Start a VS Code Server session through OnDemand as usual
+  (TODO: minimum Code Server version that supports the extension?)
+- Extensions sidebar → search "Claude" → install the Claude Code extension
+  by Anthropic (TODO: screenshot; check exact name on Open VSX)
+
+### Connect it to your API key
+
+- TODO: depends on how keys are provisioned (per-student vs. shared).
+  Things to cover:
+  - Where the key goes (environment variable or extension setting)
+    and how to check it's picked up
+  - Treat the key like a password: never commit it to Git,
+    don't put it in a file that others in the project can read
+    (callback to file permissions in `/fs/ess/PAS3493`)
+  - Default model choice, if we set one for cost reasons
+
+### First contact
+
+- Open the Claude panel (TODO: icon/shortcut + screenshot)
+- Make sure VS Code has your own dir open: `/fs/ess/PAS3493/people/$USER` ---
+  the agent works in the open folder
+- Create a dir for this week:
+
+  ```bash
+  # You should be in /fs/ess/PAS3493/people/$USER
+  mkdir week08
+  cd week08
+  ```
+
+- First prompt to show that it can "see" your files:
+
+  > What is in this folder, and what do you think this project is about?
+
+## Asking questions with your files as context
+
+- Referencing files in your prompt with `@` (TODO: confirm UI) and selecting code
+- Example: open a week 7 script and ask
+
+  > Explain what this script does, line by line
+
+- Example: explain a command from earlier weeks, e.g. the `${R1/_R1/_R2}`
+  construct from the week 7 loops
+- Point: same kind of questions as in the browser, but with automatic context
+  and no copy-pasting
+
+## Writing and editing a script
+
+Reuse the FastQC sequence from 2025:
+
+1. > Write a Bash script that runs FastQC for a single FASTQ file. The FASTQ file should be an argument to the script
+
+   - Claude proposes creating a file → show the diff/approval view → accept
+2. > Include strict bash settings in the script
+   - Proposed edit shown as a diff → review → accept
+   - Callback to `git diff` from week 5
+3. > Now add an argument for the output directory
+4. > Add code to print the current date before and after running FastQC
+
+- Introduce **permission modes**: ask before every edit vs. accept edits
+  automatically vs. plan mode (TODO: exact names in the extension).
+  Recommendation for this course: keep "ask before edits" on.
+- Compare the result to the scripts we wrote in week 7: what does it do
+  differently from our conventions? (Sets up the `CLAUDE.md` section below.)
+
+## Letting the agent run commands
+
+- The agent can propose shell commands; you approve or deny each one
+- Example:
+
+  > Run this script on one of the FASTQ files in garrigos/fastq
+
+  - Will it figure out how to make FastQC available (module/container, week 6)?
+  - Show the approval prompt; discuss **what to never approve blindly**
+    (`rm`, `mv`, anything writing outside your dir, `sbatch` loops, etc.)
+- **Key point:** an agent that can run `trim_galore --help` can check
+  its own claims. Revisit the TrimGalore hallucination from w8a:
+
+  > How can I tell TrimGalore that my reads use Illumina two-color chemistry?
+
+  - Did it guess, or did it check the help output? Does that change the answer?
+  - (Connects to GA4 Part D)
+
+## Agent tasks across files
+
+- Plan first, then act: ask for a plan, review it, then let it proceed
+- Examples from 2025 that worked well:
+
+  > Write a similar script but to run the program TrimGalore
+
+  - It should find your week 7 TrimGalore script(s) and build on them ---
+    show that it looked around the project
+
+  > Create a script to run the program featureCounts on BAM files in a given directory
+
+  - Note: there are no BAM files yet; what does it assume about file names?
+    (2025: Copilot invented `sample1_R1.fastq`-style names)
+
+## Git as your safety net
+
+- Before letting an agent edit files: `git status` clean, commit first
+- After: `git diff` to review everything it changed, also files you didn't look at
+- Undo with `git restore` (or discard specific hunks in the VS Code Source Control panel)
+- Optionally: ask Claude to write a commit message, then edit it yourself
+
+## Standing instructions with `CLAUDE.md`
+
+- What it is: a Markdown file that Claude reads at the start of every session
+- Create one (TODO: show `/init` vs. writing it by hand)
+- Example content based on this course's conventions:
+
+  ```markdown
+  # Conventions for shell scripts in this project
+  - Start scripts with `#!/bin/bash` and `set -euo pipefail`
+  - Use uppercase variable names, copied from positional arguments
+    with descriptive names
+  - Report the date and program version at the start and end
+  - Don't use `--cores` options unless asked
+  ```
+
+- Re-run one of the earlier prompts and compare the output
+- (Same idea as Copilot's `.github/copilot-instructions.md`)
+
+## Good habits and pitfalls with agents
+
+- Review every edit and command; you own the result
+- Agents may claim "this works" without having run it --- run it yourself
+- Context: long conversations get worse; start fresh for a new task
+  (TODO: `/clear` / new-conversation button in the extension)
+- Tokens and cost: briefly what a token is
+  ([link](https://posit-conf-2025.github.io/llm/slides/slides-02.html#/actually-tokens-not-words));
+  agents use far more tokens than chat
+- Never paste secrets (passwords, API keys) into prompts
+- Shared project dir: the agent can see what _you_ can see
+
+## Appendix
+
+### Optional self-study material
+
+- [GitHub Copilot in a local VS Code installation](../bonus/copilot.qmd),
+  including inline suggestions
+- Claude Code documentation (TODO: links to VS Code extension docs and `CLAUDE.md` docs)
+- Different models and their pros and cons (subject to change!)
+  - [An Opinionated Guide to Using AI Right Now](https://www.oneusefulthing.org/p/an-opinionated-guide-to-using-ai) by Ethan Mollick (Oct 2025)
+  - [Which AI model writes the best R code?](https://posit.co/blog/r-llm-evaluation-02/) (Aug 2025)
+
+<br>
