@@ -32,6 +32,11 @@ language:
 
 <br>
 
+<!-----
+https://www.osc.edu/resources/getting_started/osc_custom_commands/osc_seff
+https://www.youtube.com/watch?v=-Hq-Ep1vHn0
+------>
+
 ## Introduction
 
 This page covers some additional Slurm topics that build on the
@@ -98,12 +103,12 @@ which we can use with `--pty /bin/bash` added to get an interactive Bash shell.
 
 [^1]: Other options: `salloc` works almost identically to `srun`,
       whereas `sinteractive` is an OSC convenience wrapper but with more limited options.
-     
+
 ```bash
 srun --account=PAS3493 --pty /bin/bash
 ```
 ```bash-out
-srun: job 12431932 queued and waiting for resources  
+srun: job 12431932 queued and waiting for resources
 srun: job 12431932 has been allocated resources
 
 [...regular login info, such as quota, not shown...]
@@ -146,9 +151,9 @@ sstat -j $SLURM_JOB_ID --format=jobid,avecpu,averss,maxrss,ntasks
 Which will give you output like the following printed in your Slurm log file:
 
 ```bash-out-solo
-       JobID     AveCPU     MaxRSS   NTasks 
------------- ---------- ---------- -------- 
-2979576.bat+  01:59.000    244368K        1 
+       JobID     AveCPU     MaxRSS   NTasks
+------------ ---------- ---------- --------
+2979576.bat+  01:59.000    244368K        1
 ```
 
 `MaxRSS` is the maximum amount of memory used by the job.
@@ -166,26 +171,26 @@ sacct -u $USER \
   grep -v ".extern"
 ```
 ```bash-out
-               JobID    JobName        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES 
--------------------- ---------- --------------- ---------- ---------- -------- ---------- -------------------------------- 
-             2978362 fastqc_si+           p0224   00:01:51  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+ 
-       2978362.batch      batch           p0224   00:01:51  COMPLETED      0:0    200004K           cpu=1,mem=4556M,node=1 
-             2978487  fqtest.sh           p0224   00:01:54  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+ 
-       2978487.batch      batch           p0224   00:01:54  COMPLETED      0:0    203332K           cpu=1,mem=4556M,node=1 
+               JobID    JobName        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES
+-------------------- ---------- --------------- ---------- ---------- -------- ---------- --------------------------------
+             2978362 fastqc_si+           p0224   00:01:51  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+
+       2978362.batch      batch           p0224   00:01:51  COMPLETED      0:0    200004K           cpu=1,mem=4556M,node=1
+             2978487  fqtest.sh           p0224   00:01:54  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+
+       2978487.batch      batch           p0224   00:01:54  COMPLETED      0:0    203332K           cpu=1,mem=4556M,node=1
              2978503  fqtest.sh           p0224   00:01:55  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+
 ```
 
 To get information about a specific job, by means of example job `2978487`:
-  
+
 ```sh
 sacct -j 2978487 \
   --format=JobID,JobName,NodeList,Elapsed,State,ExitCode,MaxRSS,AllocTRES%32 |
   grep -v ".extern"
 ```
 ```bash-out
-         JobID    JobName        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES 
------------- ---------- --------------- ---------- ---------- -------- ---------- -------------------------------- 
-2978487       fqtest.sh           p0224   00:01:54  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+ 
+         JobID    JobName        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES
+------------ ---------- --------------- ---------- ---------- -------- ---------- --------------------------------
+2978487       fqtest.sh           p0224   00:01:54  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+
 2978487.bat+      batch           p0224   00:01:54  COMPLETED      0:0    203332K           cpu=1,mem=4556M,node=1
 ```
 
@@ -244,7 +249,7 @@ _Note that you should use the full path `/usr/bin/time` rather than just `time`.
 
 As an alternative approach to looping over a script,
 you can also turn a script into a job "array", i.e. a series of jobs.
-  
+
 Each job in the array gets an ID that you can then use in your script
 for each job to run with a different value of a certain parameter.
 Most commonly, you may have a file with sample names and then use the
@@ -259,14 +264,14 @@ fastqc "$fastq_file"
 
 - Above, the array was configured using the `--array` option,
   simply creating 25 jobs with array IDs from 1 to 25 (assuming 25 FASTQ files).
-  
+
 - Then, the SLURM environment variable `$SLURM_ARRAY_TASK_ID` will contain
   the task ID for each job in the array, and we use that to pull out a line
   from a file with FASTQ file names with `sed`.
-  
+
 - We also use `%A` (master job ID) and `%a`
   (ID that differs for each job in the array) for the log file name.
-  
+
 A full script example is below:
 
 ```sh
@@ -280,7 +285,7 @@ set -euo pipefail
 module load fastqc/0.12.1
 
 fastq_files_list="$1"
-output_dir="$2" 
+output_dir="$2"
 
 fastq_file=$(sed -n "${SLURM_ARRAY_TASK_ID}p" $fastq_files_list)
 
@@ -290,13 +295,13 @@ echo "Output dir: $output_dir"
 fastqc --outdir="$output_dir" "$fastq_file"
 ```
 
-- The array values can also be a comma separated list like 
+- The array values can also be a comma separated list like
   `SBATCH --array=8,10,15` and can even have a *stride*,
    with `SBATCH --array=1-7:2` producing array tasks 1, 3, 5, and 7.
 
 - You can also throttle an array of jobs: only run a subset of jobs at a time.
   This can be done as follows:
-  
+
   ```sh
   sbatch --array [1-100]%10 fastq.sh
   ```

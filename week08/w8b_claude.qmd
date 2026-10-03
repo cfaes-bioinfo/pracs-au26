@@ -37,6 +37,15 @@ language:
 
 ## Introduction
 
+<!----
+- Possible prompts:
+  - Review a text, maybe a Markdown, maybe a Word doc
+  - Have it suggest improvements for a script we already have
+
+- Rule 9. Leverage GenAI to follow best practices
+  https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1014627
+----->
+
 ### Learning goals
 
 In this lecture, you will learn how to:
@@ -710,6 +719,54 @@ For more on this and other guardrails, such as permission rules that block speci
 see the [self-study page on Claude Code](../bonus/claude-code.qmd#guardrails).
 :::
 
+### Documenting your AI use {#documenting-ai-use}
+
+As discussed in [the previous lecture](./w8a_genAI.qmd),
+journals often require you to disclose how you used genAI,
+and you can't count on getting the same answer when you ask the same thing again later.
+So it's a good idea to keep a record as you go. Here are two complementary ways to do so.
+
+**Save your conversations.**\
+Claude saves your conversations automatically (see the clock icon at the top of the panel),
+but in your Home dir rather than in your project, and in a format that's not easy to read.
+To save a conversation in your project as a plain-text file,
+type `/export` followed by a file name, for example:
+
+```bash-in-nocolor
+/export ai-log/2026-10-14_count-reads.txt
+```
+
+Do this for conversations that led to code you keep or decisions you made,
+and commit these files to Git along with your code.
+
+**Let Claude keep a diary.**\
+Exported conversations are complete but long.
+For a concise overview, you can let Claude keep a diary of key findings and decisions,
+with an instruction in `CLAUDE.md` like this one:
+
+```{.markdown .file filename="CLAUDE.md"}
+## AI diary
+
+- After completing a task, add an entry at the bottom of `claude-diary.md`
+  with the date, what I asked for, which files you created or changed,
+  and any key findings and decisions (including alternatives that were rejected)
+- Keep entries short
+```
+
+{{< fa user-edit >}} Add this to your `CLAUDE.md`, start a new conversation,
+and ask Claude to make a small change, for example:
+
+> Make scripts/count_reads.sh print a usage message when no arguments are given
+
+Then, open `claude-diary.md`. Is the entry accurate, and is it what you would want to
+remember about this change a few months from now?
+
+::: {.callout-warning appearance="simple"}
+Like any `CLAUDE.md` instruction, Claude will usually but not always follow this one.
+And the diary is Claude's own summary of what happened:
+read it, correct it where needed, and commit it to Git along with your code.
+:::
+
 ## Managing context and cost
 
 ### Agents fill up the context window quickly
@@ -784,6 +841,40 @@ a personal subscription is worth considering for this reason ---
 though it will then be _you_ who's paying.
 :::
 
+::: {.callout-note collapse="true"}
+#### Using a personal account in a research project _(Click to expand)_
+
+Personal accounts are not approved for institutional data,
+which includes your unpublished research data.
+But much of what an AI agent helps you with only involves your **code**.
+So you _may_ be able to use a personal account in a research project,
+as long as you make sure that the AI can't see your data:
+
+- **Store your data outside the workspace.**
+  Claude reads files in your workspace without asking,
+  but asks for permission before accessing anything outside of it.
+  For example, open only your `scripts` dir as the workspace,
+  while your data is in a separate dir, and decline any request to access that dir.
+
+- **Make Claude ignore files** with a deny rule
+  (see [permission rules](../bonus/claude-code.qmd#permission-rules)),
+  such as `"Read(//fs/ess/PAS1234/data/**)"`.
+  This blocks Claude's own file reads as well as common commands like `cat` and `head`,
+  but _not_, for example, a script that opens the files by itself.
+
+- **GitHub Copilot** can only be made to ignore files ("content exclusion")
+  with an organization's Business or Enterprise plan,
+  and even then not in agent mode.
+  So with a personal account,
+  storing your data outside the workspace is your main option.
+
+Keep in mind that anything that ends up in the conversation is sent to the AI,
+including the output of commands it runs (e.g. a script that prints part of your data)
+and anything you paste into a prompt.
+None of the above is watertight, so it's still up to you to keep an eye on what the AI accesses.
+And when in doubt, check with your advisor, or use an OSU-approved tool.
+:::
+
 ## Good habits when working with an agent
 
 - **Results should come from code you can rerun.** Let Claude help you write code that you
@@ -801,8 +892,9 @@ though it will then be _you_ who's paying.
 
 - **Commit before, review after.** Use Git so that you can see and undo what Claude changed.
 
-- **Keep a record.** Commit the code that Claude helped write, and note in your README
-  how you used AI. You can't count on getting the same answer if you ask again later.
+- **Keep a record.** Commit the code that Claude helped write,
+  and [document how you used AI](#documenting-ai-use), for example with exported conversations
+  and a diary. You can't count on getting the same answer if you ask again later.
 
 - **Keep secrets out of prompts.** Never paste passwords or API keys into a prompt.
 
