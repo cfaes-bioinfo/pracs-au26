@@ -1,6 +1,6 @@
 ---
 title: "Coding with an AI agent in VS Code"
-subtitle: "Week 8 - lecture B"
+subtitle: "Week 8 -- Lecture B"
 pagetitle: "w8b: Claude in VS Code"
 date: 2026-10-14
 date-modified: last-modified
@@ -33,14 +33,7 @@ language:
 
 ----------------------------------------------------------------------------------------------------
 
-<br>
-
-<!----
-Things to verify before class are marked TODO (incl. screenshots to retake in Code Server).
-
-TODO: Per-student OSU LiteLLM keys (with a budget cap). Put a key-less template
-at /fs/ess/PAS3493/share/claude-settings.json, with current model names.
----->
+<hr style="height:1pt; visibility:hidden;" />
 
 ## Introduction
 
@@ -52,13 +45,13 @@ In this lecture, you will learn how to:
 - Use Claude to ask questions about, write, and edit code, with your files as context
 - Let Claude act as an "agent" that runs commands,
   and control what it may do with permission modes
-- Give Claude standing instructions with a `CLAUDE.md` file
+- Give Claude persistent instructions (ones that carry over between conversations) with a `CLAUDE.md` file
 - Manage Claude's context window and costs
 
 ### From chat to agents
 
 In [the previous lecture](./w8a_genAI.qmd), you used genAI through a browser-based chat.
-That works well for many questions, but for coding, it has clear limitations:
+That works well for many questions, but when coding, it has clear limitations:
 the model can't see your files unless you paste or upload them,
 and it can't check whether the code it writes actually works.
 
@@ -68,44 +61,39 @@ Working inside your editor, it can:
 - **Read** the files in your project, so you don't have to explain or paste them
 - **Edit and create** files, showing you each change for approval
 - **Run commands** in the terminal, for example to test a script or check a program's
-  help info --- also with your approval
+  help info
 
 In other words, if browser chat is like emailing a knowledgeable colleague,
 working with an agent is more like having them sit next to you at your computer.
 
-::: {.callout-note appearance="simple"}
-Claude Code comes in several forms, including a command-line program
-and a desktop app. We'll use its **VS Code extension**.
-:::
-
 ### Why Claude in VS Code Server?
 
-There are many AI coding tools, but this setup has a few advantages for us:
+There are many AI coding tools, but this setup has two key advantages for us:
 
 - **It's approved for your research data.**
-  We'll use Claude through an API key from OSU's
-  [Generative AI Service](https://it.osu.edu/generative-ai-service),
-  which is approved for use with restricted institutional data (levels S2--S4).
-  (As discussed in w8a, this would _not_ be the case with a personal account.)
-- **It runs on a compute node.**
-  Because VS Code Server runs inside a compute job,
-  any commands that Claude runs also happen on a compute node, not a login node.
-- **No extra setup on your own computer.**
+  Rather than using a personal account, we'll authenticate through an API key from OSU's
+  [Generative AI Service {{< fa external-link >}}](https://it.osu.edu/generative-ai-service),
+  which is approved for use with restricted institutional data.
+
+- **Integration within our current VS Code setup.**\
+  We'll only have to install one extension.
+
+<hr style="height:1pt; visibility:hidden;" />
 
 ::: {.callout-note}
-#### What Claude doesn't do: inline suggestions
+#### Inline suggestions, Claude Code, and GitHub Copilot
 
-Some AI coding tools, like GitHub Copilot, also offer **inline suggestions**:
+Another kind of AI coding help in IDEs is **inline suggestions**:
 "ghost text" that appears as you type and that you can accept with <kbd>Tab</kbd>.
-
-![](../img/copilot-hover-suggestions.png){fig-align="center" width="80%" fig-alt="A screenshot of a GitHub Copilot inline suggestion in the VS Code editor, with a bar showing Accept (Tab) and Accept Word options." .lightbox}
-
-Claude Code doesn't offer these.
-For learning, that's arguably a good thing: inline suggestions are easy to accept
-without reading them, whereas Claude's proposed changes are something you
-review deliberately.
+Claude Code does not offer these, but some other tools do, for example GitHub Copilot.
+**GitHub Copilot** is integrated with VS Code,
+but only available in a local VS Code installation, not in VS Code Server at OSC.
 If you want to try inline suggestions, see the
 [self-study page on GitHub Copilot](../bonus/copilot.qmd).
+
+Claude Code itself also comes in **several forms**,
+including a command-line program and a desktop app.
+We'll use its **[VS Code extension](https://code.claude.com/docs/en/vs-code)**.
 :::
 
 ## Getting set up
@@ -118,27 +106,25 @@ If you want to try inline suggestions, see the
 
    ```bash
    mkdir -p week08/scripts
-   cp week07/scripts/*.sh week08/scripts/
+   cp -v week07/scripts/*.sh week08/scripts/
+   ```
+   ```bash-out
+   'week07/scripts/fastqc.sh' -> 'week08/scripts/fastqc.sh'
+   'week07/scripts/hello.sh' -> 'week08/scripts/hello.sh'
+   'week07/scripts/info.sh' -> 'week08/scripts/info.sh'
+   'week07/scripts/printname.sh' -> 'week08/scripts/printname.sh'
+   'week07/scripts/trim_mock.sh' -> 'week08/scripts/trim_mock.sh'
    ```
 
 3. **Open the `week08` dir as your VS Code folder**:
    click `File` > `Open Folder`, and select or type `/fs/ess/PAS3493/people/<user>/week08`.
    VS Code will reload.
 
-   ::: {.callout-important appearance="simple"}
+   ::: {.callout-warning appearance="simple"}
    Claude treats the folder that is open in VS Code as its "workspace":
-   this is where it will look for files, and by default the only place where it can make changes.
+   this is where it will look for files,
+   and by default the only place where it can make changes.
    :::
-
-4. Turn this dir into a Git repository and commit the scripts:
-
-   ```bash
-   git init
-   git add scripts
-   git commit -m "Add scripts from week 7"
-   ```
-
-   You'll see later why it's a good idea to use Git when working with an AI agent.
 
 ### Install the Claude Code extension
 
@@ -154,13 +140,14 @@ If you want to try inline suggestions, see the
 
 ### Connect Claude to your API key
 
-<!---- TODO: how and when students receive their key; budget per key ---->
+You've received a **personal API key** from us,
+giving you access to Claude models through OSU's Generative AI Service.
 
-You should have received a personal API key from Jelmer,
-which gives you access to Claude models through OSU's Generative AI Service.
-
-Claude Code reads its settings, including which API key to use, from a file
-`~/.claude/settings.json` in your Home dir. To set this up:
+To tell Claude to use your key,
+you need to create a **settings file** in your Home dir.
+Claude expects this file to be a JSON file at `~/.claude/settings.json`,
+and will read that file every time it starts up.
+Let's set this up:
 
 1. Copy a template settings file to that location:
 
@@ -172,15 +159,11 @@ Claude Code reads its settings, including which API key to use, from a file
 2. Open the file in the editor: click `File` > `Open File`,
    and type `~/.claude/settings.json`.
 
-3. Replace `<API-KEY>` with your personal API key (keep the quotes around it),
-   and save the file.
+3. Replace `<API-KEY>` with your personal API key (keep the quotes around it!).
 
-::: {.callout-note collapse="true"}
-#### What's in the settings file? _(Click to expand)_
+Here is what the file looks like before you add your own key:
 
-The file is in JSON format:
-
-```json
+```{.json .file filename="&#126;/.claude/settings.json"}
 {
   "env": {
     "ANTHROPIC_BASE_URL": "https://litellm.cloud.osu.edu",
@@ -193,18 +176,22 @@ The file is in JSON format:
 }
 ```
 
+The file is in JSON format, a plain-text format with key-value pairs:
+a colon `:` separates each key from its value, pairs are separated by commas,
+and curly braces `{}` group pairs (here, all settings under `env`).
+A single missing quote or comma breaks the whole file ---
+a likely culprit if Claude doesn't pick up your API key.
+
 - `ANTHROPIC_BASE_URL` makes Claude go through OSU's service rather than
   directly to Anthropic.
 - `ANTHROPIC_AUTH_TOKEN` is the API key.
 - The `MODEL` lines specify which model versions to use.
-:::
 
 ::: callout-warning
 #### Treat the API key like a password
-Anyone with your key can use it, and usage costs money and counts toward your
-key's budget.
-So never share your key, paste it into a prompt, or commit it to a Git repository.
-That's one reason the settings file lives in your Home dir,
+Anyone with your key can use it, and usage costs money and depletes your key's budget.
+So never share your key or commit it to a Git repository.
+That's one reason the settings file is located in your Home dir,
 and not in a project dir that others can see.
 :::
 
@@ -215,7 +202,6 @@ and not in a project dir that others can see.
    _Alternatively, click the Claude icon in the top right of the editor pane,_
    _which opens Claude as a tab in the editor._
 
-   <!---- TODO: retake in Code Server ---->
    ![](../img/vscode-claude-in-sidebar.png){fig-align="center" width="60%" fig-alt="A screenshot of the VS Code side bar with a CLAUDE CODE tab." .lightbox}
 
 2. You may briefly see login options.
@@ -223,12 +209,7 @@ and not in a project dir that others can see.
    once Claude has read your settings file,
    the panel will switch to a prompt box like this:
 
-   <!---- TODO: retake in Code Server ---->
    ![](../img/claude-first-window.png){fig-align="center" width="55%" fig-alt="A screenshot of the Claude Code panel ready for a first prompt." .lightbox}
-
-   ::: {.callout-important appearance="simple"}
-   If the login options don't disappear after a minute, let us know.
-   :::
 
 ### The prompt box
 
@@ -236,10 +217,26 @@ Most of what you'll do with Claude starts from the prompt box:
 
 ![](../img/claude-prompt-box.png){fig-align="center" width="65%" fig-alt="A screenshot of the Claude Code prompt box." .lightbox}
 
-- **`+`** adds files or other context to your prompt (more on this later).
-- **`/`** opens the **command menu**, with options such as switching models.
+You can type a prompt in the box, and press <kbd>Enter</kbd> to send it to Claude.
+There are some buttons across the bottom ---
+we'll go over them as we use them, but briefly:
+
+- **`+`** adds files or other context to your prompt.
+- **`/`** opens the **command menu**, with options such as switching models
+  (see the [list of commands](https://code.claude.com/docs/en/commands)).
 - **`Manual`** is the current **permission mode**:
-  how much Claude may do without asking you first (more on this later).
+  how much Claude may do without asking you first.
+
+### A quick test
+
+To check that Claude works, type this prompt and press <kbd>Enter</kbd>:
+
+> Write a limerick about a grad student whose shell script keeps failing
+
+If you get a limerick back, Claude is set up correctly.
+If you get an error instead, or it keeps printing verbs like "Brewing"
+and "Deliberating" (Claude's variant on a spinning wheel) but nothing else,
+let us know, and we'll help you troubleshoot.
 
 ### Choose a model and effort level
 
@@ -255,15 +252,10 @@ Open the command menu with `/`, and look at these options:
 - **Effort**: how much the model "thinks" before responding (Low to Max).
   More effort can give better answers to hard problems, but is slower and uses more tokens.
 
-<!---- TODO: retake: shows outdated model names ---->
 ![](../img/claude-model-sel.png){fig-align="center" width="55%" fig-alt="A screenshot of the Claude Code model selection menu." .lightbox}
 
-{{< fa user-edit >}} **Switch to Sonnet with Medium effort** --- this will be our default today.
-
-::: {.callout-tip appearance="simple"}
-A common strategy is to use a stronger model to _plan_ a bigger task,
-and a cheaper one to _carry out_ the plan.
-:::
+{{< fa user-edit >}} **Switch to Sonnet with Medium effort**,
+which will be our default today.
 
 ## A first prompt: writing a script
 
@@ -279,56 +271,69 @@ For example, it may first look at what's in your workspace.
 When it has written the script, it will **ask for permission** to create the file,
 and show you the proposed contents:
 
-<!---- TODO: screenshot(s) of the permission request and the proposed file ---->
+ADD SCREENSHOT
 
 You can accept the change, decline it, or decline it _and_ tell Claude
 what to do differently.
 Read through the script, and if it looks reasonable, accept it.
 
-::: {.callout-note appearance="simple"}
-#### Why does Claude ask for permission?
-By default, Claude asks you before it changes any file or runs any command.
-We'll look at these "permission modes" in more detail [below](#permission-modes).
-:::
-
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa comments >}} Discuss the results
+#### {{< fa user-edit >}} Breakout room exercise
 
-- Does the script look reasonable? Do you understand every line?
-- Did you get the same script as your neighbor? If not, do the differences matter?
-- How does the script compare to the scripts we wrote in week 7?
-  For example, does it use strict Bash settings, and does it report what it's doing?
-:::
+1. Discuss the script Claude wrote:
+   - Does the script look reasonable? Do you understand every line?
+   - Did you all get the same script? If not, do the differences matter?
+   - How does the script compare to the scripts we wrote in week 7?
+     For example, does it use strict Bash settings, and does it report what it's doing?
+   - How does it compare to the script Gemini wrote for the same task in the previous lecture?
 
-### Run and check the script
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: Run and verify the script
-
-1. Run the script on one of the FASTQ files, for example:
+2. Run the script on one of the FASTQ files, for example:
 
    ```bash
    bash scripts/count_reads.sh ../garrigos/fastq/S63_R1.fastq.gz
    ```
 
-2. Is the number it reports correct?
-   Check this **independently**, with a command that you understand and trust
-   (_Hint:_ every read in a FASTQ file takes up four lines.)
+3. Is the number it reports correct?
+   Check this independently, with a command that you understand.
 
-3. Did Claude itself test the script before telling you it was done?
+4. Did Claude itself test the script before telling you it was done?
+
+5. Ask Claude to change the script:
+
+   > Change the output so it prints the file name and the number of reads, separated by a tab
+
+   This time, Claude will show the proposed change as a **diff**:
+   removed lines are marked in red, and added lines in green ---
+   just like with `git diff` in [week 5](../week05/w5b_git.qmd).
+   Accept the change.
+
+   <!---- TODO: screenshot of an edit diff ---->
+
+6. Ask Claude to make one more change:
+
+   > Make the script accept multiple FASTQ files, and print one line per file
+
+   Look at how Claude made the script accept multiple files.
+   Do you recognize the construct it used from week 7?
+
+7. Run the script on all R1 files at once:
+
+   ```bash
+   bash scripts/count_reads.sh ../garrigos/fastq/*_R1.fastq.gz
+   ```
 
 <!----
 <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
 
-2. You can count the number of lines and divide that by 4:
+3. You can count the number of lines and divide that by 4:
 
    ```bash
    echo $(( $(zcat ../garrigos/fastq/S63_R1.fastq.gz | wc -l) / 4 ))
    ```
 
-3. Probably not: unless you ask it to, or it is in a mode where it can run commands
+4. Probably not: unless you ask it to, or it is in a mode where it can run commands
    without asking, Claude often doesn't test its code.
    Its claim that a script "works" can therefore just be a prediction.
 
@@ -336,57 +341,21 @@ We'll look at these "permission modes" in more detail [below](#permission-modes)
 ---->
 :::
 
-::: callout-important
+::: callout-warning
 #### You are responsible for verifying the output
 Even when a script runs without errors, it may not do what you need.
-Checking results against an independent method, like you just did,
-is a habit worth building.
+You should always check the code and the output carefully.
 :::
 
-### Edit the script
-
-Next, ask Claude to change the script:
-
-> Change the output so it prints the file name and the number of reads, separated by a tab
-
-This time, Claude will show the proposed change as a **diff**:
-removed lines are marked in red, and added lines in green ---
-just like with `git diff` in [week 5](../week05/w5b_git.qmd).
-
-<!---- TODO: screenshot of an edit diff ---->
-
-Accept the change, and then make one more:
-
-> Make the script accept multiple FASTQ files, and print one line per file
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: Check and commit the edits
-
-1. Look at how Claude made the script accept multiple files.
-   Do you recognize the construct it used from week 7?
-2. Run the script on all R1 files at once:
-
-   ```bash
-   bash scripts/count_reads.sh ../garrigos/fastq/*_R1.fastq.gz
-   ```
-
-3. In the terminal, look at the changes compared to your last commit with
-   `git diff`, and then commit the new script:
-
-   ```bash
-   git add scripts/count_reads.sh
-   git commit -m "Add a script to count reads"
-   ```
-:::
-
-::: {.callout-tip appearance="simple"}
+::: {.callout-tip}
 #### These prompts are deliberately simple
-They let us focus on how the tool works. In practice, you'd give more context and
-detail, as discussed in [the previous lecture](./w8a_genAI.qmd) ---
+They let us focus on understanding how the tool works.
+In practice, it's often worth giving more context and detail,
+as discussed in [the previous lecture](./w8a_genAI.qmd) ---
 and a single prompt can ask for all of the above at once.
 :::
 
-## Asking questions with your files as context
+## Your files as context
 
 ### Your workspace is the context
 
@@ -395,12 +364,12 @@ you don't need to upload or copy-and-paste them.
 Your entire **workspace** (the folder open in VS Code) is "implicit" context:
 when Claude thinks it's useful, it will search and read files there by itself.
 
-However, it's often better to point Claude to the relevant files **explicitly**.
-That's faster and cheaper, and avoids Claude making assumptions about which files you mean.
+However, when you have a specific task and specific files in mind,
+it's often better to point Claude to the relevant files **explicitly**.
+That's faster and cheaper,
+and avoids Claude making assumptions about which files you mean.
 
 ### Adding files and code to your prompt
-
-<!---- TODO: retake the screenshots below in Code Server, with course files ---->
 
 - **The file that's active in the editor** is added automatically.
   You can see this below the prompt box, and if you don't want to include it,
@@ -443,14 +412,15 @@ This also lets you upload files from your own computer.
 
    > What does this line do, and why do we need apptainer here?
 
-3. Now, run the script but **forget the output dir argument**:
+3. Now, you'll run the script but **forget the output dir argument**.
+   Before you run it, **predict** what will happen. Then run it:
 
    ```bash
    bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz
    ```
 
    Copy the error message into the prompt box (with the script still open), and ask
-   Claude what went wrong. Does its explanation make sense?
+   Claude what went wrong. Does its explanation match your prediction?
    Did it also offer to change the script --- and do you want it to?
 
 4. Close all files in the editor, and ask:
@@ -490,9 +460,10 @@ Click on it to switch between modes:
   Markdown document that you can review and modify before Claude carries it out.
   This is useful for bigger tasks.
 
-::: {.callout-tip appearance="simple"}
-**For now, stick to Manual mode**. It's slower, but you'll see exactly what Claude does.
-Once you're comfortable reviewing Claude's work, and you're using Git (see below),
+::: {.callout-tip}
+#### For now, stick to Manual mode
+It's slower, but you'll see exactly what Claude does.
+Once you're comfortable reviewing Claude's work, and you're committing your work with Git (see below),
 "Edit automatically" can save a lot of clicking.
 :::
 
@@ -506,6 +477,12 @@ Try this:
 Before running anything, Claude will show you the exact command and ask for permission.
 Because the FASTQ files are outside your workspace,
 it may also ask for permission to access that dir.
+
+::: {.callout-warning appearance="simple"}
+We let Claude report an answer directly here, to see how it runs commands.
+For your research, this is **not good practice**: instead, have Claude write the code
+(e.g., a loop that saves the read counts to a file), so that you can check, rerun, and keep it.
+:::
 
 <!---- TODO: screenshot of a command permission request ---->
 
@@ -523,34 +500,29 @@ for example to look up a program's documentation.
 #### Read every command before you approve it
 Be especially careful with commands that:
 
-- **Delete, move, or overwrite** files (`rm`, `mv`, `>` redirection, `cp` onto existing files)
-- Change things **outside your workspace**
-- **Push** to GitHub, or submit many jobs at once
+- Delete, move, or overwrite files (`rm`, `mv`, `>` redirection, `cp` onto existing files)
+- Change things outside your workspace
+- Push to GitHub, or submit many jobs at once
 
-And be careful with "don't ask again" for such commands.
 :::
 
 ### An agent can check its own claims
 
-In the previous lecture, we saw how genAI can make up command-line options.
+In the previous lecture, we saw how Copilot made up a TrimGalore option.
 An agent that can run commands can instead **check** a program's actual help info.
-Try:
+Try the same question:
 
-> Using the container in scripts/fastqc.sh, check the FastQC help info, and
-> tell me which options control the number of threads and the output format
+> How can I tell TrimGalore that my reads use Illumina two-color chemistry?
+> Check the help info using this container:
+> oras://community.wave.seqera.io/library/trim-galore:0.6.10--bc38c9238980c80e
 
 Did Claude run the help command, or did it answer based on its training data?
 When an answer is based on the actual help output, you can check it easily.
 
-::: {.callout-note appearance="simple"}
-In [next week's Graded Assignment](../GA/GA4.qmd) (Part D), you'll compare a genAI answer
-about another program's options with what you found in its help info yourself.
-:::
-
 ### Stopping, steering, and rewinding
 
 Sometimes you notice that Claude misunderstood you, or is going down the wrong path.
-You don't have to wait for it to finish:
+In those cases, you don't have to wait for it to finish:
 
 - **Steer it**: type a new message while Claude is working,
   and it will take that into account before continuing.
@@ -563,6 +535,9 @@ You don't have to wait for it to finish:
 - **Rewind**: press <kbd>Esc</kbd> twice in quick succession
   (or use the command menu) to go back to an earlier point in the conversation.
   This also **undoes the file changes** Claude made after that point.
+  But only changes made with Claude's own file edits:
+  changes made by **commands** it ran (e.g., `rm`, `mv`, or a script that writes output files)
+  are _not_ undone --- one more reason to use Git (see below).
 
   ![](../img/claude-interrupt2.png){fig-align="center" width="60%" fig-alt="A screenshot of the Claude Code rewind menu, listing earlier messages to go back to." .lightbox}
 
@@ -575,12 +550,12 @@ You don't have to wait for it to finish:
 
 2. While it's working, or once it has made the edit, press <kbd>Esc</kbd> <kbd>Esc</kbd>
    and rewind to before this prompt.
-3. Check with `git diff` (or by looking at the file) that the comments are gone.
+3. Check (by looking at the file) that the comments are gone.
 :::
 
-## Standing instructions with `CLAUDE.md`
+## Persistent instructions with `CLAUDE.md`
 
-### Why standing instructions?
+### Why persistent instructions?
 
 Each new conversation with Claude starts with an empty context window:
 it doesn't see what you discussed in earlier conversations.
@@ -594,13 +569,12 @@ Rather than repeating yourself, you can put such instructions in a file called `
 
 ### What is `CLAUDE.md`?
 
-`CLAUDE.md` is a Markdown file that Claude **automatically reads at the start of every conversation**
-in your project.
-Think of it as a briefing for a new team member who joins your project.
-There is no required format, but it should be concise and easy to read
---- for you as well as for Claude.
-(Many other AI coding tools read a similar file called `AGENTS.md`,
-and Claude reads that file too.)
+`CLAUDE.md` is a Markdown file that Claude
+**automatically reads at the start of every conversation** in your project.
+There is no required format, but it should be concise and easy to read,
+for you as well as for Claude.
+(Many other AI coding tools use a similar file called `AGENTS.md`.
+Claude reads that file too, but by default only if there is no `CLAUDE.md`.)
 
 Typically, it's placed in the **root dir of a project**, like our `week08` dir:
 
@@ -612,15 +586,18 @@ week08
     └── fastqc.sh
 ```
 
-::: {.callout-note collapse="true"}
-#### Other locations _(Click to expand)_
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-note}
+#### Other locations for `CLAUDE.md` files
 You can also put a `CLAUDE.md` in a parent dir, to apply to several related projects,
 or at `~/.claude/CLAUDE.md`, to apply to all your projects.
+See the [documentation on `CLAUDE.md`](https://code.claude.com/docs/en/memory) for details.
 :::
 
-### What to include
+### What to include in `CLAUDE.md`
 
-Some useful things to include:
+Some useful things to include in a `CLAUDE.md` are:
 
 - **Project overview**: the research question, organism, data type, and experimental design
 - **Key dirs and files**: where the raw data, scripts, and results are
@@ -641,73 +618,86 @@ Claude looks through your project and drafts a `CLAUDE.md` for you to review and
    Once Claude is done, open the `CLAUDE.md` file it created.
    What did it get right? Is anything wrong or missing?
 
-2. Add the following to the file (and remove anything that contradicts it):
+2. To see that Claude really reads this file, add the following line at the end of
+   `CLAUDE.md`, and save the file:
+
+   ```{.markdown .file filename="CLAUDE.md"}
+   - Always answer in the style of a pirate
+   ```
+
+   Then, start a **new conversation** (the chat icon with a `+` at the top of the Claude panel),
+   and ask _"What does `set -u` do in a shell script?"_,
+   followed by _"Why are you talking like that?"_.
+   Afterwards, remove the pirate line from `CLAUDE.md`.
+
+3. Add the following to the file (and remove anything that contradicts it):
 
    ```{.markdown .file filename="CLAUDE.md"}
    ## Data
+
    - The raw FASTQ files are in `../garrigos/fastq`: never modify or delete them
 
    ## Shell script conventions
+
    - Start scripts with `#!/bin/bash` and `set -euo pipefail`
-   - Copy arguments to descriptively named, lowercase variables (e.g. `fastq="$1"`);
+
+   - Copy arguments to descriptively named, lowercase variables (e.g. `fastq="$1"`,
+     though `R1`/`R2` for paired FASTQ files are fine);
      use uppercase only for constants (e.g. `CONTAINER=...`)
+
    - Run programs with Apptainer containers from Seqera Containers (`oras://` URLs)
+
    - At the start, report the script name, the date, and the inputs;
      at the end, report the program version, a success message, and the date
+
    - Create output dirs with `mkdir -p` before writing to them
+
    - Don't use multi-threading options unless asked
    ```
 
-3. Commit the file:
-
-   ```bash
-   git add CLAUDE.md
-   git commit -m "Add CLAUDE.md"
-   ```
-
-4. Start a **new conversation** (the chat icon with a `+` at the top of the Claude panel),
-   so that Claude reads the new `CLAUDE.md`, and ask:
+4. Start another new conversation, so that Claude reads the updated `CLAUDE.md`, and ask:
 
    > Rewrite scripts/count_reads.sh
 
-5. Check the result against each of the conventions:
-   did Claude follow all of them? Test the script and commit it if it works.
+5. Check the result against each of the conventions. Which did Claude follow?
+   Do all of them make sense for this particular script --- and if not, how did Claude handle that?
+   Test whether the script works.
 :::
 
-::: callout-tip
-#### Treat `CLAUDE.md` as living documentation
-Start simple, and add to it whenever you notice yourself telling Claude the same thing
-again --- or Claude making the same mistake again.
-Keep it short, though: it's read at the start of every conversation,
-so it uses up tokens each time.
-:::
+::: {.callout-note collapse="true"}
+#### More on using `CLAUDE.md` _(Click to expand)_
 
-::: {.callout-note}
-#### `CLAUDE.md` vs. Claude's memory
+**Keep updating your `CLAUDE.md`.**\
+Start simple, and add to it whenever you notice yourself telling Claude the
+same thing again, or Claude making the same mistake again.
+Be mindful of its length, though:
+it's read at the start of every conversation, so it uses up tokens each time.
 
-Besides reading your `CLAUDE.md`, Claude also keeps **memory** notes for itself:
-when you correct it or tell it about your preferences, it may save a note,
-which is loaded into future conversations in the same project.
-You can also ask it directly, e.g. _"Remember that I prefer ..."_.
+-----
 
-- **You** write `CLAUDE.md`: your instructions and rules for the project.
-- **Claude** writes its memory: things it has learned while working with you.
-
-This is another big advantage of AI in your editor.
-Browser-based chatbots may remember general things about you,
-but here, both kinds of memory are **specific to each project** and live alongside your files.
-So Claude can pick up where you left off, without you having to explain your project again.
-
-Type `/memory` to see and edit both.
-It's worth checking Claude's memory notes now and then, since they can be wrong or outdated.
-More details are on the [self-study page](../bonus/claude-code.qmd#memory).
-:::
-
-::: {.callout-note appearance="simple"}
+**Instructions are not strict rules.**\
 `CLAUDE.md` contains **instructions**, which Claude will usually but not always follow.
 To strictly enforce rules, use [permission rules](../bonus/claude-code.qmd#permission-rules).
 For instructions that you only need for _specific_ tasks,
 see the self-study page on [skills](../bonus/claude-code.qmd#skills).
+
+-----
+
+**`CLAUDE.md` vs. Claude's memory.**\
+Besides reading your `CLAUDE.md`, Claude also keeps **memory** notes for itself:
+when you correct it or tell it about your preferences, it _may_ save a note,
+which is loaded into future conversations in the same project.
+You can also ask it directly to save memories, e.g. _"Remember that I prefer ..."_.
+Memory notes are plain Markdown files as well, which you can view, edit, or delete ---
+but unlike `CLAUDE.md`, Claude writes them, and they're stored in your Home dir
+rather than in your project.
+
+More broadly, this is another big advantage of AI in your editor.
+While browser-based chatbots may remember general things about you,
+here you can save more extensive, specific information about your project and your preferences.
+
+You can check Claude's memory notes by typing `/memory` in the prompt box.
+More details are on the [self-study page](../bonus/claude-code.qmd#memory).
 :::
 
 ::: callout-tip
@@ -731,7 +721,6 @@ every file Claude reads and every command output it sees goes into the context t
 
 To see how full the context window is, type **`/context`** in the prompt box:
 
-<!---- TODO: retake ---->
 ![](../img/claude-context-viz.png){fig-align="center" width="60%" fig-alt="A screenshot of the output of the /context command, showing how much of the context window is used by different categories." .lightbox}
 
 ### Start fresh often
@@ -745,8 +734,7 @@ To see how full the context window is, type **`/context`** in the prompt box:
   (Claude's memory notes, discussed above, carry over some things as well).
 - Previous conversations are listed under the clock icon, in case you want to return to one.
 
-<!---- TODO: retake ---->
-![The Claude icon (left) opens a separate Claude tab; the clock icon shows previous conversations; the chat icon with a `+` starts a new one.](../img/claude-top-buttons.png){fig-align="center" width="60%" fig-alt="A screenshot of the buttons at the top of the Claude panel." .lightbox}
+![The clock icon shows previous conversations, and the chat icon with a `+` starts a new one.](../img/claude-top-buttons.png){fig-align="center" width="60%" fig-alt="A screenshot of the buttons at the top of the Claude panel." .lightbox}
 
 ::: {.callout-note collapse="true"}
 #### `/clear` and `/compact` _(Click to expand)_
@@ -759,19 +747,23 @@ To see how full the context window is, type **`/context`** in the prompt box:
 
 ### Cost
 
-<!---- TODO: per-key budget amount; can students see their own usage? ---->
-
 Every token costs money, and your API key has a limited budget. Some things to know:
 
 - **Output tokens** (Claude's responses, including its "thinking")
   cost several times more than **input tokens**.
-- **Bigger models and higher effort levels** use more tokens and cost more per token.
+- **Bigger models** cost more per token, and **higher effort levels** use more (thinking) tokens.
 - **Agentic tasks** can use many tokens, even when the visible conversation is short,
   because Claude reads files and command outputs behind the scenes.
 - **Large data files**: if Claude reads or prints an entire FASTQ or BAM file,
   that alone can use up much of your budget.
   It usually looks at just the first lines (e.g. with `head`), but keep an eye on this,
   and don't ask it to "read" large data files.
+
+Your API key has a budget of $XX for this course.
+To see an **estimate** of what the current conversation has cost so far, type `/usage`
+(this is computed from token counts at Anthropic's list prices):
+
+ADD SCREENSHOT
 
 ::: callout-tip
 #### You don't always need an agent
@@ -786,59 +778,36 @@ Use Claude when it helps that it can see your files and run commands.
 Paying per token through an API key, as we do here, is **much** more expensive than
 a personal subscription to a service like Claude, which has a fixed monthly fee.
 A day of heavy agentic coding through an API can easily cost more than a month's subscription.
-
-But a personal subscription is **not approved for institutional data**,
-so for research data, stick to OSU-approved routes like your API key.
-For personal projects without such data, a subscription may well be the better deal.
+If you want to try Claude for personal projects
+(and/or projects that don't involve institutional data),
+a personal subscription is worth considering for this reason ---
+though it will then be _you_ who's paying.
 :::
 
-## Recap and next steps
+## Good habits when working with an agent
 
-### Good habits when working with an agent
+- **Results should come from code you can rerun.** Let Claude help you write code that you
+  review, run, and keep --- don't rely on numbers or conclusions it only reports in the chat.
 
 - **You own the result.** Read every proposed edit and command before approving it.
+
 - **Verify, don't trust.** When Claude says something "works", that may be a prediction
   rather than a test result. Run the code yourself, and check results independently.
+
 - **Be explicit.** Point Claude to the relevant files, and put your conventions and rules
   in `CLAUDE.md`.
+
 - **Start fresh** for each new task, and keep conversations focused.
+
 - **Commit before, review after.** Use Git so that you can see and undo what Claude changed.
+
 - **Keep a record.** Commit the code that Claude helped write, and note in your README
   how you used AI. You can't count on getting the same answer if you ask again later.
+
 - **Keep secrets out of prompts.** Never paste passwords or API keys into a prompt.
+
 - **Remember that Claude can see what you can see.** In shared dirs like `/fs/ess/PAS3493`,
   that may include other people's files and data. Keep Claude's workspace limited to your own project.
+
 - **Don't let it do your learning for you.** When you're learning something new,
   try it yourself first, and use AI to review, explain, or extend your work afterwards.
-  That's also how this week's exercises are set up.
-
-### Next steps
-
-- In [this week's exercises](./w8_exercises.qmd), you'll first write a TrimGalore script
-  yourself, and only then ask Claude to review and extend it.
-- In [next week's Graded Assignment](../GA/GA4.qmd), you'll compare a genAI answer
-  with a program's help info.
-- For more on guardrails and other Claude Code features, see the
-  [self-study page on Claude Code](../bonus/claude-code.qmd).
-
-## Appendix
-
-### Optional self-study material
-
-- [Claude Code: guardrails, memory, skills, and more](../bonus/claude-code.qmd)
-- [GitHub Copilot in a local VS Code installation](../bonus/copilot.qmd),
-  including inline suggestions
-- Claude Code documentation:
-  [VS Code extension](https://code.claude.com/docs/en/vs-code),
-  [`CLAUDE.md` and memory](https://code.claude.com/docs/en/memory),
-  [permissions](https://code.claude.com/docs/en/permissions),
-  [skills](https://code.claude.com/docs/en/skills),
-  [commands](https://code.claude.com/docs/en/commands)
-- [Free Anthropic courses](https://anthropic.skilljar.com), such as "Claude Code 101" and
-  "AI Fluency for students"
-- Different models and their pros and cons (these change quickly!):
-  - [An Opinionated Guide to Using AI Right Now](https://www.oneusefulthing.org/p/an-opinionated-guide-to-using-ai)
-    by Ethan Mollick (Oct 2025)
-  - [Which AI model writes the best R code?](https://posit.co/blog/r-llm-evaluation-02/) (Aug 2025)
-
-<br>
