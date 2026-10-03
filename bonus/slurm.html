@@ -4232,8 +4232,12 @@ font-size: 2.5em;
     </a>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-other">    
         <li>
+    <a class="dropdown-item" href="../ref/resources.html">
+ <span class="dropdown-text">Further resources</span></a>
+  </li>  
+        <li>
     <a class="dropdown-item" href="../ref/refs.html">
- <span class="dropdown-text">Literature references</span></a>
+ <span class="dropdown-text">Literature reference list</span></a>
   </li>  
         <li><hr class="dropdown-divider"></li>
         <li class="dropdown-header">Optional self-study material:</li>
@@ -4241,7 +4245,7 @@ font-size: 2.5em;
     <a class="dropdown-item" href="../bonus/shell.html">
  <span class="dropdown-text">Unix shell (week 4)</span></a>
   </li>  
-        <li class="dropdown-header">Unix shell data tools (week 4)</li>
+        <li class="dropdown-header">Unix shell data tools (week 4) (TBA)</li>
         <li>
     <a class="dropdown-item" href="../bonus/git.html">
  <span class="dropdown-text">Version control (week 5)</span></a>
@@ -4259,8 +4263,8 @@ font-size: 2.5em;
  <span class="dropdown-text">Shell configuration (week 7)</span></a>
   </li>  
         <li class="dropdown-header">Local VS Code at OSC (week 8)</li>
-        <li class="dropdown-header">Claude Code: guardrails, memory, skills, and more (week 8)</li>
-        <li class="dropdown-header">GitHub Copilot in local VS Code (week 8)</li>
+        <li class="dropdown-header">Claude Code (week 8)</li>
+        <li class="dropdown-header">GitHub Copilot (week 8)</li>
         <li class="dropdown-header">VS Code tips and tricks (week 9)</li>
         <li class="dropdown-header">Slurm batch jobs (week 9)</li>
         <li class="dropdown-header">Project and data management (week 10)</li>
@@ -4369,7 +4373,7 @@ font-size: 2.5em;
     <div>
     <div class="quarto-title-meta-heading">Page last modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">October 1, 2026</p>
+      <p class="date-modified">October 3, 2026</p>
     </div>
   </div>
     
@@ -4382,6 +4386,10 @@ font-size: 2.5em;
 
 <hr>
 <p><br></p>
+<!-----
+https://www.osc.edu/resources/getting_started/osc_custom_commands/osc_seff
+https://www.youtube.com/watch?v=-Hq-Ep1vHn0
+------>
 <section id="introduction" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="introduction"><span class="header-section-number">1</span> Introduction</h2>
 <p>This page covers some additional Slurm topics that build on the w9a and w9b lectures: Slurm environment variables, interactive shell jobs, additional commands to monitor jobs, and job arrays.</p>
@@ -4450,7 +4458,7 @@ font-size: 2.5em;
 <p>However, we only have access to 1 core and 4 GB of memory in this VS Code shell, and there is no way of changing this. If you want an interactive shell job with more resources, you’ll have to start one with Slurm commands.</p>
 <p>A couple of different commands can be used to start an interactive shell job. I prefer the general <code>srun</code> command<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, which we can use with <code>--pty /bin/bash</code> added to get an interactive Bash shell.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">srun</span> <span class="at">--account</span><span class="op">=</span>PAS3493 <span class="at">--pty</span> /bin/bash</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>srun: job 12431932 queued and waiting for resources  
+<pre class="bash-out"><code>srun: job 12431932 queued and waiting for resources
 srun: job 12431932 has been allocated resources
 
 [...regular login info, such as quota, not shown...]
@@ -4483,9 +4491,9 @@ srun: job 12431932 has been allocated resources
 <p>For example, you may want to use an <code>sstat</code> call like the following <strong>at the end of your script</strong>:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sstat</span> <span class="at">-j</span> <span class="va">$SLURM_JOB_ID</span> <span class="at">--format</span><span class="op">=</span>jobid,avecpu,averss,maxrss,ntasks</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Which will give you output like the following printed in your Slurm log file:</p>
-<pre class="bash-out-solo"><code>       JobID     AveCPU     MaxRSS   NTasks 
------------- ---------- ---------- -------- 
-2979576.bat+  01:59.000    244368K        1 </code></pre>
+<pre class="bash-out-solo"><code>       JobID     AveCPU     MaxRSS   NTasks
+------------ ---------- ---------- --------
+2979576.bat+  01:59.000    244368K        1</code></pre>
 <p><code>MaxRSS</code> is the maximum amount of memory used by the job. It can be really good to know how much memory your job is using, so you can adjust future requests. Insufficient memory is also one of the most common causes of job failure.</p>
 </section>
 <section id="sacct-for-info-about-finished-jobs" class="level3" data-number="4.1">
@@ -4494,20 +4502,20 @@ srun: job 12431932 has been allocated resources
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sacct</span> <span class="at">-u</span> <span class="va">$USER</span> <span class="dt">\</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--format</span><span class="op">=</span>JobID,JobName,NodeList,Elapsed,State,ExitCode,MaxRSS,AllocTRES%32 <span class="kw">|</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">grep</span> <span class="at">-v</span> <span class="st">&quot;.extern&quot;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>               JobID    JobName        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES 
--------------------- ---------- --------------- ---------- ---------- -------- ---------- -------------------------------- 
-             2978362 fastqc_si+           p0224   00:01:51  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+ 
-       2978362.batch      batch           p0224   00:01:51  COMPLETED      0:0    200004K           cpu=1,mem=4556M,node=1 
-             2978487  fqtest.sh           p0224   00:01:54  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+ 
-       2978487.batch      batch           p0224   00:01:54  COMPLETED      0:0    203332K           cpu=1,mem=4556M,node=1 
+<pre class="bash-out"><code>               JobID    JobName        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES
+-------------------- ---------- --------------- ---------- ---------- -------- ---------- --------------------------------
+             2978362 fastqc_si+           p0224   00:01:51  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+
+       2978362.batch      batch           p0224   00:01:51  COMPLETED      0:0    200004K           cpu=1,mem=4556M,node=1
+             2978487  fqtest.sh           p0224   00:01:54  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+
+       2978487.batch      batch           p0224   00:01:54  COMPLETED      0:0    203332K           cpu=1,mem=4556M,node=1
              2978503  fqtest.sh           p0224   00:01:55  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+</code></pre>
 <p>To get information about a specific job, by means of example job <code>2978487</code>:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sacct</span> <span class="at">-j</span> 2978487 <span class="dt">\</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--format</span><span class="op">=</span>JobID,JobName,NodeList,Elapsed,State,ExitCode,MaxRSS,AllocTRES%32 <span class="kw">|</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">grep</span> <span class="at">-v</span> <span class="st">&quot;.extern&quot;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>         JobID    JobName        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES 
------------- ---------- --------------- ---------- ---------- -------- ---------- -------------------------------- 
-2978487       fqtest.sh           p0224   00:01:54  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+ 
+<pre class="bash-out"><code>         JobID    JobName        NodeList    Elapsed      State ExitCode     MaxRSS                        AllocTRES
+------------ ---------- --------------- ---------- ---------- -------- ---------- --------------------------------
+2978487       fqtest.sh           p0224   00:01:54  COMPLETED      0:0            billing=1,cpu=1,gres/gpfs:proje+
 2978487.bat+      batch           p0224   00:01:54  COMPLETED      0:0    203332K           cpu=1,mem=4556M,node=1</code></pre>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
@@ -4574,7 +4582,7 @@ srun: job 12431932 has been allocated resources
 <span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="ex">module</span> load fastqc/0.12.1</span>
 <span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_files_list</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="va">output_dir</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$2</span><span class="st">&quot;</span> </span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="va">output_dir</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$2</span><span class="st">&quot;</span></span>
 <span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_file</span><span class="op">=</span><span class="va">$(</span><span class="fu">sed</span> <span class="at">-n</span> <span class="st">&quot;</span><span class="va">${SLURM_ARRAY_TASK_ID}</span><span class="st">p&quot;</span> <span class="va">$fastq_files_list)</span></span>
 <span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a></span>
