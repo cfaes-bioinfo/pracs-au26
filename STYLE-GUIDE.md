@@ -57,6 +57,22 @@ CSS in both `styles.css` and `slides.css` targets
 `#6f42c1`) and icon (Bootstrap `question-circle-fill`). This works in both
 website pages and reveal.js slides.
 
+**Slides only: single-fence `.quiz` variant.** In reveal.js slides, use the
+shorter form with a `.quiz` class directly on the callout. Because `quiz`
+doesn't start with `callout-`, Quarto's revealjs renderer keeps it and
+produces the same wrapper-div structure, so only one fence is needed:
+
+```markdown
+::: {.callout-note .quiz}
+## Question
+What do you think will happen if you run this command without `sudo`?
+:::
+```
+
+Other classes, such as `.fragment data-fragment-index="1"`, can go on the
+same fence. Only `slides.css` styles `.quiz`, so on website pages keep
+using the two-fence `.callout-quiz` form.
+
 For click-to-reveal behavior in reveal.js slides, `collapse` (an HTML-only
 Quarto callout feature) doesn't work; wrap the answer content in a
 `.fragment` div instead so it appears on a click:
