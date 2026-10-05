@@ -1,7 +1,7 @@
 ---
 title: "Shell scripting I -- variables and arguments"
 subtitle: "Week 7 -- Lecture A"
-pagetitle: "w7a: Shell scripting"
+pagetitle: "w7a: Shell scripting I"
 date: 2026-10-05
 date-modified: last-modified
 author:
@@ -34,11 +34,12 @@ language:
 
 -------
 
-<br>
+<hr style="height:1pt; visibility:hidden;" />
+<hr style="height:1pt; visibility:hidden;" />
 
 ## Introduction
 
-### Learning Goals
+### Learning goals
 
 This week, you will learn how to write shell scripts to run programs
 with command-line interfaces (CLIs), like various bioinformatics tools.
@@ -53,56 +54,25 @@ In this session, we will talk about:
 
 ### Getting ready
 
-#### The usual
-
 1. At <https://ondemand.osc.edu>, start a VS Code session in `/fs/ess/PAS3493/people/$USER`.
 2. Open a terminal and create and then navigate to a `week07` dir.
 3. **Within the `week07` dir, create a dir `scripts`** (but don't navigate there).
-4. _Optional: Create a new Markdown file for class notes and save it in your `week07` dir._
 
-::: {.columns}
-::: {.column}
+## Introduction to shell scripts
 
-#### Install the Shellcheck VS Code extension {#install-shellcheck}
+#### Running command-line programs
 
-Shellcheck is a really useful VS Code extension that checks your shell scripts for
-errors and bad practices. Install it:
+Last week, we saw a first example of **running a bioinformatics tool** (FastQC) from
+the command line.
+This was quite similar to how we ran basic shell commands in the
+previous weeks, both in terms of the _structure of the commands_
+(commands, options, and arguments), and how we ran them _interactively_ in the terminal.
 
-1. In the narrow side bar, click on the Extensions icon.
-2. In the wide side bar, search for **shellcheck** (by *timonwong*) and install it.
-
-
-:::
-::: {.column}
-
-<br>
-
-![](/img/shellcheck-install.png){fig-align="center" width="90%" fig-alt="A screenshot showing the Shellcheck extension in the VS Code extensions marketplace." .lightbox}
-
-:::
-:::
-
-<!----
-::: {.callout-tip}
-#### More VS Code tips and tricks
-For many more tips, like on useful keyboard shortcuts, settings, and extensions,
-see [this optional self-study page on VS Code](../bonus/vscode.qmd).
-:::
------>
-
-## Shell scripts
-
-Many bioinformatics programs to analyze omics data are run from the command line.
-In other words, they have a command-line interface (**CLI**).
-We can run them using commands that are structurally very **similar** to those of
-basic Unix shell commands ---
-you saw an example of this when we ran FastQC last week.
-
-However, we've been running shell commands in an "interactive" manner:
-typing or pasting them into the shell and then pressing <kbd>Enter</kbd>.
-But when you run bioinformatics tools,
-it is in most cases a much better idea to **run them via shell scripts**:
-plain-text files that contain shell code.
+And while many bioinformatics tools **are** run with similarly structured commands,
+it's best **not** to run them interactively in the terminal for real analyses.
+Instead, it's better to run them **via shell scripts**:
+plain-text files that contain shell code and can be executed as a single command,
+and be submitted as batch jobs that will run even if you log out of the system.
 
 #### Why use shell scripts
 
@@ -119,8 +89,10 @@ we can submit scripts as **"batch jobs"**, which allows us to:
 - Run analyses **many times simultaneously**, such as for different files/samples
 - Run analyses while being able to **disconnect** from the system.
   We can submit a script, log out from OSC and shut down our computer,
-  and it will still run
+  and it will still run.
 
+Most of these reasons don't apply (as much) to quick shell commands,
+but they are very important when running bioinformatics tools.
 We'll talk about batch jobs in two weeks,
 and will start learning about shell scripts today.
 
@@ -168,6 +140,7 @@ Hello world
 
 Running the script has the exact same effect as typing `echo "Hello world"`
 directly in the terminal.
+
 Let's make one more very basic script and run it:
 
 ```bash
@@ -192,14 +165,16 @@ when you run it, its commands are executed one by one, from top to bottom,
 just as if you had typed them in the terminal.
 (Also note that `pwd` printed `week07`, not `week07/scripts`:
 commands in a script run in **your** working dir,
-not in the dir where the script is stored --- we'll come back to this.)
+not in the dir where the script is stored.)
 
 In practice, you wouldn't bother writing a script for simple commands like these.
-Scripts pay off for commands that you want to save and rerun,
+Scripts **pay off** for commands that you want to save and rerun,
 and/or that take a long time to run, such as those that run bioinformatics tools.
 So let's move on to a more useful example.
 
 ## A script to run FastQC
+
+### The initial script
 
 In the previous lecture, you ran FastQC for a FASTQ file
 by executing the following commands directly in the terminal:
@@ -226,38 +201,16 @@ mkdir -p results/fastqc
 # Run FastQC with its container
 apptainer exec oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960 \
     fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
+
+
 ```
 
-Like your one-line scripts, this script simply contains shell commands ---
-two of them this time (the second one spread across two lines with `\`),
-plus some comments.
-Run it:
-
-```bash
-bash scripts/fastqc.sh
-```
-```{.bash-out}
-INFO:    Using cached SIF image
-INFO:    gocryptfs not found, will not be able to use gocryptfs
-Started analysis of S63_R1.fastq.gz
-Approx 5% complete for S63_R1.fastq.gz
-Approx 10% complete for S63_R1.fastq.gz
-Approx 15% complete for S63_R1.fastq.gz
-# [...output truncated...]
-Analysis complete for S63_R1.fastq.gz
-```
-
-Nice! A couple of notes about the commands in the script:
-
-- **The container is specified in the script**\
-  Because the `fastqc` command is run with `apptainer exec` and the container URI,
-  the script contains everything needed to make FastQC available.
-  As such, the script works without any setup in your terminal,
-  which will also be important when you run scripts as batch jobs later.
+Like your first two scripts, this script simply contains shell commands ---
+a couple of notes:
 
 - **The output dir is created with `mkdir -p`**\
   Recall that FastQC won't create the output dir for you.
-  Using `mkdir -p` inside the script ensures that the output dir exists,
+  Using `mkdir -p` **inside the script** ensures that the output dir exists,
   whether or not it existed before running the script
   --- see the box below for details.
 
@@ -304,31 +257,73 @@ Nice! A couple of notes about the commands in the script:
   :::
 
 - **The file paths are relative to your working dir, not to the script**\
-  Relative paths in a script, like `results/fastqc`,
+  As you saw with `info.sh`, relative paths in a script, like `results/fastqc`,
   are interpreted relative to your working dir at the time you run the script,
   not relative to where the script itself is stored.
+  This means that this script only works as intended if you run it from your `week07` dir:
+  from any other dir, `../garrigos/fastq/S63_R1.fastq.gz` would point to a non-existent file.
 
-Next, you'll learn about two header lines that are good practice to
+Let's run the script:
+
+```bash
+bash scripts/fastqc.sh
+```
+```{.bash-out}
+INFO:    Using cached SIF image
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+application/gzip
+Started analysis of S63_R1.fastq.gz
+Approx 5% complete for S63_R1.fastq.gz
+Approx 10% complete for S63_R1.fastq.gz
+Approx 15% complete for S63_R1.fastq.gz
+# [...output truncated...]
+Analysis complete for S63_R1.fastq.gz
+```
+
+Nice! Next, you'll learn about two header lines that are good practice to
 add to every shell script.
+But first, let's install a VS Code extension that will alert you to the first of these.
+
+::: {.columns}
+::: {.column width="52%"}
+
+### Install the Shellcheck extension {#install-shellcheck}
+
+Shellcheck is a really useful VS Code extension that checks your shell scripts for
+errors and bad practices. Let's install it:
+
+1. In the narrow side bar, click on the Extensions icon.
+2. In the wide side bar, search for **shellcheck** (by *timonwong*) and install it.
+
+:::
+::: {.column width="48%"}
+
+<br>
+
+![](/img/shellcheck-install.png){fig-align="center" width="95%" fig-alt="A screenshot showing the Shellcheck extension in the VS Code extensions marketplace." .lightbox}
+
+:::
+:::
 
 ### Shebang line
 
 If Shellcheck is working,
-you should see a red squiggly line on the first line of your script:
+you should now see a red squiggly line on the first line of your `fastqc.sh` script:
 
-![](/img/shellcheck-fastqc-shebang.png){fig-align="center" width="45%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
+![](/img/shellcheck-fastqc-shebang.png){fig-align="center" width="45%" .no-border fig-alt="A screenshot showing a shellcheck warning." .lightbox}
 
 Hover over it to see the warning:
 Shellcheck wants you to add a "shebang" line.
 (More generally, keep an eye out for these squiggly lines ---
 Shellcheck will also flag things like typos in variable names.)
 
-![](/img/shellcheck-fastqc-shebang2.png){fig-align="center" width="80%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
+![](/img/shellcheck-fastqc-shebang2.png){fig-align="center" width="80%" .no-border fig-alt="A screenshot showing a shellcheck warning." .lightbox}
 
 A so-called "_shebang_" line is used as the **very first line** of a script to
-indicate **which computer language** the script uses:
+indicate **which computer language** the script uses.
+Add it to the top of your `fastqc.sh` script:
 
-```sh
+```{.bash .file filename="scripts/fastqc.sh (excerpt)" code-line-numbers="true"}
 #!/bin/bash
 ```
 
@@ -350,16 +345,20 @@ Some default settings of the Bash shell are bad ideas inside scripts:
   the shell silently replaces it with nothing
   (you'll learn more about variables below).
 
-To make the script safer and error out when such things happen,
-add the following line near the top of your shell scripts:
+To make shell scripts safer and error out when such things happen,
+we can apply a few "safe" settings by adding a single line of code to the script.
 
-```bash
+Add this line to the top of your `fastqc.sh` script, right after the shebang line:
+
+```{.bash .file filename="scripts/fastqc.sh (excerpt)" code-line-numbers="true"}
+#!/bin/bash
 set -euo pipefail
 ```
 
-You'll see these settings in action later in this session.
+<hr style="height:1pt; visibility:hidden;" />
 
-::: {.callout-tip appearance="simple"}
+::: {.callout-tip}
+#### Why place the `set` command near the top of the script?
 The safe shell settings will apply to the lines of code in the script that
 **come after** the `set` command,
 which is why it's important to place the `set` command near the top of the script.
@@ -378,10 +377,9 @@ With these settings, **the script stops** with an error message if:
 
 :::
 
-### Adding the header lines to your script
+### Rerunning the script with the new header lines
 
-Add the two discussed header lines to your `fastqc.sh` script,
-so it will now contain the following:
+Your `fastqc.sh` script should now contain the following:
 
 ```{.bash .file filename="scripts/fastqc.sh"}
 #!/bin/bash
@@ -395,13 +393,16 @@ apptainer exec oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9
     fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
 ```
 
-And run the script again
+Run the script again
 (this will overwrite the output files from the previous run, which is fine):
 
 ```bash
 bash scripts/fastqc.sh
 ```
 ```{.bash-out}
+INFO:    Using cached SIF image
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+application/gzip
 Started analysis of S63_R1.fastq.gz
 Approx 5% complete for S63_R1.fastq.gz
 # [...output truncated...]
@@ -461,7 +462,7 @@ These file paths are "**hard-coded**" in the script:
 to run FastQC for the R2 file of the same sample, or for any other sample,
 you would have to create a new script or edit the script every time.
 
-Instead, it would be better to make the script **flexible** so that it can run
+It would be better to make the script **flexible** so that it can run
 FastQC for any FASTQ file, with output going to any output dir.
 We'll do this in two steps:
 
@@ -492,55 +493,67 @@ instead of having to change them in multiple places throughout your code.
 To **assign** a value to a variable in the shell, use the syntax `variable_name=value`:
 
 ```bash
-# Assign the value "inoculated" to a variable with the name "treatment":
-treatment=inoculated
+# Assign a FASTQ file path to a variable with the name "fastq":
+fastq=../garrigos/fastq/S63_R1.fastq.gz
 
-# Assign the value "200" to a variable with the name "nr_samples":
-nr_samples=200
+# Assign an output dir path to a variable with the name "outdir":
+outdir=results/fastqc
 ```
 
+A variable can contain any value:
+besides file paths, it could for example be any word
+(e.g., `treatment=inoculated`) or number (e.g., `nr_samples=200`).
+
 :::{.callout-warning appearance="simple"}
-No spaces are allowed around the equals sign: `treatment = inoculated` fails,
-because the shell would try to run a command called `treatment`.
+No spaces are allowed around the equals sign: `outdir = results/fastqc` fails,
+because the shell would try to run a command called `outdir`.
 :::
 
 To **reference** a variable (i.e., to access its value) by its name:
 
-- Always put a dollar sign `$` in front of it: `treatment` becomes `$treatment`.
-- To be safe, also double-quote it: `$treatment` becomes `"$treatment"`.
+- Always put a dollar sign `$` in front of it: `outdir` becomes `$outdir`.
+- To be safe, also double-quote it: `$outdir` becomes `"$outdir"`.
 
 As before with the environment variables `$USER` and `$HOME`,
 use `echo` to see what values your variables contain:
 
 ```bash
-echo "$treatment"
+echo "$fastq"
 ```
 ```{.bash-out}
-inoculated
+../garrigos/fastq/S63_R1.fastq.gz
 ```
 
 ```bash
-echo "$nr_samples"
+echo "$outdir"
 ```
 ```{.bash-out}
-200
+results/fastqc
 ```
 
-Conveniently, you can use variables in lots of contexts,
-_as if you had directly typed their values_:
+More usefully, you can use a variable anywhere you would otherwise type its value.
+For example:
 
 ```bash
-input_file=../garrigos/fastq/S63_R1.fastq.gz
+ls -lh "$fastq"
+```
+<pre class="bash-out"><code>-rw-rw----+ 1 jelmer PAS0471 21M Sep  9 13:46 <span class="ls-red">../garrigos/fastq/S63_R1.fastq.gz</span></code></pre>
 
-ls -lh "$input_file"
+```bash
+mkdir "$outdir"
 ```
-```{.bash-out}
--rw-rw----+ 1 jelmer PAS0471 21M Sep  9 13:46 ../garrigos/fastq/S63_R1.fastq.gz
+```bash-out
+mkdir: cannot create directory ‘results/fastqc’: File exists
 ```
+
+(We get an error here because the dir already exists,
+and we didn't use the `-p` option,
+but that proves that the command was executed as intended.)
 
 <hr style="height:1pt; visibility:hidden;" />
 
-### Variable names
+::: callout-note
+### How to name variables
 
 Some rules for variable names in the shell --- they:
 
@@ -552,76 +565,90 @@ Some rules for variable names in the shell --- they:
 - **Cannot _start_** with a number
 
 Ideally, variable names are descriptive,
-like `$input_file` above and not cryptic like `$x`.
+like `$fastq` and `$outdir` above and not cryptic like `$x`.
 
 Like with file names, you can distinguish words using capitalization
 ("camelCase", `$inputFile`) or underscores ("snake case", `$input_file`).
 In this course, we'll mostly use lowercase variable names,
 except for "constants" in scripts, which we'll write in uppercase ---
 see the box at the end of the [arguments section](#constants).
+:::
 
 ### Quoting variables
 
-I have mentioned that it is **good practice to quote variables**
-(i.e. to use `"$treatment"` instead of `$treatment`).
-So what can happen if you don't do this?
-
-Let's start by making and moving into a sandbox dir where we can create some
-messy files:
-
-```bash
-mkdir sandbox
-cd sandbox
-```
-
-Here's what happens if you don't quote a variable whose **value contains spaces**:
+I have mentioned that it is **good practice** to quote variables
+(i.e. to use `"$outdir"` instead of `$outdir`).
+One reason is that quoting variables **prevents "word splitting"**,
+which is when the shell interprets spaces in a variable's value as separators
+between multiple words. Let's look at an example:
 
 1. Say that you have a variable `today`, and its value contains spaces:
 
-   ```sh
-   today="Tue, Mar 26"
+   ```bash
+   today="Mon, Oct 5"
+   ```
+
+2. Printing the value of the variable with or without quotes doesn't seem to make
+   a difference:
+
+   ```bash
+   echo "$today"
+   ```
+   ```bash-out
+   Mon, Oct 5
+   ```
+
+   ```bash
    echo $today
    ```
    ```bash-out
-   Tue, Mar 26
+   Mon, Oct 5
    ```
 
-2. Next, you try to create a file with a name that includes this variable,
-   but you don't quote it:
+3. Next, you try to create a file with a name that includes this variable,
+   and you don't quote it:
 
    ```bash
    touch README_$today.txt
-
-   # (Using the -1 option to ls will print each entry on its own line)
-   ls -1
+   ls
    ```
-   ```bash-out
-   26.txt
-   Mar
-   README_Tue,
-   ```
+   <pre class="bash-out"><code>5.txt  Oct  README_Mon,  <span class="ls-blue">results</span>  <span class="ls-blue">scripts</span></code></pre>
 
-3. Oops! The shell performed "word splitting" to split the value into three
-   separate units --- as a result, **three files** were created.
-   This can be avoided by quoting the variable:
+   Oops! The shell performed "word splitting" to split the value into three
+   separate units.
+   As a result, **three files** were created: `5.txt`, `Oct`, and `README_Mon,`.
 
-   ```sh
+4. This can be avoided by quoting the variable:
+
+   ```bash
    touch README_"$today".txt
-   ls -1
-   ```
-   ```bash-out
-    26.txt
-    Mar
-    README_Tue,
-   'README_Tue, Mar 26.txt'
-   ```
 
-Additionally, without quoting,
-you can't always indicate **where a variable name ends** ---
-explore this in the following exercise.
+   # The 4th file listed below is the one we intended to create all along:
+   ls
+   ```
+   <pre class="bash-out"><code>5.txt   Oct   README_Mon,  'README_Mon, Oct 5.txt'   <span class="ls-blue">results</span>   <span class="ls-blue">scripts</span></code></pre>
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: callout-tip
+#### Word splitting is like unescaped spaces in file names
+This is the same behavior you saw with spaces in file names in
+[week 4](../week04/w4b_shell-files1.qmd#exercise-spaces),
+where `rm -r extra data` removed the `data` dir instead of the `extra data` dir:
+the shell treats spaces as separators between arguments.
+
+The difference is that with a variable, the space is hidden inside its value,
+so you can't see it when you look at the command ---
+which is why it's a good habit to always quote variables.
+And just like `"$today"` above, quoting a file name (`rm -r "extra data"`)
+is one way to prevent the problem.
+:::
+
+Not quoting a variable can also cause confusion about **where the variable name ends**
+(see the exercise below).
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 1: Where does a variable name end?
+#### {{< fa user-edit >}} Self-study exercise 1: Where does a variable name end?
 
 First, assign a sample ID to a variable:
 
@@ -634,45 +661,58 @@ and then run it to check your prediction.
 
 1. `echo $sample_id.fastq.gz`
 
-2. `echo $sample_id_R1.fastq.gz` (the intent is to print `A1_R1.fastq.gz`)
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
-3. `echo "Processing sample: $sample_ID"`
-
-Finally:
-
-4. Fix the command from item 2 so that it prints `A1_R1.fastq.gz`.
-
-<!----
-<details><summary>Click here for the solutions</summary>
-
-1. This works as intended, because a period can't be part of a variable name,
+   This works as intended, because a period can't be part of a variable name,
    so the shell knows that the variable name is `sample_id`:
 
-   ```bash-out
+   ```bash-out-solo
    A1.fastq.gz
    ```
 
-2. This prints only `.fastq.gz`!
-   Underscores and letters _can_ be part of a variable name,
-   so the shell looked for a variable called `sample_id_R1`.
-   That variable doesn't exist, and the shell **silently replaced it with nothing**:
+   </details>
 
-   ```bash-out
+2. `echo $sample_id_R1.fastq.gz` (the intent is to print `A1_R1.fastq.gz`)
+
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
+   This prints only `.fastq.gz`!
+
+   Underscores and letters can be part of a variable name,
+   so the shell looked for a variable called `sample_id_R1`.
+   That variable doesn't exist,
+   and the shell **silently replaced it with nothing (!)**:
+
+   ```bash-out-solo
    .fastq.gz
    ```
 
-3. Variable names are case-sensitive, so `$sample_ID` is a different,
+   </details>
+
+3. `echo "Processing sample: $sample_ID"`
+
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
+   Variable names are case-sensitive, so `$sample_ID` is a different,
    non-existent variable. Again, the shell doesn't complain,
    it just replaces it with nothing:
 
-   ```bash-out
+   ```bash-out-solo
    Processing sample:
    ```
 
    This is why the `set -u` setting you added to your script is so useful:
    it makes a script fail with an error message instead.
 
-4. Quote the variable, so that the shell knows where the variable name ends:
+   </details>
+
+Finally:
+
+4. Fix the command from item 2 so that it prints `A1_R1.fastq.gz`.
+
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
+   Quote the variable, so that the shell knows where the variable name ends:
 
    ```bash
    echo "$sample_id"_R1.fastq.gz
@@ -681,8 +721,7 @@ Finally:
    A1_R1.fastq.gz
    ```
 
-</details>
----->
+   </details>
 :::
 
 <hr style="height:1pt; visibility:hidden;" />
@@ -690,7 +729,7 @@ Finally:
 []{#quoting-box}
 
 :::{.callout-note collapse="true"}
-#### Quoting as "escaping" --- and double vs. single quotes _(Click to expand)_
+#### Quoting as "escaping" special characters, and double vs. single quotes _(Click to expand)_
 
 By double-quoting a variable, you essentially escape ("turn off")
 the default special meaning of the space as a **word separator**,
@@ -705,7 +744,7 @@ like shell wildcards. Compare:
   echo *
   ```
   ```{.bash-out}
-  26.txt Mar README_Tue, README_Tue, Mar 26.txt
+  5.txt Oct README_Mon, README_Mon, Oct 5.txt results scripts
   ```
 
 - But with the `*` enclosed in double quotes,
@@ -727,7 +766,7 @@ However, double quotes do **not** turn off the special meaning of `$`
   echo "$today"
   ```
   ```{.bash-out}
-  Tue, Mar 26
+  Mon, Oct 5
   ```
 
 - With **single quotes**, the shell will interpret `$today` literally as a string,
@@ -744,7 +783,7 @@ However, double quotes do **not** turn off the special meaning of `$`
 :::
 
 ::: {.callout-tip collapse="true"}
-#### Curly braces notation: `${myvar}` _(Click to expand)_
+#### Curly braces notation for variables: `${myvar}` _(Click to expand)_
 
 The `$var` notation to refer to a variable in the shell is actually an abbreviation
 of the full notation, which includes curly braces:
@@ -753,31 +792,33 @@ of the full notation, which includes curly braces:
 echo ${today}
 ```
 ```bash-out
-Tue, Mar 26
+Mon, Oct 5
 ```
 
 Putting variable names between curly braces will also make it clear where the
-variable name begins and ends, although it does not prevent word splitting:
+variable name begins and ends
+(so `echo ${sample_id}_R1.fastq.gz` would also have solved item 4 of the exercise above),
+although it does not prevent word splitting:
 
-```sh
+```bash
 touch README_${today}_final.txt
 
 ls -1 *final*
 ```
 ```bash-out
-26_final.txt
+5_final.txt
 ```
 
 But you can combine curly braces and quoting:
 
-```sh
+```bash
 touch README_"${today}"_final.txt
 
 ls -1 *final*
 ```
 ```bash-out
- 26_final.txt
-'README_Tue, Mar 26_final.txt'
+ 5_final.txt
+'README_Mon, Oct 5_final.txt'
 ```
 
 <hr style="height:1pt; visibility:hidden;" />
@@ -796,7 +837,7 @@ set -euo pipefail
 # FastQC container
 CONTAINER=oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
 
-# Define the input file and output dir
+# Define in- and outputs
 fastq=../garrigos/fastq/S63_R1.fastq.gz
 outdir=results/fastqc
 
@@ -807,15 +848,34 @@ mkdir -p "$outdir"
 apptainer exec "$CONTAINER" fastqc --outdir "$outdir" "$fastq"
 ```
 
-This is an improvement:
+This is an **improvement**:
 the container URI and file paths are now clearly defined in one place at the top
 of the script, and the output dir, which is used twice,
 would only need to be changed once.
-Also, the `apptainer exec` command has become short enough to fit on a single line.
-(Why is `CONTAINER` in uppercase? See the [box on "constants"](#constants) below.)
 
-But you would still need to edit the script to run it for a different FASTQ file.
+(Also, the `apptainer exec` command has become short enough to fit on a single line.
+But why is `CONTAINER` in uppercase? See the [box on "constants"](#constants) below.)
+
+However, you'd **still** need to edit the script to run it for a different FASTQ file.
 Let's see how we can make this more flexible using command-line arguments.
+
+::: callout-tip
+#### Shellcheck warns you about unused variables
+
+While editing the script, you may have noticed orange squiggly lines under
+variable names, for example:
+
+![](/img/shellcheck-variables.png){fig-align="center" width="60%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
+
+Above, it's warning that the script has defined variables that are not used (yet).
+That's a good thing to know about, because it may indicate a typo in the variable name,
+or that you forgot to use the variable in your code.
+
+Conversely, Shellcheck also warns you when you reference a variable
+that hasn't been assigned.
+
+If you finished the script as shown above, the squiggly lines should disappear.
+:::
 
 ## Command-line arguments for scripts
 
@@ -846,8 +906,7 @@ is just like providing a command like `ls` with arguments:
 ### Accessing arguments inside the script
 
 Inside the script, any arguments you pass are
-**automatically assigned** to variables named after their position
-(we'll call these _placeholder variables_):
+**automatically assigned** to variables named after their position:
 
 - Any **first** argument will be assigned to the variable `$1`
   (above: `data/sampleA.fastq.gz`).
@@ -855,14 +914,16 @@ Inside the script, any arguments you pass are
   (above: `results/fastqc`).
 - Any **third** argument will be assigned to `$3` --- _and so on_.
 
-However, the script won't **use** these variables unless you reference them in your code.
-Let's see how to do that.
+However, the script won't **use** these "placeholder" variables unless you
+reference them in your code. Let's see how to do that.
 
 :::{.callout-note}
 #### Other variables that are automatically available inside scripts
 
-- **`$#`** contains the _number_ of command-line arguments passed to the script.
-- **`$0`** contains the script's file name^[
+- **`$#`** contains the _number_ of command-line arguments passed to the script
+  (this can be useful for validation --- see
+  [this section of the optional self-study page](/bonus/shell-scripting.html#integer-number-comparisons)).
+- **`$0`** contains the script's path (as typed when running it, e.g. `scripts/fastqc.sh`)^[
   Though this does not work when you submit scripts as Slurm batch jobs,
   and we will therefore not use this feature.].
 :::
@@ -908,11 +969,6 @@ Now, you can run the script for any FASTQ file without editing it ---
 for example, for both FASTQ files of sample `S63`:
 
 ```bash
-# Move out of the 'sandbox' dir (back to /fs/ess/PAS3493/people/$USER/week07)
-cd ..
-```
-
-```bash
 bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
 ```
 ```{.bash-out}
@@ -932,40 +988,6 @@ Approx 5% complete for S63_R2.fastq.gz
 Analysis complete for S63_R2.fastq.gz
 ```
 
-::: {.callout-note collapse="true"}
-#### Shellcheck and variables _(Click to expand)_
-
-<!----
-- Shellcheck shows a red squiggly line when a script has no shebang line,
-  and hovering over it tells you why:
-
-  ![](../img/shellcheck-shebang1.png){fig-align="center" width="50%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-  ![](../img/shellcheck-shebang2.png){fig-align="center" width="80%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-- Once you add a shebang line, the squiggly line disappears:
-
-  ![](../img/shellcheck-shebang3.png){fig-align="center" width="65%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
----->
-
-- Shellcheck shows an orange squiggly line when you've assigned a variable
-  that you don't use:
-
-  ![](../img/shellcheck-variable1.png){fig-align="center" width="50%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-  ![](../img/shellcheck-variable2.png){fig-align="center" width="70%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-  Referencing the variable makes the squiggly line disappear:
-
-  ![](../img/shellcheck-variable3.png){fig-align="center" width="50%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-
-- Conversely, Shellcheck warns you when you reference a variable
-  that hasn't been assigned --- for example, because of a typo in its name:
-
-  ![](../img/shellcheck-variable5.png){fig-align="center" width="70%" fig-alt="A screenshot showing a shellcheck warning." .lightbox}
-:::
-
 ### Safe settings in action
 
 Our script currently **requires** two arguments:
@@ -984,13 +1006,14 @@ scripts/fastqc.sh: line 8: $1: unbound variable
 
 Thanks to our safe settings with `set`, the script stops right away,
 with an error message that tells you exactly what went wrong:
-the variable `$1` doesn't exist ("is unbound").
+the variable `$1` **doesn't exist ("is unbound")**.
+
 Without this setting, the script would have continued with empty values
 for `$fastq` and `$outdir`,
 leading to much more confusing error messages downstream.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 2: A script with two arguments
+#### {{< fa user-edit >}} In-class exercise 1: A script with two arguments
 
 1. Create a script `scripts/printname.sh` with the following contents:
 
@@ -1014,7 +1037,7 @@ leading to much more confusing error messages downstream.
    ```
 
    <!----
-   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
    ```bash
    bash scripts/printname.sh John Doe
@@ -1035,7 +1058,7 @@ run the script as instructed in the scenario to test your prediction.
 3. Double-quoting the entire name, e.g. `bash scripts/printname.sh "John Doe"`.
 
    <!----
-   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
    Because we are quoting `"John Doe"`, both names are passed _as a single argument_,
    and both names end up in `$1`, the "first name".
    Then, because no second argument was passed,
@@ -1053,7 +1076,7 @@ run the script as instructed in the scenario to test your prediction.
 4. Passing three names, e.g. `bash scripts/printname.sh John Michael Doe`.
 
    <!----
-   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
    The script runs without errors, but prints the wrong last name:
    the third argument, `Doe`, ends up in `$3`, which the script never uses.
    Note that `set -u` doesn't help here:
@@ -1070,7 +1093,7 @@ run the script as instructed in the scenario to test your prediction.
 5. After "commenting out" the line with `set` settings,
    running the script without passing arguments to it.
 
-   <details><summary> {{< fa lightbulb >}} Click here to learn what "commenting out" means.</summary>
+   <details><summary> {{< fa lightbulb >}} Click here to learn what "commenting out" means</summary>
    You can deactivate a line of code without removing it
    by inserting a `#` as the first character of that line.
    This is often referred to as "commenting out" code.
@@ -1083,7 +1106,7 @@ run the script as instructed in the scenario to test your prediction.
    </details>
 
    <!----
-   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
    The script will run in its entirety and not throw any errors,
    because we are now using default Bash settings such that referencing
    non-existent variables does not throw an error.
@@ -1106,15 +1129,41 @@ run the script as instructed in the scenario to test your prediction.
    </details>
    ---->
 
+6. Back to your FastQC script:
+   what do you think will happen if you accidentally **swap the two arguments**?
+   Think about it first, then try it:
+
+   ```bash
+   bash scripts/fastqc.sh results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
+   ```
+
+   <!----
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+   The script stops at the `mkdir -p` line,
+   because `$outdir` now contains the path to the FASTQ file:
+
+   ```bash-out
+   mkdir: cannot create directory ‘../garrigos/fastq/S63_R1.fastq.gz’: File exists
+   ```
+
+   `mkdir -p` doesn't complain if a _dir_ already exists,
+   but it does fail if the path exists as a _file_.
+   Thanks to `set -e`, the script stops right there and FastQC is never run.
+
+   The broader lesson: the shell has no idea which argument is "supposed" to be what ---
+   it simply assigns them by position.
+   That's why the argument order of your scripts matters,
+   and why it helps to copy `$1` and `$2` to descriptive variable names.
+   </details>
+   ---->
+
 :::
 
-<hr style="height:1pt; visibility:hidden;" />
-
 ::: exercise
-#### {{< fa user-edit >}} Self-study exercise: Quoting arguments
+#### {{< fa user-edit >}} Self-study exercise 2: Quoting arguments
 
 What do you expect the output to be when you run your `printname.sh` script
-from Exercise 2 as follows?
+from In-class exercise 1 as follows?
 Make a prediction, then run it to check.
 
 ```bash
@@ -1123,13 +1172,13 @@ bash scripts/printname.sh "$USER" '$USER'
 
 _Hint: see the [box on double vs. single quotes](#quoting-box) above._
 
-<details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer._</summary>
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
 The shell expands variables _before_ passing arguments to the script,
 so the first argument is your username.
 The single quotes prevent that expansion, so the second argument is the literal string `$USER`:
 
-```bash-out
+```bash-out-solo
 This script will print a first and a last name
 First name: jelmer
 Last name: $USER
@@ -1223,11 +1272,6 @@ For instance:
 - Perhaps even summaries of the output (we won't do this here)
 
 This information can help with troubleshooting and record-keeping.
-(One thing to keep in mind is that later,
-when you submit scripts as batch jobs,
-such logging output will not be printed to screen but will end up in text files.
-Therefore, you can store those text files along with other output files to keep
-detailed records of what you did!)
 
 Let's add some code to the FastQC script to make it produce logging information:
 
@@ -1281,11 +1325,11 @@ A couple of notes about the lines that were added to the script above:
 - For scripts that run bioinformatics tools,
   it's a good idea to include a line that prints the **program version**.
 
-{{< fa user-edit >}} _Update your `scripts/fastqc.sh` script with the code from the box above._
-
 ### Run your final FastQC script
 
-Run your FastQC script again for one FASTQ file:
+Make sure you've updated your `scripts/fastqc.sh` script with the code from the
+box above,
+and then run your final FastQC script again for one FASTQ file:
 
 ```bash
 bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
@@ -1298,6 +1342,7 @@ Output dir:         results/fastqc
 
 INFO:    Using cached SIF image
 INFO:    gocryptfs not found, will not be able to use gocryptfs
+application/gzip
 Started analysis of S63_R1.fastq.gz
 Approx 5% complete for S63_R1.fastq.gz
 # [...output truncated...]
@@ -1312,8 +1357,14 @@ Successfully finished script fastqc.sh
 Mon Oct  5 14:23:19 EDT 2026
 ```
 
-Nice! We got some logging information, and can for example tell that the script
-took only 6 seconds to run for this small FASTQ file.
+Great! This logging information is useful as a record of what was done,
+and for example allows you to see that the script took only 6 seconds to run
+for this small FASTQ file.
+Though currently, the logging information is **only** printed to the screen,
+which is not ideal for record-keeping.
+In two weeks, we'll run scripts as batch jobs,
+and the logging information will be printed to a text file that you can keep
+along with the output files.
 
 ## Recap and next steps
 

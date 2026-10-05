@@ -1,8 +1,9 @@
 ---
 title: "Shell scripting II -- rerunning scripts with loops"
 subtitle: "Week 7 -- Lecture B"
-pagetitle: "w7b: Shell scripting 2"
+pagetitle: "w7b: Shell scripting II"
 date: 2026-10-07
+engine: knitr
 date-modified: last-modified
 author:
   - name: Jelmer Poelstra
@@ -34,7 +35,8 @@ language:
 
 --------------------------------------------------------------------------------
 
-<br>
+<hr style="height:1pt; visibility:hidden;" />
+<hr style="height:1pt; visibility:hidden;" />
 
 ## Introduction
 
@@ -48,21 +50,19 @@ Specifically, you will learn:
 - How `for` loops work
 - How to use a `for` loop to loop over files and run a shell script many times
 - How to keep a record of your analysis steps in a Markdown file
-- How to use parameter expansion to search-and-replace text in variables
-- How to loop over _samples_ (pairs of FASTQ files) rather than individual files
+- _Self-study_: How to use parameter expansion to search-and-replace text in variables
+- _Self-study_: How to loop over samples (e.g., pairs of FASTQ files) rather than individual files
 
 ### The big picture
 
-The strategy you'll learn is to write scripts that
-run **a single program a single time**,
-even though you commonly need to run a CLI tool many times,
+The strategy you've learned so far, and that we will stick to,
+is writing scripts that run **a single program a single time**.
+We do this even though you commonly need to run a CLI tool many times,
 e.g. separately for each file or sample.
-That's because at OSC, you can save a lot of time by
-submitting a **separate batch job** for each file or sample,
-since these jobs can all run simultaneously^[
+But at OSC, you can save a lot of time by submitting a **separate batch job**
+for each file or sample, since these jobs can all run simultaneously^[
 It is possible to use another strategy that parallelizes program runs within a
 script, but we will use this strategy instead.].
-
 To accommodate this, you will:
 
 - Make your scripts flexible by passing arguments to them
@@ -72,23 +72,138 @@ To accommodate this, you will:
 
 As a result, you'll also type important **code outside of your scripts**,
 and that code orchestrates your workflow.
-You will store that code in **Markdown files**, which then provide a record of what you did.
+You will store that code in **Markdown files**,
+which then provide a record of what you did.
 
 ### Getting ready
 
-#### The usual
-
-1. At <https://ondemand.osc.edu>, start a VS Code session in `/fs/ess/PAS3493/people/$USER`.
+1. At <https://ondemand.osc.edu>,
+   start a VS Code session in `/fs/ess/PAS3493/people/$USER`.
 2. In the terminal, navigate to your `week07` dir.
-3. **Create a new file `w7b.sh`** in your `week07` dir,
-   in which you'll type the code for this session
-   (the `.sh` extension gives you shell syntax highlighting and Shellcheck).
 
-#### Add a VS Code keyboard shortcut
+## Markdown setup
 
-Add a keyboard shortcut to **send code from the editor to the terminal**.
-That way, you don't have to copy-and-paste code you've typed in the editor^[
-This is the same type of behavior that you may be familiar with from RStudio.]:
+Today, and more commonly from now on, we will store some of our shell code in
+Markdown files rather than typing it directly in the terminal,
+for the reasons explained above.
+
+I will demonstrate a "visual" Markdown editor in VS Code that is more similar
+to what you might expect from a word processor.
+You can then decide whether you want to use that or the "raw" Markdown editor.
+
+1. Create a new Markdown file in your `week07` dir,
+   which you'll use as a scratch file to practice with loops ---
+   run the below command and open the file in the VS Code editor:
+
+   ```bash
+   touch loops-practice.md
+   ```
+
+2. Copy-paste the following into your `loops-practice.md`:
+
+   ````{.markdown .file filename="loops-practice.md"}
+   # For loop practice
+
+   - **Author**: <your-name>
+   - **Date**: 2026-10-07
+   - **Working dir**: `/fs/ess/PAS3493/people/<user>/week07`
+
+   In this file, we'll practice writing **`for` loops** in the shell.
+
+   ## A first shell loop
+
+   ```{{bash}}
+
+   ```
+
+   ## Multiple actions per iteration
+
+   ## Combining loops and globbing
+
+   ## Exercise 1
+
+   ## Exercise 2
+
+   ## Self-study: Parameter expansion
+
+   ## Self-study exercise 1
+
+   ## Self-study: A per-sample loop
+
+   ## Self-study exercise 2
+
+   ````
+
+::: {.columns}
+::: {.column}
+
+3. Find and install the Quarto extension in VS Code ---
+   as per usual, click "Trust Publisher and Install" when prompted.
+
+<hr style="height:1pt; visibility:hidden;" />
+<hr style="height:1pt; visibility:hidden;" />
+
+4. Find the `...` button in the top-right of the editor, and in the dropdown,
+   select "Edit in Visual Mode":
+
+:::
+::: {.column}
+
+![](/img/vscode-quarto-ext-install.png){fig-align="center" width="83%" fig-alt="A screenshot showing the Quarto extension in VS Code." .lightbox}
+
+:::
+:::
+
+![](/img/vscode-quarto-ext-view-dropdown.png){fig-align="center" width="65%" fig-alt="A screenshot showing the editor's '...' dropdown menu, with 'Edit in Visual Mode' at the bottom." .lightbox}
+
+::: legend
+"Edit in Visual Mode" is at the bottom of the dropdown menu.
+:::
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; You may get a pop-up like this --- click "Use Visual Mode"
+(the reformatting it warns about is harmless):
+
+![](/img/quarto-ext-formatting.png){fig-align="center" width="60%" fig-alt="A screenshot showing the Quarto extension in VS Code." .lightbox}
+
+5. Then, the editor will look like so --- like the preview, but editable,
+   and with formatting buttons across the top:
+
+![](/img/vscode-quarto-ext-visual.png){fig-align="center" width="85%" fig-alt="A screenshot showing the VS Code editor in Visual Mode." .lightbox}
+
+6. The main **wrinkle** with this setup is that in order to easily send code from the
+   editor to the terminal (so you don't have to copy-and-paste),
+   we need to make code blocks with a **\`\`\`{bash}** instead of
+   **\`\`\`bash** opening line^[
+    This makes the code blocks "executable" --- you'll learn much more about that
+    when we talk about using Quarto with R code in week 14.].
+
+   Practice with creating a new code block below the
+   "Multiple actions per iteration" header ---
+   type **\`\`\`{bash}** and then press <kbd>Enter</kbd> to turn it into a code block
+   (you won't have to type the closing \`\`\` line!):
+
+  ![](/img/vscode-quarto-ext-new-code-block1.png){fig-align="center" width="42%" fig-alt="A screenshot showing the VS Code editor in Visual Mode with a new code block being created." .lightbox}
+
+  ![](/img/vscode-quarto-ext-new-code-block2.png){fig-align="center" width="42%" fig-alt="A screenshot showing the VS Code editor in Visual Mode with a new code block being created." .lightbox}
+
+7. To send the code in a code block to the terminal, you can click the Play button
+   at the right end of the code block, or press <kbd>Shift</kbd>+<kbd>Enter</kbd>
+   when your cursor is in the code block. We'll practice this in a bit.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-note collapse="true"}
+#### Prefer the "raw" Markdown editor? Then follow the instructions below for additional setup. _(Click to expand)_
+
+_None of this is required, but it will make your life easier._
+
+**Set a keyboard shortcut to send code from the editor to the terminal.**\
+This keyboard shortcut is not set by default, unlike in the Visual Mode editor.
+When no text is selected, the shortcut sends the line your cursor is on.
+To run a multi-line command like a `for` loop, first select all of its lines.
+
+::: {.columns}
+::: {.column}
 
 1. Click {{< fa cog >}} (bottom-left) > `Keyboard Shortcuts`.
 2. Type "Run Selected Text" in the search box, and you should see the option
@@ -96,11 +211,83 @@ This is the same type of behavior that you may be familiar with from RStudio.]:
 3. Click on that line, then add the shortcut <kbd>Ctrl</kbd>+<kbd>Enter</kbd>
    (don't worry about any warnings that other keybindings exist for this action).
 
-![](/img/vscode-enter-line-shortcut.png){fig-align="center" width="50%" fig-alt="A screenshot showing the VS Code keyboard shortcuts settings with the 'Run Selected Text in Active Terminal' option selected." .lightbox}
+:::
+::: {.column}
 
-(When no text is selected, the shortcut sends the line your cursor is on.
-To run a multi-line command like a `for` loop, first select all of its lines
---- we'll practice this in class.)
+![](/img/vscode-enter-line-shortcut.png){fig-align="center" width="90%" fig-alt="A screenshot showing the VS Code keyboard shortcuts settings with the 'Run Selected Text in Active Terminal' option selected." .lightbox}
+
+:::
+:::
+
+**Set a keyboard shortcut to create a new code block.**\
+Unlike in Visual Mode,
+you can continue to work with the "regular" **\`\`\`bash** code blocks.
+But it's tedious to type the opening and closing lines each time,
+and in this mode, it's straightforward to set a keyboard shortcut to create a
+new code block.
+
+1. Open the Command Palette with <kbd>Ctrl/Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>,
+   and look for "Preferences: Open Keyboard Shortcuts (JSON)" ---
+   you'll want the **JSON** file option.
+
+   ![](/img/vscode-shortcut-insert-code-block.png){fig-align="center" width="65%" fig-alt="A screenshot showing the VS Code keyboard shortcuts settings with the 'Insert Snippet' option selected." .lightbox}
+
+2. Copy-paste the following into the JSON file, and save it
+   (select the correct block for your operating system):
+
+::: {.columns}
+::: {.column width="5%"}
+:::
+::: {.column width="90%"}
+
+::: {.panel-tabset}
+
+## Windows
+
+```json
+[
+  {
+    "key": "ctrl+shift+i",
+    "command": "editor.action.insertSnippet",
+    "when": "editorTextFocus && editorLangId == markdown",
+    "args": {
+      "snippet": "```bash\n$0\n```\n"
+    }
+  }
+]
+```
+
+## Mac
+
+```json
+[
+  {
+    "key": "cmd+shift+i",
+    "command": "editor.action.insertSnippet",
+    "when": "editorTextFocus && editorLangId == markdown",
+    "args": {
+      "snippet": "```bash\n$0\n```\n"
+    }
+  }
+]
+```
+:::
+
+:::
+:::
+::: {.column width="5%"}
+:::
+
+   If your file already contains other shortcuts,
+   add only the `{ ... }` part (preceded by a comma) inside the existing `[ ]`,
+   rather than pasting a second set of square brackets.
+
+3. Now, you can press <kbd>Ctrl/Cmd</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd> to create
+   a new code block in your Markdown file.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+:::
 
 ## For loops
 
@@ -114,7 +301,7 @@ and allows you to perform one or more actions for that element.
 
 ### A non-coding example
 
-In a way, you already regularly think in `for` loops.
+In a way, you're likely to already think in `for` loops regularly in your daily life.
 Say you have a rack with three tubes, and your protocol says:
 
 > **For each tube** in the rack: add 10 µL of buffer to the tube, vortex it,
@@ -122,18 +309,17 @@ Say you have a rack with three tubes, and your protocol says:
 
 Here's what that instruction consists of:
 
-- A **collection** of items to go through: the tubes in the rack
-- A set of **actions** that are the same for every item:
-  add buffer, vortex, spin down
+- A **collection** of items to go through: the tubes in the rack.
+- A set of **actions** that are **repeated for every item**:
+  add buffer, vortex, spin down.
 - A **placeholder** that stands in for "the item I'm currently working on":
   "the tube" or "it".
-  In the first round, "the tube" means tube 1; in the second round, tube 2; and so on
+  In the first round, "the tube" means tube 1; in the second round, tube 2; and so on.
 
 You'd go through the tubes one at a time,
 doing all three actions for a tube before moving on to the next one.
 And you're done when you run out of tubes:
 with three tubes, you'd do this three times.
-
 If we wrote that protocol step in `for` loop syntax, it would look like this
 _(this is not real code!)_:
 
@@ -148,7 +334,8 @@ done
 In shell code, a `for` loop has the same three components:
 
 - The **collection** comes after `in`: here, `tube1 tube2 tube3`.
-- The **actions** go between `do` and `done`.
+- The **actions** go between `do` and `done`, in _indented lines_
+  so it's clear what is being **repeated**.
 - The **placeholder** is a variable, whose name you choose and put after `for`:
   here, `tube`.
   Inside the loop, you refer to it with `$tube`,
@@ -156,26 +343,42 @@ In shell code, a `for` loop has the same three components:
 
 ### A first shell loop
 
-Let's type out the example below in `w7b.sh` and then run it in the terminal.
+Let's type out the example below in your `loops-practice.md` and then run it in the terminal.
 Here, the collection is a short list of three fruits,
-and the only action is to print the current fruit:
+and the only action is to print the current fruit.
 
-````{.bash .file filename="w7b.sh"}
+In your code block below the "A first shell loop" header, type the following:
+
+````{.bash .file filename="loops-practice.md (excerpt)"}
 for fruit in apple banana plum; do
     echo "Fruit: $fruit"
 done
 ````
+
+Then, **send the code to the terminal**:
+either press the Play button at the right end of the code block,
+or press <kbd>Shift</kbd>+<kbd>Enter</kbd> with your cursor in the code block.
+
+You should see your code appear in the terminal along with the following output.
+This output shows that the `echo` line ran three times, and each time,
+the variable `$fruit` contained a different fruit:
+
+```bash
+for fruit in apple banana plum; do
+    echo "Fruit: $fruit"
+done
+```
 ```bash-out
 Fruit: apple
 Fruit: banana
 Fruit: plum
 ```
 
-The `echo` line ran three times, and each time,
-the variable `$fruit` contained a different fruit.
-
 **Under the hood**, the following was actually run by the shell ---
 three times, a value was assigned to `$fruit`, and then the `echo` command was run:
+
+::: {.columns}
+::: {.column width="55%"}
 
 ```{.bash .norun}
 fruit=apple
@@ -187,6 +390,18 @@ echo "Fruit: $fruit"
 fruit=plum
 echo "Fruit: $fruit"
 ```
+
+:::
+::: {.column width="45%"}
+
+![](/img/frootloops.jpg){fig-align="center" width="70%" .no-border fig-alt="A photo of a bowl of Froot Loops cereal." .lightbox}
+
+::: legend2
+© Kellogg's
+:::
+
+:::
+:::
 
 ### Multiple actions per iteration
 
@@ -210,7 +425,7 @@ echo -n "apple" | wc -c
 Below, for each fruit, we print its name and then count the number of
 characters in its name:
 
-````{.bash .file filename="w7b.sh"}
+````{.bash .file filename="loops-practice.md (excerpt)"}
 for fruit in apple banana plum; do
     echo "Fruit: $fruit"
     echo "Number of characters:"
@@ -236,19 +451,19 @@ Number of characters:
 Notice that all four lines ran for `apple` before any of them ran for `banana`:
 the loop completes all actions for one item before moving on to the next item.
 
-### Key points
+### Loop recap so far
 
 To recap some key things you should understand about `for` loops:
 
 - In each iteration of the loop, one element in the collection
   is being **assigned to the variable** specified after `for`.
 - The loop will run exactly **as many times** as there are items in the collection.
-- The indented lines' code is being **repeated**:
-  all lines are run for one item before the loop moves on to the next.
-  (The indentation itself is optional for the shell, but makes loops much easier to read.)
+- The **indented** lines' code is being **repeated**:
+  all lines are run for one item before the loop moves on to the next^[
+    The indentation itself is optional for the shell, but makes loops much easier to read.].
 - The **variable name** is up to you.
   Like with other variables, try to choose a name that is descriptive.
-- Like with other variables, use a `$` when you reference (`echo $fruit`) but not
+- Like with other variables, use a `$` when you reference (`echo "$fruit"`) but not
   when you assign (`for fruit`).
 
 ::: {.callout-note collapse="true"}
@@ -307,7 +522,7 @@ For example, we wrote a `fastqc.sh` script that runs FastQC for a single FASTQ f
 and we want to run that script for all FASTQ files in a directory.
 We can loop over file names just like we looped over fruits above:
 
-````{.bash .file filename="w7b.sh"}
+````{.bash .file filename="loops-practice.md (excerpt)"}
 for fastq_file in ../garrigos/fastq/S63_R1.fastq.gz ../garrigos/fastq/S63_R2.fastq.gz; do
     echo "Now processing file: $fastq_file"
 done
@@ -321,7 +536,7 @@ However, typing out all file names is tedious and error-prone.
 Instead, we can use **globbing** to automatically generate a list of file names,
 and then loop over that list, all in one line of code:
 
-````{.bash .file filename="w7b.sh"}
+````{.bash .file filename="loops-practice.md (excerpt)"}
 for fastq_file in ../garrigos/fastq/*fastq.gz; do
     echo "Running an analysis on $fastq_file"
     # [This is where you would put additional commands to process each FASTQ file]
@@ -335,17 +550,28 @@ Running an analysis on ../garrigos/fastq/S64_R2.fastq.gz
 # [...output truncated...]
 ```
 
+The shell expands the glob into a list of matching file names
+**before** the loop starts
+(recall from [week 4](../week04/w4b_shell-files1.qmd#globbing)
+that expansion is done by the shell itself),
+so to the loop, this is no different from the typed-out list of file names above.
+
+<hr style="height:1pt; visibility:hidden;" />
+
 ::: exercise
 #### {{< fa user-edit >}} Exercise 1: What will these loops print?
 
-Given these files:
+Create these files:
 
 ```bash
 mkdir -p sandbox
 touch sandbox/file1.txt sandbox/S1_R1.fastq.gz sandbox/S1_R2.fastq.gz
 ```
 
-What do you expect the output of each of the following loops to be?
+Now, what do you expect the output of each of the following loops to be?
+Test your predictions by running the loops (either directly in the terminal or
+by putting them in your Markdown file `loops-practice.md` and sending them to
+the terminal):
 
 ```bash
 for file in sandbox/*fastq.gz; do
@@ -354,13 +580,15 @@ done
 ```
 
 <!----
-<details><summary>_Click for the solution_</summary><p>
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
 The glob only matches the two FASTQ files, so the loop runs twice:
 ```bash-out
 I have found file sandbox/S1_R1.fastq.gz
 I have found file sandbox/S1_R2.fastq.gz
 ```
-</p></details>
+
+</details>
 ---->
 
 ```bash
@@ -370,18 +598,20 @@ done
 ```
 
 <!----
-<details><summary>_Click for the solution_</summary><p>
-Look closely: the loop variable is `file`, but the `echo` line uses `$f` --
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
+Look closely: the loop variable is `file`, but the `echo` line uses `$f` ---
 a variable that was never assigned.
 Because we're at the interactive prompt rather than in a script with
-`set -u`, the shell doesn't complain about the unset variable --
+`set -u`, the shell doesn't complain about the unset variable ---
 it just silently treats it as an empty string.
 So the loop prints one empty line for each matching file ---
 here, that is just `file1.txt`.
 This is exactly the kind of silent failure that `set -u` protects you
 from: in a script with strict Bash settings, this typo would cause an
 immediate error instead of silently doing the wrong thing.
-</p></details>
+
+</details>
 ---->
 
 ```bash
@@ -391,7 +621,8 @@ done
 ```
 
 <!----
-<details><summary>_Click for the solution_</summary><p>
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
 You might expect no output at all, since no files match the pattern.
 But when a glob pattern doesn't match any files, the shell leaves the pattern as is,
 so the loop runs once, with the literal string `sandbox/*.bam`:
@@ -403,7 +634,8 @@ I have found file sandbox/*.bam
 So if you make a typo in a glob pattern in a loop that runs a script,
 the script will be run once for a non-existent "file" ---
 one more reason to print input file names in your scripts' logging output!
-</p></details>
+
+</details>
 ---->
 :::
 
@@ -414,28 +646,33 @@ Modify the globbing loop above (the one printing "Running an analysis on ...")
 to print the following for each FASTQ
 file (output for 2 files shown):
 
-```bash-out-solo
-Running an analysis on ../garrigos/fastq/S63_R1.fastq.gz
+<pre class="bash-out-solo"><code>Running an analysis on ../garrigos/fastq/S63_R1.fastq.gz
 File size:
--rw-rw----+ 1 jelmer PAS0471 21M Sep  9 13:46 ../garrigos/fastq/S63_R1.fastq.gz
+-rw-rw----+ 1 jelmer PAS0471 21M Sep  9 13:46 <span class="ls-red">../garrigos/fastq/S63_R1.fastq.gz</span>
 Number of lines:
 2000000
 
 Running an analysis on ../garrigos/fastq/S63_R2.fastq.gz
 File size:
--rw-rw----+ 1 jelmer PAS0471 22M Sep  9 13:46 ../garrigos/fastq/S63_R2.fastq.gz
+-rw-rw----+ 1 jelmer PAS0471 22M Sep  9 13:46 <span class="ls-red">../garrigos/fastq/S63_R2.fastq.gz</span>
 Number of lines:
-2000000
-```
+2000000</code></pre>
 
 Then, take a look at the line counts in your output:
 
 - How many reads does each file contain?
 - Why do the R1 and R2 files of a sample contain the same number of reads?
 
+<details><summary>{{< fa lightbulb >}} _Click for a hint_</summary>
+To count the lines in a gzip-compressed file,
+recall from the [week 4 exercises](../week04/w4_exercises.qmd)
+that `zcat` prints the decompressed contents of a file,
+which you can then pipe into another command.
+</details>
+
 <!----
 <hr style="height:1pt; visibility:hidden;" />
-<details><summary>Click for the solution</summary>
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
 ```bash
 for fastq_file in ../garrigos/fastq/*fastq.gz; do
@@ -460,44 +697,6 @@ which we'll get back to below.
 
 :::
 
-## A "protocol" Markdown file
-
-Next, we want to run our FastQC script for each FASTQ file using a loop.
-While you _could_ type that loop directly in the terminal,
-it is better to write it in a Markdown file:
-that way, you will keep a record of your analysis steps.
-
-For small projects, a simple "protocol" could be added to your main `README.md`.
-Let's practice with that by writing a README for the current analysis:
-
-```bash
-touch README.md
-```
-
-Open that file in the VS Code editor, and add the following to it:
-
-````{.markdown .file filename="README.md"}
-# RNA-seq data analysis
-
-## General information
-
-- Author: <your name>
-- Date: 2026-10-07
-- Environment: Pitzer cluster at OSC via VS Code
-- Working dir: `/fs/ess/PAS3493/people/<user>/week07`
-
-## Project background
-
-This project is ...
-
-## Protocol
-````
-
-::: {.callout-tip appearance="simple"}
-In a few weeks, we'll discuss how you can organize this kind of information for
-larger projects.
-:::
-
 ## Running a script many times with a loop
 
 ### Your FastQC script
@@ -505,7 +704,7 @@ larger projects.
 In the previous session, you wrote the following script to run FastQC,
 which should be saved at `scripts/fastqc.sh`.
 
-<details><summary>_Click to see the script's contents._</summary>
+<details><summary>_Click to see the script's contents_</summary>
 
 ```{.bash .file filename="scripts/fastqc.sh"}
 #!/bin/bash
@@ -549,18 +748,58 @@ so it can only be run for one file at a time. For example:
 bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
 ```
 
+### A "protocol" Markdown file
+
+To run the script for all FASTQ files, we'll use a loop.
+This is still practice, but unlike the loops in your `loops-practice.md` file,
+it does resemble a real analysis step.
+So, let's use it to see what a proper record of such a step would look like:
+we'll store the loop in a "protocol" section of a new `README.md` file,
+which also describes the project as a whole.
+For small projects, such a simple protocol in the main `README.md` can suffice.
+
+1. Create a `README.md` file in your `week07` dir and open it in the editor:
+
+   ```bash
+   touch README.md
+   ```
+
+2. Copy-paste the following into your `README.md`:
+
+   ````{.markdown .file filename="README.md"}
+   # RNA-seq data analysis
+
+   ## General information
+
+   - **Author**: <your-name>
+   - **Date**: 2026-10-07
+   - **Environment**: Pitzer cluster at OSC via VS Code
+   - **Working dir**: `/fs/ess/PAS3493/people/<user>/week07`
+
+   ## Project background
+
+   This project is ...
+
+   ## Protocol
+   ````
+
+::: {.callout-tip appearance="simple"}
+In a few weeks, we'll discuss how you can organize this kind of information for
+larger projects.
+:::
+
 ### Looping over FASTQ files
 
 You will now loop over all FASTQ files in the `../garrigos/fastq` dir,
 and run your `fastqc.sh` script for each file.
-Add the following to your `README.md` file,
+Add the following under `## Protocol` in your `README.md`,
 and then run the code inside the code block
 (this will take a few minutes to run for all 44 files):
 
-````{.markdown .file filename="README.md"}
+````{.markdown .file filename="README.md (excerpt)"}
 ### Step 1 - Run FastQC for each FASTQ file:
 
-```bash
+```{{bash}}
 for fastq in ../garrigos/fastq/*fastq.gz; do
     bash scripts/fastqc.sh "$fastq" results/fastqc
 done
@@ -593,6 +832,17 @@ That produces a lot of output!
 You can hopefully see that this looping approach is quite powerful,
 allowing you to easily run a script many times.
 
+::: callout-note
+#### Two different variables called `fastq`
+The loop variable `fastq` and the variable `fastq` inside the `fastqc.sh` script
+share a name, but they are **separate variables**:
+a script runs in its own, new shell,
+which can't see the variables you assigned in your terminal.
+The only way the file name gets into the script is as an argument:
+the loop passes `"$fastq"` as the first argument,
+which the script receives as `$1` and then copies to its own `fastq` variable.
+:::
+
 ::: callout-tip
 #### This loop runs the script sequentially, not in parallel
 The loop above runs the `fastqc.sh` script **sequentially**:
@@ -606,7 +856,7 @@ you have not yet learned how to run it simultaneously in parallel.
 In week 9, you'll learn about doing this by submitting scripts as batch jobs.
 :::
 
-## Looping over samples
+## Self-study: Looping over samples
 
 FastQC is run separately for each FASTQ file,
 but many tools that process paired-end data need the R1 and R2 files of a sample
@@ -624,12 +874,16 @@ How can you loop over pairs of FASTQ files? There are two main ways:
 We will use the second method.
 To deduce the R2 file name, you'll first need to learn about parameter expansion.
 
+::: {.callout-tip appearance="simple"}
+Type and run the code in this self-study section from your `loops-practice.md` file.
+:::
+
 ### Parameter expansion
 
-With "parameter expansion",
-where parameter is another word for variable,
-you can search-and-replace text in your variable's values.
-For example:
+"Parameter expansion" ("parameter" is another word for variable)
+is the shell's term for retrieving a variable's value, as in `$fastq`.
+Some special forms of parameter expansion modify the value as it is retrieved ---
+for example, to search-and-replace text:
 
 - Start by assigning a short DNA sequence to a variable:
 
@@ -667,6 +921,10 @@ let's deconstruct that:
 2. You add two forward slashes after the variable name, and then the search pattern: here, `//T`.
 3. After another forward slash, enter the replacement: here, `/U`.
 
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-note collapse="true"}
+#### Replace all matches or just the first? _(Click to expand)_
 If you only want to replace the **first** match,
 use a single forward slash after the variable name: `${var_name/<search>/<replace>}`.
 Compare:
@@ -678,10 +936,10 @@ echo "${dna_seq/T/U}"
 AAGUTCAT
 ```
 
-<hr style="height:1pt; visibility:hidden;" />
+:::
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 3: Get the R2 file name with parameter expansion
+#### {{< fa user-edit >}} Self-study exercise 1: Get the R2 file name with parameter expansion
 
 After assigning the file name `../garrigos/fastq/S63_R1.fastq.gz` to a variable,
 as shown below,
@@ -693,8 +951,7 @@ fastq_R1=../garrigos/fastq/S63_R1.fastq.gz
 fastq_R2=
 ```
 
-<!----
-<details><summary>_Click for the solution_</summary><p>
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
 ```bash
 fastq_R1=../garrigos/fastq/S63_R1.fastq.gz
@@ -709,22 +966,22 @@ echo "$fastq_R2"
 ```bash-out
 ../garrigos/fastq/S63_R2.fastq.gz
 ```
-</p></details>
----->
+
+</details>
 
 Next, a labmate suggests the shorter `fastq_R2="${fastq_R1/1/2}"`.
 Does that give the correct result for this file?
 Would it still work if the sample were called `S61` instead of `S63`?
 
-<!----
-<details><summary>_Click for the solution_</summary><p>
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
 It works for `S63`, since the first `1` in the path happens to be the one in `R1`.
 But for `../garrigos/fastq/S61_R1.fastq.gz`,
 the `1` in the sample ID would be replaced instead,
 giving `../garrigos/fastq/S62_R1.fastq.gz` --- the R1 file of a different sample!
 So, make your search pattern as specific as possible, like `_R1`.
-</p></details>
----->
+
+</details>
 :::
 
 ### A per-sample loop
@@ -739,13 +996,16 @@ for R1 in ../garrigos/fastq/*_R1.fastq.gz; do
     R2="${R1/_R1/_R2}"
     echo "R1 file: $R1"
     echo "R2 file: $R2"
+    echo
 done
 ```
 ```bash-out
 R1 file: ../garrigos/fastq/S63_R1.fastq.gz
 R2 file: ../garrigos/fastq/S63_R2.fastq.gz
+
 R1 file: ../garrigos/fastq/S64_R1.fastq.gz
 R2 file: ../garrigos/fastq/S64_R2.fastq.gz
+
 # [...output truncated...]
 ```
 
@@ -764,7 +1024,7 @@ you'll write such a script for the program TrimGalore.
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Self-study exercise: Run a script with a per-sample loop
+#### {{< fa user-edit >}} Self-study exercise 2: Run a script with a per-sample loop
 
 - Write a script `scripts/trim_mock.sh` that accepts three arguments:
   an R1 FASTQ file (assigned to `$R1`), an R2 FASTQ file (assigned to `$R2`),
@@ -779,7 +1039,7 @@ you'll write such a script for the program TrimGalore.
   echo trimmer --in1 "$R1" --in2 "$R2" --outdir "$outdir"
   ```
 
-  <details><summary> {{< fa check-circle >}} _Click for the solution_</summary>
+  <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
   ```{.bash .file filename="scripts/trim_mock.sh"}
   #!/bin/bash
@@ -811,13 +1071,13 @@ you'll write such a script for the program TrimGalore.
   ```
   </details>
 
-- Add an entry to your `README.md` file to loop over all R1 FASTQ files and
-  run the `trim_mock.sh` script for each sample.
+- In your `loops-practice.md` file, write a loop over all R1 FASTQ files that
+  runs the `trim_mock.sh` script for each sample.
 
-  <details><summary> {{< fa check-circle >}} _Click for the solution_</summary>
+  <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
-  ````markdown
-  ### Step 2 - Run the trim_mock.sh script for each _sample_
+  ````{.markdown .file filename="loops-practice.md (excerpt)"}
+  ## Self-study exercise 2
 
   We will loop over R1 files only, and deduce the R2 file name:
 

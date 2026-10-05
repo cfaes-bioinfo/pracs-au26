@@ -29,6 +29,9 @@ This page covers additional shell scripting topics that build on the
 [w7a](../week07/w7a_scripts1.qmd) and [w7b](../week07/w7b_scripts2.qmd) lectures:
 command substitution, extracting parts of file paths, renaming files with loops,
 conditionals, `while` loops, and more.
+If you're short on time, prioritize the first two sections
+(command substitution and extracting parts of file paths),
+which will be useful for one of the upcoming graded assignments.
 
 ### Setting up
 
@@ -80,8 +83,8 @@ include the current date in a file name.
 "Automatically" means that the same command will work regardless of the date ---
 for example, inside a script that you may run at any time.
 
-Let's first learn how to get the current date in a format that is suitable for
-file names. You can give `date` a format string that starts with a `+`,
+Let's first learn how to get the current date in a format that is suitable for file names.
+You can give `date` a format string that starts with a `+`,
 and `date +%F` will print the date in `YYYY-MM-DD` format and without the time:
 
 ```bash
@@ -198,6 +201,30 @@ in a generalized, programmatic way --- like inside a script.
    </details>
 :::
 
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-note collapse="true"}
+#### Doing arithmetic with `$(( ))` _(Click to expand)_
+
+A construct that looks similar to command substitution is `$(( ))`,
+which does arithmetic rather than running a command.
+For example, an alternative way to count the number of samples in Exercise 1
+is to divide the number of FASTQ files by 2:
+
+```bash
+n_files=$(ls ../garrigos/fastq/*fastq.gz | wc -l)
+n_samples=$(( n_files / 2 ))
+echo "$n_samples"
+```
+```bash-out
+22
+```
+
+Inside `$(( ))`, you can refer to variables without the `$`,
+and you can use `+`, `-`, `*`, and `/`.
+Note that Bash can only do _integer_ arithmetic:
+any decimal part is simply discarded, so `$(( 45 / 2 ))` gives `22`.
+:::
 
 ## Commands to extract parts of paths
 
@@ -217,7 +244,7 @@ it is common to have a file path from which you want to extract just the
 Extracting these parts can be done with the `dirname` and `basename` commands.
 Running `dirname` on a path will return the directory part of that path:
 
-```sh
+```bash
 dirname ../garrigos/fastq/S63_R1.fastq.gz
 ```
 ```bash-out
@@ -226,7 +253,7 @@ dirname ../garrigos/fastq/S63_R1.fastq.gz
 
 Similarly, `basename` will strip any directories and just return the file name:
 
-```sh
+```bash
 basename ../garrigos/fastq/S63_R1.fastq.gz
 ```
 ```bash-out
@@ -237,22 +264,20 @@ You can optionally provide a **suffix to strip** from the file name,
 simply as a second argument to `basename`.
 For example, to strip the `.fastq.gz` suffix:
 
-```sh
+```bash
 basename ../garrigos/fastq/S63_R1.fastq.gz .fastq.gz
 ```
 ```bash-out
 S63_R1
 ```
 
-Here is an example of how you might use `basename` in practice.
-Say that you want to **define output file paths** in a script,
-and you want those to have the same names as the input files,
-but be placed in a different dir.
-(This may happen because some programs allow or require you to define output
-file names instead of just an output dir.)
+In practice, `basename` is often used in scripts to **define output file paths**
+that have the same file names as the input files, but are in a different dir.
+You'll need this with programs that make you specify output file _names_
+rather than just an output dir.
 
-Here is an example with a fictional program `trimmer2` where the arguments
-`--out1` and `--out2` must be used to specify the output file names.
+For example, the fictional program `trimmer2` requires the arguments
+`--out1` and `--out2` to specify the output file names.
 Create this script as `scripts/trimmer2.sh`:
 
 ```{.bash .file filename="scripts/trimmer2.sh"}
@@ -293,7 +318,7 @@ trimmer2 --in1 ../garrigos/fastq/S63_R1.fastq.gz --in2 ../garrigos/fastq/S63_R2.
 A related command is `realpath`, which turns a relative path into an
 **absolute (full) path**:
 
-```sh
+```bash
 realpath ../garrigos/fastq/S63_R1.fastq.gz
 ```
 ```bash-out
@@ -304,6 +329,51 @@ This can be useful when you want to record exactly which files were used ---
 for example, by printing the full input file paths in a script's log output,
 which will then be unambiguous regardless of where the script was run from.
 
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 2: `basename` and `dirname`
+
+Predict the output of each of the following commands,
+and then run them to check your predictions:
+
+```bash
+basename ../garrigos/fastq/S63_R1.fastq.gz .fastq
+```
+```bash
+dirname S63_R1.fastq.gz
+```
+```bash
+basename ../garrigos/fastq/
+```
+
+<details><summary> {{< fa check-circle >}} _Click for the solution_</summary>
+
+1. `basename` removes the suffix only if the file name _ends_ in it.
+   `.fastq` occurs in the file name, but not at its end,
+   so nothing is removed --- and you don't get an error or warning either:
+
+   ```bash-out
+   S63_R1.fastq.gz
+   ```
+
+2. A file name without any dirs refers to a file in your working dir,
+   so `dirname` returns `.`, the shorthand for the working dir:
+
+   ```bash-out
+   .
+   ```
+
+3. `basename` doesn't check whether a path points to a file or a dir:
+   it simply returns the last part of the path (ignoring a trailing `/`):
+
+   ```bash-out
+   fastq
+   ```
+
+</details>
 :::
 
 ## Renaming files with loops
@@ -428,7 +498,7 @@ which prints the commands instead of executing them.
 Because the commands contain variables, this is a good way to check
 that they look as intended:
 
-```sh
+```bash
 for old_path in sandbox/*.sam; do
     # Build the new file path:
     file_id=$(basename "$old_path" .sam)
@@ -474,7 +544,7 @@ You can also use `mv -n` ("no-clobber"), which will never overwrite an existing 
 :::
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 2: Renaming files
+#### {{< fa user-edit >}} Exercise 3: Renaming files
 
 1. What would happen if you ran the final renaming loop above a second time?
    Predict the output, and then run the loop again to check.
@@ -556,31 +626,33 @@ fi
 
 This time, nothing is printed,
 because the condition was not met, so the `echo` line was skipped.
-
 Here's how that works:
 
-- After `if` comes the **condition**: here, `[[ "$fruit" == "apple" ]]`.
-  The double square brackets `[[ ]]` represent a _test_^[
+- After `if` comes the **condition**, where the double square brackets `[[ ]]`
+  represent a _test_^[
   You can also use single square brackets `[ ]`, but the double brackets have more functionality,
   and I recommend always using these.],
   and `==` tests whether the text on either side is identical.
-  (A double `==` is common in programming to _test for equality_,
-  as opposed to a single `=`, which is used for variable assignment.)
-- After `then`, you put one or more lines with commands that should run **only if** the
-  condition is true.
+- After `then`, you put one or more lines with commands that should run
+  **only if** the condition is true.
 - The `if` statement ends with `fi`^[
   The `fi` ending (equivalent to `done` in loops) may seem peculiar,
   but it is simply "if" in reverse order
   (you'll see the same trick with `case` ... `esac` further down this page).].
 
-::: {.callout-warning appearance="simple"}
-#### Mind the spaces
-The spaces bordering the brackets on the inside are necessary:
-`[["$fruit" == "apple"]]` would fail!
-The same goes for the spaces around `==`,
-and leaving those out is even more treacherous:
-`[[ "$fruit"=="apple" ]]` will not give an error,
-but will _always_ be true, whatever the value of `$fruit`.
+::: {.callout-warning}
+#### Spaces and double `==`
+
+- The spaces bordering the brackets on the inside are necessary:
+  `[["$fruit" == "apple"]]` would fail!
+
+- The same goes for the spaces around `==`,
+  and leaving those out is even more treacherous:
+  `[[ "$fruit"=="apple" ]]` will not give an error,
+  but will always be true, regardless of the value of `$fruit`.
+
+- A double `==` is common in programming to **test for equality**,
+  as opposed to a single `=`, which is used for variable assignment.
 :::
 
 ### Adding an `else` clause
@@ -626,19 +698,24 @@ it can be worth it because:
   you may get confusing errors or, even worse,
   failure without any clear error message at all.
 
-In the example below, you use an `if` statement to check the file type (FASTQ, FASTA, etc.)
-of an input file, and exit the script _if_ it's not of the correct type.
-Say we have a variable `$filetype` that contains a file's type:
+In the example below, an `if` statement checks whether the input file
+has a FASTQ file extension, and exits the script _if_ it doesn't:
 
 ```{.bash .norun}
-if [[ "$filetype" == "fastq" ]]; then
-    echo "Processing FASTQ file..."
+if [[ "$fastq" == *.fastq.gz ]]; then
+    echo "Processing FASTQ file $fastq..."
     # [Commands to process the FASTQ file...]
 else
-    echo "Error: unknown filetype!"
+    echo "Error: input file $fastq does not have a .fastq.gz extension!"
     exit 1
 fi
 ```
+
+Note that `*.fastq.gz` is _not_ quoted.
+When the right-hand side of `==` is unquoted, it is treated as a pattern
+with the same wildcards as globbing,
+so the test is true for any value of `$fastq` that ends in `.fastq.gz`.
+(With quotes, the test would only be true for a file literally named `*.fastq.gz`!)
 
 When used inside a script, the `exit` command will stop the execution of the script.
 With `exit 1`, the _exit status_ of our script is 1:
@@ -648,7 +725,7 @@ that will exit your shell and close the terminal!)
 
 ### String comparisons
 
-The above test, `"$filetype" == "fastq"`, was an example of a string comparison,
+The above test, `"$fastq" == *.fastq.gz`, was an example of a string comparison,
 where "string" is the programming term for text (as opposed to numbers).
 The two main string comparisons you can make are:
 
@@ -744,6 +821,8 @@ if [[ ! -f "$fastq_file" ]]; then
 fi
 ```
 
+<hr style="height:1pt; visibility:hidden;" />
+
 ::: {.callout-note collapse="true"}
 #### Testing for multiple conditions at once with `&&` and `||` _(Click to expand)_
 To test for multiple conditions at once,
@@ -766,8 +845,10 @@ use the `&&` ("and") and `||` ("or") shell operators --- for example:
   ```
 :::
 
+<hr style="height:1pt; visibility:hidden;" />
+
 ::: exercise
-#### {{< fa user-edit >}} Exercise 3: Number of arguments
+#### {{< fa user-edit >}} Exercise 4: Number of arguments
 
 You will add the `if` statement from above,
 which tests whether the correct number of arguments were passed,
@@ -865,7 +946,7 @@ echo "Last name: $last_name"
 :::
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 4: Check the input file
+#### {{< fa user-edit >}} Exercise 5: Check the input file
 
 In [w7b](../week07/w7b_scripts2.qmd), you saw that if a glob doesn't match any files,
 a loop will still run once, with the literal glob pattern as the "file name".
@@ -977,10 +1058,8 @@ to loop over **each line in a file**. This is useful when:
 - The items you want to loop over are **stored in a file**,
   such as a list of sample IDs, file paths, or accession numbers
   for files to download.
-
 - Each line contains multiple pieces of information that **belong together**,
   like the rows of a metadata table with a sample ID, treatment, and time point.
-
 - The items contain spaces: `read` reads entire lines,
   whereas a `for` loop over `$(cat file)` would split items at spaces.
 
@@ -992,7 +1071,7 @@ To see how a `while` loop works, let's create a file with one fruit per line:
 touch fruits.txt
 ```
 
-Enter the following lines into that file,
+Open that file in the editor, enter the following lines,
 and make sure to press <kbd>Enter</kbd> after the last line (see the box below for why):
 
 ```{.file filename="fruits.txt"}
@@ -1014,6 +1093,10 @@ Fruit: banana
 Fruit: plum
 ```
 
+So, the output is the same as that of the `for` loop `for fruit in apple banana plum`
+in [w7b](../week07/w7b_scripts2.qmd#a-first-shell-loop),
+but now, the collection of items comes from a file.
+
 Here's how that works:
 
 - The `< fruits.txt` after `done` uses _input_ redirection:
@@ -1034,20 +1117,18 @@ Here's how that works:
   Once there are no lines left, `read` "fails", the condition is no longer true,
   and the loop stops.
 
-::: {.callout-warning appearance="simple"}
+::: {.callout-warning}
 #### The last line needs a line break
 `read` only "succeeds" when it reaches the end of a line,
 which is marked by an invisible newline character.
 If the last line of a file isn't followed by a newline,
 `read` fails on that line, and the loop **silently skips it**!
+
 VS Code doesn't add a final newline by default ---
 so if `plum` was missing from your output, that's why.
-You can make VS Code always add one by checking the setting "Files: Insert Final Newline".
+You can make VS Code always add one by checking the
+**setting "Files: Insert Final Newline".**
 :::
-
-So, the output is the same as that of the `for` loop `for fruit in apple banana plum`
-in [w7b](../week07/w7b_scripts2.qmd#a-first-shell-loop),
-but now, the collection of items comes from a file.
 
 ### Looping over file names
 
@@ -1117,9 +1198,7 @@ Alternatively, you can process the file with another command before it goes into
 Below, `cut` extracts the first column,
 and the `<(...)` construct (called "process substitution")
 makes the output of that command available as if it were a file,
-so it can be redirected into the loop with `<`.
-Note the space between the two `<`s, which is required:
-the first one is the redirection, and the second one is part of `<(...)`:
+so it can be redirected into the loop with `<`:
 
 ```bash
 while read -r sample_id; do
@@ -1134,6 +1213,9 @@ Processing sample: S79
 Processing sample: S83
 # [...output truncated...]
 ```
+
+_(Note the space between the two `<`s, which is required:_
+_the first one is the redirection, and the second one is part of `<(...)`.)_
 
 You can also extract columns directly by providing `read` with multiple variable names,
 as `read` will split each line at spaces and tabs:
@@ -1166,8 +1248,10 @@ Processing sample: S75 (treatment: cathemerium)
 # [...output truncated...]
 ```
 
+<hr style="height:1pt; visibility:hidden;" />
+
 ::: exercise
-#### {{< fa user-edit >}} Exercise 5: While loops
+#### {{< fa user-edit >}} Exercise 6: While loops
 
 1. Below, `read` gets only _two_ variable names for the three columns in `samples.tsv`.
    What do you think the loop will print for the first sample?
@@ -1192,6 +1276,8 @@ Processing sample: S75 (treatment: cathemerium)
    This is why the examples above needed the `time` variable even though they never use it:
    it is a placeholder that "absorbs" the second column,
    so that the third column ends up in `$treatment`.
+   A common convention for such a "throwaway" variable is to name it `_`,
+   as in `while read -r sample_id _ treatment; do`.
 
    </details>
 
@@ -1242,31 +1328,32 @@ ls: cannot access 'nonexistent_dir': No such file or directory
 2
 ```
 
-(In fact, `if` works the same way: it runs the `then` block if the command after it
-has exit status 0. A test like `[[ "$fruit" == "apple" ]]` is simply a command
-that has exit status 0 if the condition is true, and 1 if it is false.)
-
 - Only if the first command **succeeds**, also run the second command:
 
-  ```sh
+  ```{.bash .norun}
   # Move into the data dir and if that succeeds, then list the files there:
   cd data && ls
   ```
-  ```sh
+  ```{.bash .norun}
   # Stage all changes => commit them => push the commit to remote:
   git add --all && git commit -m "Add README" && git push
   ```
 
 - Only if the first command **fails**, also run the second command:
 
-  ```sh
+  ```{.bash .norun}
   # Exit the script if you can't change into the output dir:
   cd "$outdir" || exit 1
   ```
-  ```sh
+  ```{.bash .norun}
   # Print a warning if the input file is empty (or doesn't exist):
   [[ -s "$fastq" ]] || echo "Warning: input file $fastq is empty"
   ```
+
+That last example works because a test like `[[ -s "$fastq" ]]` is simply a command
+with exit status 0 if the condition is true, and 1 if it is false.
+In fact, `if` works the same way:
+it runs the `then` block if the command after it has exit status 0.
 
 ### Parameter expansion to provide default values
 
@@ -1279,17 +1366,17 @@ this won't cause an "unbound variable" error with `set -u` when the argument is 
 - Assign the value of `$1` to `number_of_lines` unless `$1` is unset or empty:
   in that case, set it to a default value of `10`:
 
-  ```sh
+  ```{.bash .norun}
   number_of_lines="${1:-10}"
   ```
 
-- Set `true` as the default value for `$3`:
+- Assign the value of `$3` to `remove_unpaired`, with a default value of `true`:
 
-  ```bash
+  ```{.bash .norun}
   remove_unpaired="${3:-true}"
   ```
 
-As a more worked out example,
+As a more worked-out example,
 say that your script takes an input dir and an output dir as arguments.
 But if the output dir is not specified, you want it to be the same as the input dir.
 You can do that like so:
@@ -1320,7 +1407,7 @@ but represent a separate output stream: **"standard error"**.
 We can see this when we try to list a non-existent directory and redirect
 the output of the `ls` command to a file:
 
-```sh
+```bash
 ls solutions/ > solution_files.txt
 ```
 ```bash-out
@@ -1331,7 +1418,7 @@ Evidently, the error was printed to screen rather than redirected to the output 
 This is because `>` only redirects standard out, and not standard error.
 Was anything at all printed to the file?
 
-```sh
+```bash
 cat solution_files.txt
 ```
 ```bash-out
@@ -1349,13 +1436,13 @@ To *redirect* the standard error, use **`2>`**^[
 Note that `1>` is the full notation to redirect standard out,
 and the `>` we've been using is merely a shortcut for that.]:
 
-```sh
+```bash
 ls solutions/ > solution_files.txt 2> errors.txt
 ```
 
 To *combine* standard out and standard error, use **`&>`**:
 
-```sh
+```bash
 # (&> out.txt is a Bash shortcut for: > out.txt 2>&1)
 ls solutions/ &> out.txt
 ```
@@ -1372,7 +1459,7 @@ script **into** standard error instead of standard out, use **`>&2`**.
 This is good practice for your own error messages,
 like those in the `if` statements above:
 
-```sh
+```{.bash .norun}
 echo "Error: Invalid line number" >&2
 exit 1
 ```
@@ -1422,7 +1509,7 @@ How this works:
 
 Such a script could for example be run like so:
 
-```bash
+```{.bash .norun}
 bash scripts/salmon.sh -i my.bam -o results/salmon --no-gcbias
 ```
 
@@ -1600,7 +1687,7 @@ will also correctly handle such file names.
 And this example once again shows that you should avoid spaces in file names!
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 6: Bash arrays
+#### {{< fa user-edit >}} Exercise 7: Bash arrays
 
 First, create the `files.txt` file from the example above
 (this `printf` command prints each of its arguments on a separate line):

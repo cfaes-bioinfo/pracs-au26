@@ -18,6 +18,8 @@
     I will always have a preview server running.
   - When I ask to **proofread** a document, use the `proofread` skill
     (`.claude/skills/proofread/`).
+  - When writing or editing `.qmd`/`.md` files, follow `STYLE-GUIDE.md`
+    (e.g., line breaks after sentences or sentence parts, list punctuation, callouts).
 
 - Each week's material is a `week01`, `week02`, etc. folder, but some material
   is kept in separate folder:

@@ -40,6 +40,11 @@ language:
 This page covers how the shell finds the programs you run (the `$PATH`),
 and how you can make lasting changes to your shell's settings
 using configuration files like `~/.bashrc`.
+Understanding the `$PATH` helps you make sense of `command not found` errors,
+and of which version of a program runs when several are installed.
+And with a few lines in your `~/.bashrc`,
+you can make your shell more convenient to work in,
+e.g. with shortcuts for commands you use often and a more informative prompt.
 
 ### Setting up
 
@@ -68,6 +73,8 @@ which git
 ```
 
 To check which directories are in your `$PATH`, you can simply `echo` it:
+
+<!-- TODO: regenerate this output and the numbered one below on Cardinal (current output is from the old Owens/Pitzer setup), then update the line numbers in the callout below -->
 
 ```bash
 echo $PATH
@@ -138,6 +145,8 @@ it adds the directory with FastQC's executable to the start of your `$PATH`.
 
 Before loading the module, `which fastqc` shows that the shell cannot find it:
 
+<!-- TODO: regenerate on Cardinal; the $PATH in this output should match the `echo $PATH` output above (no personal micromamba/software/Quarto dirs) -->
+
 ```bash
 which fastqc
 ```
@@ -156,6 +165,16 @@ which fastqc
 ```
 
 (Activating a [Conda environment](conda.qmd) works the same way.)
+
+<details class="details-quiz">
+<summary>Say you have your own, older `fastqc` in `~/software/bin`, and your `~/.bashrc` adds that dir to the _start_ of your `$PATH`. If you then run `module load fastqc/0.12.1`, which `fastqc` will run?</summary>
+
+The module's version.
+Your `~/.bashrc` added your dir to the start of the `$PATH` when the shell started,
+but `module load` runs later and adds its own dir in front of that.
+When in doubt, `which fastqc` tells you which one will run.
+
+</details>
 
 ### Changing your `$PATH`
 
@@ -204,12 +223,13 @@ cp scripts/fastqc.sh ~/software/bin
 chmod +x ~/software/bin/fastqc.sh
 export PATH="$PATH:$HOME/software/bin"
 
-# You can now run the script from any directory without specifying its path:
-fastqc.sh
+# You can now run the script without specifying its path:
+fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
 ```
 
 For scripts that belong to a specific research project, though,
-it is better to keep them within the project dir and run them from there.
+it is better to keep them within the project dir and run them from there,
+so that the project is self-contained and others can rerun your analysis.
 :::
 
 ## Shell configuration files
@@ -250,7 +270,7 @@ fi
 ```
 
 This code checks whether `~/.bashrc` exists (`-f`), and if so, runs it
-(`.` is a shorthand for `source`).
+(`.` is a shorthand for the `source` command, which is explained below).
 So, you only need to edit your `~/.bashrc`.
 :::
 
@@ -258,6 +278,8 @@ So, you only need to edit your `~/.bashrc`.
 
 To see what's currently in your `~/.bashrc`,
 use `cat` or open the file in VS Code:
+
+<!-- TODO: check this output against a current student's default ~/.bashrc (the hard-coded PATH= line uses the old Owens/Pitzer dirs, and the ~/.bash_aliases block may not be an OSC default) -->
 
 ```bash
 cat ~/.bashrc
@@ -305,7 +327,7 @@ source ~/.bashrc
 ```
 
 ::: {.callout-note collapse="true"}
-#### Why use the `source` command?
+#### Why use the `source` command? _(Click to expand)_
 
 `~/.bashrc` is really a shell script, so
 why not run it with `bash ~/.bashrc` instead of `source ~/.bashrc`?
@@ -350,6 +372,22 @@ Two things to watch out for:
 - A mistake in your `~/.bashrc` can cause errors every time you open a shell.
   If that happens, fix or remove the problematic line,
   or restore your backup.
+  If your shell won't even start anymore,
+  you can still edit the file through the OnDemand `Files` menu
+  (check `Show Dotfiles` to see hidden files).
+
+- Be careful with loading software in your `~/.bashrc`,
+  e.g. with `module load` or `conda activate`.
+  This can be convenient for software that you use all the time,
+  but that software will then be loaded in every shell,
+  which can cause conflicts that are hard to track down.
+  Also, make sure that your scripts don't _rely_ on this:
+  they should still load the software they need themselves,
+  so that they also work for others.
+
+- Don't add commands that print output, like `echo`.
+  This can break tools that transfer files over SSH,
+  like `scp`, `sftp`, and `rsync`.
 :::
 
 ## Aliases
@@ -367,7 +405,7 @@ alias l='ls -lh'
 l
 ```
 ```bash-out
-total 4.0K
+total 32K
 drwxrwx---+ 5 jelmer PAS0471 4.0K Oct  1 12:37 GA3
 drwxrwx---+ 6 jelmer PAS0471 4.0K Sep 14 14:41 garrigos
 drwxr-x---+ 3 jelmer PAS0471 4.0K Sep 11 15:04 week02
@@ -435,8 +473,19 @@ aliases only last for the current shell session,
 unless you add them to your `~/.bashrc`:
 
 ```{.bash .file filename="&#126;/.bashrc (excerpt)"}
-alias ll='ls -lh'
+alias l='ls -lh'
 ```
+
+<details class="details-quiz">
+<summary>You add `alias l='ls -lh'` to your `~/.bashrc` and save the file. Then, in a terminal that was already open, you type `l`. What happens?</summary>
+
+You'll get `bash: l: command not found`
+(unless you had already typed the `alias` command in that shell).
+The `~/.bashrc` file is only read when a shell starts,
+so your already-open shell doesn't know about the new alias.
+Run `source ~/.bashrc` or open a new terminal.
+
+</details>
 
 <hr style="height:1pt; visibility:hidden;" />
 
@@ -444,7 +493,9 @@ alias ll='ls -lh'
 #### Don't use aliases in scripts
 Aliases are a convenience for working interactively.
 They are not available in scripts by default,
-so always write out the full commands in scripts.
+and even if they were,
+a script that relies on your personal aliases would not work for anyone else.
+So, always write out the full commands in scripts.
 :::
 
 ## Customizing your prompt
@@ -478,6 +529,8 @@ Here are some useful ones:
 
 For example, a potentially useful change is to show the full path to your
 working dir, so you always know exactly where you are:
+
+<!-- TODO: the example prompts below use Pitzer node p0362; update to a Cardinal node name (c0xxx) -->
 
 ```bash
 PS1='[\u@\h \w]\$ '
@@ -513,6 +566,10 @@ $</code></pre>
 Here, `\[\e[1;34m\]` switches to bold (`1`) blue (`34`) text,
 and `\[\e[0m\]` switches back to the default.
 Other color codes include `31` (red), `32` (green), `33` (yellow), and `35` (magenta).
+The `\[` and `\]` around each color code tell the shell that these characters
+take up no space on screen.
+If you leave them out, the prompt still looks fine,
+but long commands will wrap onto the next line in strange ways.
 
 Finally, you may not care much about seeing your user name and node name
 all the time.
@@ -543,10 +600,18 @@ PS1='\[\e[1;34m\][\u@\h \w]\[\e[0m\]\n\$ '
 #### Why single quotes? _(Click to expand)_
 
 Inside single quotes, nothing is interpreted by the shell,
-so the backslash codes are stored in `$PS1` exactly as you typed them,
-and are then filled in anew each time the prompt is shown.
-With double quotes, some characters like `\$` would already be interpreted
-when you set the variable, which can give surprising results.
+so `$PS1` stores exactly what you typed,
+and the shell fills it in anew each time the prompt is shown.
+This matters for anything that should be updated every time.
+For example, the variable `$PWD` contains the path to your working dir:
+
+- With `PS1='$PWD \$ '`, the prompt always shows your current working dir.
+- With `PS1="$PWD \$ "`, `$PWD` is replaced by its value right away,
+  so the prompt keeps showing the dir you were in when you set it,
+  even after you `cd` elsewhere.
+
+(This is also why you should use single quotes when adding a line
+to your `~/.bashrc` with `echo`, as shown above.)
 
 The quotes also preserve the space after `\$`,
 which separates the prompt from the command you type.

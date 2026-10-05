@@ -4,6 +4,30 @@ Notes for maintaining consistent styling across `.qmd` source files.
 This file is plain Markdown and is intentionally **not** rendered as part
 of the Quarto site (only `*.qmd` files are rendered per `_quarto.yml`).
 
+## Line breaks in source files
+
+In `.qmd` and `.md` source files, start a new line after each sentence
+or sentence part (e.g. after a clause ending in a comma),
+rather than only wrapping lines when they reach the ruler.
+These line breaks are invisible in the rendered output,
+but they make diffs smaller and the source easier to read and edit.
+
+## Punctuation in lists
+
+- No period at the end of items that are just a link, a citation,
+  or a sentence fragment
+- A period at the end of items that are full sentences,
+  or that end with a description (e.g. after ` --- ` or ` -- `)
+
+For example:
+
+```markdown
+- Ohio State's [AI landing page](https://ai.osu.edu)
+- [Claude Academy](https://academy.claude.com) ---
+  Multiple free short courses by Anthropic on using AI.
+- For more, see the [AI section of the Resources page](../ref/resources.qmd#ai).
+```
+
 ## Callouts
 
 Quarto natively supports five callout types: `note`, `tip`, `warning`,
@@ -70,3 +94,14 @@ Answer goes here.
 CSS in both `styles.css` and `slides.css` styles `details.details-quiz` to
 match `.callout-quiz` as closely as possible: purple border/accent, a
 tinted `<summary>` background, and the same question-mark icon.
+
+### Punctuation in `<summary>` labels
+
+A `<summary>` is a clickable control, like a button, so it gets no
+terminal period, even when it's a full sentence or an imperative:
+
+```html
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the answer_</summary>
+```
+
+Question-style summaries keep their question mark.
