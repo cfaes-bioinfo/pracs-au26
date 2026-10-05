@@ -168,7 +168,7 @@ commands in a script run in **your** working dir,
 not in the dir where the script is stored.)
 
 In practice, you wouldn't bother writing a script for simple commands like these.
-Scripts **pay off** for commands that you want to save and rerun,
+Scripts do pay off for commands that you want to save and rerun,
 and/or that take a long time to run, such as those that run bioinformatics tools.
 So let's move on to a more useful example.
 
@@ -181,6 +181,7 @@ by executing the following commands directly in the terminal:
 
 ```{.bash .norun}
 mkdir -p results/fastqc
+
 apptainer exec oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960 \
     fastqc --outdir results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
 ```
@@ -212,7 +213,7 @@ a couple of notes:
   Recall that FastQC won't create the output dir for you.
   Using `mkdir -p` **inside the script** ensures that the output dir exists,
   whether or not it existed before running the script
-  --- see the box below for details.
+  (see the box below for details).
 
   :::{.callout-tip collapse="true"}
   #### More about the `-p` option to `mkdir` _(Click to expand)_
@@ -305,7 +306,7 @@ errors and bad practices. Let's install it:
 :::
 :::
 
-### Shebang line
+### Shebang line!
 
 If Shellcheck is working,
 you should now see a red squiggly line on the first line of your `fastqc.sh` script:
@@ -346,8 +347,7 @@ Some default settings of the Bash shell are bad ideas inside scripts:
   (you'll learn more about variables below).
 
 To make shell scripts safer and error out when such things happen,
-we can apply a few "safe" settings by adding a single line of code to the script.
-
+we can apply a few **"safe" settings** by adding a single line of code to the script.
 Add this line to the top of your `fastqc.sh` script, right after the shebang line:
 
 ```{.bash .file filename="scripts/fastqc.sh (excerpt)" code-line-numbers="true"}
@@ -555,19 +555,19 @@ but that proves that the command was executed as intended.)
 ::: callout-note
 ### How to name variables
 
-Some rules for variable names in the shell --- they:
+Some **rules** for variable names in the shell --- they:
 
-- **Can** contain letters, numbers, and underscores
-- **Cannot** contain spaces, periods (`.`), dashes (`-`), or other special symbols^[
+- Can contain letters, numbers, and underscores
+- Cannot contain spaces, periods (`.`), dashes (`-`), or other special symbols^[
   Compare this with the situation for file names,
   which ideally do not contain spaces and special characters either,
   but in which `-` and `.` _are_ recommended.]
-- **Cannot _start_** with a number
+- Cannot _start_ with a number
 
-Ideally, variable names are descriptive,
+Ideally, variable names are **descriptive**,
 like `$fastq` and `$outdir` above and not cryptic like `$x`.
 
-Like with file names, you can distinguish words using capitalization
+Like with file names, you can **distinguish words** using capitalization
 ("camelCase", `$inputFile`) or underscores ("snake case", `$input_file`).
 In this course, we'll mostly use lowercase variable names,
 except for "constants" in scripts, which we'll write in uppercase ---
@@ -870,9 +870,8 @@ variable names, for example:
 Above, it's warning that the script has defined variables that are not used (yet).
 That's a good thing to know about, because it may indicate a typo in the variable name,
 or that you forgot to use the variable in your code.
-
-Conversely, Shellcheck also warns you when you reference a variable
-that hasn't been assigned.
+(Conversely, Shellcheck also warns you when you reference a variable
+that hasn't been assigned.)
 
 If you finished the script as shown above, the squiggly lines should disappear.
 :::
@@ -917,8 +916,8 @@ Inside the script, any arguments you pass are
 However, the script won't **use** these "placeholder" variables unless you
 reference them in your code. Let's see how to do that.
 
-:::{.callout-note}
-#### Other variables that are automatically available inside scripts
+:::{.callout-note collapse="true"}
+#### Other variables that are automatically available inside scripts _(Click to expand)_
 
 - **`$#`** contains the _number_ of command-line arguments passed to the script
   (this can be useful for validation --- see
@@ -953,17 +952,23 @@ apptainer exec "$CONTAINER" fastqc --outdir "$outdir" "$fastq"
 Only the two lines that define `$fastq` and `$outdir` changed:
 their values now come from the command line instead of being hard-coded.
 
-You _could_ use the `$1`-style variables throughout your script, like so:
+::: callout-tip
+#### Why copy the placeholder variables to descriptively named variables?
+
+You _could_ simply use the `$1`-style variables directly throughout your script,
+like so:
 
 ```{.bash .file filename="fastqc.sh (alternative - don't use)"}
 apptainer exec "$CONTAINER" fastqc --outdir "$2" "$1"
 ```
 
-But I recommend always copying them to descriptively named variables like we did here.
-This is better because:
+But I recommend always copying them to descriptively named variables like we did here,
+because:
 
 - It will make your script **easier to understand** for others and for your future self
 - It will make it less likely that you accidentally **mix up** the variables
+
+:::
 
 Now, you can run the script for any FASTQ file without editing it ---
 for example, for both FASTQ files of sample `S63`:
@@ -1015,22 +1020,22 @@ leading to much more confusing error messages downstream.
 ::: exercise
 #### {{< fa user-edit >}} In-class exercise 1: A script with two arguments
 
-1. Create a script `scripts/printname.sh` with the following contents:
+Create a new shell script `scripts/printname.sh`, with the following contents:
 
-   ```{.bash .file filename="scripts/printname.sh"}
-   #!/bin/bash
-   set -euo pipefail
+```{.bash .file filename="scripts/printname.sh"}
+#!/bin/bash
+set -euo pipefail
 
-   first_name="$1"
-   last_name="$2"
+first_name="$1"
+last_name="$2"
 
-   echo "This script will print a first and a last name"
-   echo "First name: $first_name"
-   echo "Last name: $last_name"
-   ```
+echo "First name: $first_name, last name: $last_name"
+```
 
-2. What do you think the script's output will be when you run it with the arguments
-   `John` and `Doe` like so:
+In each scenario described below, think about what might happen,
+then run the code to test your prediction.
+
+1. With the arguments `John` and `Doe`:
 
    ```bash
    bash scripts/printname.sh John Doe
@@ -1043,19 +1048,17 @@ leading to much more confusing error messages downstream.
    bash scripts/printname.sh John Doe
    ```
    ```{.bash-out}
-   This script will print a first and a last name
-   First name: John
-   Last name: Doe
+   First name: John, last name: Doe
    ```
 
    </details>
    ---->
 
-Next, in each of the three scenarios described below, think about what might happen.
-After you have thought about it,
-run the script as instructed in the scenario to test your prediction.
+2. Double-quoting the entire name:
 
-3. Double-quoting the entire name, e.g. `bash scripts/printname.sh "John Doe"`.
+   ```bash
+   bash scripts/printname.sh "John Doe"
+   ```
 
    <!----
    <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
@@ -1073,7 +1076,11 @@ run the script as instructed in the scenario to test your prediction.
    </details>
    ---->
 
-4. Passing three names, e.g. `bash scripts/printname.sh John Michael Doe`.
+3. Passing three names:
+
+   ```bash
+   bash scripts/printname.sh John Michael Doe
+   ```
 
    <!----
    <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
@@ -1083,27 +1090,17 @@ run the script as instructed in the scenario to test your prediction.
    it only catches references to _non-existent_ variables, not unused arguments.
 
    ```bash-out
-   This script will print a first and a last name
-   First name: John
-   Last name: Michael
+   First name: John, last name: Michael
    ```
    </details>
    ---->
 
-5. After "commenting out" the line with `set` settings,
-   running the script without passing arguments to it.
-
-   <details><summary> {{< fa lightbulb >}} Click here to learn what "commenting out" means</summary>
-   You can deactivate a line of code without removing it
-   by inserting a `#` as the first character of that line.
-   This is often referred to as "commenting out" code.
-   For example, below I've commented out the `ls` command,
-   and nothing will happen if I run this line:
+4. Removing the line with `set` settings from the script,
+   and then running it without passing arguments to it:
 
    ```bash
-   #ls
+   bash scripts/printname.sh
    ```
-   </details>
 
    <!----
    <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
@@ -1116,44 +1113,8 @@ run the script as instructed in the scenario to test your prediction.
    bash scripts/printname.sh
    ```
    ```bash-out
-   This script will print a first and a last name
-   First name:
-   Last name:
+   First name: , last name:
    ```
-
-   Being "commented out", the `set` line should read:
-
-   ```bash
-   #set -euo pipefail
-   ```
-   </details>
-   ---->
-
-6. Back to your FastQC script:
-   what do you think will happen if you accidentally **swap the two arguments**?
-   Think about it first, then try it:
-
-   ```bash
-   bash scripts/fastqc.sh results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
-   ```
-
-   <!----
-   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
-   The script stops at the `mkdir -p` line,
-   because `$outdir` now contains the path to the FASTQ file:
-
-   ```bash-out
-   mkdir: cannot create directory ‘../garrigos/fastq/S63_R1.fastq.gz’: File exists
-   ```
-
-   `mkdir -p` doesn't complain if a _dir_ already exists,
-   but it does fail if the path exists as a _file_.
-   Thanks to `set -e`, the script stops right there and FastQC is never run.
-
-   The broader lesson: the shell has no idea which argument is "supposed" to be what ---
-   it simply assigns them by position.
-   That's why the argument order of your scripts matters,
-   and why it helps to copy `$1` and `$2` to descriptive variable names.
    </details>
    ---->
 

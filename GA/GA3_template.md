@@ -11,7 +11,9 @@ GA3 README template.
 - Delete instructional comments like this one as you go.
 -->
 
-# GA3 answers - [your name]
+# GA3 answers - <your-name>
+
+------------------------------------------------------------------------
 
 ## Part A: Your README, data, and Git repo
 
@@ -26,6 +28,8 @@ GA3 README template.
 ### 3: Commit throughout the assignment
 
 <!-- No command/output needed here -- we check your commit history directly. -->
+
+------------------------------------------------------------------------
 
 ## Part B: Basic shell scripts
 
@@ -50,7 +54,6 @@ bash scripts/echo.sh Oct07 Oct08
 The output of the command was:
 
 ```
-
 ```
 
 ```bash
@@ -60,7 +63,6 @@ bash scripts/echo.sh Oct07 Oct08 Oct09 Oct10
 The output of the command was:
 
 ```
-
 ```
 
 ```bash
@@ -70,7 +72,6 @@ bash scripts/echo.sh Oct07 Oct08 "Oct09 Oct10"
 The output of the command was:
 
 ```
-
 ```
 
 ```bash
@@ -80,7 +81,6 @@ bash scripts/echo.sh results/fastqc/*.html
 The output of the command was:
 
 ```
-
 ```
 
 *Answer*: Which output (if any) differed from your prediction, and why?
@@ -94,39 +94,39 @@ The output of the command was:
 Test 1:
 
 ```bash
-
+# Your command:
 ```
 
 The output of the command was:
 
 ```
-
 ```
 
 Test 2 (with redirection), and checking the contents of the output file:
 
 ```bash
-
+# Your command:
 ```
 
 The output of the command that checks the file contents was:
 
 ```
-
 ```
+
+------------------------------------------------------------------------
 
 ## Part C: A script to run MultiQC
 
 ### 8: Get a MultiQC container link
 
-*Answer*: The container link (URI) is: `_____`
+*Answer*: The container link (URI) is:
 
 ### 9: MultiQC's help info, and the MultiQC command
 
 Code to run `multiqc --help` with the container:
 
 ```bash
-
+# Your command:
 ```
 
 <!-- You don't need to paste the MultiQC help output -->
@@ -134,7 +134,7 @@ Code to run `multiqc --help` with the container:
 The MultiQC command to run MultiQC on `results/fastqc` with output in `results/multiqc`:
 
 ```bash
-
+# Your command:
 ```
 
 ### 10: Write the `multiqc.sh` script
@@ -146,24 +146,23 @@ The MultiQC command to run MultiQC on `results/fastqc` with output in `results/m
 Code to run the script:
 
 ```bash
-
+# Your command:
 ```
 
 <!-- You don't need to paste the MultiQC logging output -->
 
-*Answer*: Number of FastQC reports MultiQC found: _____
+*Answer*: Number of FastQC reports MultiQC found:
 
 *Answer*: Does that match what you expected? Why/why not?
 
 ### 12: Make `multiqc.sh` accept arguments, and rerun it
 
-<!-- No need to paste the script: we'll look at scripts/multiqc.sh
-     and its Git history directly. -->
+<!-- No need to paste the script: we'll look at scripts/multiqc.sh and its Git history directly. -->
 
 Code to rerun the script:
 
 ```bash
-
+# Your command:
 ```
 
 <!-- No need to paste any output -->
@@ -171,6 +170,8 @@ Code to rerun the script:
 ### 13: Differences between the two MultiQC runs
 
 *Answer*:
+
+------------------------------------------------------------------------
 
 ## Part D: Pandoc to render Markdown
 
@@ -186,10 +187,10 @@ Code to rerun the script:
 pandoc -o README.pdf README.md
 ```
 
-<!-- Put the command you used to render your README to HTML below. -->
+- Command to render to HTML:
 
 ```bash
-
+# Your command:
 ```
 
 ### 16: Should the rendered files be committed?
@@ -214,6 +215,8 @@ pandoc -o README.pdf README.md
 
 <!-- No command/output needed here -- we check your GitHub repo directly. -->
 
+------------------------------------------------------------------------
+
 ## Bonus
 
 ### 21: Explore the MultiQC report
@@ -225,13 +228,12 @@ pandoc -o README.pdf README.md
 ### 22: Pandoc versions
 
 ```bash
-
+# Your command:
 ```
 
 The output of the command(s) was:
 
 ```
-
 ```
 
 *Answer*: Is the Pandoc version available by default the most recent one?
