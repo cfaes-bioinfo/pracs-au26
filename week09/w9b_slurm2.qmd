@@ -1,7 +1,7 @@
 ---
 title: "Slurm batch jobs -- part II"
 subtitle: "Week 9 -- Lecture B"
-pagetitle: "w9b: Batch jobs 2"
+pagetitle: "w9b: Slurm batch jobs II"
 date: 2026-10-21
 date-modified: last-modified
 author:
@@ -17,7 +17,7 @@ other-links:
   - text: "Week 9 overview"
     icon: check2-all
     href: w9_overview.html
-  - text: "w9a: Batch jobs I"
+  - text: "w9a: Slurm batch jobs I"
     icon: book
     href: w9a_slurm1.html
   - text: "Graded Assignment 4"
@@ -60,14 +60,14 @@ you will learn:
 
 Here, we'll go through the most commonly used `sbatch` options
 (except `--account`, which was covered in the previous lecture).
-As pointed out above, each of these options can be:
+As you saw in the previous lecture, each of these options can be:
 
 - passed on the command line: `sbatch --account=PAS3493 myscript.sh`
   _(has precedence over the next)_ and/or
 - added at the top of the script you're submitting: `#SBATCH --account=PAS3493`
 
 Also, note that many options have a corresponding long
-(e.g. `--account=`) and short format (e.g `-A`).
+(e.g. `--account=`) and short format (e.g. `-A`).
 For clarity, we'll stick to long-format options here.
 
 ### Time with `--time`
@@ -88,20 +88,19 @@ before they start.
 
 :::callout-tip
 ##### The time you reserve is the "**wall time**"
-When you reserve an amount of time with `--time`, this is the "wall time".
-What does wall time mean?
-This is simply the actual amount of time that passes on the (wall) clock.
+When you reserve an amount of time with `--time`, this is the "wall time":
+simply the amount of time that passes on the (wall) clock.
 This term is used to contrast it with "_core hours_",
-which is the number of hours multiplied by the number of cores:
+which you learned about in week 6: the wall time multiplied by the number of cores.
 
 :::: columns
 ::: {.column width=30%}
 :::
 ::: {.column width=40%}
-| # hours | # cores | wall time | # core hours
-|:---:|:---:|:---:|:---:|
-| 2 | 1 | 2 | 2
-| 2 | 8 | 2 | 16
+| Wall time (hours) | # cores | # core hours
+|:---:|:---:|:---:|
+| 2 | 1 | 2
+| 2 | 8 | 16
 
 : {.striped .hover}
 
@@ -159,8 +158,10 @@ time to at least 100 seconds.
 If you succeed in exceeding the time limit, an error message will be printed.
 Where do you think this error message will be printed: to the screen, in the Slurm log
 file, or in `sleep.txt`?
+And will `sleep.txt` and the "_I'm awake!_" line still be produced?
 
-After waiting for the job to be killed after 60 seconds,
+After waiting for the job to be killed
+(this may take a bit longer than 60 seconds),
 check if you were correct and what the error message is.
 
 <!---
@@ -172,6 +173,8 @@ We request 1 minute of wall-time while we let the script sleep for 100 seconds:
 #!/bin/bash
 #SBATCH --account=PAS3493
 #SBATCH --time=1
+
+set -euo pipefail
 
 echo "I will sleep for 100 seconds" > sleep.txt
 sleep 100s
@@ -193,6 +196,11 @@ which will be printed in the Slurm log file:
 ```bash-out-solo
 slurmstepd: error: *** JOB 23641567 ON p0133 CANCELLED AT 2026-04-04T14:55:24 DUE TO TIME LIMIT ***
 ```
+
+`sleep.txt` _will_ be created, since that line runs before the `sleep` command,
+but the "_I'm awake!_" line will not be printed, since the job is killed during `sleep`.
+This is why a final "Successfully finished" line in your scripts is so useful:
+if it's missing from the Slurm log file, you know the script didn't finish.
 </details>
 -->
 
@@ -213,7 +221,7 @@ same sub-parts/components of a node that you can reserve and use separately.
 Running a bioinformatics program with multiple threads/cores/CPUs ("multi-threading")
 is very common, and this can make the running time of such programs much shorter.
 While the specifics depend on the program,
-using **8-12 cores** is often a sweet spot,
+using **8--12 cores** is often a sweet spot,
 whereas asking for even more cores can lead to rapidly diminishing returns.
 
 While there are multiple relevant Slurm options (see the box below),
@@ -223,7 +231,7 @@ the option **`--cpus-per-task`** (`-c`).
 Typically, inside your shell script,
 you will also want to inform the program that your script runs about the number of
 available cores -- most have an option like `--cores` or `--threads`.
-**You should set this to the same value `n` as the `--cpus-per-task`.**
+**You should set this to the same value as `--cpus-per-task`.**
 An example, where we ask for 8 CPUs/cores/threads:
 
 ```bash
@@ -261,7 +269,7 @@ What is that about? Let's go over nodes and tasks:
 
 - For jobs that require multiple processes (tasks),
   you can use `--ntasks=n` or `--ntasks-per-node=n` --- this is also quite rare!
-  However, note in practice, specifying the number of tasks `n` with one of these
+  However, note that in practice, specifying the number of tasks `n` with one of these
   options is equivalent to using `--cpus-per-task=n`,
   in the sense that both ask for `n` cores that can subsequently be used by a program
   in your script.
@@ -413,23 +421,45 @@ and that is to use **`%j`**, which represents the batch job number:
 #SBATCH --output=slurm-fastqc-%j.out
 ```
 
+::: exercise
+#### {{< fa user-edit >}} Exercise: Slurm log files in their own dir
+
+Say you want your FastQC Slurm log files to go straight into `results/fastqc/logs`.
+So, you change the `#SBATCH` line to `#SBATCH --output=results/fastqc/logs/slurm-fastqc-%j.out`,
+and add `mkdir -p results/fastqc/logs` to the script, right after `set -euo pipefail`.
+
+Will this work the first time you submit the script, when `results/fastqc/logs` doesn't exist yet?
+_Hint: when do you think Slurm creates the log file?_
+
+<!----
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
+No. Slurm creates the log file when the job starts,
+_before_ any line of your script has run.
+At that point, `results/fastqc/logs` doesn't exist yet,
+and Slurm won't create missing dirs for you,
+so the job fails right away, and **no log file is created at all**:
+there is nowhere to look to find out what went wrong.
+
+Compare this with the `sleep.sh` exercise in the previous lecture,
+where a command _inside_ the script tried to write to a non-existent dir:
+that also failed, but then the error message ended up in the Slurm log file.
+
+So, always create the dir for your `--output` files _before_ you submit the job,
+for example with a `mkdir -p` line right above your `sbatch` loop in your protocol Markdown file.
+
+</details>
+---->
+:::
+
 [^6]: For instance, we might be running the FastQC script multiple times,
       and otherwise those Slurm log files would all have the same name and be overwritten!
 
-:::{.callout-note collapse="false"}
-##### The output streams `stdout` and `stderr`, and separating them
+:::{.callout-note collapse="true"}
+##### Separating standard output and standard error _(Click to expand)_
 
-The output that programs (including basic shell commands) print to screen can
-be divided into two types:
-
-1. **Standard output** (`stdout`) for regular output
-2. **Standard error** (`stderr`) for error messages and sometimes warning messages
-
-Most of the time, it's not obvious that these are two separate types,
-but it is possible to treat them separately. For example,
-while both `stdout` and `stderr` by default end up in the same Slurm log file,
-it is possible to separate them into different files.
-You can do that by using the `--error` option, e.g.:
+By default, both _stdout_ and _stderr_ end up in the same Slurm log file,
+but you can separate them into different files with the `--error` option, e.g.:
 
 ```bash
 #SBATCH --output=slurm-fastqc-%j.out
@@ -502,10 +532,10 @@ Here are the main options we discussed above:
 | Project to be billed | `--account=PAS3493` | `-A` | *N/A* |
 | Time limit | `--time=4:00:00` | `-t` | 1:00:00 |
 | Nr of cores | `--cpus-per-task=1` | `-c` | 1 |
-| Memory limit per node | `--mem=4G` | \- | 4G |
-| Log output file | `--output=slurm-fastqc-%j.out` | `-o` |  |
+| Memory limit per node | `--mem=20G` | \- | 4G per core |
+| Log output file | `--output=slurm-fastqc-%j.out` | `-o` | `slurm-%j.out` |
 | Put error output (*stderr*) into a separate file | `--error=slurm-fastqc-%j.err` | \- | |
-| Get email when job ends<br>/ ends or fails | `--mail-type=END` <br> `--mail-type=END,FAIL` | \- |  |
+| Get email when job fails<br>/ ends or fails | `--mail-type=FAIL` <br> `--mail-type=END,FAIL` | \- |  |
 
 
 : {.striped .hover}
@@ -528,7 +558,9 @@ And some additional ones:
 
 ## Batch job examples with FastQC
 
-Last week, we used a `for` loop to run FastQC interactively for every FASTQ file.
+<!-- TODO: regenerate outputs with the container script (job IDs, R1/R2 order, Apptainer INFO lines) -->
+
+In week 7, we used a `for` loop to run FastQC for every FASTQ file, one after the other.
 This ran quickly,
 but keep in mind that our practice FASTQ files are only 5% of their original sizes.
 Additionally, other bioinformatics programs may take much longer.
@@ -550,8 +582,8 @@ if not, see the box below.
 #!/bin/bash
 set -euo pipefail
 
-# Load the OSC module for FastQC
-module load fastqc/0.12.1
+# FastQC container
+CONTAINER=oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
 
 # Copy the placeholder variables
 fastq="$1"
@@ -567,13 +599,13 @@ echo
 # Create the output dir if needed
 mkdir -p "$outdir"
 
-# Run FastQC
-fastqc --outdir "$outdir" "$fastq"
+# Run FastQC with its container
+apptainer exec "$CONTAINER" fastqc --outdir "$outdir" "$fastq"
 
 # Final logging
 echo
 echo "Used FastQC version:"
-fastqc --version
+apptainer exec "$CONTAINER" fastqc --version
 echo
 echo "Successfully finished script fastqc.sh"
 date
@@ -583,7 +615,7 @@ date
 ### Modify the script for usage with Slurm
 
 Next, add Slurm options with the following `#SBATCH` lines in the script --
-note that you'll ask for 4 cores:
+note that for now, you'll ask for 4 cores:
 
 ```bash
 #!/bin/bash
@@ -602,30 +634,50 @@ the program would detect the total number of cores on the OSC node rather than t
 number that we have reserved.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Let FastQC use multiple cores
+#### {{< fa user-edit >}} Exercise: Let FastQC use multiple cores?
 
-Change the FastQC command in the script so that FastQC will use all 4 reserved cores.
-Run `fastqc --help` to find the relevant option.
+1. Find the FastQC option that sets the number of threads it can use
+   (`apptainer exec "$CONTAINER" fastqc --help`,
+   after assigning the `CONTAINER` variable in your terminal),
+   and add it to the FastQC command in your script so FastQC can use all 4 reserved cores.
 
-<details><summary>_Click to see the solution_</summary>
+2. Now read that option's description carefully.
+   Given that each of our batch jobs will process a single FASTQ file,
+   do you expect the 4 cores to make each job faster?
+   What does that mean for the `--cpus-per-task` line in your script?
 
-The relevant section of the Help text:
+<!----
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
-```bash-out
- -t --threads    Specifies the number of files which can be processed
-                 simultaneously.  Each thread will be allocated 250MB of
-                 memory so you shouldn't run more threads than your
-                 available memory will cope with, and not more than
-                 6 threads on a 32 bit machine
-```
+1. The relevant section of the help info:
 
-Let FastQC know how many cores you have reserved by _editing the command_
-to include `--threads 4`:
+   ```bash-out
+    -t --threads    Specifies the number of files which can be processed
+                    simultaneously.  Each thread will be allocated 250MB of
+                    memory so you shouldn't run more threads than your
+                    available memory will cope with, and not more than
+                    6 threads on a 32 bit machine
+   ```
 
-```bash
-fastqc --threads 4 --outdir "$outdir" "$fastq"
-```
+   So, you would edit the command like so:
+
+   ```bash
+   apptainer exec "$CONTAINER" fastqc --threads 4 --outdir "$outdir" "$fastq"
+   ```
+
+2. No: FastQC uses one thread per _file_,
+   so with a single file per job, 3 of the 4 cores would sit idle ---
+   while your project would still be billed for all 4.
+   So, for this script, remove the `#SBATCH --cpus-per-task=4` line (1 core is the default),
+   and remove `--threads 4` from the FastQC command as well.
+
+   This is quite specific to FastQC:
+   most programs, like TrimGalore (which you'll use in Graded Assignment 4),
+   _can_ use multiple cores to process a single (pair of) file(s) faster.
+   Always check what a program's "threads" or "cores" option actually does!
+
 </details>
+---->
 :::
 
 ### Submit a single test batch job
@@ -668,7 +720,7 @@ After a while:
   (either due to failure or because it finished successfully)
   when it is no longer listed in the `squeue` output.
 - If you additionally didn't receive an email from Slurm,
-  this implies the job succeeded --
+  this suggests the job succeeded --
   job failure should have triggered an email due to the
   `#SBATCH --mail-type=FAIL` line.
 
@@ -761,15 +813,34 @@ rm -r results/fastqc slurm-fastqc*
 ::: exercise
 #### {{< fa user-edit >}} Exercise: Trigger a job failure email
 
-1. Submit the script `scripts/fastqc.sh` as a batch job again,
-   but don't give the script any arguments when you do so.
+1. Before trying it, predict what will happen if you submit `scripts/fastqc.sh`
+   as a batch job **without any arguments**:
+   - Will the `sbatch` command itself give you an error?
+   - What error message will end up in the Slurm log file?
+   - Will a `results/fastqc` dir be created?
 
-2. This will make the job fail, so wait for a failure email to arrive.
-   (If it doesn't arrive immediately,
+2. Submit the script without arguments, and check your predictions.
+   Then, wait for the failure email to arrive.
+   (If it doesn't arrive within a few minutes,
    check the queue to make sure your job isn't still pending.)
 
 3. Optional: if you prefer, set a "Rule" in Outlook so the Slurm emails will not
    go to your Inbox but to a specific folder for such emails.
+
+<!----
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
+- No: `sbatch` doesn't look at your script's arguments, so it will simply print
+  `Submitted batch job <job-number>`.
+  The error only happens later, when the script runs inside the job.
+- Because of `set -u`, the script will stop at the line `fastq="$1"`,
+  and the Slurm log file will contain an error like
+  `scripts/fastqc.sh: line 11: $1: unbound variable`.
+  (The line number will depend on how many `#SBATCH` lines your script has.)
+- No: the script exits before it gets to the `mkdir -p` line.
+
+</details>
+---->
 :::
 
 ### Submit a job for each file
@@ -916,6 +987,43 @@ Here's what I would generally recommend:
    # [...output truncated...]
    ```
 
+::: exercise
+#### {{< fa user-edit >}} Exercise: Check all jobs at once
+
+Scrolling through the `tail` output of 44 files is tedious, and it's easy to miss a failed job.
+Using a command you learned in week 4, how could you check, in one go:
+
+1. Which Slurm log files have the "_Successfully finished_" line?
+2. Whether FastQC produced an HTML file for each of the 44 FASTQ files?
+
+<!----
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
+1. `grep -c` prints a count for each file when you give it multiple files,
+   so any file with a count of `0` belongs to a job that didn't finish:
+
+   ```bash
+   grep -c "Successfully finished" slurm-fastqc-*.out
+   ```
+   ```bash-out
+   slurm-fastqc-37615718.out:1
+   slurm-fastqc-37615719.out:1
+   # [...output truncated...]
+   ```
+
+2. Count the HTML files, and check that this is 44:
+
+   ```bash
+   ls results/fastqc/*html | wc -l
+   ```
+   ```bash-out
+   44
+   ```
+
+</details>
+---->
+:::
+
 If everything looks good,
 and you are convinced that all jobs have finished successfully,
 all that is left is to clean up the Slurm log files.
@@ -941,8 +1049,8 @@ To recap, here is an overview of basic strategies to monitor your batch jobs:
 
 - When you've submitted many jobs that run the same script for different samples/files:
   - For at least one of the jobs,
-    carefully read the full Slurm log file, and check other output files,
-  - Check whether no jobs have failed: via email when using `--mail-type=FAIL`,
+    carefully read the full Slurm log file, and check other output files.
+  - Check that no jobs have failed: via email when using `--mail-type=FAIL`,
     and/or by checking the `tail` of each log for messages like
     "Successfully finished script".
   - Check that you have the expected number of output files and that no files
@@ -967,3 +1075,16 @@ tail -f slurm-fastqc-37615717.out
 
 _To exit the `tail -f` livestream, press <kbd>Ctrl</kbd>+<kbd>C</kbd>._
 :::
+
+## Recap and what's next
+
+In this lecture, you've learned:
+
+- The most common `sbatch` options, to request time, cores, and memory,
+  to name your Slurm log files, and to get emails when jobs fail
+- How to submit a batch job for each file with a loop
+- How to check that your batch jobs ran successfully
+
+In [Graded Assignment 4](../GA/GA4.qmd),
+you will put all of this into practice with TrimGalore.
+Next week, we'll zoom out and look at how to organize and run whole workflows.

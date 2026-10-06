@@ -1,7 +1,7 @@
 ---
 title: "Slurm batch jobs -- part I"
 subtitle: "Week 9 -- Lecture A"
-pagetitle: "w9a: Slurm batch jobs"
+pagetitle: "w9a: Slurm batch jobs I"
 date: 2026-10-19
 date-modified: last-modified
 author:
@@ -17,7 +17,7 @@ other-links:
   - text: "Week 9 overview"
     icon: check2-all
     href: w9_overview.html
-  - text: "w9b: Batch jobs II"
+  - text: "w9b: Slurm batch jobs II"
     icon: book
     href: w9b_slurm2.html
   - text: "Graded Assignment 4"
@@ -88,9 +88,7 @@ set -euo pipefail
 first_name="$1"
 last_name="$2"
 
-echo "This script will print a first and a last name"
-echo "First name: $first_name"
-echo "Last name: $last_name"
+echo "First name: $first_name, last name: $last_name"
 ```
 :::
 
@@ -103,8 +101,8 @@ The code below should be saved in `scripts/fastqc.sh`:
 #!/bin/bash
 set -euo pipefail
 
-# Load the OSC module for FastQC
-module load fastqc/0.12.1
+# FastQC container
+CONTAINER=oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
 
 # Copy the placeholder variables
 fastq="$1"
@@ -120,13 +118,13 @@ echo
 # Create the output dir if needed
 mkdir -p "$outdir"
 
-# Run FastQC
-fastqc --outdir "$outdir" "$fastq"
+# Run FastQC with its container
+apptainer exec "$CONTAINER" fastqc --outdir "$outdir" "$fastq"
 
 # Final logging
 echo
 echo "Used FastQC version:"
-fastqc --version
+apptainer exec "$CONTAINER" fastqc --version
 echo
 echo "Successfully finished script fastqc.sh"
 date
@@ -164,6 +162,18 @@ you will stay in your current shell at your current node.
 After you submit a batch job,
 it will continue to run even if you log off from OSC and shut down your computer.
 
+::: callout-tip
+#### A batch job is like sending samples to a sequencing facility
+- You hand over your samples (the script) along with a submission form that says what you need
+  (the `sbatch` options).
+- You get a tracking number right away (the job ID),
+  and you can leave and do other things.
+- Your samples wait in a queue until the facility has capacity (the job is _pending_),
+  and then they are processed (_running_).
+- The results show up in a place you agreed on beforehand (output files and the Slurm log file),
+  and it's up to you to check that everything went well.
+:::
+
 ### The `sbatch` command
 
 You can use Slurm's `sbatch` command to submit a batch job.
@@ -173,9 +183,7 @@ But first, let's recall how we've run shell scripts so far:
 bash scripts/printname.sh Jane Doe
 ```
 ```{.bash-out}
-This script will print a first and a last name
-First name: Jane
-Last name: Doe
+First name: Jane, last name: Doe
 ```
 
 The above command ran the script on whatever node you are on,
@@ -191,7 +199,7 @@ sbatch: error: ERROR: Job invalid: Must specify account for job
 sbatch: error: Batch job submission failed: Unspecified error
 ```
 
-However, as the above error message --"_Must specify account for job_"-- informs us,
+However, as the error message above ("_Must specify account for job_") informs us,
 you need to indicate which OSC Project (or as Slurm puts it, "account")
 you want to use for this compute job.
 Use the `--account=` option to do this:
@@ -252,8 +260,12 @@ It ended up in a file called `slurm-<job-number>.out` (e.g., `slurm-12431942.out
 since each job number is unique to a given job, each file has a different number).
 We'll call this type of file a **Slurm log file**.
 
-<details><summary>Getting this output in log files instead of printed to screen may seem inconvenient. Can you think of any reasons why we may not want batch job output printed to screen, even if it were possible? _(Click for the answer)_</summary>
+<details class="details-quiz">
+<summary>Getting this output in log files instead of printed to screen may seem inconvenient. Can you think of any reasons why we may not want batch job output printed to screen, even if it were possible?</summary>
 
+_The answer will be added after class._
+
+<!----
 There are several reasons, such as:
 
 - If you log off after submitting a batch job,
@@ -262,6 +274,8 @@ There are several reasons, such as:
   e.g. one per sample, running the same script.
   If the output from all those scripts ends up on your screen,
   things become a big mess, and you have no lasting record of what happened.
+---->
+
 </details>
 
 If you run `ls`, you should see a Slurm log file for the job you just submitted:
@@ -279,9 +293,7 @@ Let's take a look at its contents:
 cat slurm*
 ```
 ``` {.bash-out}
-This script will print a first and a last name
-First name: Jane
-Last name: Doe
+First name: Jane, last name: Doe
 ```
 
 This file contains the script's output that was printed to screen
@@ -301,14 +313,15 @@ Additionally, as you've seen,
 Slurm log files will (by default) be created in the dir you submitted the job from.
 :::
 
-#### Two types of output files
+#### Two types of output
 
 There is an important distinction between two general types of output that
 scripts, commands, and programs may have:
 
 1. Output that is **printed to screen**.\
-   The technical terms for such output are "**standard output**" for non-error output
-   and "**standard error**" for error output
+   Recall from week 4 that the technical terms for such output are
+   "**standard output**" (_stdout_) for non-error output
+   and "**standard error**" (_stderr_) for error output.
    - We've seen that most shell commands by default print their output to the screen.
    - Other programs, like bioinformatics tools, will commonly print "logging"-type
      output to the screen, like you've seen with FastQC.
@@ -320,8 +333,8 @@ scripts, commands, and programs may have:
 To summarize what happens to these when you submit a script as a batch job
 instead of running it directly:
 
-- A script's standard out and standard error
-  will be written to a file when you submit the script with `sbatch`.
+- A script's standard output and standard error
+  will be written to the Slurm log file when you submit the script with `sbatch`.
 - Output of commands written to output files inside the script
   (either via redirection or otherwise)
   *will end up in the exact same files* regardless of how you run the script.
@@ -374,7 +387,11 @@ This is a useful alternative because:
 These options are added in the script using another **type of special comment line**
 (akin to the shebang `#!/bin/bash` line) that is marked by `#SBATCH`.
 Just like the shebang line,
-`#SBATCH` line(s) should be located at the top of the script.
+`#SBATCH` lines **must** be located at the top of the script:
+Slurm stops looking for them as soon as it reaches the first line with a command
+(comment lines and blank lines before that are fine).
+Any `#SBATCH` lines further down are **silently ignored** ---
+you won't get an error, but those options won't be applied either.
 
 Let's add one such line to the `printname.sh` script,
 such that the first few lines read:
@@ -397,6 +414,27 @@ sbatch scripts/printname.sh Jane Doe
 ```bash-out
 Submitted batch job 12431942
 ```
+
+<details class="details-quiz">
+<summary>A labmate's script starts as shown below. Their job keeps getting killed after 1 hour, even though they asked for 5 hours. Can you spot why? (`--time` sets a job's time limit, as you'll see in the next lecture.)</summary>
+
+```bash
+#!/bin/bash
+#SBATCH --account=PAS3493
+set -euo pipefail
+#SBATCH --time=5:00:00
+```
+
+_The answer will be added after class._
+
+<!----
+The `--time` line comes after the first command (`set -euo pipefail`),
+so Slurm ignores it, and the job gets the default time limit of 1 hour.
+The `--account` line _is_ applied, which is why the job could be submitted at all.
+The fix is to move `set -euo pipefail` below all `#SBATCH` lines.
+---->
+
+</details>
 
 <hr style="height:1pt; visibility:hidden;" />
 
@@ -461,7 +499,8 @@ batch job using `sbatch scripts/sleep.sh`:
 
 Then, test your predictions by running the script.
 
-<details><summary>Click for the solutions</summary>
+<!----
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
 1. The job will produce 2 files:
     - `slurm-<job-number>.out`: The Slurm log file, containing output normally printed to screen.
@@ -498,6 +537,7 @@ cat slurm-27935840.out
 I'm awake! Successfully finished script sleep.sh
 ```
 </details>
+---->
 
 Now, let's reason through a couple of variations on this, without actually
 running them:
@@ -510,11 +550,8 @@ running them:
    but the `results` dir doesn't exist yet.
    Will the job fail? If so, where would you find out that it did?
 
-6. Now, in addition, you add `#SBATCH --output=logs/sleep-%j.out` to the script,
-   and the `logs` dir doesn't exist either.
-   What happens now, and how is this different from the situation in Q5?
-
-<details><summary>Click for the solutions</summary>
+<!----
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
 4. If we had run the script directly with `bash`, `sleep.txt` would have also
    been created with the same content, but
@@ -529,15 +566,8 @@ running them:
    which Slurm still creates by default in your submission dir --
    it will contain the error message.
 
-6. This time, Slurm itself can't create the log file either, because
-   `--output` points to a `logs` dir that doesn't exist,
-   and Slurm (like the `echo` redirection above) won't create missing dirs for you.
-   This means the job fails **silently**: no log file is created at all, so
-   there's nowhere to look to find out what went wrong.
-   This is a real and surprisingly common failure mode --
-   always make sure the dir for your `--output` files already exists!
-
 </details>
+---->
 :::
 
 ### Checking a job's status
@@ -550,7 +580,7 @@ Eventually, and often very quickly, the job will start running.
 You've seen this process with the VS Code Interactive App job as well.
 
 Whereas Interactive App jobs will keep running until they've reached the end
-of the allocated time^[Unless you actively "Delete" the job on the Ondemand website.],
+of the allocated time^[Unless you actively "Delete" the job on the OnDemand website.],
 **batch jobs will stop as soon as the script has finished**.
 And if the script is still running when the job runs out of its allocated time,
 it will be killed (stopped) right away.
@@ -749,13 +779,6 @@ scancel -u $USER
   [...]
   ```
 
-- Update directives for a job that has already been submitted
-  (this can only be done _before_ the job has started running):
-
-  ```bash
-  scontrol update jobid=<jobID> timelimit=5:00:00
-  ```
-
 - Hold and release a pending (queued) job --
   this could e.g. be useful when you need to update an input file before the
   job starts running:
@@ -775,6 +798,6 @@ jobs with the `sbatch` command, including:
 - The basic behavior and outputs associated with batch jobs
 - How to check the job queue and monitor your jobs
 
-In the next lecture, you will learn other commonly-used `sbatch` options so
+In the next lecture, you will learn other commonly used `sbatch` options so
 you can reserve more time, cores, etc. for your job.
 You will also see some more practical examples of running batch jobs.
