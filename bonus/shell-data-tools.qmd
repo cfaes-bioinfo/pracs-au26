@@ -1,20 +1,31 @@
 ---
-title: "A deeper dive into Unix data tools"
-subtitle: "Optional self-study content for week 3"
+title: "More Unix data tools:<br>regular expressions, `awk`, `sed` & more"
+subtitle: "Optional self-study content"
 pagetitle: "Unix data tools"
-date: 2026-09-01
+date: 2026-10-10
+date-modified: last-modified
 author:
   - name: Jelmer Poelstra
     orcid: 0000-0002-3514-7462
     email: poelstra.1@osu.edu
-    affiliation: 
+    affiliation:
       - name: CFAES Bioinformatics Core, Ohio State University
         url: https://go.osu.edu/bioinformatics-core
       - name: Dept. of Plant Pathology, Ohio State University
         url: https://plantpath.osu.edu
+other-links:
+  - text: "Week 4 overview"
+    icon: check2-all
+    href: ../week04/w4_overview.html
+  - text: "w4c: Shell files II"
+    icon: book
+    href: ../week04/w4c_shell-files2.html
+  - text: "More Unix shell (bonus)"
+    icon: book
+    href: shell.html
 bibliography: ../references.bib
 language:
-  title-block-published: "Presented on"
+  title-block-published: "Published on"
   title-block-modified: "Page last modified"
 ---
 
@@ -22,1208 +33,1790 @@ language:
 
 <br>
 
-
 ## Introduction
 
-### Learning goals
+This page contains optional self-study material that builds on the
+[w4c lecture](../week04/w4c_shell-files2.qmd),
+where you learned the basics of `grep`, `cut`, `sort`, and `uniq`.
+Here, you'll go further with those commands and learn several new ones:
 
-This page focuses on commands to inspect and process data:
+- [Regular expressions](#regular-expressions-with-grep),
+  to search for text _patterns_ rather than fixed text
+- [More `sort` and `uniq`](#more-sort-and-uniq-and-friends),
+  plus the related commands `column`, `paste`, and `comm`
+- [`tr`](#tr-to-translate-characters) to substitute or delete single characters
+- [`awk`](#awk-for-tabular-data-processing) to filter and process tabular data
+- [`sed`](#sed-to-find-and-replace) to find and replace text, and more
+- [`join`](#putting-it-together-genes-per-chromosome) to merge two tables,
+  in a final example that combines many of these tools
 
-- It will revisit some commands from week 2
-  (e.g. `sort`, `uniq`, and **`grep`**)
-  
-- Using regular expressions in the shell.
+Throughout, you'll work with the files from the @garrigós2025 dataset,
+plus the _Culex pipiens_ genome assembly FASTA file.
 
-- Several new commands including the two very powerful
-  commands `sed` and `awk`
-
-### Get the files for Buffalo Chapter 7
-
-```bash
-# You should be in your dir already, otherwise:
-cd /fs/ess/PAS3493/people/$USER
-
-#
-mkdir bonus
-cd bonus
-  
-# Download the repository for the Buffalo book:
-git clone https://github.com/vsbuffalo/bds-files.git
-  
-# Move into the dir for this chapter:
-cd bds-files/chapter-07-unix-data-tools
-  
-Take a look at what's there:
-ls
-```
-
-### BED files (`.bed`)
-
-Often just contains **genomic coordinates** in 3 columns:
-
-  1. Chromosome / scaffold
-  2. Start position
-  3. End position
-
-```bash
-chr1    26      39
-chr1    32      47
-chr3    11      28
-chr1    40      49
-```
-
-## Viewing data files
-
-### `head` and `tail` revisited
-
-- Print a specific line number:
-
-  ```bash
-  head -n 1866 "$mus".bed | tail -n 1  # Prints line nr. 1866
-  ```
-
-### `less` revisited
-
-```bash
-less "$mus".gtf
-```
-
-- You'll be inside the pager, and your prompt is gone. Keyboard shortcuts:
-
-| Key                             | Function |
-|---------------------------------|----------|
-| <kbd>q</kbd>                    | Exit `less`
-| <kbd>space</kbd> / <kbd>b</kbd> | Next / previous page. <br>(*`pgup` / `pgdn` usually also work.*)
-| <kbd>d</kbd> / <kbd>u</kbd>     | Go down / up *half* a page.
-| <kbd>g</kbd> / <kbd>G</kbd>     | Go to the first / last line (`home` / `end` also work)
-| <kbd>/</kbd>`<pattern>` <br> <kbd>?</kbd>`<pattern>` | Search forward/backward: next type keyword to search for
-| <kbd>n</kbd> / <kbd>N</kbd>     | Go to next/previous search match
-
-::: exercise
-#### <i class="fa fa-user-edit"></i> Your turn: `less`
-
-1. Open a FASTQ file with `less`:
-  ```bash
-  less contaminated.fastq
-  ```
-
-2. Jump back to the last line and then back to the first line.
-
-4. Now search for the following pattern: `AGATCGG`.  
-   Move to the next match and the next.
-
-5. Exit.
+::: {.callout-tip}
+#### Aim for reading fluency, not memorization
+`awk` and `sed` are small programming languages in their own right,
+and nobody remembers all of their syntax.
+Aim to understand what the examples do,
+so that you can recognize, adapt, and look up such commands later.
+This also matters for week 8: generative AI is quite good at writing one-liners
+like the ones on this page, but you'll need to be able to read them
+to check that they do what you want.
 :::
 
-### Substituting characters using `tr`
+### Setting up
 
-`tr` for **`tr`**anslate will substitute all instances of characters –
-here, any `a` for a `b`:
+1. At <https://ondemand.osc.edu>, start a VS Code session in `/fs/ess/PAS3493/people/$USER`.
+
+2. Create a dir for this page and move into it:
+
+   ```bash
+   mkdir -p week04/data-tools
+   cd week04/data-tools
+   ```
+
+3. Copy the metadata file and one FASTQ file, like in w4c:
+
+   ```bash
+   cp ../../garrigos/meta/metadata.tsv .
+   cp ../../garrigos/fastq/S63_R1.fastq.gz .
+   ```
+
+4. Create a decompressed copy of the GTF file.
+   This way, you won't have to start every command with `zcat`:
+
+   ```bash
+   zcat ../../garrigos/ref/annot.gtf.gz > annot.gtf
+   ```
+
+5. Download the genome assembly FASTA file from NCBI with `wget`,
+   create a decompressed copy named `genome.fna`, and remove the compressed file:
+
+   ```bash
+   wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_genomic.fna.gz
+   zcat GCF_016801865.2_TS_CPP_V2_genomic.fna.gz > genome.fna
+   rm GCF_016801865.2_TS_CPP_V2_genomic.fna.gz
+   ```
+
+   ::: {.callout-note appearance="simple"}
+   `wget` downloads a file from a URL.
+   You'll learn more about it, and download this same file again,
+   in week 10.
+   :::
+
+6. Check that you have these four files:
+
+   ```bash
+   ls -lh
+   ```
+   ```bash-out
+   -rw-rw----+ 1 jelmer PAS0471 123M Sep 21 10:12 annot.gtf
+   -rw-rw----+ 1 jelmer PAS0471 547M Sep 21 10:13 genome.fna
+   -rw-rw----+ 1 jelmer PAS0471  457 Sep 21 10:11 metadata.tsv
+   -rw-rw----+ 1 jelmer PAS0471  21M Sep 21 10:11 S63_R1.fastq.gz
+   ```
+
+::: {.callout-tip appearance="simple"}
+The decompressed genome FASTA takes up quite a bit of space,
+so remove `genome.fna` once you're done with this page.
+:::
+
+## Regular expressions with `grep`
+
+### What are regular expressions?
+
+In w4c, you used `grep` to search for fixed text, like `relictum`.
+But `grep` actually interprets its search pattern as a **regular expression** ("regex"):
+a pattern in which some characters have a special meaning.
+With regular expressions, you can for example search for:
+
+- Lines that _start_ with a `>` (the header lines of a FASTA file)
+- Reads that end in a stretch of 15 or more `A`s
+- Any text between quotes that follows `gene_id` in a GTF file
+
+Regular expressions are used far beyond `grep`:
+`sed` and `awk` (later on this page) use them,
+as do R and Python, and even VS Code's search box
+(click the `.*` button in the search box to turn on regex search).
+So, time spent learning them pays off in many places.
+
+::: {.callout-warning}
+#### Use single quotes around regular expressions
+Some regex symbols, like `$` and `\`, also have a special meaning to the shell.
+Inside double quotes, the shell may therefore change the pattern
+before `grep` gets to see it.
+Inside **single quotes**, the shell leaves everything alone,
+so on this page, we'll use single quotes around regular expressions.
+:::
+
+### Anchors: `^` and `$`
+
+By default, a pattern can match anywhere in a line.
+**`^`** anchors a pattern to the **start** of a line,
+and **`$`** anchors it to the **end** of a line.
+To see the difference, search the sample IDs in the metadata file
+(column 1) for the number `6`:
 
 ```bash
-echo "aaaaccc" | tr a b
+cut -f 1 metadata.tsv | grep '6'
+```
+<pre class="bash-out"><code>S7<span class="match-red">6</span>
+S8<span class="match-red">6</span>
+S<span class="match-red">6</span>4
+S<span class="match-red">6</span>7
+S<span class="match-red">66</span>
+S<span class="match-red">6</span>9
+S<span class="match-red">6</span>3
+S<span class="match-red">6</span>5
+S<span class="match-red">6</span>8</code></pre>
+
+```bash
+# Only sample IDs that start with 'S6':
+cut -f 1 metadata.tsv | grep '^S6'
+```
+<pre class="bash-out"><code><span class="match-red">S6</span>4
+<span class="match-red">S6</span>7
+<span class="match-red">S6</span>6
+<span class="match-red">S6</span>9
+<span class="match-red">S6</span>3
+<span class="match-red">S6</span>5
+<span class="match-red">S6</span>8</code></pre>
+
+```bash
+# Only sample IDs that end with '6':
+cut -f 1 metadata.tsv | grep '6$'
+```
+<pre class="bash-out"><code>S7<span class="match-red">6</span>
+S8<span class="match-red">6</span>
+S6<span class="match-red">6</span></code></pre>
+
+Anchors are especially useful with genomics files,
+in which certain types of lines start with a specific character.
+For example, to count the sequences in a FASTA file,
+count its header lines, which start with a `>`:
+
+```bash
+grep -c '^>' genome.fna
+```
+```bash-out
+290
+```
+
+Let's also look at the first few headers:
+
+```bash
+grep '^>' genome.fna | head -n 5
+```
+```bash-out
+>NC_068937.1 Culex pipiens pallens isolate TS chromosome 1, TS_CPP_V2, whole genome shotgun sequence
+>NC_068938.1 Culex pipiens pallens isolate TS chromosome 2, TS_CPP_V2, whole genome shotgun sequence
+>NC_068939.1 Culex pipiens pallens isolate TS chromosome 3, TS_CPP_V2, whole genome shotgun sequence
+>NW_026292818.1 Culex pipiens pallens isolate TS unplaced genomic scaffold, TS_CPP_V2 Cpp_Un0001, whole genome shotgun sequence
+>NW_026292819.1 Culex pipiens pallens isolate TS unplaced genomic scaffold, TS_CPP_V2 Cpp_Un0002, whole genome shotgun sequence
+```
+
+So, the genome assembly consists of 290 sequences:
+the three _Culex_ chromosomes, and many smaller "unplaced scaffolds"
+(pieces of the genome that could not be assigned to a chromosome).
+
+::: {.callout-tip appearance="simple"}
+Combining both anchors, `^$` matches **empty lines**,
+so `grep -v '^$'` removes all empty lines from its input.
+:::
+
+### Any character (`.`), repetition (`*`), and `grep -o`
+
+Two more key regex symbols are:
+
+- **`.`** --- matches any **single character**.
+- **`*`** --- matches the **preceding character** any number of times, including zero.
+
+Together, **`.*`** therefore matches any number of any characters,
+like the `*` shell wildcard does.
+
+To see exactly what a regular expression matches, use `grep`'s **`-o`** option,
+which prints **only the matching part** of each line instead of the full line.
+Let's try to extract the gene ID (the quoted text after `gene_id`)
+from the first line of the GTF file's table part:
+
+```bash
+grep -v '^#' annot.gtf | head -n 1 | grep -o 'gene_id ".*"'
+```
+```bash-out
+gene_id "LOC120427725"; transcript_id ""; db_xref "GeneID:120427725"; description "homeotic protein deformed"; gbkey "Gene"; gene "LOC120427725"; gene_biotype "protein_coding"
+```
+
+That's a lot more than we wanted!
+The problem is that `.*` is "**greedy**": it matches as much as possible,
+so the match runs all the way to the _last_ `"` on the line.
+Character classes, discussed next, offer a solution.
+
+::: {.callout-note appearance="simple"}
+To match one of these special characters literally,
+put a backslash before it ("escape" it).
+For example, `NC_068937\.1` only matches an actual period between `7` and `1`,
+while `NC_068937.1` would also match, e.g., `NC_06893701`.
+:::
+
+### Character classes: `[...]` and `[^...]`
+
+A **character class** matches **one character from a set**,
+which you list between square brackets:
+
+- `[ACGT]` matches a single `A`, `C`, `G`, _or_ `T`.
+- Ranges are allowed: `[0-9]` matches any digit, and `[a-z]` any lowercase letter.
+- A `^` as the _first_ character inside the brackets **negates** the class:
+  `[^ACGT]` matches any single character that is _not_ `A`, `C`, `G`, or `T`.
+
+::: {.callout-warning appearance="simple"}
+Note the two different meanings of `^`:
+_outside_ brackets, it anchors to the start of a line,
+while as the first character _inside_ brackets, it negates the character class.
+:::
+
+Negated character classes are the solution to our greedy matching problem.
+Instead of "any characters, followed by a quote" (`.*"`),
+we ask for "any characters _except_ a quote, followed by a quote" (`[^"]*"`).
+This way, the match can't extend beyond the next quote:
+
+```bash
+grep -v '^#' annot.gtf | head -n 1 | grep -o 'gene_id "[^"]*"'
+```
+```bash-out
+gene_id "LOC120427725"
+```
+
+The same trick works to extract just the sequence IDs from the FASTA headers ---
+everything after the `>` up until the first space:
+
+```bash
+grep -o '^>[^ ]*' genome.fna | head -n 4
+```
+```bash-out
+>NC_068937.1
+>NC_068938.1
+>NC_068939.1
+>NW_026292818.1
+```
+
+#### Extracting and counting matches
+
+Combining `grep -o` with the `sort | uniq -c` frequency-table approach from w4c
+is a very handy way to summarize information that is "hidden" inside a column.
+For example, the GTF file's attribute column (column 9) has a `gene_biotype`
+for every gene. How many genes of each type are there?
+
+```bash
+grep -o 'gene_biotype "[^"]*"' annot.gtf | sort | uniq -c | sort -nr
+```
+```bash-out
+  16297 gene_biotype "protein_coding"
+   1620 gene_biotype "lncRNA"
+    842 gene_biotype "pseudogene"
+    686 gene_biotype "tRNA"
+    155 gene_biotype "rRNA"
+     58 gene_biotype "snRNA"
+      9 gene_biotype "snoRNA"
+      5 gene_biotype "transcribed_pseudogene"
+      1 gene_biotype "misc_RNA"
+```
+
+Most genes are protein-coding,
+but the annotation also includes, e.g., about 1,600 long non-coding RNA (lncRNA) genes.
+
+### Extended regular expressions: `grep -E`
+
+Several other useful regex symbols are only available as
+"**extended** regular expressions", which you can turn on with `grep -E`:
+
+| Symbol    | Matches | Example | Example matches
+|-----------|---------|---------|----------------
+| `+`       | The preceding character **one or more** times | `[0-9]+` | `7`, `2046`
+| `?`       | The preceding character **zero or one** time | `genes?` | `gene`, `genes`
+| `{n}`     | The preceding character **exactly _n_** times | `A{3}` | `AAA`
+| `{n,}`    | The preceding character **at least _n_** times | `A{3,}` | `AAA`, `AAAAAA`
+| `{n,m}`   | The preceding character **_n_ to _m_** times | `A{3,5}` | `AAA`, `AAAAA`
+| <code>&#124;</code> | **Either** the pattern on the left **or** the one on the right | <code>cecropin&#124;defensin</code> | `cecropin`, `defensin`
+| `( )`     | **Groups** a pattern, e.g. to repeat it | `(CA)+` | `CA`, `CACACA`
+
+: {.striped .hover}
+
+For example, how many reads in the FASTQ file end in at least 15 `A`s,
+which may be the poly-A tails of mRNAs?
+
+```bash
+zcat S63_R1.fastq.gz | grep -cE 'A{15,}$'
+```
+```bash-out
+199
+```
+
+And which GTF features belong to genes for the antimicrobial peptides
+cecropin or defensin, which are part of the mosquito immune response?
+
+```bash
+grep -E 'cecropin|defensin' annot.gtf | cut -f 3 | sort | uniq -c
+```
+```bash-out
+     16 CDS
+     17 exon
+      7 gene
+      8 start_codon
+      8 stop_codon
+      8 transcript
+```
+
+::: {.callout-note collapse="true"}
+#### Basic vs. extended regular expressions _(Click to expand)_
+
+Without `-E`, `grep` uses "**basic**" regular expressions,
+in which `+`, `?`, `{ }`, `|`, and `( )` are just literal characters.
+In the GNU version of `grep` (which is what OSC uses),
+you can still use their special meaning by putting a backslash before them:
+
+| Extended (`grep -E`) | Basic (`grep`) |
+|----------------------|----------------|
+| `A+`                 | `A\+`          |
+| `A{15,}`             | `A\{15,\}`     |
+| <code>cecropin&#124;defensin</code> | <code>cecropin\&#124;defensin</code> |
+
+: {.striped .hover}
+
+That gets hard to read quickly,
+so it's easiest to simply use `-E` whenever you need these symbols.
+The same goes for `sed`, which also has an `-E` option.
+`awk` always uses extended regular expressions.
+
+When searching online, you'll also come across
+"Perl-compatible" regular expressions (`grep -P`),
+which offer additional shortcuts.
+For example, `\t` matches a Tab with `grep -P`, but not with `grep` or `grep -E`:
+
+```bash
+# Print lines with 'gene' as the feature type (column 3), surrounded by Tabs:
+grep -P '\tgene\t' annot.gtf | head -n 2
+```
+:::
+
+::: {.callout-tip collapse="true"}
+#### Printing full FASTQ records with `grep -A` and `-B` _(Click to expand)_
+
+When you search a FASTQ file for a sequence,
+`grep` only prints the matching sequence line.
+To see the full 4-line FASTQ record of each matching read,
+also print 1 line **b**efore (`-B 1`) and 2 lines **a**fter (`-A 2`) each match.
+The `--no-group-separator` option prevents `grep` from printing `--` lines
+between non-adjacent matches, so that the output is valid FASTQ:
+
+```bash
+zcat S63_R1.fastq.gz | grep --no-group-separator -B 1 -A 2 -E 'A{15,}$' | head -n 8
+```
+```bash-out
+@ERR10802863.17755922 17755922 length=73
+AGAATGCATACACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
++
+AAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+@ERR10802863.21692370 21692370 length=73
+AGATCAACTACTGAGAAATGTGTTGAGCGATAAATACAGTTCATTAAAATCAACCAGAAAAAAAAAAAAAAAA
++
+AAAAAEEEEEEEEEEEEEEEEEEEEAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+```
+:::
+
+### Regular expressions vs. shell wildcards
+
+Regular expressions and the shell wildcards from w4b
+(and the [More Unix shell](shell.qmd#other-shell-wildcards) page)
+look similar, but they are different things:
+
+- **Shell wildcards** match **file names**,
+  and are expanded by the shell _before_ a command runs.
+- **Regular expressions** match **text** in a command's input,
+  and are interpreted by the command itself (e.g. `grep`).
+
+Confusingly, some symbols have a different meaning in each:
+
+| Shell wildcard | Regex equivalent | Matches
+|----------------|------------------|--------------------------
+| `?`            | `.`              | Any single character
+| `*`            | `.*`             | Any number of any characters
+| `[...]` and `[^...]` | Same       | One character that is / is not in the set
+
+: {.striped .hover}
+
+Also recall from w4c that `grep` patterns don't need to match the entire line,
+whereas a glob pattern has to match the entire file name.
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 1: Regular expressions
+
+a. Thinking of the shell wildcard `S6*`, a classmate expects the command below
+   to count the 7 samples whose ID starts with `S6`.
+   What count do you think it will report instead, and why?
+   Run the command to check your answer.
+
+   ```bash
+   cut -f 1 metadata.tsv | grep -c 'S6*'
+   ```
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   It reports `22`: every single sample ID.
+
+   In a regular expression, `*` means "the preceding character any number of times,
+   _including zero_".
+   So, `S6*` matches an `S` followed by zero or more `6`s ---
+   and every sample ID contains an `S`.
+
+   The regex equivalent of the wildcard is `S6.*`,
+   but since `grep` patterns don't need to match the full line,
+   plain `S6` (or, more precisely, `^S6`) is all you need here.
+   </details>
+
+b. Count the number of FASTA headers that start with `>NC`,
+   and the number that start with `>NW`, and print the `>NC` headers.
+   What do the `NC` sequences represent, and what do the `NW` ones represent?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```bash
+   grep -c '^>NC' genome.fna
+   ```
+   ```bash-out
+   4
+   ```
+   ```bash
+   grep -c '^>NW' genome.fna
+   ```
+   ```bash-out
+   286
+   ```
+   ```bash
+   grep '^>NC' genome.fna
+   ```
+   ```bash-out
+   >NC_068937.1 Culex pipiens pallens isolate TS chromosome 1, TS_CPP_V2, whole genome shotgun sequence
+   >NC_068938.1 Culex pipiens pallens isolate TS chromosome 2, TS_CPP_V2, whole genome shotgun sequence
+   >NC_068939.1 Culex pipiens pallens isolate TS chromosome 3, TS_CPP_V2, whole genome shotgun sequence
+   >NC_015079.1 Culex pipiens pipiens mitochondrion, complete genome
+   ```
+
+   The 4 `NC` sequences are the 3 chromosomes plus the mitochondrial genome,
+   while the 286 `NW` sequences are the unplaced scaffolds
+   (in NCBI's RefSeq database, `NC_` IDs are used for complete molecules
+   like chromosomes, and `NW_` IDs for scaffolds).
+   </details>
+
+c. A labmate counts the reads in a FASTQ file by counting the header lines,
+   which start with `@`:
+
+   ```bash
+   zcat S63_R1.fastq.gz | grep -c '^@'
+   ```
+
+   For this file, that gives the correct answer of 500,000 reads.
+   But why could this approach overcount the reads in other FASTQ files?
+   _(Hint: think about the quality scores, and see the table in the_
+   _[w4a FASTQ quality score slides](../week04/w4a_genomics-files.qmd#fastq-quality-scores).)_
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   The `@` character is also used as a quality score:
+   it represents a Phred score of 31 (one more than `?`, which represents 30).
+   So, a quality score line can start with an `@`,
+   and would then be counted as a read.
+
+   It happens to work for our file because its quality scores are "binned"
+   into just a few values, none of which is 31.
+   More robust approaches are to divide the number of lines by 4,
+   or to search for a longer, more specific header pattern like `'^@ERR'`.
+   </details>
+
+d. How many genes have a description that contains "heat shock",
+   and are any of these descriptions shared by multiple genes?
+   _(Hint: `description` attributes are only present on `gene` lines,_
+   _so you can adapt the `gene_biotype` command above.)_
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Allow any characters except a quote both before and after "heat shock",
+   so that the match stays within the description's quotes:
+
+   ```bash
+   grep -o 'description "[^"]*heat shock[^"]*"' annot.gtf | sort | uniq -c | sort -nr
+   ```
+   ```bash-out
+         3 description "heat shock protein 70 B2"
+         2 description "heat shock 70 kDa protein cognate 4-like"
+         1 description "heat shock protein beta-1"
+         1 description "heat shock protein 83-like"
+         1 description "heat shock protein 83"
+         1 description "heat shock protein 75 kDa, mitochondrial"
+         1 description "heat shock protein 70 A2-like"
+         1 description "heat shock protein 60A-like"
+         1 description "heat shock factor-binding protein 1"
+         1 description "heat shock factor protein"
+         1 description "heat shock 70 kDa protein cognate 5"
+         1 description "heat shock 70 kDa protein cognate 4"
+         1 description "heat shock 70 kDa protein cognate 2"
+         1 description "heat shock 70 kDa protein 4"
+         1 description "activator of 90 kDa heat shock protein ATPase homolog 1"
+         1 description "10 kDa heat shock protein, mitochondrial"
+   ```
+
+   There are 16 distinct descriptions, two of which are shared by multiple genes.
+   To count the genes, count the matching lines:
+
+   ```bash
+   grep -c 'description "[^"]*heat shock' annot.gtf
+   ```
+   ```bash-out
+   19
+   ```
+   </details>
+:::
+
+## More `sort` and `uniq`, and friends
+
+### Sorting by column, numerically
+
+In w4c, you saw that `sort -k` sorts by specific columns,
+and that `sort -n` sorts numerically.
+You can combine the two by adding an `n` to a specific column (key).
+
+To try this, create a small file with the sequence ID, feature type,
+and start and end positions (columns 1 and 3-5) of the first 6 genes in the GTF file.
+(The `-w` option makes `grep` only match `gene` as a whole word.)
+
+```bash
+cut -f 1,3-5 annot.gtf | grep -w 'gene' | head -n 6 > genes6.tsv
+cat genes6.tsv
+```
+```bash-out
+NC_068937.1     gene    2046    110808
+NC_068937.1     gene    48457   50554
+NC_068937.1     gene    76295   82374
+NC_068937.1     gene    82671   86331
+NC_068937.1     gene    160196  177583
+NC_068937.1     gene    299209  303777
+```
+
+These genes are already sorted by their start position (column 3 in this file).
+But see what happens when you sort them by that column
+_without_ telling `sort` that it contains numbers:
+
+```bash
+sort -k3,3 genes6.tsv
+```
+```bash-out
+NC_068937.1     gene    160196  177583
+NC_068937.1     gene    2046    110808
+NC_068937.1     gene    299209  303777
+NC_068937.1     gene    48457   50554
+NC_068937.1     gene    76295   82374
+NC_068937.1     gene    82671   86331
+```
+
+Sorting alphabetically, `sort` compares character by character,
+so `160196` comes before `2046` because `1` comes before `2`.
+With `-k3,3n`, you get the correct numeric order back:
+
+```bash
+sort -k3,3n genes6.tsv
+```
+```bash-out
+NC_068937.1     gene    2046    110808
+NC_068937.1     gene    48457   50554
+NC_068937.1     gene    76295   82374
+NC_068937.1     gene    82671   86331
+NC_068937.1     gene    160196  177583
+NC_068937.1     gene    299209  303777
+```
+
+A common use of this is to sort an annotation file by position,
+first by sequence ID (alphabetically) and then by start position (numerically).
+For the GTF file, whose start positions are in column 4, that would be:
+
+```bash
+# [Example only, no need to run this]
+sort -k1,1 -k4,4n annot.gtf
+```
+
+Many genomics tools require their input files to be sorted this way.
+
+### Other useful `sort` options
+
+- **`-c`** checks whether a file is already sorted.
+  It prints nothing if the file is sorted, and reports the first out-of-order line if not:
+
+  ```bash
+  sort -c -k3,3n genes6.tsv
+  ```
+  ```bash
+  sort -c -k3,3 genes6.tsv
+  ```
+  ```bash-out
+  sort: genes6.tsv:5: disorder: NC_068937.1     gene    160196  177583
+  ```
+
+- **`-u`** only keeps unique lines, so `sort -u` does the same as `sort | uniq`.
+
+- **`-V`** ("version sort") sorts numbers _within text_ by their numeric value:
+
+  ```bash
+  # printf prints text like echo does, and '\n' starts a new line:
+  printf "sample1\nsample10\nsample2\n" | sort -V
+  ```
+  ```bash-out
+  sample1
+  sample2
+  sample10
+  ```
+
+  _(Without `-V`, `sample10` would come before `sample2`.)_
+
+- **`-g`** sorts numbers in scientific notation (like `1e-5`) correctly,
+  which `-n` doesn't.
+  This is useful for, e.g., p-values.
+
+- **`-t`** sets the column delimiter, which by default is any whitespace.
+  For example, `sort -t , -k2,2` sorts a CSV file by its second column.
+
+### Finding duplicates with `uniq -d`
+
+With the **`-d`** option, `uniq` only prints lines that occur more than once
+(one copy of each).
+For example, how many gene descriptions are shared by multiple genes?
+
+```bash
+grep -o 'description "[^"]*"' annot.gtf | sort | uniq -d | wc -l
+```
+```bash-out
+1424
+```
+
+To see which descriptions are shared by the most genes,
+use the frequency table approach instead:
+
+```bash
+grep -o 'description "[^"]*"' annot.gtf | sort | uniq -c | sort -nr | head -n 5
+```
+```bash-out
+    156 description "5S ribosomal RNA"
+    141 description "uncharacterized protein K02A2.6-like"
+     44 description "pickpocket protein 28-like"
+     41 description "transfer RNA valine (anticodon AAC)"
+     39 description "transfer RNA tyrosine (anticodon GUA)"
+```
+
+_(The 156 5S ribosomal RNA genes are not an error:_
+_rRNA genes typically occur in many copies in a genome.)_
+
+### `column -t` for viewing tabular files
+
+When the values in a column differ in length,
+tabular files can look messy in the terminal:
+
+```bash
+grep -v '^#' annot.gtf | cut -f 1-8 | head -n 3
+```
+```bash-out
+NC_068937.1     Gnomon  gene    2046    110808  .       +       .
+NC_068937.1     Gnomon  transcript      2046    110808  .       +       .
+NC_068937.1     Gnomon  exon    2046    2531    .       +       .
+```
+
+`column -t` lines up the columns nicely:
+
+```bash
+grep -v '^#' annot.gtf | cut -f 1-8 | head -n 3 | column -t
+```
+```bash-out
+NC_068937.1  Gnomon  gene        2046  110808  .  +  .
+NC_068937.1  Gnomon  transcript  2046  110808  .  +  .
+NC_068937.1  Gnomon  exon        2046  2531    .  +  .
+```
+
+`column` is only meant for viewing:
+it separates columns with spaces, so don't save its output as a TSV file.
+For a CSV file, specify the delimiter with `-s`: `column -s , -t my-data.csv`.
+
+### `paste` to combine lines
+
+`paste` combines lines **side by side**, separated by Tabs.
+Given two files, it pastes line 1 of the first file next to line 1 of the second, and so on.
+
+A neat trick is to give `paste` a dash (`-`) for each line it should combine
+from its standard input.
+With four dashes, `paste` combines every four lines into one ---
+which turns each 4-line FASTQ record into a single line:
+
+```bash
+zcat S63_R1.fastq.gz | paste - - - - | head -n 2
+```
+```bash-out
+@ERR10802863.8435456 8435456 length=74  CAACGAATACATCATGTTTGCGAAACTACTCCTCCTCGCCTTGGTGGGGATCAGTACTGCGTACCAGTATGAGT      +       AAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+@ERR10802863.27637245 27637245 length=74        GCCACACTTTTGAAGAACAGCGTCATTGTTCTTAATTTTGTCGGCAACGCCTGCACGAGCCTTCCACGTAAGTT      +       AAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAEE<EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+```
+
+Now that each read is one line, with the sequence in column 2,
+you can use all the column-based tools you know.
+For example, which read sequences occur most often?
+
+```bash
+zcat S63_R1.fastq.gz | paste - - - - | cut -f 2 | sort | uniq -c | sort -nr | head -n 5
+```
+```bash-out
+  32589 NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+    255 ATAAATTAAAGGGCCGCAGTATTTTGACTGTGCGAAGGTAGCATAATCACTAGTCTTTTAATTGGAGGCTTGT
+    223 AACAGCGTAATTTTTTTTTAGAGTTCATATCGACAAAAAAGATTGCGACCTCGATGTTGGATTAAGAGTTATTT
+    204 AAATTAAAGGGCCGCAGTATTTTGACTGTGCGAAGGTAGCATAATCACTAGTCTTTTAATTGGAGGCTTGTATG
+    138 GCAAAAGTACGTCGACGTGCACTGCCACGACAGTGACGACCAGAGCGTGAAGCTGTACAAGAACCAGATCGCC
+```
+
+By far the most common "sequence" is that of the all-`N` reads
+you found in w4c.
+The FastQC program, which you'll use in week 6,
+reports such "overrepresented sequences" too.
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 2: `sort`, `uniq`, and `paste`
+
+a. The experiment has 2 time points and 3 treatments.
+   Create a frequency table of the number of samples
+   for each _combination_ of time point and treatment.
+   Is the design balanced, i.e. does every combination have the same number of samples?
+
+   <details><summary>{{< fa lightbulb >}} &nbsp; _Click for a hint_</summary>
+   Select both the time point and the treatment column with `cut`.
+   </details>
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Select columns 2 and 3 with `cut -f 2,3`,
+   and keep the rest of the w4c frequency table pipeline the same:
+
+   ```bash
+   tail -n +2 metadata.tsv | cut -f 2,3 | sort | uniq -c
+   ```
+   ```bash-out
+         4 10dpi   cathemerium
+         4 10dpi   control
+         4 10dpi   relictum
+         3 24hpi   cathemerium
+         3 24hpi   control
+         4 24hpi   relictum
+   ```
+
+   Because `uniq` compares entire lines,
+   it counts each distinct combination of time point and treatment.
+   The design is not fully balanced:
+   at 24hpi, there are only 3 samples for both the cathemerium and control treatments.
+   </details>
+
+b. A labmate wants to sort the GTF file by start position (column 4).
+   They remove the header lines and then sort as follows:
+
+   ```bash
+   grep -v '^#' annot.gtf | sort -k4
+   ```
+
+   Without running it, can you spot two problems with this command?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   1. Without `n`, the start positions are sorted alphabetically,
+      so that, e.g., `160196` would come before `2046`.
+   2. The sequence ID (column 1) is ignored,
+      so features from different chromosomes and scaffolds get mixed up.
+      To sort by position _within_ each sequence, use `sort -k1,1 -k4,4n`.
+
+   _(A minor third point: `-k4` means "from column 4 to the end of the line",_
+   _rather than just column 4 as `-k4,4` would.)_
+
+   You can see the second problem right away in the output,
+   whose first lines come from three different scaffolds:
+
+   ```bash
+   grep -v '^#' annot.gtf | sort -k4 | head -n 3 | cut -f 1-5
+   ```
+   ```bash-out
+   NW_026292908.1  Gnomon  CDS     10      11481
+   NW_026292919.1  Gnomon  CDS     10      1167
+   NW_026292909.1  Gnomon  CDS     10      1587
+   ```
+   </details>
+
+c. `paste - - - -` is a safe way to put each FASTQ read on a single line.
+   Would `paste - -` similarly be a safe way to put each sequence in `genome.fna`
+   on a single line, next to its header? Why or why not?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   No: in FASTQ files, every record consists of exactly 4 lines,
+   but in FASTA files, a sequence can be spread across any number of lines
+   (recall exercise 2 in the [w4a slides](../week04/w4a_genomics-files.qmd)).
+   In `genome.fna`, each line holds 80 bases,
+   so `paste - -` would mostly paste one 80-base line next to the next one.
+   </details>
+:::
+
+## `tr` to translate characters
+
+### Substituting characters
+
+The `tr` (**tr**anslate) command substitutes characters one-for-one:
+the first character in its first argument is replaced by the first character
+in its second argument, and so on.
+For example, to replace every `a` by a `b`:
+
+```bash
+echo "aaaaccc" | tr 'a' 'b'
 ```
 ```bash-out
 bbbbccc
 ```
 
-Oddly enough, `tr` does not take a file name as an argument,
-so how can we provide it with input from a file?
-The easiest way is by piping the output of `cat` into `tr` as follows:
+Oddly enough, `tr` does not accept a file name as an argument:
+it only reads from standard input.
+So, to use it on a file, pipe the output of `cat` into `tr`.
+For example, to turn the Tab-separated `metadata.tsv` into a comma-separated file,
+replace each Tab (`\t`) by a comma:
 
 ```bash
-cat Pacifici2013_data.csv | tr ";" "\t" | head -n 3
+cat metadata.tsv | tr '\t' ',' > metadata.csv
+head -n 3 metadata.csv
 ```
 ```bash-out
-TaxID   Order   Family  Genus   Scientific_name AdultBodyMass_g Sources_AdultBodyMass   Max_longevity_d Sources_Max_longevity   Rspan_d AFR_d   Data_AFR        Calculated_GL_d   GenerationLength_d      Sources_GL
-7580    Rodentia        Cricetidae      Eligmodontia    Eligmodontia typus      17.37   PanTHERIA       292     PanTHERIA       254.64  73.74   calculated      147.5856  147.5856        Rspan-AFR(SM+Gest)
-42632   Rodentia        Cricetidae      Microtus        Microtus oregoni        20.35   PanTHERIA       456.25  PanTHERIA       445.85  58.06   calculated      187.3565  187.3565        Rspan-AFR(SM+Gest)
+sample_id,time,treatment
+S82,10dpi,cathemerium
+S75,10dpi,cathemerium
 ```
 
-The example above converted the `;` delimited to a `Tab` (i.e., a CSV file to a TSV file),
-where **`\t`** is a regular expression meaning Tab.
-(Though note that we didn't modify the original file nor saved the output in a new file.)
-
-::: {.callout-note collapse="true"}
-#### Deletion and "squeezing" with `tr` _(Click to expand)_
-
-You can delete characters with the `-d` option -- for example, to delete all a's:
+`tr` also understands **ranges** of characters.
+This is handy because many genome FASTA files, including ours,
+are "**soft-masked**": repetitive regions are written in lowercase letters.
+For example, lines 12 and 13 of the genome FASTA file contain both:
 
 ```bash
-echo "aabbccddee" | tr -d a
+head -n 13 genome.fna | tail -n 2
 ```
 ```bash-out
-bbccddee
+CCTAATTCATGGAGGTGAATAGAGCATACGTAAATACAAAACTCATGACATTAGCCTGTAAGGATTGTGTaattaatgca
+aaaatattgaTAGAATGAAAGATGCAAGTCccaaaaattttaagtaaatgaATAGTAATCATAAAGATAActgatgatga
 ```
 
-You can "squeeze" i.e. remove consecutive duplicates with the `-s` option --
-for example, to turn variable numbers of spaces into a single space:
+To convert everything to uppercase, translate the range `a-z` into `A-Z`:
 
 ```bash
-echo "a     b   c   d" | tr -s " "
+head -n 13 genome.fna | tail -n 2 | tr 'a-z' 'A-Z'
 ```
 ```bash-out
-a b c d
+CCTAATTCATGGAGGTGAATAGAGCATACGTAAATACAAAACTCATGACATTAGCCTGTAAGGATTGTGTAATTAATGCA
+AAAATATTGATAGAATGAAAGATGCAAGTCCCAAAAATTTTAAGTAAATGAATAGTAATCATAAAGATAACTGATGATGA
 ```
-:::
 
-::: exercise
-#### {{< fa user-edit >}} Exercise: Redirecting `tr` output
+### Reverse complementing a sequence
 
-Modify our command in which we changed the delimiter to a Tab to redirect the output
-to a new file, `Pacifici2013_data.tsv` (note the extension).
-This file should be located in the `sandbox` dir,
-which is not your current working dir.
-
-<details><summary>*Click to see the solution*</summary>
+Combined with `rev`, which reverses each line,
+`tr` can create the **reverse complement** of a DNA sequence:
+`rev` takes care of the "reverse" part, and `tr` of the "complement" part
+by swapping `A` with `T` and `C` with `G`:
 
 ```bash
-cat Pacifici2013_data.csv | tr ";" "\t" > ../sandbox/Pacifici2013_data.tsv
+echo "ATGCCGTA" | rev | tr 'ACGT' 'TGCA'
 ```
-</details>
-:::
+```bash-out
+TACGGCAT
+```
 
-## Regular expressions
+### Deleting and "squeezing" characters
 
-Regular expressions are **character sequences defining a search pattern**,
-with symbols with a special, non-literal meaning.
+- The **`-d`** option **deletes** characters.
+  For example, by deleting all newlines (`\n`) from the sequence lines of the genome FASTA,
+  you can count the total number of bases in the genome assembly
+  (this takes a few seconds):
 
-Some of the key symbols:
-
-| Symbol            | Matches | Example
-|--|------|--------
-| **`.`**           | Any character | `grep -o "Olfr.*"`
-| **`*`**           | Preceding character any # times | `grep -o "Olfr.*"`
-| **`\t`**          | tab     | `echo -e "column1 \t column2"`
-| **`\n`**          | newline | `echo -e "Line1 \n Line2"`
-| **`^`** / **`$`** | beginning/end of line | `grep -v "^$"`
-| **`\w`**          | any alphanumeric character and "_"  | <code>grep **-E** -o 'gene_id "\w+"'</code>
-| <code>&#124;</code> | logical or  | <code>grep **-E** "intron&#124;exon"</code> <br> <code>grep "intron\&#124;exon"</code>
-
-### "Basic" versus "Extended" Regular Expressions
-
-By default, `grep` and `sed` use Basic Regular Expressions (BRE) ---
-to turn on Extended Regular Expressions (ERE), use **`grep -E`** or **`sed -E`**.
-**`awk`** uses ERE by defaults.
-
-::: callout-warning
-Where this gets particularly confusing when googling around,
-is that there are both "*POSIX*" and "*GNU*" versions of each.
-We are using *GNU* tools, so the GNU regex are relevant to us.
-:::
-
-**Differences between BRE and ERE for GNU tools:**
-
-| ERE | BRE   | Meaning|
-|-----|-------|--------|
-| `?` | `\?`  | Matches preceding character **at most once**
-| `+` | `\+`  | Matches preceding character **at least once**
-| `{m,n}`| `\{m,n\}`| Matches preceding character *m* to *n* times
-| <code>&#124;</code> | <code>\&#124;</code> | Logical or
-| `(ab)\1` | `\(ab` `\)\1` | Backreference *capture* with **`()`** and <br> *recall* with **`\1`**; matches "abab"
-
-### Regular expressions versus shell wildcards
-
-| Wildcard  | Regex symbol(s) | Meaning
-|-----------|-----------------|--------------------------
-| **`?`**   | **`.`**         | Any single character
-| **`*`**   | **`.*`**        | Any number of any character
-| **`[]`** and **`[^]`**   | same!        | Match/negate match of *character class*
-
-Furthermore, recall that:
-  - Wildcards match *file names*; matches are expanded directly by the shell.
-  - Regular expressions match any input for the command.
-
-## More `grep` to find text
-
-- `grep` always allows partial matching (cf. file globbing):
-  
   ```bash
-  grep "Olfr" "$mus"_genes.txt | head
-  #> ENSMUSG00000067064      Olfr1416
-  #> ENSMUSG00000057464      Olfr1415
-  #> ...
+  grep -v '^>' genome.fna | tr -d '\n' | wc -c
+  ```
+  ```bash-out
+  566354144
   ```
 
-- Use the `-w` option to match only entire "words" --
-  consecutive alphanumeric characters *and* "_":
-  
+  So, the _Culex pipiens_ genome assembly is about 566 million bases (566 Mb) long.
+
+- The **`-s`** option "**squeezes**" runs of the same character into one.
+  For example, to turn a variable number of spaces into a single space:
+
   ```bash
-  cat example.txt
-  
-  grep "bioinfo" example.txt
-  #> bioinfo
-  #> bioinformatics
-  
-  grep -w "bioinfo" example.txt
-  #> bioinfo
+  echo "a     b   c" | tr -s ' '
   ```
-
-### Search for multiple patterns
-
-- Match two different records using a character class:
-
-  ```bash
-  grep "Olfr141[13]" "$mus"_genes.txt
-  #> ENSMUSG00000058904      Olfr1413
-  #> ENSMUSG00000062497      Olfr1411
-  ```
-
-- More flexible -- alternation with **`|`**: 
-
-  ```bash
-  grep -E "(Olfr1411|Olfr1413)" "$mus"_genes.txt
-  #> ENSMUSG00000058904      Olfr1413
-  #> ENSMUSG00000062497      Olfr1411
-  ```
-  
-  *(Note that you need `-E` for extended regex for the `|` to work.)*
-  
-### Other options
-
-- `-v` to invert matches:
-
-  ```bash
-  # All strings (gene names) with Olfr except Olfr1413:
-  grep "Olfr" "$mus"_genes.txt | grep -v "Olfr1413"
-  
-  # Don't print lines beginning with a "#":
-  grep -v "^#" "$mus".gtf
-  
-  # Don't print empty lines:
-  grep -v "^$" "$mus".gtf
-  ```
-
-- Count matching lines using `-c`:
-  
-  ```bash
-  # Count snRNAs:
-  grep -c 'gene_biotype "snRNA"' "$mus".gtf
-  
-  # Count gene names starting with "Olfr":
-  grep -Pc "\tOlfr" "$mus"_genes.txt
-  ```
-
-::: callout-note
-In the second example, we use the `-P` flag to turn on "Perl-like regular
-expressions -- yes, yet another type of regex...!  
-This is needed to successfully match a tab character with `\t`.
-:::
-
-### Print lines surrounding matches
-
-- Print lines surrounding matches using:
-  
-  - `-A n` --- print `n` lines **a**fter the match
-  - `-B n` --- print `n` lines **b**efore the match
-  - `-C n` --- print `n` lines before and after the match
-  
-- Use this to print the full 4-line FASTQ entry when the sequence matches:  
-  
-  ```bash
-  grep -B 1 -A 2 "AGATCGG" contam.fastq | head -n 4
-  ```
-
-- When only using `-A` or `-B`, records are separated by `--` lines.  
-  To avoid this:
-  
-  ```bash
-  grep -B 1 --no-group-separator "string" file.txt
-  ```
-
-### Only print the match itself
-
-**Print only the match itself and not full lines with `-o`**:
-  
-- Get all gene names starting with "Olfr":
-  ```bash
-  grep "Olfr.*" "$mus"_genes.txt | head -n 2
-  #> ENSMUSG00000067064      Olfr1416
-  #> ENSMUSG00000057464      Olfr1415
-  
-  grep -o "Olfr.*" "$mus"_genes.txt | head -n 2
-  #> Olfr1416
-  #> Olfr1415
-  ```
-
-- Capture the quoted word following the "gene_id" column:
-
-  ```bash
-  grep -E 'gene_id "\w+"' "$mus".gtf | head -n 2
-  #> 1       pseudogene      gene    3054233 3054733 .       +       .       gene_id "ENSMUSG00000090025"; gene_name "Gm16088"; gene_source "havana"; gene_biotype "pseudogene";
-  #> 1       unprocessed_pseudogene  transcript      3054233 3054733 .       +       .       gene_id "ENSMUSG00000090025"; transcript_id "ENSMUST00000160944"; gene_name "Gm16088"; gene_source "havana"; gene_biotype "pseudogene"; transcript_name "Gm16088-001"; transcript_source "havana"; tag "cds_end_NF"; tag "cds_start_NF"; tag "mRNA_end_NF"; tag "mRNA_start_NF";
-
-  grep -E -o 'gene_id "\w+"' "$mus".gtf | head -n 2
-  #> gene_id "ENSMUSG00000090025"
-  #> gene_id "ENSMUSG00000090025"
-  ```
-
-- Use a nice little pipeline to get a cleaned list of gene names,  
-  building on the previous command:
-
-  ```bash
-  grep -E -o 'gene_id "\w+"' "$mus".gtf | \
-      cut -f2 -d" " | \
-      sed 's/"//g' | \
-      sort | \
-      uniq > mm_gene_id.txt
-  #> ENSMUSG00000000544
-  #> ENSMUSG00000000817
-  #> ...
+  ```bash-out
+  a b c
   ```
 
 ::: exercise
+#### {{< fa user-edit >}} Exercise 3: `tr`
 
-### <i class="fa fa-user-edit"></i> Your turn: `grep`
-
-1. **Count the number of genomic features in `Mus_musculus.GRCm38.75_chr1.gtf`
-   with a single `grep` command.**
-
-  *(Hint: this is the number of lines excluding the header.)*
-
-2. **Bonus: Count the number of "exon" features belonging to a "lincRNA"
-   by `grep`ping for both of these strings.**
-
-   *(You can either pipe together two grep commands,  
-   or use a single `grep` command --
-   "lincRNA" will occur before "exon" on a line.)*
-
-1. Count the number of genomic features in `Mus_musculus.GRCm38.75_chr1.gtf`
-   with a single `grep` command.
-
-  ```bash
-  grep -cv "^#" $mus.gtf
-  #> 81226
-  ```
-
-2. Bonus: Count the number of "exon" features belonging to a "lincRNA"
-   by `grep`ping for both of these strings.
-  ```bash
-  grep "lincRNA" $mus.gtf | grep -c "exon"
-  #> 408
-  
-  grep -c "lincRNA.*exon" $mus.gtf
-  #> 408
-  ```
-:::
-
-## More `uniq` and `sort`
-
-### Two more `uniq` examples
-
-- Or count combinations *across columns* -- here, "features" by "strand":
-  
-  ```bash
-  grep -v "^#" "$mus".gtf | cut -f3,7 | sort | uniq -c
-  #> 12891 CDS     +
-  #> 13010 CDS     -
-  #> 18134 exon    +
-  #> 17994 exon    -
-  ```
-
-- Another useful `uniq` option is `-d` to check for duplicate lines:
-
-  ```bash
-  uniq -d mm_gene_names.txt | wc -l  # 0 if no duplicates
-  ```
-
-### More `sort`
-
-- `-k` to select fields, `n` to turn on *numeric* sorting,
-  and `-r` for reverse sorting:
-  
-  ```bash
-  # Sort a BED file by chromosome and (reversed) start position:
-  sort -k1,1 -k2,2nr example.bed
-  ```
-
-- `-V` to recognize numbers within strings, and sort accordingly:
-  
-  ```bash
-  sort -k1,1 -k2,2n example2.bed
-  #> chr1
-  #> chr10
-  #> chr2
-  
-  sort -k1,1V -k2,2n example2.bed > example_sorted.bed
-  #> chr1
-  #> chr2
-  ```
-
-::: callout-tip
-####  The `-g` flag will properly sort scientific number notation like 10e-2.
-:::
-
-## `column` for tabular file viewing
-
-- Tab-delimited files can look messy in the terminal or text editors:
-  
-  ```bash
-  grep -v "^#" "$mus".gtf | cut -f 1-8 | head -n3
-  ```
-
-- With `column`, we can make this look better:
-  
-  ```bash
-  grep -v "^#" "$mus".gtf | cut -f 1-8 | column -t | head -n 3
-  ```
-
-- `column` can make even more of a difference for CSV files:
-  
-  ```bash
-  column -s "," -t "$mus"_bed.csv | head -n 3
-  ```
-
-## `join` to merge tabular data files
-
-**`join` can merge files that share a certain column.**
-
-Say we need to add a column with chromosome lengths to a BED file:
-
-```bash
-cat example.bed
-cat example_lengths.txt
-```
-
-`join` will only work for sorted data, so we sort / check sortedness:
-
-```bash
-sort -k1,1 example.bed > example_sorted.bed
-sort -c -k1,1 example_lengths.txt # verifies is already sorted
-```
-
-Now, we can join the files:
-
-```bash
-join -1 1 -2 1 example_sorted.bed example_lengths.txt
-```
-
-::: callout-tip
-This type of join is an "inner join": only *rows* found in both files are
-returned. To return rows found in only in one of the two files,
-use the `-a` option.
-:::
-
-### Checking whether a file is sorted
-
-- `-c` to check if a file is sorted --
-  we get a message when the file is *not* sorted,
-  but no output when the file is sorted:
-  
-  ```bash
-  sort -k1,1 -k2,2n -c example.bed
-  #> sort: example.bed:4: disorder: chr1     40      49
-  
-  sort -k1,1 -k2,2n -c example_sorted.bed
-  $
-  ```
-
-## Command exit statuses and making use of them
-
-If we need to check whether a file is sorted in a script before sorting it,  
-we can make use of the *exit status* of the command:
-  
-- `0` = success
-- `1` = fail (As well as other non-zero numbers)
-
-```bash
-sort -k1,1V -k2,2n -c example_sorted.bed
-echo $?
-```
-
-You can make use of this as follows:
-
-```bash
-if ! sort -k1,1V -k2,2n -c example.bed; then
-  echo "File is unsorted - sorting now..."
-  sort -k1,1V -k2,2n example.bed > example_sorted2.bed
-fi
-```
-
-This construct can also be used with `grep`,
-which will have exit status `0` (success) if it found a match:
-
-```bash
-if grep "AGATCGG" contimated.fasta > /dev/null; then
-  echo "OH NO! File is contaminated!"
-  exit 1
-fi
-```
-
-:::callout-info
-An additional trick we used here is to redirect the standard
-output to `/dev/null`,
-which won't write anything and will simply avoid the output being printed.
-:::
-
-## `awk` for advanced (tabular) data processing
-
-`awk` is a small programming language in itself!  
-
-`awk` is great for *quick file processing*, especially on tabular data.
-It is not (necessarily) the best choice for complicated tasks --
-perhaps best used as a very powerful tool rather than
-a stand-alone programming language.
-
-To understand `awk`, we should cover its two core ideas / concepts:
-  - **Record processing**
-  - **Pattern-action pairs**
-
-### `awk` record processing: Records and fields
-
-- **Records**:
-  - `awk` processes records one at a time, like a `for` loop going line-by-line.  
-  - By default, **each line is one record**.
-  - The entire record is assigned to `$0`.
-
-  ```bash
-  awk '{ print $0 }' my.txt           # $0: full line
-  ```
-
-- **Fields**:
-  - Within a line, **each column is a _field_**.
-  - Columns are automatically assigned to `$1` (first column),
-    `$2` (second column), `$3` (third column), etc. 
-
-  ```bash
-  awk '{ print $3 "\t" $2 }' my.txt   # $3 & $2: column 3 and 2
-  ```
-
-### `awk` record processing: Pattern-action pairs
-
-- **Pattern**: an expression or regex pattern --- a *condition* to be tested.
-- **Action**: If the pattern evaluates to true, the action is performed.
-
-General syntax: **`awk 'pattern { action }' file`**.
-Note also that the entire `awk` command is placed *between single quotes*.
-
-- Only one of the two (pattern and action) is *required* in any `awk` command:
-
-  - Omit the pattern: *every record* is subjected to the action.
-  
-  ```bash
-  awk '{ print $1 }' my.txt   # Pattern omitted
-  ```
-  
-  - Omit the action: *print full records* that match the pattern.
-  
-  ```bash
-  awk '$3 < 10' my.txt        # Action omitted
-  ```
-  
-### Simple `awk` examples: action only
-
-**In these first examples, we omit a pattern --**
-**therefore, every record (lines) is subjected to the action we specify.**
-
-- If our action, then, is to print the entire record,
-  we mimic `cat` &mdash; each line will be printed in full:
-  
-  ```bash
-  awk '{ print $0 }' example.bed
-  ```
-
-- We can also mimic `cut` -- and here we go beyond `cut` to *reorder* columns:
-  
-  ```bash
-  awk '{ print $3 "\t" $2 }' example.bed
-  #> 39      26
-  #> 47      32
-  #> 28      11
-  ```
-
-- Above, we explicitly printed a tab (`\t`) between the columns.  
-  What happens when we omit the `\t`?
-  
-  ```bash
-  awk '{ print $3 $2 }' example.bed # Columns concatenated...
-  #> 3926
-  #> 4732
-  #> 2811
-  ```
-  
-- We can use a comma `,` to invoke the default separator (a space):
-  
-  ```bash
-  awk '{ print $3, $2 }' example.bed # Default sep: " "
-  #> 39 26
-  #> 47 32
-  #> 28 11
-  ```
-
-### Simple `awk` examples: pattern only
-
-**In the next examples, we use patterns and omit the action:  
-lines matching the pattern (condition) are printed in full.**
-  
-- Print only lines where column 2 (start of BED feature) is larger than 30:
+a. A labmate wants to rename the `control` treatment to `mock` in the metadata file,
+   and runs the command below.
+   What do you think the output will look like?
+   Run the command to check.
 
    ```bash
-  awk '$2 > 30' example.bed
-  ```
-  
-- Calculate the length of each BED feature (column 3 - column 2),  
-  and only print lines with a feature of at least 18 bp:
-  
-  ```bash
-  awk '$3 - $2 > 18' example.bed
-  ```
+   cat metadata.tsv | tr 'control' 'mock'
+   ```
 
-- Print only lines from "chr1" -- do an exact match for the first column:
-  
-  ```bash
-  awk '$1 == "chr1"' example.bed # Quote the string
-  ```
-  
-- Regular expression patterns are placed between forward slashes:
-  
-  ```bash
-  awk '/chr1/' example.bed  # Looks for match anywhere on line
-  
-  awk '$1 ~ /chr1/' example.bed # Looks for a match in column 1
-  ```
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-### `awk` comparison and logical operators
+   The output is mangled, also outside of the `control` lines:
 
-| Comparison  | Description
+   ```bash-out
+   sampke_id       kime    kkeakmeck
+   S82     10dpi   makhemekium
+   S75     10dpi   makhemekium
+   [...]
+   S78     10dpi   mkckkkk
+   S84     10dpi   mkckkkk
+   [...]
+   ```
+
+   `tr` translates individual _characters_, not words:
+   every `c` became an `m`, every `n` a `c`, and so on, anywhere in the file.
+   Because the second argument is shorter than the first,
+   the remaining characters (`t`, `r`, `o`, and `l`) all became its last character, `k`.
+
+   To replace a word, use `sed`, which is covered below.
+   </details>
+
+b. Use `tr` to calculate which percentage of the genome assembly is soft-masked
+   (i.e., written in lowercase).
+
+   <details><summary>{{< fa lightbulb >}} &nbsp; _Click for a hint_</summary>
+   Combine `-d` with the **`-c`** option, which takes the complement of the
+   (first) set of characters: e.g., `tr -cd 'xyz'` deletes everything _except_
+   `x`, `y`, and `z`.
+   Then compare with the total of 566,354,144 bases.
+   </details>
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Delete everything except lowercase bases, and count the remaining characters:
+
+   ```bash
+   grep -v '^>' genome.fna | tr -cd 'acgtn' | wc -c
+   ```
+   ```bash-out
+   315245493
+   ```
+
+   315,245,493 / 566,354,144 = 0.56, so **56%** of the assembly is soft-masked.
+   Large fractions of many genomes, including those of mosquitoes,
+   consist of repetitive DNA such as transposable elements.
+
+   _(The `grep -v '^>'` step is needed because the header lines contain lowercase letters too.)_
+   </details>
+
+c. A labmate wants the reverse complement of the entire genome, and runs:
+
+   ```bash
+   rev genome.fna | tr 'ACGT' 'TGCA' > genome_revcomp.fna
+   ```
+
+   Without running it, can you name at least two problems with this command?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   1. `rev` reverses each _line_ separately,
+      but leaves the order of the lines unchanged.
+      Because the sequences are spread across many lines,
+      they are therefore not properly reversed.
+   2. The header lines are also reversed and "complemented":
+      e.g., the first header would end in `[...] sneipip xeluG 1.739860_GN>`.
+   3. Lowercase (soft-masked) bases are not complemented,
+      since `tr` is case-sensitive.
+
+   This is a task for a dedicated bioinformatics tool.
+   </details>
+:::
+
+## `awk` for tabular data processing
+
+`awk` is a small programming language in its own right,
+which is especially good at quickly processing tabular data.
+For example, it can select rows based on the values in specific columns,
+reorder columns, or do calculations.
+To understand `awk`, you need to know about two core concepts:
+**records and fields**, and **pattern-action pairs**.
+
+### Records and fields
+
+`awk` processes its input one **record** at a time,
+and by default, each line is one record.
+Within a record, each column is a **field**.
+The entire record is available as `$0`, and the fields as
+`$1` (first column), `$2` (second column), and so on.
+
+An `awk` command is placed between single quotes,
+and actions go between curly braces `{ }`.
+For example, to print columns 3 and 1 of the metadata file:
+
+```bash
+awk '{ print $3, $1 }' metadata.tsv | head -n 3
+```
+```bash-out
+treatment sample_id
+cathemerium S82
+cathemerium S75
+```
+
+This already goes beyond `cut`, which can't change the order of columns.
+Note how the comma `,` between the columns made `awk` separate them with a space.
+Without the comma, the columns are pasted together,
+and to separate them with a Tab, you can add a `"\t"`:
+
+```bash
+awk '{ print $3 $1 }' metadata.tsv | head -n 3
+```
+```bash-out
+treatmentsample_id
+cathemeriumS82
+cathemeriumS75
+```
+
+```bash
+awk '{ print $3 "\t" $1 }' metadata.tsv | head -n 3
+```
+```bash-out
+treatment       sample_id
+cathemerium     S82
+cathemerium     S75
+```
+
+::: {.callout-warning}
+#### Set the column delimiter with `-F '\t'` for TSV files
+
+By default, `awk` splits fields on _any_ whitespace: Tabs as well as spaces.
+That works for the metadata file, which contains no spaces,
+but not for the GTF file, whose ninth column contains spaces.
+See what happens when you try to print column 9 of a GTF line:
+
+```bash
+grep -v '^#' annot.gtf | head -n 1 | awk '{ print $9 }'
+```
+```bash-out
+gene_id
+```
+
+The built-in variable `NF` (**n**umber of **f**ields) shows that `awk`
+split this line into 24 fields, rather than the 9 columns of a GTF file:
+
+```bash
+grep -v '^#' annot.gtf | head -n 1 | awk '{ print NF }'
+```
+```bash-out
+24
+```
+
+With **`-F '\t'`**, you tell `awk` to only split fields on Tabs:
+
+```bash
+grep -v '^#' annot.gtf | head -n 1 | awk -F '\t' '{ print NF }'
+```
+```bash-out
+9
+```
+
+To be safe, always use `-F '\t'` with Tab-separated files.
+:::
+
+### Pattern-action pairs
+
+The general syntax of an `awk` command is **`awk 'pattern { action }' file`**, where:
+
+- The **pattern** is a condition that is tested for each record.
+- The **action** is performed for each record for which the pattern is true.
+
+Either of the two can be omitted:
+
+- Omit the pattern, like in the examples above, and the action is performed for _every_ record.
+- Omit the action, and every record that matches the pattern is printed in full.
+
+#### Patterns
+
+Patterns are often comparisons, such as `$3 == "control"`
+(column 3 equals "control"; note the double `==` and the quotes around the text).
+Patterns can also be combined, for example with `&&` ("and").
+To print all infected (i.e., non-control) samples from the 24hpi time point:
+
+```bash
+awk '$2 == "24hpi" && $3 != "control"' metadata.tsv
+```
+```bash-out
+S64     24hpi   cathemerium
+S67     24hpi   cathemerium
+S70     24hpi   cathemerium
+S71     24hpi   relictum
+S74     24hpi   relictum
+S65     24hpi   relictum
+S68     24hpi   relictum
+```
+
+Here are the most important comparison and logical operators:
+
+| Operator    | Meaning
 |-------------|-------------|
 | `a == b`    | `a` is equal to `b`
 | `a != b`    | `a` is not equal to `b`
-| `a < b`     | `a` is less than `b`
-| `a > b`     | `a` is greater than `b`
-| `a <= b`    | `a` is less than or equal to `b`
-| `a >= b`    | `a` is greater than or equal to `b`
-| `a ~ /b/`   | `a` matches regular expression pattern `b`
-| `a !~ /b/`  | `a` does not match regular expression pattern `b`
-| `a && b`    | logical and: `a` **and** `b`
-| `a` <code>&#124;</code><code>&#124;</code> `b` | logical or: `a` **or** `b`
-| `!a`        | not a (logical negation)
+| `a < b` / `a > b` | `a` is less than / greater than `b`
+| `a <= b` / `a >= b` | `a` is less than or equal to / greater than or equal to `b`
+| `a ~ /b/`   | `a` matches regular expression `b`
+| `a !~ /b/`  | `a` does not match regular expression `b`
+| `a && b`    | `a` **and** `b`
+| `a` <code>&#124;&#124;</code> `b` | `a` **or** `b`
+| `!a`        | **not** `a`
+
+: {.striped .hover}
+
+As the `~` operator shows, `awk` can also use regular expressions,
+which go between forward slashes.
+For example, `$1 ~ /^NW_/` would select features on the unplaced scaffolds.
+
+You can also **calculate** in patterns.
+For example, the length of a GTF feature is its end position (column 5)
+minus its start position (column 4), plus 1^[
+The plus 1 is needed because GTF coordinates are "1-based and inclusive":
+a feature with start and end position 2046 is 1 base long.
+Watch out: in other formats, like BED, this is not the case.].
+So, to print all genes longer than 1 Mb (1,000,000 bases):
+
+```bash
+awk -F '\t' '$3 == "gene" && $5 - $4 + 1 > 1000000' annot.gtf
+```
+```bash-out
+NC_068939.1     Gnomon  gene    10362825        11542514        .       +       .       gene_id "LOC120432606"; transcript_id ""; db_xref "GeneID:120432606"; description "RNA-binding protein Musashi homolog Rbp6"; gbkey "Gene"; gene "LOC120432606"; gene_biotype "protein_coding";
+```
+
+Only one gene, on chromosome 3, is that long.
+
+#### Actions
+
+Patterns and actions can of course be combined.
+For example, to print the sequence ID, start, end, and length of each gene:
+
+```bash
+awk -F '\t' '$3 == "gene" { print $1, $4, $5, $5 - $4 + 1 }' annot.gtf | head -n 3
+```
+```bash-out
+NC_068937.1 2046 110808 108763
+NC_068937.1 48457 50554 2098
+NC_068937.1 76295 82374 6080
+```
+
+### `BEGIN` and `END`
+
+Two special patterns are **`BEGIN`** and **`END`**,
+whose actions are performed once:
+before the first record and after the last record, respectively.
+
+`BEGIN` is often used to set options.
+For example, setting the variable `OFS` (**o**utput **f**ield **s**eparator)
+to a Tab makes the commas in `print` produce Tabs instead of spaces:
+
+```bash
+awk -F '\t' 'BEGIN { OFS = "\t" } $3 == "gene" { print $1, $4, $5, $5 - $4 + 1 }' annot.gtf | head -n 3
+```
+```bash-out
+NC_068937.1     2046    110808  108763
+NC_068937.1     48457   50554   2098
+NC_068937.1     76295   82374   6080
+```
+
+`END` is useful for printing a summary after processing all records.
+For example, to compute the mean gene length,
+add up the lengths of all genes in a variable `sum`,
+count the genes in a variable `n`,
+and divide the two at the end:
+
+```bash
+awk -F '\t' '$3 == "gene" { sum += $5 - $4 + 1; n++ } END { print sum / n }' annot.gtf
+```
+```bash-out
+18961.9
+```
+
+In this command:
+
+- `sum += x` is shorthand for `sum = sum + x`, and `n++` for `n = n + 1`.
+- Two statements within one action are separated by a semicolon `;`.
+- You don't need to create (initialize) `sum` and `n` beforehand:
+  `awk` variables start out as 0.
+
+### Processing FASTQ files with `awk`
+
+The built-in variable **`NR`** holds the current record (line) number.
+This is very handy for FASTQ files, where the sequence is always on
+the 2nd line of each 4-line record:
+the lines for which `NR % 4 == 2` (the remainder after dividing the line number by 4 is 2).
+Combined with the `length()` function,
+this gives you the length of every read --- and then, a frequency table of read lengths:
+
+```bash
+zcat S63_R1.fastq.gz | awk 'NR % 4 == 2 { print length($0) }' | sort | uniq -c | sort -nr | head -n 5
+```
+```bash-out
+ 303297 74
+ 123453 73
+  32678 35
+  28617 72
+   8483 71
+```
+
+Most reads are 72--74 bases long,
+but 32,678 reads are only 35 bases long:
+the all-`N` reads you saw in w4c and in the `paste` section above.
+
+### `awk` reference tables
+
+Some useful built-in variables:
+
+| Variable  | Meaning
+|-----------|------------|
+| `$0`      | The entire record (by default, a line)
+| `$1`, `$2`, ... | The first, second, ... field (by default, a column)
+| `NR`      | **N**umber of the current **r**ecord (in `END`: total number of records)
+| `NF`      | **N**umber of **f**ields in the current record
+| `FS`      | Input **f**ield **s**eparator (set with `-F`; default: any whitespace)
+| `OFS`     | **O**utput **f**ield **s**eparator (default: a space)
+
+: {.striped .hover}
+
+Some useful functions and statements:
+
+| Function / statement | Meaning
+|----------------------|--------------------------------|
+| `length(s)`          | Number of characters in `s` (`length()` alone: in the whole record)
+| `tolower(s)` / `toupper(s)` | `s` converted to lowercase / uppercase
+| `substr(s, start, n)` | The part of `s` that starts at position `start` and is `n` characters long
+| `split(s, arr, sep)` | Splits `s` into pieces on `sep`, and stores the pieces in array `arr`
+| `sub(regex, repl, s)` | Replaces the first match of `regex` in `s` by `repl`
+| `gsub(regex, repl, s)` | Replaces every match of `regex` in `s` by `repl`
+| `next`               | Skips to the next record, without considering any remaining pattern-action pairs
+| `exit`               | Stops processing records (any `END` action is still performed)
+
+: {.striped .hover}
 
 ::: exercise
-### <i class="fa fa-user-edit"></i> Your turn: `awk`
+#### {{< fa user-edit >}} Exercise 4: `awk`
 
-The following exercises use `example.bed`.
+a. A classmate wants to print the control samples, but makes a small typo:
 
-1. Use a pattern to only print features (= rows) which end at position 28.
+   ```bash
+   awk '$3 = "control"' metadata.tsv
+   ```
 
-2. Use an action to print, for each row, the chromosome and the length of
-   the feature (column 3 minus column 2).
+   What do you think this will print? Run the command to check.
 
-3. Combine the action from 1. with the pattern (condition) from 2.
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-1. Use a pattern to only print features (= rows) which end at position 28.
-  
-  ```bash
-  awk '$3 == 28' example.bed
-  ```
+   It prints _every_ line, with the third column replaced by `control`
+   (and with spaces instead of Tabs between the columns):
 
-2. Use an action to print, for each row, the chromosome and the length of
-   the feature (column 3 minus column 2).
-  
-  ```bash
-  awk '{ print $1, $3 - $2 }' example.bed
-  awk '{ print $1 "\t" $3 - $2 }' example.bed # Alt: tab-delimited
-  ```
+   ```bash-out
+   sample_id time control
+   S82 10dpi control
+   S75 10dpi control
+   [...]
+   ```
 
-3. Combine the action from 1. with the pattern (condition) from 2.
-  
-  ```bash
-  awk '$3 == 28 { print $1, $3 - $2 }' example.bed
-  ```
+   A single `=` doesn't compare but _assigns_ a value:
+   it sets column 3 to `control` for every line.
+   Furthermore, the result of that assignment, the text `control`, counts as "true",
+   so every line is printed.
+   When `awk` changes a field, it rebuilds the line using `OFS`, which is a space by default.
+
+   With `==`, the command works as intended:
+
+   ```bash
+   awk '$3 == "control"' metadata.tsv
+   ```
+   </details>
+
+b. Compute the mean length of exons.
+   Why do you think it is so much shorter than the mean gene length of nearly 19,000 bases?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Change the pattern from `"gene"` to `"exon"`:
+
+   ```bash
+   awk -F '\t' '$3 == "exon" { sum += $5 - $4 + 1; n++ } END { print sum / n }' annot.gtf
+   ```
+   ```bash-out
+   542.133
+   ```
+
+   Exons are only about 540 bases long on average,
+   because most genes consist of multiple exons separated by introns,
+   which are often much longer than the exons.
+   The length of a gene spans all of its exons _and_ introns.
+   </details>
+
+c. Remove all reads shorter than 50 bases from `S63_R1.fastq.gz`,
+   and save the remaining reads in a new FASTQ file `S63_R1_filtered.fastq`.
+   How many reads are left?
+
+   <details><summary>{{< fa lightbulb >}} &nbsp; _Click for a hint_</summary>
+   Put each read on one line with `paste`, filter with `awk`,
+   and then turn each line back into a 4-line FASTQ record with `tr`.
+   (The `length()` function can also take a specific field, like `length($2)`.)
+   </details>
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   After `paste - - - -`, the sequence is in column 2,
+   so keep only lines with `length($2) >= 50`.
+   Then, replace the Tabs that `paste` inserted by newlines:
+
+   ```bash
+   zcat S63_R1.fastq.gz |
+       paste - - - - |
+       awk -F '\t' 'length($2) >= 50' |
+       tr '\t' '\n' > S63_R1_filtered.fastq
+   ```
+
+   _(A line that ends with a pipe `|` continues on the next line,_
+   _which makes long pipelines easier to read.)_
+
+   Count the reads by dividing the number of lines by 4:
+
+   ```bash
+   wc -l S63_R1_filtered.fastq
+   ```
+   ```bash-out
+   1869040 S63_R1_filtered.fastq
+   ```
+
+   1,869,040 / 4 = 467,260 reads are left,
+   so 32,740 reads were shorter than 50 bases.
+
+   _(In practice, you would use a dedicated read-trimming program for this,_
+   _which can filter reads by length and quality in one go.)_
+   </details>
 :::
 
-### Filtering and combining expressions
+## `sed` to find and replace
 
-- Combining patterns with `&&` -- print *chr1* features longer than 10 bp:
+### Substitution with `s/pattern/replacement/`
 
-  ```bash
-  awk '$1 ~ /chr1/ && $3 - $2 > 10' example.bed
-  ```
-
-- Select lines with "chr2" *or* "chr3" using **`|`**:
-  
-  ```bash
-  awk '$1 ~ /chr2|chr3/ { print $0 "\t" $3 - $2 }' example.bed
-  ```
-
-::: callout-tip
-#### **'|'** and **'||'** 
-
-- **'|'** can be used directly in `awk`, as it uses *extended regex* (ERE).
-
-- We can use **`|`** *within* a regex,  
-  and **`||`** (and **`&&`**) to chain together multiple regex:
+`sed` (**s**tream **ed**itor) is most often used to **find and replace** text,
+using the syntax **`s/pattern/replacement/`**, where `s` stands for "substitute".
+Unlike `tr`, `sed` replaces whole patterns rather than single characters.
+So, here is how you _can_ rename the `control` treatment to `mock`
+(recall Exercise 3a):
 
 ```bash
-awk '/chr1|chr2/' example.bed
-
-awk '/chr1/ || /chr2/' example.bed
+sed 's/control/mock/' metadata.tsv | head -n 8 | tail -n 4
 ```
-:::
-  
-Summary of `awk` so far:
+```bash-out
+S83     10dpi   cathemerium
+S78     10dpi   mock
+S84     10dpi   mock
+S77     10dpi   mock
+```
 
-> *So far, these exercises have illustrated two ways Awk can come in handy:*
-> - *For filtering data using rules that can combine regular expressions and arithmetic*
-> - *Reformatting the columns of data using arithmetic*
-
-### Actions before and after record processing
-
-- The `BEGIN` and `END` patterns can be used to specify actions before and
-  after record processing. Here, we:
-  
-  - Before record processing, initialize a variable `sum`;
-  - For each record, add the sum of the feature length (`$3`-`$2`) to `sum`;
-  - After record processing, calculate the mean length by dividing 
-    the total length `sum` by `NR`, the number of records.
-  
-  ```bash
-  awk 'BEGIN{ sum = 0 };            
-       { sum += ($3 - $2) };             
-       END{ print "mean: " sum/NR };' example.bed
-  #> mean: 14
-  ```
-
-When using multiple pattern-action pairs, separate them with "**`;`**".
-
-::: callout-info
-The `+=` operator is shorthand for adding to a variable:
-`x += 1` means `x = x + 1`. It is used in many languages.
-:::
-
-### Species `awk` variables and keywords
-
-| keyword/<br>variable  | meaning    |
-|----------|------------|
-| `BEGIN`  | Used as a pattern that matches the start of the file
-| `END`    | Used as a pattern that matches the end of the file
-| `NR`     | Number of Records (running count; in `END`: total nr. of lines)
-| `NF`     | Number of Fields (for each record)
-| `$0`     | Contains entire record (usually a line)
-| `$1` - `$n` | Contains one column each
-| `FS`     | Input Field Separator (default: any whitespace)
-| `OFS`    | Output Field Separator (default: single space)
-| `RS`     | Input Record Separator (default: newline)
-| `ORS`    | Output Record Separator (default: newline)
-
-### `awk` functions
-
-| Function         | Meaning                        |
-|------------------|--------------------------------|
-| `length(<string>)`        | Return number of characters
-| `tolower(<string>)`       | Convert to lowercase
-| `toupper(<string>)`       | Convert to uppercase
-| `substr(<string>, <start>, <end>)`  | Return substring
-| `split(<string>, <array>, <delimiter>)`   | Split into chunks in an array
-| `sub(<from>, <to>, <string>)`        | Substitute (replace) regex
-| `gsub(<from>, <to> <string>)`        | >1 substitution per line 
-| **`print`**                    | Print, e.g. column: `print $1`
-| **`exit`**                     | Break out of record-processing loop; <br> e.g. to stop when match is found
-| `next`                      | Don't process later fields: to next iteration
-| 
-
-### Counting columns with `awk`
-
-- `NF` is the number of *fields*:
-  
-  ```bash
-  awk -F "\t" '{print NF; exit}' Mus_musculus.GRCm38.75_chr1.bed
-  #> 3
-  ```
-  
-- For the GTF file, we need to omit the header lines (starting with a `#`)
-  before we can count columns.
-  We can do this either with `grep` or with `awk` itself:
-  
-  ```bash
-  grep -v "^#" Mus_musculus.GRCm38.75_chr1.gtf | awk -F "\t" '{print NF; exit}'
-  #> 9
-  
-  awk -F "\t" '!/^#/ {print NF; exit}' Mus_musculus.GRCm38.75_chr1.gtf
-  #> 9
-  ```
-
-## sed for advanced editing
-
-### Replacing strings with `sed`
-
-`sed` is most often used to perform string replacements,  
-using the syntax `'s/pattern/replacement/[modifiers]'`,  
-where `s` stands for **substitute**.
-  
-We can replace "chrom" by "chr" in every line of a file as follows:
+The pattern is a regular expression,
+and by default, `sed` only replaces the **first match on each line**.
+To replace all matches, add the **`g`** ("global") modifier at the end:
 
 ```bash
-head -n 3 chroms.txt # before sed
-#> chrom1  3214482 3216968
-#> ...
-  
-sed 's/chrom/chr/' chroms.txt | head -n 3
-#> chr1  3214482 3216968
-#> ...
+echo "AAACCCAAA" | sed 's/A/T/'
 ```
-
-How does this functionality differ from the `tr` command?
-
-- For **global substitution** (>1 substitution per line),
-  we use the **`g`** modifier,  
-  and for **case-insensitive** matching, we use the **`i`** modifier:
-  
-  ```bash
-  sed 's/chrom/chr/ig' chroms.txt | head -n 3
-  ```
-
-### `sed` output options
-
-- Note that `sed` does not edit the file in place, and prints to standard out.
-  Usually, we'll redirect the output to a new file:
-  
-  ```bash
-  sed 's/chrom/chr/ig' chroms.txt > chroms_renamed.txt
-  ```
-
-- When we want replacements in place, **don't redirect to the same file!**
-  
-  ```bash
-  sed 's/chrom/chr/ig' chroms.txt > chroms.txt # NO!!
-  ```
-
-- We can instruct `sed` to perform the replacement **in place**
-  with the **`-i`** flag, so that we edit the file:
-
-  ```bash
-  cp chroms.txt chroms_inplace.txt
-  
-  sed -i 's/chrom/chr/' chroms_inplace.txt
-  
-  head -n 3 chroms_inplace.txt
-  #> chr1    3214482 3216968
-  #> chr1    3216025 3216968
-  #> chr1    3216022 3216024
-  ```
-
-### Reformatting using `sed`
-
-- Let's say we want to change the genomic coordinates format
-  `chr1:431-874` ("chrom:start-end") to one that has a tab (`"\t"`)
-  between each field.  
-  
-  ```bash
-  # Use two consecutive sed calls:
-  echo "chr1:431-874" | sed 's/:/\t/' | sed 's/-/\t/'
-  #> chr1    431     874
-  
-  # Use -e for multiple expressions:
-  echo "chr1:431-874" | sed -e 's/:/\t/' -e 's/-/\t/'
-  #> chr1    431     874
-  
-  # Use a character class to match the ":" and "-" at once:
-  echo "chr1:431-874" | sed 's/[:-]/\t/g'
-  #> chr1    431     874
-  ```
-
-### Reformatting using `sed`
-
-- Let's say we want to change the genomic coordinates format
-  `chr1:431-874` ("chrom:start-end") to one that has a tab (`"\t"`)
-  between each field.  
-  
-  ```bash
-  # Use two consecutive sed calls:
-  echo "chr1:431-874" | sed 's/:/\t/' | sed 's/-/\t/'
-  #> chr1    431     874
-  
-  # Use -e for multiple expressions:
-  echo "chr1:431-874" | sed -e 's/:/\t/' -e 's/-/\t/'
-  #> chr1    431     874
-  
-  # Use a character class to match the ":" and "-" at once:
-  echo "chr1:431-874" | sed 's/[:-]/\t/g'
-  #> chr1    431     874
-  ```
-
-::: callout-tip
-Because we're replacing single characters, `tr` would also work here::
+```bash-out
+TAACCCAAA
+```
 
 ```bash
-echo "chr1:431-874" | tr ":-" "\t"
+echo "AAACCCAAA" | sed 's/A/T/g'
 ```
+```bash-out
+TTTCCCTTT
+```
+
+::: {.callout-warning}
+#### Saving the output of `sed`
+
+Like the other commands on this page,
+`sed` does not change the input file, but prints its output to the screen.
+To save the output, redirect it to a _new_ file
+(recall from w4c that you should never redirect to the input file itself):
+
+```bash
+sed 's/control/mock/' metadata.tsv > metadata_mock.tsv
+```
+
+`sed` also has an **`-i`** option to edit a file **in place**,
+e.g. `sed -i 's/control/mock/' metadata.tsv`.
+This is convenient, but be careful: there is no undo,
+so make sure your command works before adding `-i`.
 :::
+
+### Selecting lines with addresses
+
+By default, `sed` operates on every line.
+You can restrict it to certain lines by putting an "**address**" in front of the command:
+either a line number or range of line numbers, or a regular expression between slashes.
+For example, many tools use only the first "word" of a FASTA header as the sequence ID,
+and long headers can be a nuisance.
+To remove everything from the first space onwards, but only on header lines:
+
+```bash
+sed '/^>/ s/ .*//' genome.fna | grep '^>' | head -n 3
+```
+```bash-out
+>NC_068937.1
+>NC_068938.1
+>NC_068939.1
+```
+
+Besides `s`, two other handy `sed` commands are `d` (**d**elete) and `p` (**p**rint):
+
+- `sed '/^#/d' annot.gtf` deletes all lines starting with `#`,
+  i.e. it does the same as `grep -v '^#' annot.gtf`.
+- `sed '1d' metadata.tsv` deletes the first line,
+  i.e. it does the same as `tail -n +2 metadata.tsv`.
+- `sed -n '12,13p' genome.fna` prints lines 12 to 13.
+  The `-n` option turns off `sed`'s default printing of every line,
+  so only the lines selected with `p` are printed.
+
+### Using a different delimiter
+
+The `/` in `s/pattern/replacement/` can be replaced by (almost) any other character.
+This is useful when the pattern or replacement contains slashes, like file paths.
+For example, to remove the dirs from a list of file paths
+(the `.*/` greedily matches everything up to and including the _last_ `/`):
+
+```bash
+ls ../../garrigos/fastq/*fastq.gz | sed 's#.*/##' | head -n 3
+```
+```bash-out
+S63_R1.fastq.gz
+S63_R2.fastq.gz
+S64_R1.fastq.gz
+```
+
+To apply multiple substitutions in one `sed` command, put **`-e`** before each one.
+For example, to also remove the read direction and extension,
+and get a list of sample IDs:
+
+```bash
+ls ../../garrigos/fastq/*fastq.gz | sed -e 's#.*/##' -e 's/_R[12]\.fastq\.gz$//' | sort -u | head -n 3
+```
+```bash-out
+S63
+S64
+S65
+```
+
+### Capture groups and backreferences
+
+A powerful regex feature is that you can **capture** parts of a match by putting
+them in parentheses `( )`,
+and then **recall** them in the replacement with `\1` (the first group),
+`\2` (the second group), and so on.
+(Use `sed -E`, so that the parentheses don't need backslashes.)
+
+For example, genomic regions are often written as `<seqID>:<start>-<end>`.
+To turn such a region into three Tab-separated columns:
+
+```bash
+echo "NC_068937.1:2046-110808" | sed -E 's/^([^:]+):([0-9]+)-([0-9]+)$/\1\t\2\t\3/'
+```
+```bash-out
+NC_068937.1     2046    110808
+```
+
+Here, `([^:]+)` captures everything up to the colon,
+and each `([0-9]+)` captures a number.
+
+Capture groups are also a way to extract information from a line.
+For example, to extract the gene ID from the GTF's gene lines,
+match the _entire_ line,
+and replace it by just the captured ID:
+
+```bash
+awk -F '\t' '$3 == "gene"' annot.gtf | sed -E 's/.*gene_id "([^"]+)".*/\1/' | head -n 3
+```
+```bash-out
+LOC120427725
+LOC120427726
+LOC128092783
+```
+
+Let's try the same with the transcript IDs, on all lines of the GTF file:
+
+```bash
+grep -v '^#' annot.gtf | sed -E 's/.*transcript_id "([^"]+)".*/\1/' | head -n 3
+```
+```bash-out
+NC_068937.1     Gnomon  gene    2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id ""; db_xref "GeneID:120427725"; description "homeotic protein deformed"; gbkey "Gene"; gene "LOC120427725"; gene_biotype "protein_coding";
+XM_052707445.1
+XM_052707445.1
+```
+
+What went wrong in the first line?
+Gene lines have an empty transcript ID (`transcript_id ""`),
+which doesn't match `[^"]+` (one or more non-quote characters).
+And when the pattern doesn't match, `sed` simply prints the line unchanged.
+
+The solution is to combine the `-n` option with the `p` modifier,
+which prints a line only if a substitution was made:
+
+```bash
+grep -v '^#' annot.gtf | sed -E -n 's/.*transcript_id "([^"]+)".*/\1/p' | head -n 3
+```
+```bash-out
+XM_052707445.1
+XM_052707445.1
+XM_052707445.1
+```
 
 ::: exercise
-### <i class="fa fa-user-edit"></i> Your turn: `sed`
+#### {{< fa user-edit >}} Exercise 5: `sed`
 
-Make the following replacements in `Mus_musculus.GRCm38.75_chr1_genes.txt`
-with `sed`.
+a. Above, `sed 's#.*/##'` removed the dirs from a file path.
+   What do you think the command below will print instead? Run it to check.
 
-For 1. and 2., don't write to new files: check your result by piping into `head`.
+   ```bash
+   echo "../../garrigos/fastq/S63_R1.fastq.gz" | sed 's#/.*##'
+   ```
 
-1. Oops, the geneIDs referenced the wrong organism!  
-   Replace `ENSMUS` by `GALGAL`.
-   
-2. Replace the tabs by an underscore (`_`).
-   
-3. Do both at the same time, and write to a new file `genes_fixed.txt`.
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-1. Replace `ENSMUS` by `GALGAL`.
-  
-  ```bash
-  sed 's/ENSMUS/GALGAL/' "$mus"_genes.txt | head
-  ```
+   ```bash-out
+   ..
+   ```
 
-2. Replace the tabs by an underscore (`_`).
-  
-  ```bash
-  sed 's/\t/_/' "$mus"_genes.txt | head
-  ```
+   The pattern `/.*` matches the _first_ `/` and everything after it,
+   so only the first `..` is left.
+   </details>
 
-3. Do both at the same time, and write to a new file `genes_fixed.txt`.
-  
-  ```bash
-  # Approach 1 -- Pipe into a second sed call:
-  sed 's/ENSMUS/GALGAL/' "$mus"_genes.txt | \
-        sed 's/\t/_/' > genes_fixed.txt
-  
-  # Approach 2 -- Use two expressions with "-e":
-  sed -e 's/ENSMUS/GALGAL/' -e 's/\t/_/' "$mus"_genes.txt \
-        > genes_fixed.txt
-  ```
+b. Create a version of the metadata file in which the `time` column holds
+   the number of hours post-infection:
+   `240` instead of `10dpi`, and `24` instead of `24hpi`.
+   Also rename the column header from `time` to `time_h`
+   --- make sure that only the header is affected.
+
+   <details><summary>{{< fa lightbulb >}} &nbsp; _Click for a hint_</summary>
+   Use `-e` for multiple substitutions,
+   and an address to restrict the header change to line 1.
+   </details>
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```bash
+   sed -e '1s/time/time_h/' -e 's/10dpi/240/' -e 's/24hpi/24/' metadata.tsv > metadata_hours.tsv
+   head -n 3 metadata_hours.tsv
+   ```
+   ```bash-out
+   sample_id       time_h  treatment
+   S82     240     cathemerium
+   S75     240     cathemerium
+   ```
+
+   In this case, `s/time/time_h/` without the `1` address would have worked too,
+   because no other line contains `time`.
+   But with the address, you can be sure that only the header line is changed.
+   </details>
+
+c. Do the reverse of the `sed` capture group example above:
+   for each gene in the GTF file, print its region in the format
+   `<seqID>:<start>-<end>`, e.g. `NC_068937.1:2046-110808`.
+   Can you think of a way to do this with `awk` instead?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   With `sed`, first select the gene lines and the relevant columns,
+   and then capture and rearrange the three columns:
+
+   ```bash
+   awk -F '\t' '$3 == "gene"' annot.gtf | cut -f 1,4,5 |
+       sed -E 's/^([^\t]+)\t([0-9]+)\t([0-9]+)$/\1:\2-\3/' | head -n 3
+   ```
+   ```bash-out
+   NC_068937.1:2046-110808
+   NC_068937.1:48457-50554
+   NC_068937.1:76295-82374
+   ```
+
+   With `awk`, this is a lot simpler:
+   print the columns separated by the desired text (between quotes):
+
+   ```bash
+   awk -F '\t' '$3 == "gene" { print $1 ":" $4 "-" $5 }' annot.gtf | head -n 3
+   ```
+
+   As you can see, there is often more than one way to do something with these tools.
+   </details>
 :::
 
-### Backreferences in regular expressions
+## Putting it together: genes per chromosome
 
-Let's say we need to reorder columns or other information we are matching
-with regular expressions.
-How can we do this with `sed`?  
+As a final example, let's combine several of the tools on this page
+to answer a biological question:
+**how gene-dense is each chromosome?**
+To compute the number of genes per million bases (Mb) for each sequence,
+you'll need information from two files:
+sequence lengths from the genome FASTA, and gene counts from the GTF.
+You'll then merge these with a new command, `join`.
 
-We can use **backreferences**,
-which allow you to capture a matched string, and *recall it*.
-(This is a general regex feature.)
+### Step 1: Sequence lengths from the FASTA file
 
-Backreferences are *captured* in parentheses:   
-**`(pattern1)(pattern2)`**,
-and *recalled* using **`\1`** for the first,
-**`\2`** for the second, etc.
-
-- For instance, in `sed`, to invert the order of two words:
-
-  ```bash
-  echo "inverted words" | sed -E 's/(\w+) (\w+)/\2 \1/'
-  # words inverted
-  ```
-
-::: callout-important
-For `grep` & `sed`, don't forget to turn on extended regex with **`-E`**
-to allow for backreferences withour escape backslashes!
-:::
-
-- Similarly, we can invert these two fields:
-  
-  ```bash
-  echo "431-874" |
-      sed -E 's/([0-9]+)-([0-9]+)/\2-\1/'
-  #> 874-431
-  ```
-  
-- Going back to the format that has `chr` as well:  
-  
-  ```bash
-  echo "chr1:431-874" |
-      sed -E 's/(chr[0-9]+):([0-9]+)-([0-9]+)/\1:\3-\2/'
-  #> chr1:874-431
-  ```
-
-- What if *some* chromosomes had names like `chr9a`?  
-  To allow for any character up until the delimiter (**`:`**),
-  we could use **`:`** as a character class and *negate* it:
-  
-  ```bash
-  echo "chr9a:425-787" | \
-      sed -E 's/(chr[^:]+):([0-9]+)-([0-9]+)/\1:\3-\2/'
-  #> chr9a:787-425
-  ```
-
-### Print only matching or selected lines using `sed`
-
-- Let's say we want to **extract a list of transcript IDs** from a GTF file,  
-  which are formatted as `"transcript_id "ENSMUST00000160944"`.
-
-  ```bash
-  grep -v "^#" "$mus".gtf |
-        sed -E 's/.*transcript_id "([^"]+)".*/\1/' |
-        head -n 3 
-  #> 1       pseudogene      gene    3054233 3054733 .       +       .       gene_id "ENSMUSG00000090025"; gene_name "Gm16088"; gene_source "havana"; gene_biotype "pseudogene";
-  #> ENSMUST00000160944
-  #> ENSMUST00000160944
-  ```
-  
-What went wrong?
-  
-By default, non-matching lines are also printed --
-and for those lines, there was no replacement to be made,  
-and they were printed in full.
-  
-To fix this, we can tell `sed` to only print matching lines by:
-
-- Using the **`-n`** option,
-  which turns off the default behavior of printing all lines, *and*
-  
-  - Using the **`p`** modifier for matches, to print just matching lines:
-  
-  ```bash
-  # Print only lines containing the pattern 'abc' (mimics grep!): 
-  sed -n '/abc/p' 
-  ```
-
-- So let's apply this technique to our GTF file:
-  
-  ```bash
-  grep -v "^#" "$mus".gtf |
-      sed -E -n 's/.*transcript_id "([^"]+)".*/\1/p' |
-      head -n 3
-  #> ENSMUST00000160944
-  #> ENSMUST00000160944
-  #> ENSMUST00000082908
-  ```
-
-### Another `sed` example
-
-Here is the reformatting example from @buffalo2015,
-which gives tab-separated (**`\t`**) output:
-  
-```bash
-echo "chr1:28427874-28425431" | \
-    sed -E 's/^(chr[^:]+):([0-9]+)-([0-9]+)/\1\t\2\t\3/'
-```
-  
-::: callout-note  
-#### **Note the two different uses of the caret sign **`^`** above!**
-
-- The first caret, in **`s/^`**, matches the beginning of a line.
-  
-- The second caret, in **`[^:]`**, is used as the first character inside
-  a character class **`[]`**, which means that is functions to *negate*!
-  
-  So, **`[^:]`** will match any character that is *not* a colon **`:`**.
-:::
-
-### Final `sed`
-
-- We can also use the `-n` and `p` syntax to simply print specific lines
-  identified by their line numbers:
-  
-  ```bash
-  sed -n '20,50p' "$mus".gtf # Print lines 20-50
-  ```
-
-- You can use **other delimiters than `/`** in the substitution command,
-  which can be useful when patterns and/or replacement contain slashes:
-  
-  ```bash
-  echo "data/fastq/sampleA.fastq" | sed 's#data/fastq/##'
-  #> sampleA.fastq
-  ```
-
-  Almost any character works as the delimiter,
-  but the "rarer" the character, the better.  
-
-### Greedy and non-greedy matching with regex
-
-- When matching with regular expressions,
-  you need to be careful not to match too "greedily". For instance:
-  
-  When using a character to try to *delimit the end of the match*,
-  but this character occurs multiple times in the line, problems can occur:
-  
-  ```bash
-  echo 'transcript_id "ENSMUST00000160944"; gene_name "Gm16088"' \
-      > greedy_example.txt
-  
-  # We try to delimit the match by a quote `"`, but this fails:
-  sed -E 's/transcript_id "(.*)".*/\1/' greedy_example.txt
-  #> ENSMUST00000160944"; gene_name "Gm16088
-  ```
-  
-- Instead, you can basically invert the approach:
-  use a character class to match everything except the delimiting character,
-  so that the match is guaranteed to stop when the delimiting character occurs:
-
-  ```bash
-  sed -E 's/transcript_id "([^"]+)".*/\1/' greedy_example.txt
-  # ENSMUST00000160944
-  ```
-
-## Process substitution and subshells
-
-### Process substitution
-
-With process substitution, we can treat command output
-**as if it had been written to a file**.
-
-- Capturing input streams:
-
-  ```bash
-  program \
-      --in1 <(makein raw1.txt) \
-      --in2 <(makein raw2.txt) \
-      --out1 out1.txt \
-      --out2 out2.txt
-  ```
-
-- Capturing output streams:
-  
-  ```bash
-  program \
-      --in1 in1.txt \
-      --in2 in2.txt \
-      --out1 >(gzip > out1.txt.gz) \
-      --out2 >(gzip > out2.txt.gz)
-  ```
-
-- Combining both:
-
-  ```bash
-  program \
-      --in1 <(makein raw1.txt) \
-      --in2 <(makein raw2.txt) \
-      --out1 >(gzip > out1.txt.gz) \
-      --out2 >(gzip > out2.txt.gz)
-  ```
-
-Why is this useful? Why not write intermediate files?
-
-### Subshells
-
-- "Subshell" between `( )`: both `head` and `tail` get the same standard input:
-  
-  ```bash
-  (head -n 2; tail -n 2) < file
-  ```
-
-- Creating a custom function with this subshell trick:
-
-  ```bash
-  i() { (head -n 2; tail -n 2) < "$1" | column -t; }
-  ```
-
-- Now you can use `i` ("inspect") to print the first and last two lines
-  of a file:
-  
-  ```bash
-  i $mus.bed
-  #> 1  3054233    3054733
-  #> 1  3054233    3054733
-  #> 1  195240910  195241007
-  #> 1  195240910  195241007
-  ```
-
-You'll have to add the function to your bash config file `~/.bashrc` to be
-able to use it any time.
-
-- Another subshell example
+Computing the length of each sequence in a FASTA file takes a slightly more
+complex `awk` command,
+because each sequence is spread across many lines:
 
 ```bash
-(zgrep "^#" "$mus".gtf.gz; \
-    zgrep -v "^#" "$mus".gtf.gz | sort -k1,1 -k4,4n) |
-    gzip > "$mus"_sorted.gtf.gz
+awk '/^>/ { if (id) print id "\t" len; id = substr($1, 2); len = 0; next }
+     { len += length($0) }
+     END { print id "\t" len }' genome.fna | sort -k1,1 > seq_lengths.tsv
 ```
+
+Here is what this does:
+
+- For **header lines** (pattern `/^>/`):
+  - If this isn't the first header, print the ID and length of the _previous_ sequence.
+  - Store the new sequence ID: the first field without the `>`
+    (`substr($1, 2)` takes everything from the 2nd character onwards).
+  - Reset the length to 0, and skip to the next line (`next`).
+- For **sequence lines** (no pattern, but header lines never get here because of `next`):
+  add the number of bases on the line to the length.
+- At the **end**, print the ID and length of the last sequence,
+  which hasn't been printed yet.
+- Finally, sort by sequence ID, which `join` will need.
+
+```bash
+head -n 4 seq_lengths.tsv
+```
+```bash-out
+NC_015079.1     14856
+NC_068937.1     139153999
+NC_068938.1     224097512
+NC_068939.1     186194774
+```
+
+### Step 2: Gene counts from the GTF file
+
+To count the genes on each sequence,
+make a frequency table of column 1 for the gene lines.
+Then, swap the two columns of `uniq -c`'s output with `awk`,
+so that the sequence ID comes first, as in the other file:
+
+```bash
+awk -F '\t' '$3 == "gene"' annot.gtf | cut -f 1 | sort | uniq -c |
+    awk '{ print $2 "\t" $1 }' > gene_counts.tsv
+
+head -n 4 gene_counts.tsv
+```
+```bash-out
+NC_015079.1     13
+NC_068937.1     5173
+NC_068938.1     7532
+NC_068939.1     6248
+```
+
+### Step 3: Merging the two files with `join`
+
+`join` merges two files based on a shared column ---
+by default, the first column of each file.
+For every sequence ID that occurs in both files,
+it prints the ID followed by the remaining columns of both files:
+
+```bash
+join seq_lengths.tsv gene_counts.tsv | head -n 4
+```
+```bash-out
+NC_015079.1 14856 13
+NC_068937.1 139153999 5173
+NC_068938.1 224097512 7532
+NC_068939.1 186194774 6248
+```
+
+::: {.callout-warning appearance="simple"}
+`join` requires both files to be **sorted** on the join column.
+If they aren't, it will miss matches (usually, but not always, with a warning).
+:::
+
+<details class="details-quiz">
+<summary>The joined output has fewer lines than `seq_lengths.tsv`. Which sequences are missing, and why?</summary>
+
+`join` only prints lines whose ID occurs in _both_ files (this is called an "inner join").
+Sequences without any annotated genes don't occur in `gene_counts.tsv`,
+so they're left out.
+To also keep the lines that only occur in the first file, use `join -a 1`.
+</details>
+
+### Step 4: Computing gene density
+
+Finally, use `awk` to divide the number of genes (column 3)
+by the length in Mb (column 2 divided by 1,000,000),
+and only keep the sequences with `NC` IDs:
+
+```bash
+join seq_lengths.tsv gene_counts.tsv |
+    awk '{ print $1, $2, $3, $3 / ($2 / 1000000) }' |
+    grep '^NC'
+```
+```bash-out
+NC_015079.1 14856 13 875.067
+NC_068937.1 139153999 5173 37.1746
+NC_068938.1 224097512 7532 33.6104
+NC_068939.1 186194774 6248 33.5563
+```
+
+So, the three chromosomes have a similar gene density of about 34--37 genes per Mb.
+The mitochondrial genome (`NC_015079.1`) is far more gene-dense:
+its 13 genes are packed into fewer than 15,000 bases.
+
+::: {.callout-note appearance="simple"}
+For more complex merges of tables, R is a better tool:
+its _dplyr_ package, which you'll learn about in week 13,
+has a set of flexible `join` functions.
+:::
+
+## Wrap-up: which tool when?
+
+| Task                                            | Tool(s)
+|-------------------------------------------------|---------------------------
+| Find lines that contain a (regex) pattern       | `grep`
+| Extract the matching part of lines              | `grep -o`, or `sed -E` with capture groups
+| Select columns                                  | `cut`; `awk` to also reorder them
+| Select rows based on the values in a column     | `awk`
+| Calculate with values in columns                | `awk`
+| Replace text                                    | `sed`; `tr` for single characters
+| Count or summarize values                       | `sort` and `uniq -c`
+| Merge two tables                                | `join`
+
+: {.striped .hover}
+
+These tools shine for quick, one-off questions about (large) files,
+and for small processing steps in shell scripts.
+But when a pipeline gets long or hard to read,
+it's often better to switch to:
+
+- **R or Python**, for more complex data wrangling, statistics, and plotting
+  (you'll start learning R in week 12).
+- **Dedicated bioinformatics tools**, for format-specific tasks like
+  filtering or reverse complementing reads and sequences.
+  Such tools handle the details of file formats
+  (like multi-line FASTA sequences, or soft-masked bases) for you.
+
+Finally, now that you're done with this page,
+remove the large genome FASTA file:
+
+```bash
+rm genome.fna
+```
+
+<br>
