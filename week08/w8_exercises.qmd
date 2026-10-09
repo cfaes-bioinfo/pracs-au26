@@ -50,29 +50,21 @@ bibliography: ../references.bib
 
 In these exercises, you'll practice writing shell scripts to run bioinformatics
 programs, and looping over samples to run these scripts multiple times.
-The example program is TrimGalore, which we use in our RNA-seq analysis workflow:
+
+The example program is TrimGalore,
+a commonly used tool for preprocessing reads in FASTQ files before further analysis.
+It's part of the RNA-seq analysis workflow we're gradually applying to the @garrigós2025
+data in this course:
 
 ![](../img/rnaseq-wf-3.png){fig-align="center" width="60%" fig-alt="A diagram showing the steps in an RNA-seq analysis pipeline." .lightbox}
 
 <hr style="height:1pt; visibility:hidden;" />
 
-::: callout-important
-#### Exercises 1-3 without genAI, Exercise 4 with genAI
-Please do **Exercises 1-3 without any genAI assistance**,
-and only then move on to Exercise 4,
-where you'll hand the script you wrote to a genAI assistant.
-
-This order is deliberate, and mirrors how we hope you'll keep using these tools:
-the "[0-to-90% problem](./w8a_genAI.qmd#/pitfalls)" we discussed means that you can
-only judge the last 10% --- whether the code is actually correct ---
-if you could have done a good part of the first 90% yourself.
-Writing the script first also gives you something concrete to compare
-the genAI output against.
-
+Please do **Exercises 1-3 without any genAI assistance**.
+Then, in Exercise 4, you'll hand the script you wrote to a genAI assistant.
 This is different from [the second lecture](./w8b_claude.qmd),
 where Claude wrote a script from scratch.
 At the end, you'll reflect on which approach gave you more confidence in the result.
-:::
 
 ## What is TrimGalore?
 
@@ -82,22 +74,22 @@ TrimGalore [@krueger2021] is a tool that can trim and filter FASTQ files, removi
   Adapters are always added to DNA/cDNA fragments of interest prior to Illumina sequencing,
   and the last bases of a read can "read-through" into the adapter if the fragment
   is shorter than the read length.]
-- Poor-quality bases at the start and end of the reads
+- Poor-quality bases at the end of the reads
 - Reads that have become very short after the prior two steps
 
 TrimGalore takes FASTQ files as input, and outputs filtered FASTQ files.
+But unlike FastQC, you don't run it on one FASTQ file at a time.
 
-It is important to realize that when you have paired-end reads
-(as you do with the @garrigós2025 data),
-a single TrimGalore run should include both the R1 (forward read) and R2 (reverse
-read) file for one sample.
+When you have paired-end reads (as with the @garrigós2025 data),
+a single TrimGalore run should include **both** the R1 (forward read) and
+R2 (reverse read) file for one sample.
 This is because R1 and R2 files need to remain "synced":
 generally, you can't remove a read from an R1 file without also removing
 its mate from the R2.
-Operationally, this means we can't simply run one FASTQ file at a time!
 
 ::: {.callout-note collapse="true"}
 #### More about TrimGalore and similar programs _(Click to expand)_
+
 Several largely equivalent tools exist for this kind of FASTQ preprocessing ---
 [Trimmomatic](http://www.usadellab.org/cms/index.php?page=trimmomatic) and
 [fastp](https://github.com/OpenGene/fastp) are two other commonly used ones.
@@ -111,37 +103,33 @@ Two advantages of TrimGalore are:
 
 ## Setting up
 
-1. At <https://ondemand.osc.edu>,
-   start a VS Code session, and open your `/fs/ess/PAS3493/people/$USER/week08` dir
-   as the VS Code folder, like in [the second lecture](./w8b_claude.qmd#prepare-a-dir-for-this-week)
-   (this way, Claude will also use your `CLAUDE.md` file in Exercise 4).
-2. Create a dir `exercises` (i.e., `week08/exercises`) **and navigate there** --
-   this should be your working dir for the exercises.
-3. Create a dir `scripts` (i.e., `week08/exercises/scripts`) but don't navigate there.
-4. Create a file `README.md` for notes and answers.
-5. You'll be working with the `garrigos` FASTQ files.
-   It's up to you whether you use the files you already have
-   (`/fs/ess/PAS3493/people/$USER/garrigos`),
+1. Start a VS Code session at OSC OnDemand,
+   and open your `week08` dir as the VS Code folder,
+   like in [the second lecture](./w8b_claude.qmd#prepare-and-open-a-dir-for-this-week)
+   (this way, Claude will use your `CLAUDE.md` file from class in Exercise 4).
+
+2. Create a dir `exercises` with a subdir `scripts` (i.e., `week08/exercises/scripts`),
+   and in the terminal, **navigate** to the `exercises` dir.
+
+3. Create a file `exercises/README.md` for notes and answers.
+
+4. You'll be working with the familiar `garrigos` FASTQ files.
+   It's up to you whether you use the files you already have,
    or copy these FASTQ files into a `data` dir within `week08/exercises`.
-6. ***Optional:*** Turn your `week08` dir into a Git repo,
-   and commit to it as appropriate while you are doing the exercises.
-   At the end, create a GitHub repo and push your local repo to the remote,
-   optionally tagging `@kstarr791` and `@jelmerp` in an Issue.
 
 ## Exercise 1: Get the TrimGalore container
 
-1. Get the URL to the container image with the most recent TrimGalore version
-   that you found last week in [Graded Assignment 3](/GA/GA3.qmd).
-   Or go to <https://seqera.io/containers> to retrieve the link there.
-
-   <details><summary>Struggling to get the container link? Find it here. _(Click to expand)_</summary><p>
-   ```bash-out-solo
-   oras://community.wave.seqera.io/library/trim-galore:0.6.10--bc38c9238980c80e
-   ```
-   </details>
+1. At <https://seqera.io/containers>, get a link to a container image
+   with TrimGalore version **0.6.10**,
+   like you did for FastQC in the
+   [week 6 lecture](../week06/w6b_software.qmd#obtaining-a-container-image)
+   and for MultiQC in [Graded Assignment 3](../GA/GA3.qmd).
+   _(Newer versions exist, so make sure to select 0.6.10:_
+   _that's the version we'll use throughout the course.)_
 
 2. To check that the container works,
-   print the TrimGalore help info using the help option: `trim_galore --help`.
+   use `apptainer exec` with your container link to print the TrimGalore help info
+   (`trim_galore --help`).
    You'll use this help info below.
 
 ## Exercise 2: Write a TrimGalore script
@@ -214,7 +202,7 @@ Replace the `<...>` parts with your code:
 # Constants
 TRIMGALORE_CONTAINER=<...>
 
-# Copy the automatically available variables to descriptively named ones
+# Copy the placeholder variables to descriptively named ones
 R1=<...>
 R2=<...>
 outdir=<...>
@@ -274,8 +262,13 @@ giving you the opportunity to use multiple cores.
    file for the FastQC run on the **raw** R1 file,
    which you did in the
    [week 6 lecture on using software at OSC](../week06/w6b_software.qmd#running-a-fastqc-analysis).
-   E.g.: can you see any differences in overall sequence quality,
-   and do the very short reads with only Ns appear to have been removed?
+   - Can you see any differences in overall sequence quality?
+   - Do the short reads with only `N`s,
+     which you saw [in week 4](../week04/w4c_shell-files2.qmd#less-to-page-through-files),
+     appear to have been removed?
+     The example read in week 4 was 35 bp long,
+     which is longer than TrimGalore's default length threshold of 20 bp.
+     So how could TrimGalore have removed it?
 
 ## Exercise 4: Now bring in genAI
 
@@ -312,15 +305,19 @@ and what you concluded after checking it.
    - Did it suggest anything that is simply **wrong**,
      or that conflicts with how we've been writing scripts in this course?
 
-2. Ask it to add something to the script that you haven't written yourself, e.g.:
+2. First, run your script as it is now with an R1 file name that doesn't exist.
+   What happens, and at which point does the script stop?
+
+   Then, ask Claude to add something to the script that you haven't written yourself, e.g.:
 
    > Add a check that both input FASTQ files exist, and exit with an informative
    > error message if they don't
 
    Claude will show you the proposed change as a diff:
-   read it before you accept it. Then, **test it**:
-   run the script with a file name that doesn't exist and see what happens.
+   read it before you accept it.
+   Then, **test it** with the same non-existent file name.
    Does it behave the way the AI claimed it would?
+   And given what you saw before the change, how useful is this check?
 
 3. Now, ask Claude to write a `for` loop that runs your script for multiple samples:
 
@@ -342,6 +339,9 @@ and what you concluded after checking it.
    - Does it run the script once per **sample**, rather than once per FASTQ file?
    - Does it get the correct R2 file for each R1 file?
      If you don't understand how it does this, ask Claude to explain that part.
+     Recall the `S61` pitfall from
+     [the w7b self-study exercise](../week07/w7b_scripts2.qmd#self-study-looping-over-samples):
+     would Claude's approach have that problem?
    - Does it only include the 7 `S6` samples?
 
    Then, test the loop by putting `echo` before the `bash` command,
@@ -361,15 +361,17 @@ and what you concluded after checking it.
    #### Check every option against the help info
    Whenever the AI suggests **command-line options** --- for TrimGalore or any other
    program --- look them up in that program's help info
-   (e.g. `trim_galore --help`) before you believe them.
-   As we saw in [the first lecture this week](./w8a_genAI.qmd#/a-prompt-about-trimgalore),
+   (e.g. `trim_galore --help`) before you believe them,
+   or ask Claude to check them against the help info itself,
+   like we did in [the second lecture](./w8b_claude.qmd#an-agent-can-check-its-own-claims).
+   As we saw in [the first lecture this week](./w8a_genAI.qmd#/trimgalore-prompt),
    making up plausible-looking options that don't exist is one of the most common
    ways these tools fail in a bioinformatics context,
    and the failure is easy to miss because the output _looks_ authoritative.
    :::
 
 5. Finally, write a short reflection in your `README.md`:
-   in [the lecture](./w8b_claude.qmd), Claude wrote a script from scratch,
+   in [the second lecture](./w8b_claude.qmd), Claude wrote a script from scratch,
    while here, you wrote the script yourself first.
    Which approach gave you more confidence that the script is correct, and why?
 
@@ -390,7 +392,7 @@ if you copied them into `data`, use `data/` instead.
 
 - `--paired` to indicate that the FASTQ files are paired-end
 - `--output_dir` (or equivalently, `-o`) to specify the output directory
--  `--fastqc` to run FastQC on the trimmed FASTQ files
+- `--fastqc` to run FastQC on the trimmed FASTQ files
 
 </details>
 
@@ -432,7 +434,7 @@ apptainer exec "$TRIMGALORE_CONTAINER" \
 echo
 echo "TrimGalore version:"
 apptainer exec "$TRIMGALORE_CONTAINER" \
-  trim_galore -v
+    trim_galore -v
 echo "Successfully finished script trimgalore.sh"
 date
 ```
@@ -444,7 +446,7 @@ date
   to adjust the base quality score threshold, which has the Phred unit we've discussed.
   The default threshold is 20, which corresponds to an estimated 0.01 error rate.
   TrimGalore will trim bases with a lower quality score than this threshold
-  from the **ends** of the reads.
+  from the **end** (3' end) of the reads.
   It will **not** remove or mask bases with lower quality scores elsewhere in the read.
 
 - The option `--length` can be used
@@ -553,11 +555,29 @@ Yes, there are clear differences in:
   all of which had artefacts related to those very short reads that only
   contained Ns: these reads have been removed by the trimming process.
 
+- Even reads like the 35 bp example from week 4 were removed:
+  all of their bases had quality score `#` (Phred score 2),
+  so quality trimming removed every base.
+  The resulting empty (0 bp) reads were then removed by the length filter,
+  together with their mates.
+
 </p></details>
 
 ### Exercise 4
 
-Your genAI answers will vary, but here is what a correct loop for item 3 looks like.
+Your genAI answers will vary,
+but here are some notes on item 2, and what a correct loop for item 3 looks like.
+
+<details><summary> 2 - Running the script with a non-existent file _(Click to expand)_</summary>
+
+Even without the check, the script stops with an error thanks to `set -e`,
+because TrimGalore fails.
+But it only stops after printing the "Starting" messages and creating the output dir,
+and the error message comes from TrimGalore rather than from your script.
+An explicit check makes the script fail earlier and more clearly:
+useful, but not essential.
+
+</details>
 
 <details><summary> 3 - Run the script for multiple samples _(Click to expand)_</summary><p>
 
