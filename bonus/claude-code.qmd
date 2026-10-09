@@ -1,8 +1,8 @@
 ---
-title: "Claude Code: guardrails, memory, skills, and more"
+title: "Additional Claude Code features and strategies"
 subtitle: "Optional self-study content for week 8"
 pagetitle: "Bonus: Claude Code"
-date: 2026-10-14
+date: 2026-10-09
 date-modified: last-modified
 author:
   - name: Jelmer Poelstra
@@ -22,6 +22,9 @@ other-links:
   - text: "w8b: Coding with an AI agent"
     icon: book
     href: ../week08/w8b_claude.html
+  - text: "GitHub Copilot in VS Code  (optional)"
+    icon: book
+    href: ../bonus/copilot.html
 language:
   title-block-published: "Published on"
   title-block-modified: "Page last modified"
@@ -30,192 +33,112 @@ language:
 ---------
 
 <hr style="height:1pt; visibility:hidden;" />
-
-::: callout-warning
-#### This page is a draft and is still under construction.
-:::
-
 <hr style="height:1pt; visibility:hidden;" />
 
 ## Introduction
 
+### Background
+
 This page builds on the [w8b lecture](../week08/w8b_claude.qmd),
 where you set up Claude Code in VS Code Server and created a `week08` project dir
 with a `CLAUDE.md` file.
-Here, you'll learn about additional ways to make working with Claude safer and more effective:
-guardrails, memory, skills, and planning.
+Here, you'll learn about additional ways to make working with Claude more effective
+and safer: plan mode, skills, memory, and guardrails.
 
-## Guardrails: Git and permissions {#guardrails}
+### Setting up
 
-An agent that can edit files and run commands is powerful, but it can also make mistakes
-at a larger scale than a chatbot can.
-"Guardrails" are the practices and settings that limit the damage.
-Think of the guardrails on a mountain road: they don't stop you from driving,
-but they keep you from accidentally going over the edge.
+- Start and open a VS Code Server session.
+- Open your `week08` project dir with the Open Folder functionality.
+- Some exercises below ask you to commit your changes,
+  so if you haven't done so yet, make your `week08` dir a Git repository
+  ([week 5](../week05/w5b_git.qmd)):
 
-### Git as your safety net
+  ```bash
+  # Run this in your week08 dir
+  git init
+  git add CLAUDE.md scripts
+  git commit -m "Add CLAUDE.md and scripts from the w8b lecture"
+  ```
 
-Version control ([week 5](../week05/w5_overview.qmd)) pairs very well with agentic AI:
+## Plan mode
 
-- **Before** asking Claude for a bigger change, commit your work,
-  so that `git status` is clean.
-- **After** Claude is done, review _all_ changes with `git diff` or the VS Code
-  Source Control panel --- including changes to files you didn't have open.
-- **Undo** changes you don't want with `git restore <file>`,
-  or discard them in the Source Control panel.
+### Plan first, then act
 
-::: {.callout-tip appearance="simple"}
-Claude can write commit messages for you, too
---- but read them, and edit them where needed.
+::: {.columns}
+::: {.column}
+
+For bigger tasks, it's often better to have Claude write a plan first,
+before it changes anything.
+Claude Code has a dedicated mode for that: **Plan mode**.
+
+In this mode, Claude will look around your project,
+perhaps ask you some clarifying questions,
+and write a plan that opens as a Markdown document.
+You can then edit the plan, ask for changes,
+or approve it so that Claude carries it out.
+
+To switch to Plan mode, click the "mode indicator" that shows the current mode
+(e.g., "Manual") in the bottom right of the prompt box, and select **Plan**:
+
+:::
+::: {.column}
+
+![](/img/claude-modes-plan.png){fig-align="center" width="80%" fig-alt="Switch to Plan mode" .lightbox}
+
+:::
 :::
 
-### Built-in protections
-
-By default, Claude Code:
-
-- **Asks before editing files** and before running commands
-  (except a set of read-only commands, like `ls`).
-- **Asks before accessing files outside your workspace.**
-- Tries to detect **"prompt injection"**: instructions hidden in files or web pages that
-  Claude reads, which try to make it do something you didn't ask for.
-  This protection is not foolproof.
-
-### Permission rules {#permission-rules}
-
-You can add your own rules about what Claude may do, in a `permissions` section of a settings file.
-There are three types of rules:
-
-- **allow**: Claude may do this without asking.
-- **ask**: Claude must always ask first, even in permission modes that normally don't ask.
-- **deny**: Claude may never do this.
-
-For example:
-
-```{.json .file filename=".claude/settings.json"}
-{
-  "permissions": {
-    "ask": [
-      "Bash(rm *)",
-      "Bash(git push *)"
-    ],
-    "deny": [
-      "Read(~/.claude/settings.json)",
-      "Edit(//fs/ess/PAS3493/people/*/garrigos/**)"
-    ]
-  }
-}
-```
-
-This example:
-
-- Makes Claude always ask before **removing files** or **pushing to GitHub**.
-- Prevents Claude from reading your user settings file, which contains your **API key**.
-- Prevents Claude from editing anything in your **raw data** dir.
-
-Where you put these rules determines where they apply:
-
-| File | Applies to |
-| ---- | ---------- |
-| `~/.claude/settings.json` | All your projects (this is where your API key is) |
-| `.claude/settings.json` in a project | That project; commit it to share the rules with collaborators |
-| `.claude/settings.local.json` in a project | That project, just for you (don't commit it) |
-
-: {.striped .hover tbl-colwidths="[45, 55]"}
-
-::: {.callout-note appearance="simple"}
-When you choose "Yes, and don't ask again" for a command,
-Claude saves an allow rule in `.claude/settings.local.json`.
-To see all rules that are currently active, and which file each comes from,
-type `/permissions` in the prompt box.
-The [documentation on permissions](https://code.claude.com/docs/en/permissions) describes the full rule syntax.
-:::
+Plans are also a good way to see how model choice and effort level affect Claude's
+work, which is what you'll explore in the exercise below.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Add permission rules
+#### {{< fa user-edit >}} Exercise 1: Compare a fast and a thorough plan
 
-1. Create a file `.claude/settings.json` in your `week08` dir from the w8b lecture with the contents shown above.
-2. Start a new conversation, and type `/permissions` to check that the rules are active.
-3. Ask Claude:
+You'll ask Claude for the same plan twice:
+first with a small model, then with a large model and high effort.
+Use the following prompt both times:
 
-   > Show me the contents of ~/.claude/settings.json
+> Write a plan for aligning the FASTQ files in ../garrigos/fastq to the reference genome
+> in ../garrigos/ref, and then counting the aligned reads to produce a gene count table.
+> We will run this at OSC with Apptainer containers.
+> Which alignment and counting programs would you recommend, and why?
 
-   What happens?
-4. Commit `.claude/settings.json`.
+**Round 1 --- fast:**
+
+1. Switch to **Haiku** (which has no effort levels), and select **Plan mode**.
+2. Send the prompt, and read the plan. For example:
+   How many steps does it have? Does it name specific programs and versions?
+   Does it ask you any clarifying questions, or mention uncertainties?
+   Did it check which files are actually in `../garrigos/ref`?
+3. Run `/usage` to see how much this plan cost.
+
+**Round 2 --- thorough:**
+
+1. Start a **new conversation**, so that the first plan doesn't influence this one.
+2. Switch to **Opus** with **High** effort, keeping Plan mode on.
+3. Send the same prompt, and read the plan with the same questions in mind.
+4. Run `/usage` to see how much this plan cost.
+
+**Think about:**
+
+- What differences do you notice between the two plans?
+- Run `ls ../garrigos/ref`: there is a genome annotation file,
+  but no genome FASTA file yet (you'll download it in week 10).
+  Did either plan notice this?
+- How would you check whether a plan is reasonable and complete?
+- How do the plans compare to what @garrigós2025 did?
+- Would the "fast" plan have been good enough?
+- What are the trade-offs between speed and thoroughness in planning?
+
+(Don't let Claude carry out the plans:
+decline, or simply stop, when it asks to proceed.)
 :::
 
-::: callout-warning
-#### Guardrails complement your own review, they don't replace it
-Permission rules can only block what you thought of in advance.
-Keep reading Claude's proposed edits and commands,
-especially when you work with data that isn't yours to share.
-:::
-
-## Memory {#memory}
-
-### How Claude's memory works
-
-In the lecture, you learned that Claude reads your `CLAUDE.md` at the start of every conversation.
-In addition, Claude keeps **memory** notes for itself ("auto memory").
-As it works with you, it may save notes about:
-
-- Your **preferences** and **corrections** you've given it
-  (e.g., "the user prefers lowercase variable names")
-- **Project context** that it can't work out from your files
-  (e.g., a deadline, or why a decision was made)
-
-It doesn't save something in every conversation, only things it thinks will be useful later.
-When it does, you'll see a message like "Saved 1 memory" in the Claude panel.
-
-The memory is stored separately for each project (each Git repository),
-in a dir in your Home dir: `~/.claude/projects/<project>/memory/`.
-That dir contains an index file, `MEMORY.md`, which is loaded into every conversation
-in that project, and one file for each memory, which Claude reads when it needs to.
-
-### Memory vs. `CLAUDE.md`
-
-| | `CLAUDE.md` | Memory |
-|-|-|-|
-| **Who writes it** | You | Claude |
-| **Contains** | Instructions and rules | Things Claude learned while working with you |
-| **Where** | In your project (can be committed with Git) | In your Home dir (only for you) |
-
-: {.striped .hover tbl-colwidths="[20, 40, 40]"}
-
-Compared to browser-based chatbots, which may remember general things about you,
-this is a big advantage: both `CLAUDE.md` and Claude's memory are specific to each project,
-so Claude can pick up where you left off in that project.
-
-If you want Claude to remember something, you can tell it directly:
-
-- _"Remember that ..."_ makes Claude save a memory.
-- _"Add this to CLAUDE.md: ..."_ adds it to your `CLAUDE.md` instead.
-  This is better for things that collaborators (or your future self) should also know,
-  since `CLAUDE.md` is part of your project.
-
-### Viewing and editing memory
-
-Type **`/memory`** in the prompt box to see your `CLAUDE.md` files and memory,
-and to open them for editing.
-Memory files are plain Markdown, so you can edit or delete them as you like ---
-and it's worth checking them now and then, since Claude may have saved something
-that's wrong or no longer true.
-
-You can also turn auto memory off with the toggle in `/memory`,
-or for a single project by adding `"autoMemoryEnabled": false` to the project's
-`.claude/settings.json`.
-For more, see the [documentation on `CLAUDE.md` and memory](https://code.claude.com/docs/en/memory).
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: Make Claude remember something
-
-1. In your `week08` project, tell Claude:
-
-   > Remember that when I ask you to explain code, I want a short explanation with an example
-
-2. Type `/memory` and find the note Claude saved.
-3. Start a new conversation, and ask Claude to explain a line from one of your scripts.
-   Did it follow your preference?
-4. If you don't want to keep this memory, delete it (e.g., by asking Claude to forget it).
+::: {.callout-tip}
+#### Model choice in planning vs. execution
+A common strategy is to write the plan with a larger model like Opus,
+and then switch to a smaller and cheaper model like Sonnet to carry it out:
+much of the hard thinking happens while planning.
 :::
 
 ## Skills {#skills}
@@ -227,6 +150,19 @@ But you may also have multi-step procedures or checklists that you only need for
 **specific tasks** --- for example, reviewing a script, or checking the outputs of a workflow.
 For those, you can create a **skill**.
 
+|                 | `CLAUDE.md`                             | Skill                                |
+| --------------- | --------------------------------------- | ------------------------------------ |
+| **Use for**     | Information Claude should always know   | Procedures for specific tasks        |
+| **Example**     | Project dirs, script conventions, rules | Reviewing a script, checking outputs |
+| **When loaded** | At the start of every conversation      | Only when used                       |
+
+: {.striped .hover tbl-colwidths="[20, 40, 40]"}
+
+<hr style="height:1pt; visibility:hidden;" />
+
+At the start of a conversation, Claude only sees each skill's short description,
+and it reads the full instructions only when it uses the skill.
+So, skills can be long without using many tokens in every conversation.
 A skill is a Markdown file called `SKILL.md`, with instructions for one specific task.
 Each skill gets its own dir in `.claude/skills` in your project:
 
@@ -239,10 +175,6 @@ week08
 ├── CLAUDE.md
 └── scripts
 ```
-
-::: {.callout-note appearance="simple"}
-Skills in `~/.claude/skills` instead are available in all your projects.
-:::
 
 ### What's in a `SKILL.md` file?
 
@@ -273,29 +205,12 @@ Review the shell script that the user points to:
 
 You can use a skill in two ways:
 
-- **Explicitly**, by typing `/` followed by the name of its dir, e.g. `/review-script`.
+- **Explicitly**: by typing `/` followed by the name of its dir, e.g. `/review-script`.
 - **Automatically**: when your request matches a skill's description,
-  Claude will often use the skill without being told to.
-
-For more options, see the [documentation on skills](https://code.claude.com/docs/en/skills).
-
-::: callout-tip
-#### Skills vs. `CLAUDE.md`
-
-| | `CLAUDE.md` | Skill |
-|-|-|-|
-| **Use for** | Information Claude should always know | Procedures for specific tasks |
-| **Example** | Project dirs, script conventions, rules | Reviewing a script, checking outputs |
-| **When loaded** | At the start of every conversation | Only when used |
-
-: {.striped .hover tbl-colwidths="[20, 40, 40]"}
-
-Because a skill's instructions are only loaded when needed,
-skills can be longer than `CLAUDE.md` without using tokens in every conversation.
-:::
+  Claude often uses the skill without being told to.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Create and use a skill
+#### {{< fa user-edit >}} Exercise 2: Create and use a skill
 
 1. In your `week08` dir, create the file `.claude/skills/review-script/SKILL.md`,
    with the contents shown above.
@@ -305,111 +220,268 @@ skills can be longer than `CLAUDE.md` without using tokens in every conversation
 
    > Can you check this script for problems?
 
-   Did Claude use the skill? (You should see this in its response.)
+   Did Claude use the skill? (If it did, you'll see this in its response.)
 4. Improve the skill based on what you saw, for example by adding a check
    that you think is missing. Then commit it.
 :::
 
-## Plan mode, models, and effort levels
+### Having Claude create a skill
 
-### Plan first, then act
+You don't have to write skills yourself: Claude can write them for you.
+This works especially well right after you've done a task together with Claude,
+because the conversation then contains all the steps,
+as well as any corrections you had to make along the way.
+For example, you could ask:
 
-For bigger tasks, it's often better to have Claude write a **plan** first, before it changes anything.
-In **Plan mode** (select it with the permission mode button in the prompt box),
-Claude will look around your project, perhaps ask you some clarifying questions,
-and write a plan that opens as a Markdown document.
-You can then edit the plan, ask for changes, or approve it so that Claude carries it out.
+> Turn what we just did into a skill, so that next time,
+> you can do this without my corrections
 
-Plans are also a good way to see how model choice and effort level affect Claude's work,
-which is what you'll explore in the exercise below.
+You can also describe a new skill from scratch, for example:
+
+> Create a skill for checking the outputs of a FastQC run:
+> check that there is an output file for each FASTQ file,
+> and summarize any modules that failed
+
+Either way, read the skill that Claude wrote, and edit it where needed.
+Claude will follow its instructions every time it uses the skill,
+so any mistakes in it will be repeated, too.
+Then, test the skill on a real task, and keep improving it based on what you see.
+
+::: {.callout-note collapse="true"}
+#### More on skills _(Click to expand)_
+
+- **Making skills available in all your projects**\
+  If you want certain skills to be available in all your projects,
+  simply place them in `~/.claude/skills` in your Home dir.
+
+- **Using skills created by others**\
+  Many people share skills online, such as in Anthropic's
+  [skills repository](https://github.com/anthropics/skills) on GitHub.
+  To use such a skill, simply copy its dir to `.claude/skills` or `~/.claude/skills`.
+  Besides a `SKILL.md` file, these dirs may contain other files,
+  like scripts that Claude can run.
+  Be careful, though: a skill contains instructions that Claude will follow,
+  so only use skills from sources you trust, and read them (including any scripts) first.
+
+- **[Claude's documentation on skills](https://code.claude.com/docs/en/skills)**
+:::
+
+## Memory {#memory}
+
+### How Claude's memory works
+
+In the lecture, you learned that Claude reads your `CLAUDE.md` at the start of every conversation.
+In addition, Claude keeps **memory** notes for itself ("auto memory").
+As it works with you, it may save notes about:
+
+- Your **preferences** and **corrections** you've given it
+  (e.g., "the user prefers lowercase variable names")
+- **Project context** that it can't work out from your files
+  (e.g., a deadline, or why a decision was made)
+
+It doesn't save something in every conversation, only things it thinks will be useful later.
+When it does, you'll see a message like "Saved 1 memory" in the Claude panel.
+
+The memory is stored separately for each project (each Git repository),
+in a dir in your Home dir: `~/.claude/projects/<project>/memory/`.
+That dir contains an index file, `MEMORY.md`, which is loaded into every conversation
+in that project, and one file for each memory, which Claude reads when it needs to.
+
+### Memory vs. `CLAUDE.md`
+
+| | `CLAUDE.md` | Memory |
+|-|-|-|
+| **Who writes it** | You (or Claude, when you ask it to) | Claude, when it thinks it's useful |
+| **Contains** | Instructions and rules | Things Claude learned while working with you |
+| **Where** | In your project (can be committed with Git) | In your Home dir (only for you) |
+
+: {.striped .hover tbl-colwidths="[20, 40, 40]"}
+
+Compared to browser-based chatbots, which may remember general things about you,
+this is a big advantage: both `CLAUDE.md` and Claude's memory are specific to each project,
+so Claude can pick up where you left off in that project.
+
+If you want Claude to remember something, you can tell it directly:
+
+- _"Remember that ..."_ makes Claude save a memory.
+- _"Add this to CLAUDE.md: ..."_ adds it to your `CLAUDE.md` instead.
+  This is better for things that collaborators (or your future self) should also know,
+  since `CLAUDE.md` is part of your project.
+
+### Viewing and editing memory
+
+Type **`/memory`** in the prompt box to see your `CLAUDE.md` files and memory,
+and to open them for editing.
+Memory files are plain Markdown, so you can edit or delete them as you like ---
+and it's worth checking them now and then, since Claude may have saved something
+that's wrong or no longer true.
+
+You can also turn auto memory off with the toggle in `/memory`,
+or for a single project by adding `"autoMemoryEnabled": false` to the project's
+`.claude/settings.json`.
+For more, see the [documentation on `CLAUDE.md` and memory](https://code.claude.com/docs/en/memory).
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Compare a "fast" and a "thorough" plan
+#### {{< fa user-edit >}} Exercise 3: Make Claude remember something
 
-You'll ask Claude for the same plan twice: first quickly and cheaply,
-and then with the most capable model and more effort.
-Use the following prompt both times:
+1. In your `week08` project, tell Claude:
 
-```markdown
-Write a plan for aligning the FASTQ files in ../garrigos/fastq to the reference genome
-in ../garrigos/ref, and then counting the aligned reads to produce a gene count table.
-We will run this at OSC with Apptainer containers.
-Which alignment and counting programs would you recommend, and why?
+   > Remember that when I ask you to explain code, I want a short explanation with an example
+
+2. Type `/memory` and find the note Claude saved.
+3. Start a new conversation, and ask Claude to explain a line from one of your scripts.
+   Did it follow your preference?
+4. If you don't want to keep this memory, delete it (e.g., by asking Claude to forget it).
+:::
+
+## Guardrails {#guardrails}
+
+An agent that can edit files and run commands is powerful,
+but it can also make much more damaging mistakes than a chatbot can.
+To reduce the risk of such mistakes, we can use a set of "guardrails".
+
+### Git as your safety net
+
+Version control ([week 5](../week05/w5_overview.qmd)) pairs very well with agentic AI:
+
+- Before asking Claude for a bigger change, commit your work,
+  so that `git status` is clean.
+- After Claude is done, review all changes with `git diff` or the VS Code
+  Source Control panel, including changes to files you didn't have open.
+- Undo changes you don't want with `git restore <file>`,
+  or discard them in the Source Control panel.
+  New files that Claude created are untracked, so `git restore` won't remove them:
+  `git status` lists them, and you can delete them yourself.
+
+::: {.callout-tip}
+#### Claude can also help with version control itself
+You can ask it to, e.g., commit your changes (including writing the commit message),
+show what changed since the last commit, or undo specific changes.
+As always, check what it did.
+:::
+
+### Built-in protections
+
+By default, Claude Code:
+
+- Asks before editing files and before running commands
+  (except a set of read-only commands, like `ls`).
+- Asks before accessing files outside your workspace.
+- Tries to detect "prompt injection":
+  instructions hidden in files or web pages that Claude reads,
+  which try to make it do something you didn't ask for.
+  This protection is not foolproof.
+
+### Permission rules {#permission-rules}
+
+You can add your own rules about what Claude may do,
+in a `permissions` section of a settings file.
+There are three types of rules:
+
+- **allow**: Claude may do this without asking.
+- **ask**: Claude must always ask first, even in permission modes that normally don't ask.
+- **deny**: Claude may never do this.
+
+For example:
+
+```{.json .file filename=".claude/settings.json"}
+{
+  "permissions": {
+    "ask": [
+      "Bash(rm *)",
+      "Bash(git push *)"
+    ],
+    "deny": [
+      "Read(~/.claude/settings.json)",
+      "Edit(//fs/ess/PAS3493/people/*/garrigos/**)"
+    ]
+  }
+}
 ```
 
-**Round 1 --- fast:**
+This example:
 
-1. Switch to **Haiku** with **Low** effort, and select **Plan mode**.
-2. Send the prompt, and read the plan. For example:
-   How many steps does it have? Does it name specific programs and versions?
-   Does it ask you any clarifying questions, or mention uncertainties?
+- Makes Claude always ask before **removing files** or **pushing to GitHub**.
+- Prevents Claude from reading your user settings file, which contains your **API key**.
+- Prevents Claude from editing files in your **raw data** dir.
 
-**Round 2 --- thorough:**
+These rules aren't watertight, though.
+For example, the `Edit` rule blocks Claude's own file edits,
+but not a script that Claude runs which writes to or moves those files.
 
-3. Start a **new conversation**, so that the first plan doesn't influence this one.
-4. Switch to **Opus** with **High** effort, keeping Plan mode on.
-5. Send the same prompt, and read the plan with the same questions in mind.
+Where you put these rules determines where they apply:
 
-**Discuss:**
+| File                                       | Applies to                                                    |
+| ------------------------------------------ | ------------------------------------------------------------- |
+| `~/.claude/settings.json`                  | All your projects (this is where your API key is)             |
+| `.claude/settings.json` in a project       | That project; commit it to share the rules with collaborators |
+| `.claude/settings.local.json` in a project | That project, just for you (don't commit it)                  |
 
-- What differences do you notice between the two plans?
-- How would you check whether a plan is reasonable and complete?
-- How do the plans compare to what @garrigós2025 did?
-- Would the "fast" plan have been good enough?
+: {.striped .hover tbl-colwidths="[45, 55]"}
 
-**Don't** let Claude carry out the plans: decline (or simply stop) when it asks to proceed.
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-note collapse="true"}
+#### Allow rules _(Click to expand)_
+When you choose "Yes, and don't ask again" for a command,
+Claude saves an allow rule in `.claude/settings.local.json`.
+To see all rules that are currently active, and which file each comes from,
+type `/permissions` in the prompt box.
+
+The [documentation on permissions](https://code.claude.com/docs/en/permissions)
+describes the full rule syntax.
 :::
 
-::: {.callout-note appearance="simple"}
-The thorough round uses many more tokens, so don't repeat it too often with your API key.
+::: exercise
+#### {{< fa user-edit >}} Exercise 4: Add permission rules
+
+1. In your `week08` dir, create the file `.claude/settings.json`
+   with the contents shown above.
+2. Start a new conversation, and type `/permissions` to check that the rules are active.
+   If they don't show up, check the file for typos, such as a missing comma or quote,
+   before you continue.
+3. Ask Claude:
+
+   > Show me the contents of ~/.claude/settings.json
+
+   What happens?
+4. Before testing the `Bash(rm *)` rule, **predict**:
+   which of these commands would make Claude ask first because of that rule?
+
+   - `rm test.txt`
+   - `rm -f test.txt`
+   - `find . -name test.txt -delete`
+
+   Then, create a file to practice with (`touch test.txt`),
+   switch to the **Edit automatically** permission mode,
+   and ask Claude to delete `test.txt`.
+   Which command did it use, and did it ask first?
+   Afterwards, switch back to Manual mode.
+5. Commit `.claude/settings.json`.
+6. Suppose a labmate clones your `week08` repo from GitHub and works on it with Claude.
+   Which of the following would their Claude know about or follow?
+
+   - The script conventions in your `CLAUDE.md`
+   - Your preference for short explanations from the memory exercise
+   - Your `review-script` skill
+   - The permission rules in `.claude/settings.json`
+   - An allow rule that was saved when you chose "Yes, and don't ask again"
+
+<details><summary> {{< fa check-circle >}} Click here for the solution</summary>
+
+4. The two `rm` commands match the rule, but the `find` command doesn't,
+   even though it also deletes the file:
+   rules match the text of a command, not what the command does.
+   There are many ways to delete or overwrite a file (`mv`, `>`, a script, ...),
+   so a rule like this lowers the risk of mistakes but doesn't rule them out.
+
+6. Their Claude would use your `CLAUDE.md`, your skill, and the rules in `.claude/settings.json`,
+   since you committed all three to your repo.
+   It would not know about your memory, which is stored in your Home dir,
+   or the allow rule, which is saved in `.claude/settings.local.json`
+   and shouldn't be committed.
+
+</details>
 :::
-
-## Ideas for using agentic AI
-
-So far, we've used Claude for fairly small tasks.
-Here are some ideas for what else it can be useful for in your research:
-
-- **Troubleshooting complex errors.**
-  Agents can be surprisingly good at following the trail of an error through a complicated
-  set of scripts or a workflow.
-- **Things that are beyond your ability, but easy to verify.**
-  For example, a complicated software installation,
-  or automating a tedious, repetitive task.
-- **Proofreading code that works.**
-  In a large set of scripts, it's easy to miss inconsistent variable names or similar
-  small errors --- agents can be quite meticulous at catching these.
-- **Writing workflows**, including in formal workflow languages like Nextflow
-  (see [week 11](../week11/w11_overview.qmd)).
-- **The "optional next steps" you never get to**, such as:
-  - Organizing a project dir, writing documentation, and putting it under version control
-    (see [week 10](../week10/w10_overview.qmd))
-  - Turning a script into a Quarto document (see [week 14](../week14/w14_overview.qmd))
-  - Building a personal or lab website with Quarto
-- **Keeping a log.** For longer projects, ask Claude to keep a log file
-  (e.g., `LOG.md`) of what it did and why, which helps both you and future
-  conversations with Claude.
-
-Looking for ideas beyond coding?
-[This site by a political scientist](https://claudeblattman.com) is one starting point.
-
-## Other ways to use Claude Code
-
-- **In the terminal**: Claude Code is also a command-line program (`claude`),
-  which has the same features and uses the same settings files.
-- **In other editors**: The extension also works in editors based on VS Code,
-  such as Positron, an editor for R and Python.
-
-## Resources
-
-- [Claude Academy](https://academy.claude.com): free courses by Anthropic,
-  such as "Claude Code 101", "AI Capabilities and Limitations", and "AI Fluency for students"
-- YouTube playlists by Anthropic:
-  [Claude 101](https://www.youtube.com/playlist?list=PLmWCw1CzcFilebjK89WLb5cAvM8K0cLB3) and
-  [Claude Skills](https://www.youtube.com/playlist?list=PLmWCw1CzcFim_hkruZSlABOUOAAQ5JMyo)
-- [Claude Code documentation](https://code.claude.com/docs/en/overview)
-- [Prompt, `AGENTS.md`, skill, or MCP server?](https://opensource.posit.co/blog/2026-07-03_ai-newsletter/#prompt-agentsmd-skill-or-mcp-server)
-  --- a Posit blog post on when to use which (July 2026)
-- [The Hitchhiker's Guide to Agentic AI: From Foundations to Systems](https://arxiv.org/abs/2606.24937)
-  --- an in-depth overview paper (2026)
 
 <hr style="height:1pt; visibility:hidden;" />
