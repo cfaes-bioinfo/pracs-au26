@@ -25,6 +25,9 @@ other-links:
   - text: "w8b: Coding with an AI agent"
     icon: book
     href: ../week08/w8b_claude.html
+  - text: "Week 8 exercises"
+    icon: pencil
+    href: ../week08/w8_exercises.html
   - text: "Additional Claude Code features and strategies (optional)"
     icon: book
     href: ../bonus/claude-code.html
@@ -126,7 +129,10 @@ You can already sign in and use the free plan in the meantime.
 
 ### Sign in to GitHub Copilot in VS Code
 
-First, start a VS Code Server session at OSC as usual.
+First, start a VS Code Server session at OSC in `/fs/ess/PAS3493/people/$USER`, as usual.
+If VS Code opens a different folder, like your `week08` dir from the lecture,
+use `File` > `Open Folder` to open `/fs/ess/PAS3493/people/$USER` instead:
+that way, Copilot can see your work from all weeks.
 
 ::: {.callout-warning collapse="true"}
 #### You should have already _enabled_ GitHub Copilot in class. If not, click here.
@@ -264,30 +270,81 @@ If inline suggestions are disabled, enable them as follows:
 ## GitHub Copilot inline suggestions
 
 Let's start by creating a dir for the work you'll do following along with this page,
-navigating there, and creating and opening a Markdown file:
+and navigating there:
 
 ```bash
 # You should be in /fs/ess/PAS3493/people/$USER
 mkdir -p week08/copilot
 cd week08/copilot
-touch copilot.md
 ```
 
-In the editor, paste the following into the `copilot.md` document:
+Next, make a decompressed copy of the GTF file into your working dir for easy access:
 
-````{.markdown .file filename="copilot.md"}
-```{{bash}}
+```bash
+zcat ../../garrigos/ref/annot.gtf.gz > annot.gtf
+```
+
+Finally, create a file `copilot.sh`, open it in the editor,
+and paste the following into it:
+
+```{.bash .file filename="copilot.sh"}
 # GTF file:
-GTF=../../garrigos/ref/annot.gtf
+GTF=annot.gtf
 ```
 
-````
+Run the `GTF=` line in the terminal. (If you haven't already,
+set a keyboard shortcut to send code from the editor to the terminal:
+see the box below.)
 
-Next, turn on inline suggestions specifically for Markdown:
+::: {.callout-note collapse="true"}
+#### Set a keyboard shortcut to send code from the editor to the terminal _(Click to expand)_
 
-TODO
+This shortcut will send selected code in the editor to the terminal.
+When no text is selected, the shortcut sends the line your cursor is on
+(in VS Code, your entire line is implicitly "selected" when your cursor is on it).
+To run a multi-line command like a `for` loop, first select all of its lines.
 
-When you go to a new line within the code block and wait a second,
+::: {.columns}
+::: {.column}
+
+1. Click {{< fa cog >}} (bottom-left) > `Keyboard Shortcuts`.
+2. Type "Run Selected Text" in the search box, and you should see the option
+   "_Terminal: Run Selected Text in Active Terminal_".
+3. Click on that line, then add the shortcut <kbd>Ctrl</kbd>+<kbd>Enter</kbd>
+   (don't worry about any warnings that other keybindings exist for this action;
+   also, the keyboard shortcut is up to you, but I'd recommend this one).
+
+:::
+::: {.column}
+
+![](/img/vscode-enter-line-shortcut.png){fig-align="center" width="90%" fig-alt="A screenshot showing the VS Code keyboard shortcuts settings with the 'Run Selected Text in Active Terminal' option selected." .lightbox}
+
+:::
+:::
+:::
+
+::: {.callout-note collapse="true"}
+#### Why a `.sh` file instead of a Markdown file? _(Click to expand)_
+
+In other sessions, you've been typing code in a Markdown file
+and sending it to the terminal from there.
+Here, we'll use a file with a `.sh` extension instead,
+because that makes things a bit easier with Copilot:
+
+- In a `.sh` file, Copilot knows that everything is Bash code,
+  so it will suggest code rather than prose,
+  and comment lines work as prompts.
+- You don't need to create code blocks with backticks.
+
+But note that **this file is not a real shell script**
+like the ones you wrote in week 7:
+it is a scratch file whose lines you run one by one in the terminal,
+just like the code in your Markdown files.
+You won't run it with `bash` or `sbatch`,
+which is why it doesn't have a shebang line or `set` settings.
+:::
+
+When you go to a new line and wait a second,
 you should see a suggestion "in ghost text" (light gray text) appear.
 To accept the suggestion, press <kbd>Tab</kbd>.
 
@@ -391,8 +448,44 @@ your abilities:
 ```
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Ask other questions
-Be creative and ask GitHub Copilot to help you with some Unix shell tasks!
+#### {{< fa user-edit >}} Exercise 1: Does it really count genes?
+
+1. Add the following comment line, and accept Copilot's suggestion,
+   (but don't run the suggestion yet):
+
+   ```bash
+   # Count the number of genes in the GTF file
+   ```
+
+2. Predict: does the suggested command really count genes?
+   Take a look at a few lines of the GTF file (e.g., with `head -n 3 $GTF`)
+   to help you decide.
+
+3. Run it, and compare the result to that of the earlier prompt
+   "Count the number of gene features in the GTF file".
+   If the numbers differ, which one is correct, and why?
+
+   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
+
+   Copilot's suggestion will vary, but a common one is `grep -c "gene" $GTF`.
+   This counts every line that contains the word "gene" _anywhere_ ---
+   and because every line in a GTF file has a `gene_id` attribute,
+   that is simply every line in the file.
+
+   To count genes, you need the lines whose 3rd column (the feature type) is `gene`:
+
+   ```bash
+   cut -f 3 $GTF | grep -c "^gene$"
+   ```
+
+   The command runs fine either way:
+   only by looking at the data, or by comparing two approaches,
+   can you tell that the first answer is wrong.
+
+   </details>
+
+4. Finally, try a few shell tasks of your own.
+
 :::
 
 ## GitHub Copilot Chat
@@ -411,8 +504,8 @@ and then make sure that the "`CHAT`" tab is selected.
 
 - You can use the keyboard shortcut
   <kbd>Ctrl</kbd>+<kbd>⌘/Alt</kbd>+<kbd>I</kbd>
-  to directly open the `"CHAT`" tab in the secondary sidebar.
-- You can click "sparkling chat box" icon in the top bar,
+  to directly open the "`CHAT`" tab in the secondary sidebar.
+- You can click the "sparkling chat box" icon in the top bar,
   shown in this screenshot:
 
 ![](/img/copilot-open-sidebar-sparkle-icon.png){fig-align="center" width="60%" fig-alt="A screenshot of the VS Code top bar, with the icon to open the GitHub Copilot Chat sidebar highlighted on the far left." .lightbox}
@@ -422,7 +515,7 @@ and then make sure that the "`CHAT`" tab is selected.
 :::
 ::: {.column width="35%"}
 
-![](/img/vscode-claude-secondary-side-bar-annot1.png){fig-align="center" width="60%" fig-alt="A screenshot of the VS Code side bar with a CLAUDE CODE tab." .lightbox}
+![](/img/vscode-claude-secondary-side-bar-annot1.png){fig-align="center" width="60%" fig-alt="A screenshot of the top-right corner of VS Code, with the icon that opens the secondary side bar encircled." .lightbox}
 
 :::
 :::
@@ -440,7 +533,7 @@ Just like Claude, Copilot can search and read files in your workspace
 And like in Claude, you can point it to specific files:
 
 - **The file that's active in the editor** is _suggested_ as context.
-  You should see `copilot.md` at the top of the chat box
+  You should see `copilot.sh` at the top of the chat box
   (TODO - REPLACE SCREENSHOT).
   Unlike in Claude, it is not added automatically:
   click the `+` button next to the file name to add it.
@@ -558,27 +651,12 @@ hover over it to see buttons to copy the code, insert it at the cursor,
 or insert it into a new file.
 :::
 
-#### More example prompts for Ask mode
-
-Here are some more questions that you could ask in Ask mode:
-
-- What is the difference between `"$@"` and `$@` in a Bash script?
-- What does a base quality score of 30 in a FASTQ file mean,
-  and how is it encoded?
-- Why are the reads of paired-end FASTQ files stored in two separate files,
-  and how do the two files relate to each other?
-- What is the difference between `git restore`, `git reset`, and `git revert`?
-- What does `oras://` mean at the start of an Apptainer image URL?
-- Why should I use a container image with an exact version,
-  rather than the latest version?
-
 ### Some examples in "Agent" mode
 
 Select "Agent" mode.
 Your workspace is `/fs/ess/PAS3493/people/$USER`,
 which contains all of your work for this course,
 so Copilot can find and use files from earlier weeks.
-
 Let's start with this prompt:
 
 > Write a shell script to run the program FastQC on one FASTQ file
@@ -627,8 +705,10 @@ or the checkmark icon in the top-right of the editor window
 
 Finally, let's have the agent create a script to run a program for which we
 don't have code yet ---
-the program FeatureCounts, which can be used to count reads mapping to genes^[
-This is similar to the program Salmon which was indicated in our workflow diagrams.]:
+the program featureCounts, which counts how many reads map to each gene^[
+Like Salmon, which is in our workflow diagram, it produces a gene count table.
+But featureCounts works on reads that have already been aligned to a genome (BAM files),
+while Salmon estimates the counts directly from FASTQ files.]:
 
 > Create a script to run the program FeatureCounts on BAM files in a given directory
 
@@ -645,7 +725,7 @@ And just like with Claude, read every command before you approve it!
 Select "Plan" mode and type the following prompt:
 
 > I want a runner script that first runs my FastQC script and then my TrimGalore
-> script on all samples in ../../garrigos/fastq. Make a plan for this.
+> script on all samples in garrigos/fastq. Make a plan for this.
 
 <!-- TODO: screenshot of the plan -->
 

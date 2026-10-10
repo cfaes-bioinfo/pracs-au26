@@ -28,7 +28,7 @@ other-links:
   - text: "Additional Claude Code features and strategies (optional)"
     icon: book
     href: ../bonus/claude-code.html
-  - text: "GitHub Copilot in VS Code  (optional)"
+  - text: "GitHub Copilot in VS Code (optional)"
     icon: book
     href: ../bonus/copilot.html
 language:
@@ -40,11 +40,6 @@ language:
 ----------------------------------------------------------------------------------------------------
 
 <hr style="height:1pt; visibility:hidden;" />
-
-::: callout-warning
-#### This page is a draft and is still under construction.
-:::
-
 <hr style="height:1pt; visibility:hidden;" />
 
 ## Introduction
@@ -83,7 +78,7 @@ Working inside your editor, it can:
 In other words, if browser chat is like emailing a knowledgeable colleague,
 working with an agent is more like having them sit next to you at your computer.
 
-### Why Claude in VS Code Server?
+### Why Claude Code in VS Code?
 
 There are many AI coding tools, but this setup has two key advantages for us:
 
@@ -97,8 +92,8 @@ There are many AI coding tools, but this setup has two key advantages for us:
 
 <hr style="height:1pt; visibility:hidden;" />
 
-::: {.callout-note collapse="true"}
-#### Inline suggestions, GitHub Copilot, and other Claude Code programs _(Click to expand)_
+::: {.callout-note}
+#### Inline suggestions, GitHub Copilot, and other Claude Code programs
 
 Another kind of AI coding help in IDEs is **inline suggestions**:
 "ghost text" that appears as you type and that you can accept with <kbd>Tab</kbd>.
@@ -107,9 +102,9 @@ Claude Code does not offer these, but some other tools do, for example GitHub Co
 If you want to try inline suggestions, see the
 [self-study page on GitHub Copilot](/bonus/copilot.qmd).
 
-Claude Code itself also comes in **several forms**,
+Claude Code itself also comes in several forms,
 including a command-line program and a desktop app.
-We'll use its VS Code extension.
+Here, we'll use its VS Code extension.
 :::
 
 ## Getting set up
@@ -131,9 +126,12 @@ We'll use its VS Code extension.
 3. Open the `week08` dir as your VS Code folder with `File` > `Open Folder`.
 
    ::: {.callout-note appearance="simple"}
-   Claude treats the folder that is open in VS Code as its "workspace":
+   Claude treats the folder that is open in VS Code as its "**workspace**":
    this is where it will look for files,
    and by default the only place where it can make changes.
+   (Yet another application where good project organization,
+   in the sense of having a single self-contained dir with all project files,
+   pays off.)
    :::
 
 ### Connect Claude to your API key
@@ -159,7 +157,16 @@ Let's set this up:
      or click `File` > `Open File` > type `~/.claude/settings.json`.].
 
 3. In the file, **replace the placeholder** `<API-KEY>` with your personal API key
-   (replace the `<` and `>` as well, but keep the quotes around it!).
+   in the manner shown below:
+
+   ```{.file filename="&#126;/.claude/settings.json (excerpt - before)"}
+     "ANTHROPIC_AUTH_TOKEN": "<API-KEY>",
+   ```
+
+   ```{.file filename="&#126;/.claude/settings.json (excerpt - after - with fictional API key)"}
+     "ANTHROPIC_AUTH_TOKEN": "bY-7jiuWbfck9DZk34hA_t",
+   ```
+
 
 ::: {.callout-note collapse="true"}
 #### More about the settings file _(Click to expand)_
@@ -276,7 +283,6 @@ whereas the message shown in the center is just one of many "tips" Claude may sh
 :::
 :::
 
-
 ::: {.callout-note collapse="true"}
 #### Or click the Claude icon to open Claude in the editor pane instead _(Click to expand)_
 Alternatively, you can open Claude Code by clicking the **Claude icon**
@@ -309,6 +315,10 @@ We'll go over the other buttons across the bottom of the box in more detail belo
   which is really a collection of nearly all options and settings in Claude Code,
   including those that can be accessed with the other buttons.
   You'll need this one least often.
+- Once Claude has responded, a **clock icon** with a number of minutes appears.
+  This shows how long until the conversation's "cache" expires,
+  after which your next message will be more expensive
+  (see the box on caching in [Managing context and cost](#managing-context-and-cost)).
 - `Sonnet 5 Medium` is the current **model** and **effort level**,
   and you can click on it to change them.
 - **`Manual`** is the current **permission mode** (what Claude is allowed to do),
@@ -340,7 +350,7 @@ Write or paste the prompt in the box, and press <kbd>Enter</kbd>.
 ![](/img/claude-limerick-reply.png){fig-align="center" width="98%" .no-border fig-alt="A screenshot of a limerick about a grad student whose shell script keeps failing, written by Claude." .lightbox}
 
 ::: legend2
-Your question and, after a while, the answer should then appear in the panel
+Then, your question and, after a while, the answer should appear in the panel
 above the prompt box.
 :::
 
@@ -372,7 +382,7 @@ From left to right:
 - The **chat icon** with a `+` starts a new conversation.
   Start a new one for **each new task** (you'll see why [later](#start-fresh)).
 
-::: {.callout-warning}
+::: {.callout-tip}
 #### The exact interface is ever-changing
 For example, the bookmarking feature was added in a recent update.
 These screenshots were made just days before class,
@@ -402,7 +412,7 @@ Claude comes in four model "sizes", listed here from most to least capable:
   and the one you should use most of the time.
 - *Haiku*: the fastest and cheapest, for simple questions and quick edits.
 
-::: callout-tip
+::: callout-warning
 #### Two things in this menu can be confusing:
 
 - The **"Default (recommended)"** entry at the top is _not_ the model you set
@@ -436,7 +446,7 @@ _In summary, we'll stick to our settings file's default of Sonnet 5 Medium for n
 _but now you know how to change it if you want to try a different model or effort level._
 
 ::: {.callout-note collapse="true"}
-#### "Thinking" toggle? _(Click to expand)_
+#### What about a "Thinking" toggle? _(Click to expand)_
 
 Earlier versions of Claude Code had a separate toggle to turn "thinking"
 on or off, and you may still see it in online tutorials and videos.
@@ -456,103 +466,240 @@ Start a new conversation with the `+` icon, and submit the following prompt:
 > Write a script scripts/count_reads.sh that counts the number of reads in a
 > gzipped FASTQ file. The FASTQ file should be an argument to the script.
 
-Claude will show you what it's doing as it goes.
-For example, it may first look at what's in your workspace.
-When it has written the script, it will **ask for permission** to create the file,
-and show you the proposed contents:
+::: {.columns}
+::: {.column width="45%"}
 
-ADD SCREENSHOT
+Claude will show you what it's doing as it goes,
+and it will likely **ask you for permission** to run a command,
+like in the screenshot on the right,
+where it started by wanting to check if the `scripts` dir that we asked to put
+the script in already exists, and create it if not.
 
-You can accept the change, decline it, or decline it and tell Claude
-what to do differently.
-Read through the script, and if it looks reasonable, accept it.
+Try to understand what it is proposing to do, and click **Yes** to let it run the command.
 
-<hr style="height:1pt; visibility:hidden;" />
+In general, Claude loves to use **shell commands** for many tasks,
+so, as it happens, you have a leg up on better understanding what it does given
+what you've learned in this course.
+
+:::
+::: {.column width="55%"}
+
+![](/img/claude-ask-permission1.png){fig-align="center" width="95%" fig-alt="A screenshot of a Claude Code permission request to run a command." .lightbox}
+
+:::
+:::
+
+It should then **ask for permission** to create the script file,
+and show the proposed contents in the "diff" format we've seen before:
+
+::: {.columns}
+::: {.column width="42%"}
+
+![](/img/claude-allow-write.png){fig-align="center" width="95%" .no-border fig-alt="A screenshot of a Claude Code permission request to write a file." .lightbox}
+
+:::
+::: {.column width="58%"}
+
+![](/img/claude-new-script.png){fig-align="center" width="100%" .no-border fig-alt="A screenshot of a Claude Code permission request to write a file, showing the proposed contents of the new script." .lightbox}
+
+:::
+:::
+
+You can accept the change, decline it,
+or decline it and tell Claude what to do differently.
+Take a quick look and accept it ---
+you'll take a closer look in the upcoming exercise.
+
+::: {.columns}
+::: {.column width="40%"}
+
+Claude may also ask to make the script **executable** with `chmod +x`,
+and if so, you can allow it to do that as well.
+
+_(Making scripts executable is not really necessary,_
+_so we didn't practice with this in class._
+_But it can be a convenience in some contexts ---_
+_see [this box](/week07/w7a_scripts1.qmd#run-without-bash) from last week for more.)_
+
+:::
+::: {.column width="60%"}
+
+![](/img/claude-make-executable.png){fig-align="center" width="90%" fig-alt="A screenshot of a Claude Code permission request to run a command to make the new script executable." .lightbox}
+
+:::
+:::
+
+When Claude is done, it may close the script in the editor pane,
+but it should provide a clickable link in the panel:
+
+![](/img/claude-clickable-file-link.png){fig-align="center" width="70%" .no-border fig-alt="A screenshot of a clickable link to the new script in the Claude Code panel." .lightbox}
 
 ::: exercise
-#### {{< fa user-edit >}} Breakout room exercise
+#### {{< fa user-edit >}} Exercise 1: Trying out Claude Code (breakout rooms)
 
 1. Discuss the script Claude wrote:
    - Does the script look reasonable? Do you understand every line?
-   - Did you all get the same script? If not, do the differences matter?
-   - How does the script compare to the scripts we wrote in week 7?
-     For example, does it use strict Bash settings, and does it report what it's doing?
+     It's likely you don't, because the script probably uses a few constructs
+     that were only discussed in optional reading material
+     ([command substitution](/bonus/shell-scripting.html#command-substitution)
+     and [bash arithmetic](/bonus/shell-scripting.html#arithmetic)).
+     You can ask Claude to explain any line you don't understand.
+
+   - Did you all get the same script? If not, can you make sense of the differences?
+
+   - Did Claude look at other files in your workspace before writing the script?
+     If so, does that seem to have affected the way it wrote the script?
+     If not, how does the script compare the `fastqc.sh` script we wrote in week 7,
+     for example in terms of structure, header lines, and so on?
+
    - How does it compare to the script Gemini wrote for the same task in the previous lecture?
 
-2. Run the script on one of the FASTQ files, for example:
+   - Did Claude test the script, or offer to, for any of you?
+
+   <details><summary> {{< fa lightbulb >}} Click here for a hint</summary>
+
+   When I ran this, Claude reported finding the `fastqc.sh` script in the `scripts`
+   dir, and said it would copy the style of that script:
+
+   ![](/img/claude-copying-script-style.png){fig-align="center" width="70%" fig-alt="A screenshot of Claude Code reporting that it is copying the style of an existing script." .lightbox}
+
+   The resulting script from the earlier screenshot indeed very closely resembles
+   the `fastqc.sh` script in its structure.
+
+   </details>
+
+2. Run the script on one of the FASTQ files, like `../garrigos/fastq/S63_R1.fastq.gz`.
+   Did it work and can you check whether the number it reports is correct?
+
+   <details><summary> {{< fa lightbulb >}} Click here for some hints</summary>
+
+   Here is how you can run the script for that file:
 
    ```bash
    bash scripts/count_reads.sh ../garrigos/fastq/S63_R1.fastq.gz
    ```
 
-3. Is the number it reports correct?
-   Check this independently, with a command that you understand.
-
-4. Did Claude itself test the script before telling you it was done?
-
-5. Predict what the script will do when you give it a file that doesn't exist.
-   Then try it:
+   The correct number of reads is 500,000,
+   and this can be checked with `zcat` and `wc -l`:
 
    ```bash
-   bash scripts/count_reads.sh ../garrigos/fastq/S99_R1.fastq.gz
+   zcat ../garrigos/fastq/S63_R1.fastq.gz | wc -l
+   ```
+   ```bash-out
+   2000000
    ```
 
-   Is this the behavior you'd want?
-   If not, which of the strict Bash settings from week 7 would help?
+   The number of reads is the number of lines (2,000,000) divided by 4.
 
-6. Ask Claude to change the script:
+   </details>
 
-   > Change the output so it prints the file name and the number of reads, separated by a tab
+3. Probably, Claude followed the style of the `fastqc.sh` script for most of you,
+   but its logging output is a bit verbose for a simple "utility" script like this.
+   Either way, let's say we're picky about the output format of the script,
+   but failed to mention that in our initial prompt to Claude.
+   Ask Claude to change the script:
 
-   This time, Claude will show the proposed change as a **diff**:
-   removed lines are marked in red, and added lines in green ---
-   just like with `git diff` in [week 5](../week05/w5b_git.qmd).
-   Accept the change.
+   > Change the output so it only prints the file name and the number of reads, separated by a space
 
-   <!---- TODO: screenshot of an edit diff ---->
+   ::: {.columns}
+   ::: {.column width="42%"}
 
-7. Ask Claude to make one more change:
+   As you'd expect, Claude will realize you're talking about the script it just wrote,
+   but if you have the script open,
+   Claude will also automatically add it as explicit "context" to your prompt:
+   its filename is shown below the prompt box (more on this below).
+
+   :::
+   ::: {.column width="58%"}
+
+   ![](/img/claude-context-init.png){fig-align="center" width="95%" .no-border fig-alt="A screenshot of the Claude Code prompt box showing that the script file is added as context." .lightbox}
+
+   ::: legend2
+   `count_reads.sh` is automatically added as context to your prompt when you
+   have the file open.
+   The clock icon (`4m`) shows the time left before the cache expires
+   (see [Managing context and cost](#managing-context-and-cost)).
+   :::
+
+   :::
+   :::
+
+4. Do you understand how Claude shows the proposed changes to the script?
+   And do you understand the actual changes it made to the script?
+
+   <details><summary> {{< fa lightbulb >}} Click here for some hints</summary>
+
+   ::: {.columns}
+   ::: {.column width="38%"}
+
+   The screenshot on the right is the "diff" it showed for me,
+   with proposed deletions (all the logging lines) highlighted in **red**,
+   and additions (a single replacement line) highlighted in **green**.
+
+   Those changes are in two separate places in the script,
+   and each of them _can_ be separately accepted or rejected by clicking the
+   checkmark (✓) or backward arrow (↶) in the added gray boxes below them.
+
+   (On the other hand, if you click "Yes" in the Claude Code prompt box,
+   it will accept all changes at once. That's a more typical way of working,
+   though it's useful to know that you can accept or reject individual changes.)
+
+   :::
+   ::: {.column width="58%"}
+
+   ![](/img/claude-diff-narrow.png){fig-align="center" width="95%" .no-border fig-alt="A screenshot of the proposed changes to the script, showing a diff." .lightbox}
+
+   :::
+   :::
+
+   </details>
+
+5. Ask Claude to make one more change:
 
    > Make the script accept multiple FASTQ files, and print one line per file
 
-   Look at how Claude made the script accept multiple files.
-   Does it use a `for` loop like we did in week 7?
+   Look at how Claude made the script accept multiple files,
+   and try to understand this mechanism ---
+   you can ask Claude (or Gemini) to explain it.
+   And does it use a `for` loop like we did in week 7?
 
-8. Run the script on all R1 files at once:
+6. With a single command, run the script on all garrigos R1 files at once.
+   You should know how to do this, but you can also ask Claude for help if you want.
+
+   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
 
    ```bash
    bash scripts/count_reads.sh ../garrigos/fastq/*_R1.fastq.gz
    ```
 
-<!----
-<details><summary> {{< fa check-circle >}} Click here for the solution</summary>
+   </details>
 
-3. You can count the number of lines and divide that by 4:
+7. Reflect on the difference between running the same task on many files with a
+   `for` loop **inside** the script (like here) versus **outside** the script
+   (like we did in week 7).
 
-   ```bash
-   echo $(( $(zcat ../garrigos/fastq/S63_R1.fastq.gz | wc -l) / 4 ))
-   ```
+   <details><summary> {{< fa lightbulb >}} Click here for some hints</summary>
 
-4. Probably not: unless you ask it to, or it is in a mode where it can run commands
-   without asking, Claude often doesn't test its code.
-   Its claim that a script "works" can therefore just be a prediction.
+   It should be clear that once the script is written,
+   it is more convenient to have the loop inside the script.
 
-5. This depends on the script you got.
-   A common outcome is that `zcat` prints an error, but the script still reports
-   0 reads and finishes "successfully":
-   without `set -o pipefail`, a pipeline's exit status is that of its last command (`wc -l`),
-   which succeeded.
-   That's a silent wrong result, which is worse than an error.
-   With `set -euo pipefail`, the script would stop with an error instead.
+   However, we talked about, though haven't yet practiced with,
+   submitting jobs to a cluster with `sbatch`.
+   What is a key difference then?
 
-</details>
----->
+   Given that, when does it make sense to have the loop inside the script,
+   and when does it make sense to have it outside?
+
+   </details>
+
 :::
 
 ::: {.callout-tip}
-#### These prompts are deliberately simple
-They let us focus on understanding how the tool works.
-In practice, it's often worth giving more context and detail,
+#### These prompts were deliberately simple
+They let us focus on understanding how the tool works,
+and see what it can do and explore when we're not very specific about what we want.
+But if you know what you want, or have information that might help Claude help you
+figure that out, it's often worth giving more context and detail,
 as discussed in [the previous lecture](./w8a_genAI.qmd).
 :::
 
@@ -576,29 +723,28 @@ and avoids Claude making assumptions about which files you mean.
   You can see this below the prompt box
   (to remove the file as context, click the `x` next to it).
 
-  ![](/img/claude-automatic-file-context.png){fig-align="center" width="60%" fig-alt="A screenshot of the Claude Code prompt box showing that the file open in the editor was added as context." .lightbox}
+  ![](/img/claude-automatic-file-context2.png){fig-align="center" width="65%" .no-border fig-alt="A screenshot of the Claude Code prompt box showing that the file open in the editor was added as context." .lightbox}
 
 - **Selected lines** in the editor are also added automatically.
   This is handy to ask about specific lines in a longer script:
 
-  ![](/img/claude-select-lines.png){fig-align="center" width="60%" fig-alt="A screenshot of the Claude Code prompt box showing that a selection of lines was added as context." .lightbox}
+  ![](/img/claude-select-lines2.png){fig-align="center" width="65%" .no-border fig-alt="A screenshot of the Claude Code prompt box showing that a selection of lines was added as context." .lightbox}
 
 - **Type `@`** followed by part of a file name to add any file in your workspace,
   including files in subdirs.
-
   You can also wait for the list to appear after typing `@`,
-  as shown in the screenshot below,
-  but in my experience, finding files this way can be a bit awkward and slow,
-  at least if you have many files in your workspace.
+  as shown in the screenshot below.
 
-  ![](/img/claude-context-add2.png){fig-align="center" width="45%" fig-alt="A screenshot of the file list that appears after typing @ in the Claude Code prompt box." .lightbox}
+  ![](/img/claude-context-add3.png){fig-align="center" width="45%" fig-alt="A screenshot of the file list that appears after typing @ in the Claude Code prompt box." .lightbox}
 
 - When you switch to a different file in the editor,
-  Claude will _swap_ the context to that file as well,
+  Claude will _swap_ the context to that file,
   and it won't keep the previous file in context.
-  To add **multiple files**, either use the `@` button as well,
+  To add **multiple files**, either type `@` as well,
   or press <kbd>Alt/Option</kbd>+<kbd>K</kbd> while in a file:
   this keeps it in the context, even when you switch to another file.
+
+<hr style="height:1pt; visibility:hidden;" />
 
 ::: {.callout-note collapse="true"}
 #### The `+` button _(Click to expand)_
@@ -610,7 +756,7 @@ This also lets you upload files from your own computer.
 :::
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Ask about your own code
+#### {{< fa user-edit >}} Exercise 2: Ask about your code
 
 1. Start a new conversation.
    Then, open your `scripts/fastqc.sh` (copied from week 7) in the editor, and ask Claude:
@@ -631,9 +777,9 @@ This also lets you upload files from your own computer.
    bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz
    ```
 
-   Copy the error message into the prompt box (with the script still open), and ask
-   Claude what went wrong. Does its explanation match your prediction?
-   Did it also offer to change the script --- and do you want it to?
+   Copy the error message into the prompt box (with the script still open;
+   you can add a question like "What went wrong", but this doesn't tend to be necessary).
+   Does its explanation match your prediction?
 
 4. Close all files in the editor, and ask:
 
@@ -678,56 +824,77 @@ The permission mode, shown at the bottom right of the prompt box,
 determines what Claude may do **without asking you first**.
 Click on it to switch between modes:
 
-- **Manual**: Claude asks permission for each file edit and for most commands
-  (it runs simple read-only commands, like `ls` and `head`, without asking).
+- **Manual**: Claude asks permission for each file edit and for many commands
+  (it runs simple read-only commands, like `ls`, `head`, and `grep`, without asking,
+  as you should have noticed in the previous exercises).
+
 - **Edit automatically**: Claude edits files and runs simple file commands
   like `mkdir` and `cp` in your workspace without asking.
-- **Auto mode**: Claude decides for itself when to ask for permission.
-- **Plan mode**: Claude doesn't change anything, but writes a plan,
+
+- **Auto**: Claude decides for itself when to ask for permission.
+
+- **Plan**: Claude doesn't change anything, but writes a plan,
   which opens as a Markdown document that you can review and modify before
   Claude carries it out.
   This is useful for bigger tasks and is covered in more detail in
   [the self-study page on Claude Code](../bonus/claude-code.qmd#plan-mode).
+
+<hr style="height:1pt; visibility:hidden;" />
 
 ::: {.callout-tip}
 #### For now, we'll stick to Manual mode
 
 It's slower-going, but you'll see exactly what Claude does.
 Once you're comfortable reviewing Claude's work, though,
-the many permission requests in Manual mode can become tedious ---
+the many permission requests can become tedious,
 and it's easy to start clicking "Yes" without really reading what you approve.
 
 At that point, "**Auto mode**" is a good alternative.
 In this mode, a separate AI model checks each action before it runs:
-routine actions, like editing files in your project, go ahead without asking,
+routine actions, like editing files in your project, are permitted without asking,
 while risky ones, like deleting many files or doing things you didn't ask for, are blocked.
-This safety check is not foolproof, so you should still review what Claude did
-(see also the Git tip below).
 :::
 
 ### Letting Claude run commands
 
-Claude can do more than write files: it can also run commands in the terminal.
-Try this:
+We've already seen how Claude runs commands,
+for example to check whether a directory or certain files exist.
+As you might expect then,
+we can also ask Claude directly to run commands on our behalf --- try this:
 
 > Run count_reads.sh on all FASTQ files in ../garrigos/fastq, and tell me which sample has the fewest reads
 
-Before running the script, Claude will show you the exact command and ask for permission
-(though as mentioned above, it may run simple read-only commands like `ls` without asking).
+Before running the script, Claude will show you the exact command and ask for permission.
 Because the FASTQ files are outside your workspace,
 it may also ask for permission to access that dir.
 
-<!---- TODO: screenshot of a command permission request ---->
+::: {.columns}
+::: {.column width="42%"}
 
 You'll typically see these options:
 
-- **Yes**: run the command this once.
-- **Yes, and don't ask again for: ...**: also allow similar commands in the future.
-  For commands, this is saved permanently for this project (see [this self-study page](../bonus/claude-code.qmd#permission-rules)).
+- **"Yes"**: run the command this once.
+- **"Yes, allow ... for this project (just you)"**:
+  also allow this command in the future, without asking.
 - **No**: don't run it. You can add a note to tell Claude what to do instead.
 
-Claude may also ask for permission to search the **web** or fetch a web page,
-for example to look up a program's documentation.
+(Claude may also ask for permission to search the **web** or fetch a web page,
+for example to look up a program's documentation.)
+
+:::
+::: {.column width="58%"}
+
+![](/img/claude-asks.png){fig-align="center" width="95%" .no-border fig-alt="A screenshot of a Claude Code permission request to run a command." .lightbox}
+
+:::
+:::
+
+Here, click one of the two affirmative options to let Claude run the command.
+Is the output correct?
+Here's what I got --- it's indeed correct, and it even correctly inferred that
+these reads were "subsampled to a fixed depth":
+
+![](/img/claude-run-command-result.png){fig-align="center" width="65%" .no-border fig-alt="A screenshot of the result of a command run by Claude." .lightbox}
 
 ::: callout-warning
 #### Cautionary notes
@@ -756,22 +923,117 @@ For more on this and other guardrails, such as permission rules that block speci
 see the [self-study page on Claude Code](../bonus/claude-code.qmd#guardrails).
 :::
 
-### An agent can check its own claims
+### Getting answers from a program's help info {#help-info}
 
-In the previous lecture, we saw how Microsoft Copilot made up a TrimGalore option.
-An agent that can run commands can instead **check** a program's actual help info.
-Start a new conversation, and try the same question:
+In the previous lecture, we talked about hallucinations,
+like a chatbot making up program options that don't actually exist.
+An example was the question about TrimGalore and two-color chemistry,
+for which Microsoft Copilot made up a `--polyG` option last year.
+
+A chatbot can only answer such questions based on its training data
+(or perhaps a web search),
+but an agent that can run commands can instead look up the program's **actual help info**,
+and be sure to look at the right version of the program.
+Start a new conversation, and ask the TrimGalore question again ---
+this time pointing Claude to a container with the program:
 
 > How can I tell TrimGalore that my reads use Illumina two-color chemistry?
 > Check the help info using this container:
-> oras://community.wave.seqera.io/library/trim-galore:0.6.10--bc38c9238980c80e
+> oras://community.wave.seqera.io/library/trim-galore:2.3.0--a56e49e832976df4
 
-Did Claude run the help command, or did it answer based on its training data?
-When an answer is based on the actual help output, you can check it easily.
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise 1: Let Claude fix a broken script
+
+1. Create a new file `scripts/read_summary.sh` and paste the following into it.
+   This script should count the number of reads in every FASTQ file in a dir,
+   but it contains (at least) one error:
+
+   ```{.bash .file filename="scripts/read_summary.sh"}
+   #!/bin/bash
+   set -euo pipefail
+
+   # Copy the placeholder variables
+   fastq_dir="$1"
+   outfile="$2"
+
+   # Initial logging
+   echo "Starting script read_summary.sh"
+   date
+   echo "Input FASTQ dir:    $fastq_dir"
+   echo "Output file:        $outfile"
+   echo
+
+   # Count the number of reads in each FASTQ file
+   for fastq in "$fastq_dir/*.fastq.gz"; do
+       n_lines=$(cat "$fastq" | wc -l)
+       n_reads=$(( n_lines / 4 ))
+       echo -e "$(basename "$fastq")\t$n_reads" >> "$outfile"
+   done
+
+   # Final logging
+   echo "Successfully finished script read_summary.sh"
+   date
+   ```
+
+2. Run the script, and take a look at the error:
+
+   ```bash
+   bash scripts/read_summary.sh ../garrigos/fastq read_summary.tsv
+   ```
+
+3. Start a new conversation, open the script in the editor, and ask Claude to fix it
+   by pasting the error message along with a short prompt like:
+
+   > I got this error when running this script with
+   > `bash scripts/read_summary.sh ../garrigos/fastq read_summary.tsv`. Please fix it.
+   > [paste the error message here]
+
+   Then watch what Claude does:
+
+   - Does it explain the cause of the error, and do you understand the explanation?
+   - Does it only fix the error you reported, or does it find and fix other problems too?
+   - Does it run the script to test its fix?
+
+4. If Claude did not test the script, run it yourself.
+   Then check the contents of `read_summary.tsv`: are the read counts correct?
+   If the counts are not correct, tell Claude, and let it fix the script.
+
+<!----
+<details><summary> {{< fa check-circle >}} Click here for the solution</summary>
+
+The script contains two errors:
+
+- The glob in the `for` loop is inside double quotes (`"$fastq_dir/*.fastq.gz"`),
+  so it is not expanded.
+  The loop therefore runs only once, with the literal string `../garrigos/fastq/*.fastq.gz`,
+  and `cat` fails because no file has that name.
+  The fix is to keep the `*` outside the quotes: `"$fastq_dir"/*.fastq.gz`.
+
+- The script uses `cat` instead of `zcat` on gzipped files.
+  This doesn't cause an error message:
+  `wc -l` simply counts the "lines" in the compressed data,
+  so the script reports read counts that are far too low.
+  This is the more dangerous of the two errors, because it silently produces wrong results.
+
+Claude may have spotted the second error just by reading the script,
+or only after running it and seeing suspicious read counts --- or not at all,
+if it didn't test the script.
+This shows why a script that runs without errors still needs to be checked,
+whether you or Claude wrote or fixed it.
+
+Finally, because the script appends (`>>`) to the output file,
+running it multiple times will add the same files again to `read_summary.tsv`.
+Claude may have noticed this when testing the script,
+and either removed the file between test runs or changed `>>` to something else.
+
+</details>
+---->
+:::
 
 ### Stopping, steering, and rewinding
 
-Sometimes you notice that Claude misunderstood you, or is going down the wrong path.
+Sometimes you notice that Claude misunderstood you, or is going down the wrong path
+(it's often worth keeping a close eye on its "thinking" as it works!).
 In those cases, you don't have to wait for it to finish:
 
 - **Steer it**: type a new message while Claude is working,
@@ -782,18 +1044,17 @@ In those cases, you don't have to wait for it to finish:
 - **Stop it**: press <kbd>Esc</kbd> (or click the stop button).
   You can then send a new message to redirect it.
 
-- **Rewind**: press <kbd>Esc</kbd> twice in quick succession
+- **Rewind**: press <kbd>Esc</kbd> twice in quick succession,
+  or hover over one of your earlier messages and click the rewind button,
   to go back to an earlier point in the conversation.
-  (Or hover over one of your earlier messages and click the rewind button,
-  which also lets you undo file changes while keeping the conversation.)
-  This also *undoes file changes* Claude made after that point.
-  But only changes made with Claude's own file edits:
+  You can choose to also *undo the file changes* Claude made after that point ---
+  but only changes made with Claude's own file edits:
   changes made by *commands* it ran are not undone.
 
   ![](/img/claude-interrupt2.png){fig-align="center" width="60%" fig-alt="A screenshot of the Claude Code rewind menu, listing earlier messages to go back to." .lightbox}
 
 ::: exercise
-#### {{< fa user-edit >}} Self-study exercise: Stop and rewind
+#### {{< fa user-edit >}} Self-study exercise 2: Rewind
 
 1. Start a new conversation, and ask Claude:
 
@@ -803,7 +1064,7 @@ In those cases, you don't have to wait for it to finish:
 
    Accept the edit and the command, and check that both changes were made.
 
-2. Before you rewind, **predict**: which of the two changes will be undone?
+2. Before you rewind, predict which of the two changes will be undone.
 
 3. Press <kbd>Esc</kbd> <kbd>Esc</kbd>, rewind to before this prompt,
    and check both files. Was your prediction correct?
@@ -850,7 +1111,8 @@ week08
 ├── CLAUDE.md
 └── scripts
     ├── count_reads.sh
-    └── fastqc.sh
+    ├── fastqc.sh
+    └── read_summary.sh
 ```
 
 ### What to include in `CLAUDE.md`
@@ -871,55 +1133,107 @@ Claude looks through your project and drafts a `CLAUDE.md` for you to review and
   If a `CLAUDE.md` already exists, `/init` will instead suggest updates to it.].
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Create and use a `CLAUDE.md`
+#### {{< fa user-edit >}} Exercise 3: Create and use a `CLAUDE.md`
 
 1. Type `/init` in the prompt box and press <kbd>Enter</kbd>.
    Once Claude is done, open the `CLAUDE.md` file it created.
-   What did it get right? Is anything wrong or missing?
 
-2. To see that Claude really reads this file, add the following line at the end of
+   - Is what it wrote correct?
+   - How much of it is information that Claude could also have gotten by simply
+     reading the files in your project?
+   - What important information about your project is missing,
+     because it can't be found in these files?
+
+   In a small practice project like ours, `/init` doesn't have much to work with,
+   so its draft will mostly describe the existing scripts.
+   It's more useful in larger projects, but even there,
+   the most valuable parts of a `CLAUDE.md` are things only you know:
+   what the project is about, where the data is, and how you want things done.
+
+2. To see that Claude really reads this file, add the following lines at the end of
    `CLAUDE.md`, and save the file:
 
    ```{.markdown .file filename="CLAUDE.md"}
+   ### Replies
+
    - Always answer in the style of a pirate
    ```
 
-   Then, start a new conversation, and ask _"What does `set -u` do in a shell script?"_,
-   followed by _"Why are you talking like that?"_.
-   Afterwards, remove the pirate line from `CLAUDE.md`.
+   Then, start a new conversation, and ask:
 
-3. Add the following to the file (and remove anything that contradicts it):
+   > What does `set -u` do in a shell script?
 
-   ```{.markdown .file filename="CLAUDE.md (excerpt)"}
+   Followed by:
+
+   > Why are you talking like that?
+
+   Afterwards, remove the pirate lines from `CLAUDE.md`.
+
+   <details><summary> {{< fa lightbulb >}} Click to see what it told me</summary>
+
+   ![](/img/claude-pirate.png){fig-align="center" width="65%" .no-border fig-alt="A screenshot of Claude Code answering a question in pirate style." .lightbox}
+
+   ![](/img/claude-pirate2.png){fig-align="center" width="65%" .no-border fig-alt="A screenshot of Claude Code answering a follow-up question in pirate style." .lightbox}
+
+   </details>
+
+3. Replace the entire contents of `CLAUDE.md` with the following,
+   which adds information that `/init` couldn't know about:
+
+   ```{.markdown .file filename="CLAUDE.md"}
+   # Practice RNA-Seq project
+
+   Practice project for the course PLNTPTH 5006, using RNA-Seq data from
+   Garrigós et al. (2025) on *Culex pipiens* mosquitoes
+   infected with two avian *Plasmodium* species.
+
    ## Data
 
-   - The raw FASTQ files are in `../garrigos/fastq`: never modify or delete them
+   - The FASTQ files are in `../garrigos/fastq`:
+     paired-end, ~75-bp Illumina reads for 22 samples,
+     subsampled to 500,000 reads per file, with names like `S63_R1.fastq.gz`
+   - Sample metadata is in `../garrigos/meta/metadata.tsv`
+   - Never modify, move, or delete anything in `../garrigos`
+
+   ## Dirs
+
+   - `scripts/`: shell scripts
+   - `results/`: all output, in a separate subdir for each step (e.g. `results/fastqc`)
+
+   ## Software
+
+   - We work at the Ohio Supercomputer Center (OSC)
+   - Run programs with Apptainer containers from Seqera Containers (`oras://` URLs),
+     not with `module load` or by installing them
+   - Don't use multi-threading options unless asked
 
    ## Shell script conventions
 
    - Start scripts with `#!/bin/bash` and `set -euo pipefail`
-
-   - Copy arguments to descriptively named, lowercase variables (e.g. `fastq="$1"`,
-     though `R1`/`R2` for paired FASTQ files are fine);
+   - Below that, add a comment block with the script's purpose and an example command to run it
+   - Copy arguments to descriptively named, lowercase variables (e.g. `fastq="$1"`);
      use uppercase only for constants (e.g. `CONTAINER=...`)
-
-   - Run programs with Apptainer containers from Seqera Containers (`oras://` URLs)
-
    - At the start, report the script name, the date, and the inputs;
      at the end, report the program version, a success message, and the date
-
    - Create output dirs with `mkdir -p` before writing to them
-
-   - Don't use multi-threading options unless asked
    ```
 
 4. Start another new conversation, so that Claude reads the updated `CLAUDE.md`, and ask:
 
-   > Rewrite scripts/count_reads.sh
+   > Write a script that takes the first 10,000 reads of a FASTQ file,
+   > and run it on the R1 file of sample S63
 
-5. Check the result against each of the conventions. Which did Claude follow?
-   Do all of them make sense for this particular script --- and if not, how did Claude handle that?
-   Test whether the script works.
+   Notice that this prompt doesn't say where the FASTQ files are,
+   where the output should go, or how to write the script.
+
+5. Check the result:
+   - Did Claude know where to find the FASTQ file, or did it have to search for it?
+     And where did it put the output?
+   - Check the script against each of the conventions. Which did Claude follow?
+     Do all of them make sense for this particular script ---
+     and if not, how did Claude handle that?
+   - Is the output correct? Check that the output file has 40,000 lines
+     (use `zcat` if it is compressed).
 :::
 
 ::: {.callout-note collapse="true"}
@@ -954,7 +1268,8 @@ when you correct it or tell it about your preferences, it _may_ save a note,
 which is loaded into future conversations in the same project.
 You can also ask it directly to save memories, e.g. _"Remember that I prefer ..."_.
 Like `CLAUDE.md`, memory notes are plain Markdown files,
-but you typically don't edit them directly, and they're stored in your Home dir.
+and they're stored in your Home dir.
+Claude writes them itself, but it's worth checking them now and then.
 
 More broadly, memory notes are another big advantage of AI in your editor.
 While browser-based chatbots may remember general things about you,
@@ -976,15 +1291,45 @@ Claude saves your conversations automatically,
 but in your Home dir rather than in your project,
 and in a format that's not easy to read.
 To save a conversation in your project as a plain-text file,
-use `/export` followed by a file name like so:
-
-```bash-in-nocolor
-/export ai-log/2026-10-14_count-reads.txt
-```
+type `/export` in the prompt box.
+In the save dialog that opens, go to (or create) an `ai-logs` dir in your project,
+and give the file a descriptive name like `2026-10-14_count-reads.txt`.
 
 Do this for conversations that helped you produce code you end up keeping,
 or helped you make decisions about the analysis steps.
 Consider committing these files to Git as well.
+
+::: {.callout-note collapse="true"}
+#### Automatically saving all conversations _(Click to expand)_
+
+Exporting by hand is easy to forget.
+To save _every_ conversation automatically, you can use a **hook**:
+a shell command that Claude Code runs at a specific moment,
+such as whenever Claude finishes responding.
+Hooks are run by Claude Code itself rather than by the model,
+so unlike instructions in `CLAUDE.md`, they always run.
+
+A hook receives the location of Claude's own file for the current conversation,
+which contains every message and tool call in a format that's hard to read.
+The hook can then run a small script that converts this file
+into a readable Markdown file in your project,
+overwriting it each time so it stays up to date.
+
+You don't have to write this yourself --- you can ask Claude to set it up, for example:
+
+> Add a Stop hook to this project's `.claude/settings.json`
+> that saves the current conversation as a Markdown file in `ai-logs/`.
+> Name each file by the conversation's start date and session ID,
+> include my prompts and your responses, and summarize each tool call in one line.
+
+Then, have a short conversation and check the resulting Markdown file.
+A few more tips:
+
+- To use the hook in all your projects, ask Claude to put it in `~/.claude/settings.json` instead.
+- Claude deletes its own conversation files from your Home dir after 30 days.
+  To keep them longer, set `cleanupPeriodDays` in `~/.claude/settings.json`.
+- See the [hooks documentation](https://code.claude.com/docs/en/hooks) for details.
+:::
 
 ### Let Claude keep a diary
 
@@ -995,19 +1340,38 @@ with an instruction in `CLAUDE.md` like this one:
 ```{.markdown .file filename="CLAUDE.md (excerpt)"}
 ## AI diary
 
-- After completing a task, add an entry at the bottom of `claude-diary.md`
+- After completing a task, add an entry at the bottom of `doc/ai/claude-diary.md`
   with the date, what I asked for, which files you created or changed,
   and any key findings and decisions (including alternatives that were rejected)
 - Keep entries short
 ```
 
-{{< fa user-edit >}} Add this to your `CLAUDE.md`, start a new conversation,
+Add this to your `CLAUDE.md`, start a new conversation,
 and ask Claude to make a small change, for example:
 
 > Make scripts/count_reads.sh print a usage message when no arguments are given
 
-Then, open `claude-diary.md`. Is the entry accurate, and is it what you would want to
-remember about this change a few months from now?
+After editing the script, Claude should ask you for permission to create the `doc/ai`
+folder (unless it already exists) and to write to `doc/ai/claude-diary.md`.
+
+Then, open `claude-diary.md`.
+Is the entry accurate, and do you think this provides enough information when you
+look back at it a few months from now?
+
+<details><summary> {{< fa lightbulb >}} Here is the entry that I got</summary>
+
+<hr style="height:1pt; visibility:hidden;" />
+
+```{.markdown .file filename="doc/ai/claude-diary.md"}
+## 2026-10-10
+
+- Asked: make `scripts/count_reads.sh` print a usage message when no arguments are given.
+- Changed: `scripts/count_reads.sh` — added a check that prints usage to stderr
+  and exits 1 when called with no args.
+
+```
+
+</details>
 
 ::: {.callout-warning appearance="simple"}
 Like any `CLAUDE.md` instruction, Claude will usually but not always follow this one.
@@ -1078,14 +1442,22 @@ Cached input tokens cost only a fraction of the regular price
 (for Sonnet, about one tenth).
 Only your new prompt and everything Claude does in response are processed at the full price.
 
-However, the cache **expires** after it hasn't been used for a while
-(typically somewhere between 5 minutes and an hour, depending on the setup),
+However, the cache **expires** after it hasn't been used for a while,
 and it's specific to a model.
 After the cache expires or when you switch models,
 the next message reprocesses the entire conversation at the full price.
+
+With an API key like ours, the cache expires after only **5 minutes**
+without activity.
+The clock icon in the prompt box (e.g., `4m`) shows how much time is left.
+(With a personal subscription, Claude Code keeps the cache for an hour instead:
+that costs more per cached token, which doesn't matter with a fixed monthly fee
+but does when you pay per token.)
+
 Some practical consequences:
 
-- When you come back to a long conversation after a break,
+- When you come back to a long conversation after a break
+  of more than a few minutes,
   consider starting a new conversation instead,
   unless you really need what was discussed before.
 - Choose your model at the start of a conversation,
@@ -1146,10 +1518,24 @@ Some other things to know:
     As pointed out before: Claude should help you write code that reads and analyzes
     data, rather than reading and "analyzing" data itself.].
 
-To see an **estimate** of what the current conversation has cost so far,
-type `/usage`:
+::: {.columns}
+::: {.column width="45%"}
 
-ADD SCREENSHOT
+To see an **estimate** of what the current conversation has cost so far,
+type `/usage` --- example output is shown in the screenshot on the right.
+
+This information is somewhat limited, e.g. you can't see usage for other conversations,
+or how much you've used in total for this API key.
+
+(When you have a personal subscription, more detailed usage information is provided.)
+
+:::
+::: {.column width="55%"}
+
+![](/img/claude-usage-api-screenshot.png){fig-align="center" width="90%" fig-alt="A screenshot of the output of the /usage command, showing how many input and output tokens have been used, and an estimated cost." .lightbox}
+
+:::
+:::
 
 ::: callout-tip
 #### You don't always need an agent
