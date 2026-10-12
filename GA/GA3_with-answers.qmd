@@ -1,0 +1,864 @@
+---
+title: "Graded Assignment 3: Software and shell scripts"
+pagetitle: "GA3"
+date: 2026-10-11
+date-modified: last-modified
+other-links:
+  - text: "w5b: Git hands-on"
+    icon: book
+    href: ../week05/w5b_git.html
+  - text: "w5c: Remotes on GitHub"
+    icon: book
+    href: ../week05/w5c_github.html
+  - text: "w6b: Software at OSC"
+    icon: book
+    href: ../week06/w6b_software.html
+  - text: "w7a: Shell scripting I"
+    icon: book
+    href: ../week07/w7a_scripts1.html
+  - text: "w7b: Shell scripting II"
+    icon: book
+    href: ../week07/w7b_scripts2.html
+  - text: "Advanced shell scripting (optional)"
+    icon: book
+    href: ../bonus/shell-scripting.html
+language:
+  title-block-published: "Deadline"
+  title-block-modified: "Page last modified"
+  other-links-title: "Relevant context"
+bibliography: ../references.bib
+number-sections: false
+---
+
+------
+
+<hr style="height:1pt; visibility:hidden;" />
+
+## Overview and grading
+
+### What you'll practice
+
+In this graded assignment, you will practice with shell scripts,
+running software with containers, rendering Markdown with Pandoc,
+and version control with Git and GitHub.
+
+### Submission expectations
+
+- **Deadline**: [Sunday Oct 11^th^ at 11:59 pm]{style="background-color: #faf678;"}.
+- **Submission**: You will submit your assignment by tagging the instructors in an
+  Issue in your GitHub repository, as per the last step below.
+
+::: {#oral-exam .callout-note}
+#### Oral examination
+For one of the three remaining graded assignments (this one, GA3, and GA4–GA5),
+each of you will be asked to explain your work in a short oral examination.
+You won't know in advance which assignment this will be.
+We'll ask you to walk us through how you approached a few of the questions
+and to explain your answers.
+
+If you worked through the assignment yourself, there is nothing to worry about:
+we just want to hear you talk through your reasoning.
+It's completely fine if you've forgotten details of a command or concept,
+even one you used correctly.
+You'll only lose points for a question if it's clear that you really don't
+understand your own answer to it.
+If this is the case for several questions,
+you may be asked to redo the assignment in the form of a replacement assignment.
+
+We'll use 15-minute time slots for the oral examinations,
+and we'll schedule them after the assignment deadline.
+We'd also like to use a few minutes of this time to hear about your overall
+experience with the course so far (this part is not graded).
+:::
+
+### Academic integrity
+
+::: {.columns}
+::: {.column width="8%"}
+
+:::
+::: {.column width="84%"}
+
+|                                                         |                                                                            |
+| ------------------------------------------------------- | -------------------------------------------------------------------------- |
+| ![](/img/icons/AI-Permitted_No.png){.no-border width="100%"}      | **Use of generative AI tools is not permitted.**                           |
+| ![](/img/icons/OpenBookResearch_Yes.png){.no-border width="100%"} | Open-book research for the assignment **is** permitted.                        |
+| ![](/img/icons/GetHelp_No.png){.no-border width="100%"}           | Getting help on the assignment is **not** permitted.                           |
+| ![](/img/icons/Collaborate_No.png){.no-border width="100%"}       | Collaborating, or completing the assignment with others, is **not** permitted. |
+| ![](/img/icons/CopyPreviousWork_No.png){.no-border width="100%"}  | Copying or reusing previous work is **not** permitted.                         |
+| ![](/img/icons/CitationsRequired_No.png){.no-border width="100%"} | APA Citations and/or formatting for this assignment are **not required**.      |
+
+: {.striped tbl-colwidths="[7,93]"}
+
+:::
+::: {.column width=8%"}
+
+:::
+:::
+
+::: {.callout-important}
+### GenAI check --- like previously, but with more details on expectations
+
+This is the last graded assignment for which you are _not_ allowed to use
+generative AI tools.
+The guidelines are just like for the previous graded assignments,
+but we provide some additional details on proper citation:
+
+- You are allowed to search the internet, consult books, and so on,
+  but you are **not** allowed to use generative AI tools.
+  As such, using **Google AI Mode** output is not allowed either, but unfortunately,
+  it may pop up even when you're trying to use Google for regular web searches.
+  In case that helps, please note that one way to prevent AI mode output from
+  showing up at all is adding `-ai` to your Google search queries.
+
+- For any **unprompted use of commands, options, or other code we didn't cover in the course**,
+  you must provide, **separately for each 'novel' use of code**, the **specific source**,
+  where you quote the relevant lines that explain it.
+  A general reference to a website or book that may explain 100s of commands/options/etc.
+  is not sufficient.
+  Alternatively, you can argue you simply knew that command already,
+  from previous self-study or experience.
+  If you provide neither a source nor an explanation for commands not covered in
+  the course, you will not earn any points for the relevant question(s).
+:::
+
+### Rubric
+
+You can earn a maximum of **0.5 points** for each of the 20 numbered questions/items below.
+There are two **bonus** questions (21 and 22) that can also earn you 0.5 points
+each, but only in case you dropped points elsewhere.
+
+## Detailed steps
+
+### General
+
+- We provide a **template** `README.md`
+  (see "Setting up" below) with a section for each question,
+  where you can add your answers:
+  - Add the commands you ran only where the template has a `bash` code block for them.
+  - Include a command's output only where the template has an output block for it.
+
+- For each **shell script** you write, follow the practices from class:
+  start with the shebang and safe-settings lines,
+  and copy any placeholder variables like `$1` to descriptively named variables.
+  You don't need to paste your scripts into your README,
+  since we'll look at them in your repo.
+
+- In any question where you're asked to make **predictions**, and then to run commands
+  to check your predictions, no points will be subtracted for any incorrect predictions.
+
+- _Recommended_: Keep a Markdown preview open to the side,
+  so you can check that it renders as you intended.
+
+### Setting up
+
+- Start a VS Code (Code Server) session at OSC OnDemand as per usual,
+  and open a terminal in that session.
+
+- Create a new dir for this assignment, `/fs/ess/PAS3493/people/$USER/GA3`,
+  and navigate there.
+  *This will be your working dir for the entire assignment.*
+
+- Copy the **template file** for this assignment,
+  `/fs/ess/PAS3493/share/GA3/GA3_template.md`,
+  into your working dir as `README.md`
+  (keep this exact file name --- so don't include, e.g., your own name).
+  _You'll use this file throughout the assignment to add your answers._
+
+### Part A: Your README, data, and Git repo
+
+01. Inside dir `GA3`, create subdirs `data`, `scripts`, and `results`.
+    Then, copy some files into your GA3 "project"^[So your dir is self-contained,
+    as would be typical when working on a research project.]:
+
+    ```bash
+    # Copy your FastQC results into your `results` dir:
+    cp -r ../week07/results/fastqc results/
+
+    # Copy the Garrigós metadata file into your `data` dir:
+    cp ../garrigos/meta/metadata.tsv data/
+    ```
+
+    <details><summary>{{< fa lightbulb >}} Help! I don't have those FastQC results.</summary>
+    You may not have those FastQC results
+    (perhaps we didn't get that far in class, or you didn't manage to follow along).
+    In that case, you can copy files from the share dir instead, as follows:
+
+    ```bash
+    # Copy some FastQC results into your `results` dir:
+    cp -r /fs/ess/PAS3493/share/GA3/results/fastqc results/
+    ```
+
+    </details>
+
+    _Optional:_ Take a look at the structure of your GA3 dir after copying those files,
+    for example using the `tree` command.
+    Your `results/fastqc` dir should contain several dozen files.
+
+02. Initialize a **Git repository**,
+    and in a first commit, commit your `README.md` file (and nothing else).
+    Then, create a `.gitignore` file that makes Git ignore the `data` and `results`
+    dirs, and commit this file.
+
+03. **_Throughout the assignment_**, commit your files to your Git repo as you go along,
+    using informative commit messages.
+    Besides the specific commits that questions ask for,
+    commit at least once per Part.
+
+### Part B: Basic shell scripts
+
+04. Save the code below in a script `scripts/echo.sh`.
+    Then, look at the four commands below that will run the script,
+    and for each, describe what you expect to be the output and why.
+
+    - The script:
+
+      ```{.bash .file filename="scripts/echo.sh"}
+      #!/bin/bash
+      set -euo pipefail
+
+      echo "$1"
+      echo "$2"
+      echo "$3"
+      echo "Finished"
+
+
+      ```
+
+    - The commands to run the script four times with different arguments:
+
+      ```bash
+      bash scripts/echo.sh Oct07 Oct08
+      bash scripts/echo.sh Oct07 Oct08 Oct09 Oct10
+      bash scripts/echo.sh Oct07 Oct08 "Oct09 Oct10"
+      bash scripts/echo.sh results/fastqc/*.html
+      ```
+
+05. Run the commands, and if any output differed from your prediction,
+    try to understand and explain why.
+
+06. Write a shell script `scripts/printline.sh` that accepts two arguments,
+    \(1) an input file path and (2) a line number.
+    The script should **print** (not store in a file) the requested line from the
+    specified file and nothing else.
+
+    <details><summary>{{< fa lightbulb >}} Click here for a hint</summary>
+    Figure out a way to combine `head` and `tail` with a pipe to print one
+    specific line from a file. If you don't manage to,
+    your script can instead print all lines up until the specified line,
+    so you can still move on to the next question.
+    </details>
+
+07. Test your `printline.sh` script **twice**.
+    Each time, make it print one line from the `data/metadata.tsv` file you copied earlier.
+    In **one** of these tests, _redirect_ the script's output to an appropriately
+    named file in the `results` dir, and then check the contents of that file.
+
+### Part C: A script to run MultiQC
+
+MultiQC is a very useful program that summarizes per-sample results of FastQC
+and other bioinformatics programs into a single multi-sample report.
+This allows you to easily compare results across multiple samples.
+
+MultiQC takes a path to a **directory** as input,
+and it will recursively search that directory for files that it can summarize,
+such as FastQC results. It will then write its summary report to an output directory.
+
+08. MultiQC isn't available as an OSC module (_optional_: verify this).
+    Get a link from the Seqera Containers website to a **container** with the most
+    recent version of MultiQC (`bioconda::multiqc` is the correct hit).
+
+09. Print MultiQC's help info by running `multiqc --help` with your container link.
+    Use the help info to figure out how to run MultiQC with `results/fastqc` as its
+    input dir and `results/multiqc` as its output dir,
+    and write down that command in your `README.md` (don't run it yet).
+
+10. Write a script, `scripts/multiqc.sh`, to run MultiQC using the command you
+    wrote above.
+    That is, the script will have the input and output paths "hard-coded" in it.
+    _Optional_: add some logging statements to the script with `echo`,
+    like we did in class for the `fastqc.sh` script.
+
+11. Run your script to summarize the FastQC results with MultiQC.
+    MultiQC will print logging information to the screen ---
+    how many FastQC reports does it say it found,
+    and does that match what you expected?
+    Commit your `scripts/multiqc.sh` script now that you know it works.
+
+12. Change your `scripts/multiqc.sh` script so that it accepts
+    **two arguments**, the input dir and the output dir,
+    and uses these when running MultiQC.
+    Then, rerun your script, passing the same input and output dirs as before
+    (`results/fastqc` and `results/multiqc`) as arguments.
+    Commit your updated script to Git,
+    so your Git history will now contain both versions of the script.
+
+13. Compare the second MultiQC run with the first one:
+    do you notice any differences in what MultiQC printed to the screen,
+    and in the names of the output files it created? What caused these differences?
+
+### Part D: Pandoc to render Markdown
+
+So far, you've seen Markdown rendered in VS Code's preview and on GitHub.
+But you haven't yet converted ("rendered") any of your Markdown files
+to another format, like HTML or PDF, yourself.
+The command-line program **Pandoc** can do this for you.
+That's handy when, for example, you want to share your notes with someone who
+doesn't use Markdown.
+
+14. Here is a Pandoc command to render a Markdown file to PDF:
+
+    ```bash
+    pandoc -o README.pdf README.md
+    ```
+
+    Take a close look at the **structure of this command**:
+    how would you describe it in terms of the option(s) and argument(s) it takes,
+    and what does each do?
+    Also, how do you think Pandoc knows which output format to produce?
+
+15. Run the above command to **render** your `README.md` to PDF,
+    and check that the PDF file was created.
+    Then, based on your answer to the previous question,
+    write and run a command to render your `README.md` to **HTML** instead.
+
+16. Think about whether the rendered files you just produced should be committed
+    to your Git repo or not, and explain your choice.
+
+17. To view PDF files in VS Code,
+    you'll need to install the **extension** "_PDF Viewer_" by "Mathematic Inc".
+    Install it. Then, simply clicking on the PDF file in the VS Code
+    file explorer will open it properly in a new editor tab.
+    Make one observation about the rendered PDF file,
+    like any formatting you hadn't expected.
+    _Optional_: If you see any formatting errors, update your Markdown file,
+    rerender the PDF, and check again.
+
+    ![](/img/vscode-pdf-extension.png){fig-align="center" width="50%" fig-alt="PDF Viewer extension for VS Code" .lightbox}
+
+### Part E: Publish your repo on GitHub
+
+Finally, you'll publish your Git repo on GitHub and "hand in" your assignment
+by creating an Issue.
+
+18. Create a new, empty, public repository on **GitHub**.
+    The repo's name is up to you, but I'd suggest "GA3" or "PLNTPTH5006-GA3"^[
+      As pointed out in class, the GitHub repo's name does not need to match the
+      name of your local dir.
+      As a matter of fact, Git doesn't care about the name of your local dir,
+      and your local repo doesn't really have a name at all --- just a location.
+    ].
+
+19. Make sure you have committed your final `README.md`.
+    Then, connect the GitHub repo to your local repo,
+    and push your local repo to GitHub.
+
+    _Your `README.md` will appear in a nicely rendered form on your repo's GitHub page,_
+    _so this is another opportunity to review your document_
+    _(and if needed, make final adjustments by editing the file in VS Code,_
+    _committing the changes, and pushing to GitHub again)._
+
+    <details><summary>{{< fa lightbulb >}} Click here for help if you don't want to make the GitHub repo public</summary>
+
+    - First, I'd reconsider,
+      since you're allowed to delete the repo as soon as your grade is in ---
+      and more broadly, there is little reason to make your repo private,
+      since it contains no sensitive information.
+
+    - If you still want to make it private, you can do so, but then you'll need to
+      add the instructors as collaborators to your repo, so we can see it and grade it.
+
+    - To do this, go to your repo's GitHub page,
+      click on "Settings" > "Collaborators" > "Add people",
+      and add GitHub users `kstarr791` and `jelmerp`.
+      Also create an Issue in your repo, as instructed below.
+
+    </details>
+
+20. On the GitHub page for your repo, create a new **Issue**.
+    Use whatever title you like, and in the text box (not the title),
+    tag the instructors: GitHub users `kstarr791` and `jelmerp`
+    (using the `@` notation like `@kstarr791`),
+    asking them to take a look at your assignment.
+
+### Bonus
+
+21. Because it has lots of interactive elements,
+    the MultiQC report doesn't render very well in the VS Code preview.
+    Therefore, it's better to **download the file** and open it in a web browser
+    on your own computer.
+    Find one of the MultiQC reports in the VS Code file explorer, right-click on it,
+    and you should see a "**_Download..._**" item.
+    Click on it to download the file, and open it^[
+      After it downloads, your browser will likely show a pop-up where you can
+      click on the file name to open it in a web browser.
+      Otherwise, use your computer's file browser to navigate to the downloaded file,
+      and double-click on it to open it in your browser.
+      You're likely familiar with this process.
+    ].
+
+    Then, explore the MultiQC report, and try to make sense of it.
+    Note that there is lots of interactivity,
+    and you can for example see sample IDs when you hover over lines and bars.
+    Name one insight you gained from it,
+    and one thing you're confused about and would like to learn more about.
+
+22. Check the **version of Pandoc** that is available at OSC without loading any modules,
+    i.e. the one you used above, by running `pandoc -v`.
+    Then, search the internet to check if that Pandoc version is the most recent one.
+    Check what other versions of Pandoc are available via OSC modules,
+    and load the module with the most recent available Pandoc version.
+    Finally, run `pandoc -v` again to confirm that you're now using a different version.
+
+## Solutions
+
+The commands below assume that your working dir is `/fs/ess/PAS3493/people/<user>/GA3`.
+In the example output, `<user>` stands for your user name.
+
+### Part A: Your README, data, and Git repo
+
+<details><summary>**1.** Create subdirs and copy files</summary>
+
+```bash
+mkdir data scripts results
+
+cp -r ../week07/results/fastqc results/
+cp ../garrigos/meta/metadata.tsv data/
+```
+
+_Optional_ check of the dir structure:
+
+```bash
+tree
+```
+
+</details>
+
+<details><summary>**2.** Initialize a Git repo, and commit `README.md` and `.gitignore`</summary>
+
+```bash
+git init
+git add README.md
+git commit -m "Add README"
+```
+
+Then, create a `.gitignore` file with the following contents,
+for example in the VS Code editor:
+
+```{.bash .file filename=".gitignore"}
+data/
+results/
+```
+
+```bash
+git add .gitignore
+git commit -m "Add .gitignore to ignore data and results dirs"
+```
+
+- Your first commit should contain only `README.md`.
+- Patterns like `data`, `/data/`, or `data/*` also work.
+  Either way, the `data` and `results` dirs should never appear in any commit.
+
+</details>
+
+<details><summary>**3.** Commit throughout the assignment</summary>
+
+Your Git history should have at least one commit per Part (A--E),
+including the commits asked for in questions 11 and 12,
+each with an informative commit message.
+
+</details>
+
+### Part B: Basic shell scripts
+
+<details><summary>**4.** Predict the output of `echo.sh`</summary>
+
+1. `bash scripts/echo.sh Oct07 Oct08` prints `Oct07` and `Oct08`,
+   and then fails with an "unbound variable" error,
+   because no third argument was passed,
+   and `set -u` turns the use of an unset variable into an error.
+   So, `Finished` is not printed.
+2. `bash scripts/echo.sh Oct07 Oct08 Oct09 Oct10` prints `Oct07`, `Oct08`, `Oct09`,
+   and `Finished`.
+   The fourth argument is ignored, since the script never uses `$4`.
+3. `bash scripts/echo.sh Oct07 Oct08 "Oct09 Oct10"` prints `Oct07`, `Oct08`,
+   `Oct09 Oct10` (on one line), and `Finished`.
+   The quotes make `Oct09 Oct10` a single argument.
+4. In `bash scripts/echo.sh results/fastqc/*.html`,
+   the shell expands the glob _before_ running the script,
+   so the script receives 44 file paths as arguments.
+   It prints the first three of these (in alphabetical order) and `Finished`.
+
+</details>
+
+<details><summary>**5.** Run `echo.sh` and compare with your predictions</summary>
+
+```bash
+bash scripts/echo.sh Oct07 Oct08
+```
+```bash-out
+Oct07
+Oct08
+scripts/echo.sh: line 6: $3: unbound variable
+```
+
+```bash
+bash scripts/echo.sh Oct07 Oct08 Oct09 Oct10
+```
+```bash-out
+Oct07
+Oct08
+Oct09
+Finished
+```
+
+```bash
+bash scripts/echo.sh Oct07 Oct08 "Oct09 Oct10"
+```
+```bash-out
+Oct07
+Oct08
+Oct09 Oct10
+Finished
+```
+
+```bash
+bash scripts/echo.sh results/fastqc/*.html
+```
+```bash-out
+results/fastqc/S63_R1_fastqc.html
+results/fastqc/S63_R2_fastqc.html
+results/fastqc/S64_R1_fastqc.html
+Finished
+```
+
+See the answer to question 4 for an explanation of each output.
+
+</details>
+
+<details><summary>**6.** Write the `printline.sh` script</summary>
+
+```{.bash .file filename="scripts/printline.sh"}
+#!/bin/bash
+set -euo pipefail
+
+# Copy the placeholder variables
+input_file=$1
+line_nr=$2
+
+# Print the requested line
+head -n "$line_nr" "$input_file" | tail -n 1
+```
+
+- `head -n "$line_nr"` prints all lines up to and including the requested one,
+  and `tail -n 1` then keeps only the last of those lines.
+- Other approaches, like `sed -n "${line_nr}p"` or `awk`, work too,
+  but because we didn't cover these in class, you'd need to provide a source.
+
+</details>
+
+<details><summary>**7.** Test `printline.sh` twice</summary>
+
+```bash
+bash scripts/printline.sh data/metadata.tsv 1
+```
+```bash-out
+sample_id	time	treatment
+```
+
+```bash
+bash scripts/printline.sh data/metadata.tsv 5 > results/metadata_line5.txt
+cat results/metadata_line5.txt
+```
+```bash-out
+S83	10dpi	cathemerium
+```
+
+</details>
+
+### Part C: A script to run MultiQC
+
+<details><summary>**8.** Get a MultiQC container link</summary>
+
+_Optional_: check that MultiQC isn't available as an OSC module:
+
+```bash
+module spider multiqc
+```
+```bash-out
+# TODO: paste output from OSC
+```
+
+The container link (URI) for the most recent version of MultiQC (1.35) is:
+
+```bash-in-nocolor
+oras://community.wave.seqera.io/library/multiqc:1.35--562c547b518ebe20
+```
+
+Make sure to use the `oras://` URI rather than the Docker one.
+
+</details>
+
+<details><summary>**9.** MultiQC's help info, and the MultiQC command</summary>
+
+```bash
+apptainer exec oras://community.wave.seqera.io/library/multiqc:1.35--562c547b518ebe20 \
+    multiqc --help
+```
+
+The relevant line of the output:
+
+```bash-out
+│ --outdir           -o  Create report in the specified output directory. (TEXT)                                                   │
+```
+
+And the usage line, `multiqc [OPTIONS] [ANALYSIS DIRECTORY]`,
+shows that the input dir is passed as an argument.
+So, the MultiQC command is:
+
+```bash
+apptainer exec oras://community.wave.seqera.io/library/multiqc:1.35--562c547b518ebe20 \
+    multiqc --outdir results/multiqc results/fastqc
+```
+
+Using `-o` instead of `--outdir` is fine too.
+
+</details>
+
+<details><summary>**10.** Write the `multiqc.sh` script</summary>
+
+```{.bash .file filename="scripts/multiqc.sh"}
+#!/bin/bash
+set -euo pipefail
+
+# Run MultiQC
+apptainer exec oras://community.wave.seqera.io/library/multiqc:1.35--562c547b518ebe20 \
+    multiqc --outdir results/multiqc results/fastqc
+```
+
+As for the _optional_ logging statements, you could for example add
+`echo "Starting script multiqc.sh"` and `date` lines at the start and end of the script,
+like in the `fastqc.sh` script from class.
+
+</details>
+
+<details><summary>**11.** Run `multiqc.sh`</summary>
+
+```bash
+bash scripts/multiqc.sh
+```
+
+The relevant lines of the output:
+
+```bash-out
+       file_search | Search path: /fs/ess/PAS3493/people/<user>/GA3/results/fastqc
+            fastqc | Found 44 reports
+     write_results | Data        : results/multiqc/multiqc_data
+     write_results | Report      : results/multiqc/multiqc_report.html
+           multiqc | MultiQC complete
+```
+
+- MultiQC found **44 reports**.
+  This is as expected, because FastQC ran once for each of the 44 FASTQ files
+  (22 samples × R1 and R2).
+- If you ran FastQC on fewer files in class, you'll see a lower number,
+  which is fine as long as you can explain it.
+- Commit the script once you've seen that it works.
+
+</details>
+
+<details><summary>**12.** Make `multiqc.sh` accept arguments, and rerun it</summary>
+
+```{.bash .file filename="scripts/multiqc.sh"}
+#!/bin/bash
+set -euo pipefail
+
+# Copy the placeholder variables
+indir=$1
+outdir=$2
+
+# Run MultiQC
+apptainer exec oras://community.wave.seqera.io/library/multiqc:1.35--562c547b518ebe20 \
+    multiqc --outdir "$outdir" "$indir"
+```
+
+```bash
+bash scripts/multiqc.sh results/fastqc results/multiqc
+```
+
+Then, commit the updated script,
+so your Git history contains both versions of the script.
+
+</details>
+
+<details><summary>**13.** Differences between the two MultiQC runs</summary>
+
+In the second run, MultiQC printed the following line:
+
+```bash-out
+Existing reports found, adding suffix to filenames. Use '--force' to overwrite.
+```
+
+So, rather than overwriting the output files from the first run,
+it added a `_1` suffix to the names of the new output files.
+The output dir now contains both reports:
+
+```bash
+ls results/multiqc
+```
+```bash-out
+multiqc_data  multiqc_data_1  multiqc_report_1.html  multiqc_report.html
+```
+
+- These differences are caused by using the same output dir twice,
+  combined with MultiQC not overwriting existing reports by default.
+  The `--force` (`-f`) option would make it overwrite them.
+- The change to the script did _not_ cause the differences,
+  because the MultiQC command that the script runs is the same as before.
+
+</details>
+
+### Part D: Pandoc to render Markdown
+
+<details><summary>**14.** The structure of the Pandoc command</summary>
+
+In `pandoc -o README.pdf README.md`:
+
+- `pandoc` is the command (program).
+- `-o README.pdf` is an **option** that takes a value, the output file
+  (`-o` is short for `--output`).
+- `README.md` is an **argument**, the input file.
+
+Pandoc infers the output format from the **extension of the output file name**
+(`.pdf`),
+and similarly, the input format from the extension of the input file name (`.md`).
+You can also set the formats explicitly with the `--to` (`-t`) and `--from` (`-f`) options.
+
+</details>
+
+<details><summary>**15.** Render your README to PDF and HTML</summary>
+
+```bash
+pandoc -o README.pdf README.md
+ls -lh README.pdf
+```
+```bash-out
+# TODO: paste output from OSC
+```
+
+Following from the answer to question 14,
+you only need to change the output file's extension to render to HTML:
+
+```bash
+pandoc -o README.html README.md
+```
+
+</details>
+
+<details><summary>**16.** Should the rendered files be committed?</summary>
+
+- Generally, **no**: the PDF and HTML files are output that you can regenerate
+  from `README.md` at any time, just like the files in `results`.
+  Committing them would add redundant files to your repo,
+  and each time you change your README,
+  you'd also need to rerender and commit these files to keep them in sync.
+  Also, Git can't show meaningful differences between versions of a binary file like a PDF.
+- You could add these files to your `.gitignore`,
+  e.g. with the lines `README.pdf` and `README.html`.
+- That said, a "yes" with a reasonable justification is also fine ---
+  for example, to make the PDF directly available to collaborators
+  who don't use Markdown.
+
+</details>
+
+<details><summary>**17.** Install the PDF Viewer extension and view the PDF</summary>
+
+There is no single correct answer here.
+
+</details>
+
+### Part E: Publish your repo on GitHub
+
+<details><summary>**18--20.** Create a GitHub repo, push, and create an Issue</summary>
+
+After creating the repo on GitHub:
+
+```bash
+git remote add origin git@github.com:<github-username>/GA3.git
+git push -u origin main
+```
+
+- Your GitHub repo should be public,
+  or you should have added `kstarr791` and `jelmerp` as collaborators.
+- Your GitHub repo should contain your final `README.md`, `.gitignore`, and `scripts`,
+  but not `data` or `results`.
+- Your Issue should tag `@kstarr791` and `@jelmerp` in its text box.
+
+</details>
+
+### Bonus
+
+<details><summary>**21.** Explore the MultiQC report</summary>
+
+There is no single correct answer here. For example:
+
+- An insight could involve comparing a metric across samples,
+  or between R1 and R2 files,
+  such as read counts, per-base quality, or adapter content.
+- Something you're confused about could be what a specific FastQC module measures,
+  or why a module is flagged with a warning or failure.
+
+</details>
+
+<details><summary>**22.** Pandoc versions</summary>
+
+```bash
+pandoc -v
+```
+```bash-out
+# TODO: paste first line of output from OSC
+```
+
+The most recent Pandoc version is 3.12.1
+(see <https://github.com/jgm/pandoc/releases>),
+so the version available by default at OSC is not the most recent one.
+
+```bash
+module spider pandoc
+```
+```bash-out
+# TODO: paste output from OSC
+```
+
+```bash
+module load pandoc/TODO
+pandoc -v
+```
+```bash-out
+# TODO: paste first line of output from OSC
+```
+
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+
+<!-----
+14. Get a single Seqera container that contains **both** FastQC and MultiQC,
+    and check that you can run both programs with it.
+    Compare this container's URI with that of the MultiQC-only container you used above.
+    What information is missing from it, and how could you still find that information?
+
+07. Predict what each of the `echo` commands below will print,
+    then run the commands to check.
+    For any output that differed from your prediction, explain what happened.
+
+    ```bash
+    fastq=data/S63_R1.fastq.gz
+    echo "${fastq/_R1/_R2}"
+    echo "${fastq/.fastq.gz/_trimmed.fastq.gz}"
+    echo "$fastq_R2"
+
+    fastq=data/SRR1234_R1.fastq.gz
+    echo "${fastq/R1/R2}"
+    ```
+---->
