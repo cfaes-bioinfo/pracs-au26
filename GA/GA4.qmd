@@ -1,354 +1,419 @@
 ---
 draft: true
-title: "Graded Assignment 4:<br>Slurm batch jobs and genAI"
+title: "Graded Assignment 4:<br>Shell scripts with and without genAI"
 pagetitle: "GA4"
 date: 2026-10-25
 date-modified: last-modified
 other-links:
-  - text: "w10a: Slurm batch jobs I"
+  - text: "w6b: Software at OSC"
     icon: book
-    href: ../week10/w10a_slurm1.html
-  - text: "w10b: Slurm batch jobs II"
+    href: ../week06/w6b_software.html
+  - text: "w7a: Shell scripting I"
     icon: book
-    href: ../week10/w10b_slurm2.html
+    href: ../week07/w7a_scripts1.html
+  - text: "w7b: Shell scripting II"
+    icon: book
+    href: ../week07/w7b_scripts2.html
   - text: "w9a: Coding with an AI agent"
     icon: book
     href: ../week09/w9a_claude.html
+  - text: "Graded Assignment 3"
+    icon: pencil-square
+    href: GA3.html
 language:
   title-block-published: "Deadline"
   title-block-modified: "Page last modified"
   other-links-title: "Relevant context"
+bibliography: ../references.bib
 number-sections: false
 ---
 
 ------
 
 <hr style="height:1pt; visibility:hidden;" />
+<hr style="height:1pt; visibility:hidden;" />
 
-## Overview
+## Overview and grading
 
-In this graded assignment, you will practice primarily with Slurm batch jobs.
-In the last part, you will also use generative AI to help you with one of the
-questions --- and critically evaluate what it tells you.
+### What you'll practice
 
-## Directions and grading
+In this graded assignment, you will first write a shell script to run the
+program TrimGalore, run it, and interpret its output, all **without** genAI.
+Then, you will hand your script to Claude Code:
+you'll have it review and extend your script, write a loop to run the script
+for multiple samples, and summarize the results.
+Along the way, you'll critically check what Claude produces,
+and document your genAI use.
 
 ### Submission expectations
 
-- **Deadline**: Sunday Oct 25^th^ at 11:59 pm.
-- **Submission**: You will submit your assignment by tagging the instructor in an
-  Issue in your GitHub as per the last step below.
+- **Deadline**: [Sunday Oct 25^th^ at 11:59 pm]{style="background-color: #faf678;"}.
+- **Submission**: Like for GA3, you will submit your assignment by tagging the
+  instructors in an Issue in your GitHub repository, as per the last step below.
+
+::: callout-note
+#### Oral examination
+As explained in [GA3](GA3.qmd#oral-exam),
+each of you will have **one** short oral examination,
+for one of GA3, GA4, or GA5.
+If you already had yours for GA3, you won't have another one.
+If not, it may be for this assignment,
+in which case you should also be able to explain any code that genAI wrote for you.
+:::
 
 ### Academic integrity
 
-::: callout-important
-### Gen-AI check
+::: {.columns}
+::: {.column width="8%"}
 
-**This is the first assignment in which you are allowed to use generative AI.**
-Now that we've covered these tools in weeks 8 and 9,
-the course guideline from here on
-(including for the Final Project) applies:
-
-- You may use genAI, **as long as you can explain what your code does**.
-  If genAI produces commands or constructs that we have not covered in class,
-  do the research needed to understand them ---
-  you may be asked to explain your code live over Zoom.
-- Whatever the source, **you remain responsible for whether the code is correct**.
-  "The AI told me so" is not a defense for a wrong answer,
-  and as you'll see in Part D, it is quite capable of inventing options that
-  don't exist.
-- In Part D, you are **required** to document your genAI usage.
-  Elsewhere in the assignment, documenting it is optional but encouraged.
-
-Getting help from other people, and collaborating, are still not permitted.
 :::
+::: {.column width="84%"}
 
-<hr style="height:1pt; visibility:hidden;" />
-
-|                                                         |                                                                                          |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| ![](../img/icons/AI-Permitted_Yes.png){.no-border width="80%"}     | Use of generative AI Tools (e.g. Claude, Google Gemini, ChatGPT) is permitted |
-| ![](../img/icons/GetHelp_No.png){.no-border width="80%"}           | Getting help on the assignment is not permitted                                          |
-| ![](../img/icons/Collaborate_No.png){.no-border width="80%"}       | Collaborating, or completing the assignment with others, is not permitted                |
-| ![](../img/icons/CopyPreviousWork_No.png){.no-border width="80%"}  | Copying or reusing previous work is not permitted                                        |
-| ![](../img/icons/OpenBookResearch_Yes.png){.no-border width="80%"} | Open-book research for the assignment is permitted                                       |
-| ![](../img/icons/CitationsRequired_No.png){.no-border width="80%"} | APA Citations and/or formatting for this assignment are not required                     |
+|                                                         |                                                                            |
+| ------------------------------------------------------- | -------------------------------------------------------------------------- |
+| ![](/img/icons/AI-Permitted_Yes.png){.no-border width="100%"}     | Use of generative AI tools **is** permitted, except in Part B (see below). |
+| ![](/img/icons/OpenBookResearch_Yes.png){.no-border width="100%"} | Open-book research for the assignment **is** permitted.                        |
+| ![](/img/icons/GetHelp_No.png){.no-border width="100%"}           | Getting help on the assignment is **not** permitted.                           |
+| ![](/img/icons/Collaborate_No.png){.no-border width="100%"}       | Collaborating, or completing the assignment with others, is **not** permitted. |
+| ![](/img/icons/CopyPreviousWork_No.png){.no-border width="100%"}  | Copying or reusing previous work is **not** permitted.                         |
+| ![](/img/icons/CitationsRequired_No.png){.no-border width="100%"} | APA Citations and/or formatting for this assignment are **not required**.      |
 
 : {.striped tbl-colwidths="[7,93]"}
 
+:::
+::: {.column width=8%"}
+
+:::
+:::
+
+::: {.callout-note}
+### GenAI expectations
+
+This is the first assignment in which you are allowed to use generative AI.
+Now that we've covered these tools in weeks 8 and 9,
+the course guideline from here on (including for the Final Project) applies:
+
+- You may use genAI, **as long as you can explain what your code does**.
+  If genAI produces commands or constructs that we have not covered in class,
+  do the research needed to understand them.
+- Whatever the source, **you remain responsible for whether the code is correct**.
+  "The AI told me so" is not a defense for a wrong answer.
+
+That said, this assignment has two exceptions:
+
+- You must do **Part B without** genAI assistance.
+  This is because in Part C, you'll compare genAI output with
+  a script and answers you produced yourself.
+  As in GA3, for any use of commands or options in Part B that we didn't cover
+  in the course, provide the specific source.
+- In Part C, on the other hand, you are _required_ to use Claude Code and to
+  document how you used it.
+:::
+
 ### Rubric
 
-You can earn a total of 10 points:
-
-:::: columns
-::: {.column width="35%"}
-| Part                          | Points |
-| :---------------------------- | :----: |
-| B --- TrimGalore batch job    |   4    |
-| C --- Batch jobs in a loop    |   2    |
-| D --- GenAI                   |   3    |
-| Git/GitHub (Parts A and E)    |   1    |
-
-: {.striped}
-:::
-::::
-
-The Bonus question can earn you up to an additional point
-if you lost points elsewhere in the assignment.
+You can earn a maximum of **0.5 points** for each of the 20 numbered questions/items below.
+There are two **bonus** questions (21 and 22) that can also earn you 0.5 points
+each, but only in case you dropped points elsewhere.
 
 ## Detailed steps
 
-### Part A: Setting up & Git
+### General
 
-1. Start a VS Code session at OSC in the folder `/fs/ess/PAS3493/people/$USER`.
-   Create a new dir for this assignment, `/fs/ess/PAS3493/people/$USER/GA4`,
-   and switch to that folder in VS Code using the "Open Folder" option.
-   _This should be your working dir for the entire assignment._
+- Like before, we provide a **template** `README.md`
+  (see "Setting up" below) with a section for each question,
+  where you can add your answers:
+  - Add the commands you ran only where the template has a `bash` code block for them.
+  - Include a command's output only where the template has an output block for it.
 
-2. Initialize a Git repository.
-   Commit to the repo throughout the assignment as you see fit,
-   but at least once for each "Part" of this assignment.
-   Use and commit a `.gitignore` file as appropriate.
-   _(Tip: Many of you would do well to recall the feedback you got_
-   _on your Git repo from the previous assignment!)_
+- For each **shell script** you write, follow the practices from class:
+  start with the shebang and safe-settings lines,
+  and copy any placeholder variables like `$1` to descriptively named variables.
+  You don't need to paste your scripts into your README,
+  since we'll look at them in your repo.
 
-3. Inside dir `GA4`, create a `README.md` file and open it in the VS Code editor.
-   Use this file throughout the assigment to add your answers where appropriate.
+- **Commit** your files to your Git repo as you go along,
+  using informative commit messages.
+  Besides the specific commits that questions ask for,
+  commit at least once per Part.
 
-4. Inside dir `GA4`, also create dirs `scripts` and `results`.
-   We'll make your dir self-contained again
-   (like a typical situation for a research project)
-   by copying some data into it:
+### Setting up
 
-   ```bash
-   # (This command will work as intended if you *don't* have a data dir yet)
-   cp -rv ../garrigos/fastq data
-   ```
+- Start a VS Code session at OSC OnDemand as per usual,
+  and open a terminal in that session.
 
-5. As a starting script, store the code below in a shell script `scripts/trimgalore.sh`.
+- Create a new dir for this assignment, `/fs/ess/PAS3493/people/$USER/GA4`.
+  Then, open this dir as your VS Code folder with `File` > `Open Folder`.
+  *This will be your working dir for the entire assignment,*
+  *and Claude's workspace in Part C.*
 
-   ```bash
-   #!/bin/bash
-   set -euo pipefail
+- Copy the **template file** for this assignment,
+  `/fs/ess/PAS3493/share/GA4/GA4_template.md`,
+  into your working dir as `README.md`.
+  _You'll use this file throughout the assignment to add your answers._
 
-   # Constants
-   TRIMGALORE_CONTAINER=oras://community.wave.seqera.io/library/trim-galore:2.3.0--a56e49e832976df4
+### Part A: Your project dir and Git repo
 
-   # Copy the placeholder variables
-   R1="$1"
-   R2="$2"
-   outdir="$3"
+01. Inside dir `GA4`, create subdirs `scripts` and `results`.
+    Then, copy the `CLAUDE.md` file you created in class into your working dir,
+    so that Claude will follow the instructions it contains in Part C:
 
-   # Report
-   echo "Starting script trimgalore.sh"
-   date
-   echo "Input R1 FASTQ file:      $R1"
-   echo "Input R2 FASTQ file:      $R2"
-   echo "Output dir:               $outdir"
-   echo
+    ```bash
+    cp ../week09/CLAUDE.md .
+    ```
 
-   # Create the output dir
-   mkdir -p "$outdir"
+    <details><summary>{{< fa lightbulb >}} Help! I don't have that `CLAUDE.md` file.</summary>
+    In that case, copy the `CLAUDE.md` file from the share dir instead:
 
-   # Run TrimGalore
-   apptainer exec "$TRIMGALORE_CONTAINER" \
-       trim_galore \
-       --paired \
-       --fastqc \
-       --output_dir "$outdir" \
-       "$R1" \
-       "$R2"
+    ```bash
+    cp /fs/ess/PAS3493/share/GA4/CLAUDE.md .
+    ```
 
-   # Report
-   echo
-   echo "TrimGalore version:"
-   apptainer exec "$TRIMGALORE_CONTAINER" \
-       trim_galore -v
-   echo "Successfully finished script trimgalore.sh"
-   date
-   ```
+    </details>
 
-### Part B: A TrimGalore batch job
+02. Initialize a **Git repository**,
+    and create a `.gitignore` file that makes Git ignore the `results` dir.
+    Then, commit your `README.md`, `CLAUDE.md`, and `.gitignore` files.
 
-You'll start with the TrimGalore script you just created, which should be much
-like that from last week's exercises.
-But this time, instead of running the TrimGalore script "directly" with `bash`,
-you will submit it as a batch job.
-Then, in the next section,
-you will submit many batch jobs at the same time: one for each sample.
+### Part B: A TrimGalore script --- without genAI
 
-06. Add Sbatch options to the top of the TrimGalore shell script to specify:
+TrimGalore [@krueger2021] is a commonly used tool to preprocess the reads
+in FASTQ files before further analysis.
+It's the next step in the RNA-seq analysis workflow we're gradually applying to
+the @garrigós2025 data in this course:
 
-    - The account/project you want to use
-    - The number of cores you want to reserve: use 8
-    - The amount of time you want to reserve: use 30 minutes
-    - The desired file name of Slurm log file
-    - That Slurm should email you upon job failure
-    - _Optional: you can try other Sbatch options you'd like to test_
+![](/img/rnaseq-wf-3.png){fig-align="center" width="60%" fig-alt="A diagram showing the steps in an RNA-seq analysis pipeline." .lightbox}
 
-07. By printing and scanning through the TrimGalore help info once again
-    (see last week's exercises),
-    find the TrimGalore option that specifies how many cores it can use --
-    add the relevant line(s) from the TrimGalore help info to your `README.md`.
-    In the script, change the `trim_galore` command accordingly to use the available
-    number of cores.
+<hr style="height:1pt; visibility:hidden;" />
 
-08. To test the script and batch job submission,
-    submit the script as a batch job only for sample `S63`.
+TrimGalore takes FASTQ files as input, and removes:
 
-09. Monitor the job, and when it's done, check that everything went well
-    (if it didn't, redo until you get it right).
-    In your `README.md`, explain your monitoring and checking process.
-    Then, remove all outputs (Slurm log files and TrimGalore output files)
-    produced by this test-run.
+- Any adapter sequences that are present in the reads^[
+  Adapters are always added to DNA/cDNA fragments of interest prior to Illumina sequencing,
+  and the last bases of a read can "read-through" into the adapter if the fragment
+  is shorter than the read length.]
+- Poor-quality bases at the end of the reads
+- Reads that have become very short after the prior two steps
 
-10. Illumina sequencing uses colors to distinguish between nucleotides
-    as they are being added during the sequencing-by-synthesis process.
-    However, newer Illumina machines (Nextseq and Novaseq) use a different color
-    chemistry than older ones, and this newer chemistry suffers from an artefact
-    that can erroneously produce strings of `G`s ("poly-G") with high quality scores.
-    Those `G`s should really be `N`s instead,
-    and occur especially at the end of reverse (R2) reads.
+It then writes the filtered reads to new FASTQ files.
+But unlike FastQC, you don't run it on one FASTQ file at a time.
+When you have paired-end reads, like with the @garrigós2025 data,
+a **single** TrimGalore run should include **both** the R1 (forward read) and
+R2 (reverse read) file for one sample.
+This is because R1 and R2 files need to remain "synced":
+generally, you can't remove a read from an R1 file without also removing
+its mate from the R2 file.
 
-    In the FastQC outputs for the R2 file that you just produced with TrimGalore
-    (recall that it runs FastQC after trimmming!),
-    do you see any evidence for this problem? Explain.
+::: {.callout-note collapse="true"}
+#### More about TrimGalore and similar programs _(Click to expand)_
 
-11. We'll assume that the data was indeed produced with the newer Illumina
-    color chemistry.
-    In the TrimGalore help info, find the relevant TrimGalore option to deal with
-    the poly-G problem,
-    and again add the relevant line(s) from the help info to your `README.md`.
-    Then, use the TrimGalore option you found,
-    but don't change the quality score threshold from the default.
+Several largely equivalent tools exist for this kind of FASTQ preprocessing ---
+[Trimmomatic](http://www.usadellab.org/cms/index.php?page=trimmomatic) and
+[fastp](https://github.com/OpenGene/fastp) are two other commonly used ones.
+TrimGalore itself is "just" a wrapper around yet another tool called Cutadapt,
+but it is simpler to use.
+Two advantages of TrimGalore are:
 
-12. Rerun TrimGalore with the added color-chemistry option.
-    Check all outputs and confirm that usage of this option made a difference.
-    Then, remove all outputs produced by this test-run again.
-
-### Bonus: Modify the script to rename the output FASTQ files
-
-_If you choose not to do this Bonus part, you can simply move on to Part C._
-
-The TrimGalore output FASTQ files are oddly named,
-ending in `_R1_val_1.fq.gz` and `_R2_val_2.fq.gz` --
-check the output files from your initial run to see this.
-This is not _necessarily_ a problem,
-but could trip you up in a next step with these files.
-
-Therefore, modify your TrimGalore script to rename the output files after running
-TrimGalore, giving them the same names as the input files.
-Then, rerun the script to check that your changes were successful.
-
-<details><summary>Hints _(Click to expand)_</summary>
-
-To rename the files,
-you first need to extract and store the part of the file name that is basically
-a sample ID: that before `_R1.fastq.gz`/`_R2.fastq.gz`.
-To do that, you will need to use "command substitution" and the `basename` command.
-Those are explained on the optional advanced shell scripting self-study page
-[starting here](../bonus/shell-scripting.qmd#command-substitution) but we did not
-cover them together in class.
-
-Here is a skeleton of the code to extract that part of the file name:
-
-```bash
-# Replace " ... " with your code.
-sample_id=$( ... )
-```
-
-Based on that ID, you can build up the names of the TrimGalore output files
-_and_ those of the desired final file names. For example:
-
-```bash
-# The name of the initial ('init') TrimGalore R1 output file will be:
-R1_out_init="$outdir"/"$sample_id"_R1_val_1.fq.gz
-```
-
-See also
-[this section on renaming files with loops](../bonus/shell-scripting.qmd#renaming-files-with-loops),
-though realize that this situation is different:
-because you will do the renaming inside the script without a loop.
-
-</details>
-
-### Part C: TrimGalore batch jobs in a loop
-
-After your test-run, it is time to run TrimGalore on all samples by submitting
-batch jobs using a loop.
-
-13. Write a `for` loop in your `README.md` to submit a TrimGalore batch job for
-    each pair of FASTQ files that you have in your `data` dir.
-
-14. Monitor the batch jobs and when they are done, check that everything went well
-    (if it didn't, redo until you get it right).
-    In your `README.md`, explain your monitoring and checking process.
-    In this case, it is appropriate to keep the Slurm log files:
-    move them into a dir `logs` within the TrimGalore output dir.
-
-### Part D: GenAI --- and checking what it tells you
-
-In questions 10-12, you found TrimGalore's color-chemistry option the "old-fashioned"
-way: by reading the program's help info.
-Now you'll ask a genAI assistant the same question,
-which gives you a rare opportunity to judge an AI answer against
-a ground truth that you established yourself.
-
-15. Ask a genAI tool of your choice how to deal with the two-color chemistry /
-    poly-G problem in TrimGalore.
-    You can use your own phrasing, or something like:
-
-    > How can I tell the program TrimGalore that my reads use Illumina two-color chemistry?
-
-    In your `README.md`, document:
-
-    - Which genAI tool (and, if you know it, which model) you used
-    - The exact prompt you used
-    - The answer you got --- include the relevant code/options,
-      and **add a screenshot** of the exchange
-      (upload the screenshot to OSC and commit it to your repo)
-    - **Your evaluation**: does the option it gave you actually exist in
-      `trim_galore --help`?
-      Is it the same option you found yourself in question 11?
-      If the answer was wrong or partly wrong,
-      how confident did the tool _sound_ about it?
-
-    ::: {.callout-tip appearance="simple"}
-    Whatever you get, follow up at least once:
-    for example, ask it to point you to the exact line in the TrimGalore help info
-    that documents the option it suggested, and see what happens.
-    :::
-
-16. Now pick **one task of your own** related to this assignment that you don't
-    know how to do yourself, and ask genAI for help with it.
-    Some ideas:
-
-    - Extracting the resource usage (e.g. memory, run time) of all your completed
-      batch jobs and collecting it in a small table
-    - Submitting a job that only starts once all your TrimGalore jobs have finished
-    - Counting the reads in each trimmed FASTQ file
-
-    Run the code you get, check that it does what you think it does,
-    and document the same items as above
-    (tool, prompt, answer, whether it worked, and your own evaluation).
-    A screenshot is not required here.
-
-::: callout-warning
-#### Remember: you own the answer
-For both questions, you are graded on your **evaluation** of the genAI output,
-not on whether the tool happened to give a good answer.
-A well-documented trial in which you caught the AI being wrong
-is worth full points.
+- It will auto-detect the adapters that are present in your reads.
+- It can automatically run FastQC on the trimmed sequences.
 :::
 
-### Part E: Publish your repo on Github
+03. Get a link from the Seqera Containers website to a **container** with
+    TrimGalore version 2.3.0.
 
-You'll publish your Git repo on GitHub and "hand in" your assignment by creating
-an Issue.
+04. Print TrimGalore's help info by running `trim_galore --help` with your
+    container link. Use the help info to find the options to:
+    - Tell TrimGalore that the reads in your input FASTQ files are **paired-end**^[
+      If you don't do this, TrimGalore will process the two FASTQ files independently.]
+    - Set the **output dir**
+    - Make it **run FastQC** on the trimmed FASTQ files
 
-17. Create a repository on GitHub, connect it to your local repo,
-    and push your local repo to GitHub.
-    _(Don't forget to commit your Part D screenshot.)_
+05. Also use the help info to find the **default thresholds** for the
+    base quality score and the read length.
+    In your own words, what does TrimGalore do with each of these thresholds?
+    For example, will it remove a low-quality base in the middle of a read?
+    _(You don't have to change these thresholds, the defaults work fine for us.)_
 
-18. Create a new issue and tag GitHub users `kstarr791` and `jelmerp`,
-    asking us to take a look at your assignment.
+06. Write a shell script `scripts/trimgalore.sh` that runs TrimGalore
+    on the R1 and R2 FASTQ files of **one** sample:
+    - The script should accept three arguments:
+      the R1 FASTQ file, the R2 FASTQ file, and the output dir.
+    - Use the three options from question 4.
+    - Include "logging statements" with `echo`, like in the FastQC script from class,
+      and a line that prints the TrimGalore version.
+
+    <details><summary>{{< fa lightbulb >}} Click here for a hint</summary>
+    Use your `fastqc.sh` script from [class](/week07/w7b_scripts2.qmd#your-fastqc-script)
+    as a starting point,
+    and recall how you ran a script for a pair of FASTQ files in the
+    [w7b self-study exercise](/week07/w7b_scripts2.qmd#self-study-looping-over-samples).
+    </details>
+
+    ::: {.callout-warning collapse="true"}
+    #### Don't use TrimGalore's `--cores` option for now _(Click to expand)_
+    Since you're running the program interactively on your single-core VS Code compute job,
+    you only have 1 core at your disposal --- and that's TrimGalore's default.
+    Therefore, don't adjust this setting here.
+    Next week, you'll learn to submit scripts as batch jobs,
+    which gives you the opportunity to use multiple cores.
+
+07. Run your script for the FASTQ files of sample `S63`,
+    with `results/trimgalore` as the output dir.
+    Then, list the files in the output dir,
+    and briefly describe what each _type_ of output file contains.
+    Once your script works, commit it.
+    _(If something went wrong, go back to your script and try to fix it,_
+    _and briefly describe the problem and your fix in the README.)_
+
+08. TrimGalore printed a lot of output to the screen,
+    most of which is also saved in its `*_trimming_report.txt` output files.
+    Use this output to answer the following:
+    - In each file (R1 and R2), in what percentage of reads were adapters detected?
+    - In each file (R1 and R2), what percentage of bases were quality-trimmed?
+    - What percentage of read pairs were removed because they were too short?
+
+09. Compare TrimGalore's FastQC report for the **trimmed** R1 file with
+    the FastQC report for the **raw** R1 file of the same sample
+    (for example, from your GA3 dir: `../GA3/results/fastqc/S63_R1_fastqc.html`).
+    - Name at least two differences between the reports.
+    - Do the short reads with only `N`s,
+      which you saw [in week 4](/week04/w4c_shell-files2.qmd#less-to-page-through-files),
+      appear to have been removed?
+      The example read in week 4 was 35 bp long,
+      which is longer than TrimGalore's default length threshold.
+      So how could TrimGalore have removed it?
+
+### Part C: Bring in genAI
+
+Now that you have a script that you wrote yourself and that you know works,
+you'll use Claude Code to review and extend it.
+
+- Use the Claude extension in VS Code, as in [class](/week09/w9a_claude.qmd),
+  and keep the permission mode at **Manual** throughout.
+- Start a new conversation for each question,
+  to keep the context window small (and to save costs).
+- For each question, record in your README what you asked,
+  what you got, and what you concluded after checking it.
+- You are graded on your evaluation of Claude's output,
+  not on whether Claude happened to give a good answer.
+  A well-documented case in which you caught Claude being wrong
+  is worth full points.
+
+11. With your `scripts/trimgalore.sh` open in the editor, and the Claude panel open,
+    check that the script is added as context
+    (you should see its name below the prompt box).
+    Then, ask Claude to **review** your script, for example:
+
+    > Review this shell script. What could be wrong with it, and what would you improve?
+    > Don't change the script yet.
+
+    In your README, briefly list Claude's suggestions,
+    and for each, say whether and why you agree with it, disagree with it,
+    or don't understand it.
+    Did it suggest anything that you think is wrong,
+    or that conflicts with how we've been writing scripts in this course?
+    Did it refer to any of the conventions in your `CLAUDE.md`?
+
+12. Before making changes, run your script with a file path that doesn't exist.
+    What happens, and at which point does the script stop?
+
+13. Ask Claude to add a check to your script, for example:
+
+    > Add a check that both input FASTQ files exist, and exit with an informative
+    > error message if they don't
+
+    Claude will show you the proposed change as a diff:
+    read it before you accept it.
+    Then, **test** the updated script with the same non-existent file name as above.
+    Does it behave the way Claude claimed it would?
+    And given what you saw in the previous question, how useful is this check?
+
+    Finally, **commit** the updated script.
+    Your Git history now shows exactly what Claude changed in your script.
+
+14. Ask Claude to write a `for` loop that runs your script for multiple samples,
+    for example:
+
+    > Write a for loop that runs scripts/trimgalore.sh for the 7 samples whose IDs
+    > start with S6, with output dir results/trimgalore.
+    > I will run the loop from the GA4 dir.
+    > Only show me the loop: don't add it to a file, and don't run it.
+
+    Add the loop to your README,
+    and **before** running it, compare this to what you learned in the
+    [w7b self-study section](/week07/w7b_scripts2.qmd#self-study-looping-over-samples):
+
+    - Does it run the script once per sample, rather than once per FASTQ file?
+    - Does it get the correct R2 file for each R1 file?
+      If you don't understand how it does this, ask Claude to explain that part.
+      Would Claude's approach have the `S61` pitfall from the w7b self-study exercise?
+    - Does it only include the 7 `S6` samples?
+
+    If you had to fix the loop, explain what you changed and why.
+
+15. Test the loop by putting `echo` before the `bash` command,
+    so that it only prints the commands it would run.
+    If those look right, remove the `echo` and run the loop for real
+    (this will take about 10 minutes).
+    When it's done, how many files do you expect to be in `results/trimgalore`,
+    and is that what you find?
+
+16. Ask Claude for a command that produces a small **summary table**
+    of all your TrimGalore results,
+    with one line per sample and the percentage of read pairs that were removed
+    because they were too short.
+    Run the command, and **verify** its output:
+    - Does the value for `S63` match your answer to question 8?
+    - In your own words, how does the command work?
+      If it uses anything we didn't cover in class, ask Claude to explain it.
+
+17. **Document** your genAI use by saving your Part C conversations
+    with the `/export` command, as shown in
+    [class](/week09/w9a_claude.qmd#documenting-ai-use).
+    Save them in a dir `doc/ai` in your working dir, with descriptive file names,
+    and commit them to your Git repo.
+
+18. Write a short **reflection** in your README (one or two paragraphs):
+    in [class](/week09/w9a_claude.qmd), Claude wrote a script from scratch,
+    while here, you wrote the script yourself first.
+    Which approach gave you more confidence that the script is correct, and why?
+    Also, did Claude tell you anything during this assignment that turned out to
+    be wrong, and how did you find out?
+
+21. Ask Claude for help with something related to this assignment that you
+    genuinely don't know how to do yourself.
+    Some ideas:
+    - Comparing the file sizes of the FASTQ files before and after trimming,
+      in a small summary table
+    - Counting the number of reads in each trimmed FASTQ file
+    - Anything else you're curious about
+
+    Run the code you get, and describe how you checked that it does what you
+    think it does.
+    Also export this conversation to `doc/ai`.
+
+22. Based on your experiences in this part,
+    add one or more instructions to your `CLAUDE.md` that would have improved
+    Claude's output
+    (for example, to prevent a suggestion you disagreed with in question 11).
+    Then, start a new conversation and test whether Claude follows the new instruction.
+    In your README, describe what you added and what happened,
+    and commit your updated `CLAUDE.md`.
+
+### Part D: Publish your repo on GitHub
+
+Finally, you'll publish your Git repo on GitHub and "hand in" your assignment
+by creating an Issue.
+
+19. Make sure you have committed your final `README.md`.
+    Then, create a new, empty, public repository on **GitHub**
+    (e.g., named "GA4" or "PLNTPTH5006-GA4"),
+    connect it to your local repo, and push your local repo to GitHub.
+
+20. On the GitHub page for your repo, create a new **Issue**.
+    Use whatever title you like, and in the text box (not the title),
+    tag the instructors: GitHub users `kstarr791` and `jelmerp`
+    (using the `@` notation like `@kstarr791`),
+    asking them to take a look at your assignment.
+
+<hr style="height:1pt; visibility:hidden;" />
