@@ -17,12 +17,12 @@ other-links:
   - text: "Week 13 overview"
     icon: check2-all
     href: w13_overview.html
-  - text: "w12a: Intro to R and RStudio"
+  - text: "w12a: Intro to R, RStudio, and Quarto"
     icon: book
     href: ../week12/w12a_r-basics.html
-  - text: "w12b: R vectors and data types"
+  - text: "w12a self-study: Vectors and data types"
     icon: book
-    href: ../week12/w12b_data.html
+    href: ../week12/w12a_r-basics.html#self-study-vectors-and-data-types
   - text: "Week 13 exercises"
     icon: pencil
     href: w13_exercises.html
@@ -59,10 +59,12 @@ In this lecture, you will learn:
 1. At <https://ondemand.osc.edu>,
    start an RStudio session like in the previous lecture
    ([Starting an RStudio Server session at OSC](../week12/w12a_r-basics.html#starting-an-rstudio-server-session-at-osc)).
-2. Create a new RStudio Project called `week13`, like you did in the previous lecture
-  ([Working directory and RStudio Projects](../week12/w12a_r-basics.html#working-directory-and-rstudio-projects)).
-3. Open a new R Script and save it as `week13a.R` in your `week13` folder
-   ([R scripts](../week12/w12a_r-basics.html#r-scripts)).
+2. Make sure your RStudio Project from week 12 is open
+   ([Working directory and RStudio Projects](../week12/w12a_r-basics.qmd#working-directory-and-rstudio-projects)),
+   and create a new folder `week13` inside it.
+3. Create a new Quarto document and save it as `week13a.qmd` in your `week13` folder
+   ([Quarto documents](../week12/w12a_r-basics.qmd#creating-a-quarto-document)),
+   and add a YAML header.
 
 ## The tidyverse
 
@@ -157,7 +159,8 @@ files like CSV and TSV files.
 The `read_tsv()` function will read TSV (tab-delimited files) -- for example:
 
 ```{r eval= FALSE}
-meta <- read_tsv(file = "garrigos/meta/metadata.tsv")
+# (Recall that the working dir of your Quarto document is its folder, 'week13')
+meta <- read_tsv(file = "../garrigos/meta/metadata.tsv")
 ```
 
 ```{r echo= FALSE}
@@ -192,14 +195,8 @@ They contain tabular data and can be thought of as vectors pasted side-by-side:
 each column is a vector.
 This means that each column can only contain one data type.
 
-It also implies that rows and columns aren't equivalent.
-Specifically,
-it is good practice to organize tabular data in the so-called
-["tidy" data format](https://r4ds.hadley.nz/data-tidy.html)
-like above, where:
-
-- Each column contains a different **"variable"** (e.g. coat color, weight).
-- Each row contains a different **"observation"** (data on e.g. one cat/person/sample).
+It also implies that rows and columns aren't equivalent:
+recall that in tidy data, each column is a variable, and each row an observation.
 
 Note that the object we read in above is not a plain data frame but a so-called
 **"tibble", which is the tidyverse variant of a data frame**.
@@ -227,6 +224,20 @@ and when subsetting they always return another tibble rather than simplifying to
 
 :::
 
+To see the structure of a data frame --- its dimensions, column names,
+and column data types --- use `str()`:
+
+```{r}
+str(iris)
+```
+
+The output for the `iris` data set above shows:
+
+- The object has the class `data.frame`
+- There are 150 observations (rows) and 5 variables (columns)
+- A full list of the variable names (e.g. Sepal.Length, Sepal.Width, etc.)
+- The data type of each variable (e.g. num, factor)
+
 ### Extracting columns from a data frame
 
 You can extract individual columns from a data frame using the `$` operator:
@@ -241,38 +252,20 @@ This kind of operation will return a vector -- and can be indexed as well:
 meta$treatment[2]
 ```
 
-## Matrices
+::: {.callout-note collapse="true"}
+#### The matrix data structure _(Click to expand)_
+A matrix is another R data structure for tabular data.
+Unlike in a data frame, all elements in a matrix must be of the same data type,
+which is usually numeric.
 
-The matrix data structure in R is similar to a data frame:
-it is also rectangular with rows and columns.
-But it differs in that all the elements in a matrix must be of the same data type:
-all numeric, character, or logical.
-This restriction applies only to the contents of the matrix which is
-the actual numbers inside the rectangular data area.
-However, rownames and colnames are not part of the matrix’s main data content.
-They are attributes attached to the matrix object.
-
-
-Most commonly, matrices consist of only _numerical_ data.
-
-Of course, column labels can then still be provided with column names,
-but what about rows?
-
-In a matrix, row names are typically used for **feature IDs (e.g., genes)** and column names for **sample IDs**.
-These rownames are important for RNAseq data analysis package `DESeq2` because the
-software uses rownames to match genes across the count matrix and associated metadata.
-While data frames in R also allow rownames, they are less commonly used for
-storing identifiers like gene names.
-Instead, gene names are usually stored as a separate column for clarity in a data frame.
-
-
-Generally, matrices are not nearly as common as data frames,
-but we are introducing them here because they are used in a number of omics-data
-related packages.
-For example, the
-[DESeq2](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html)
-package, which we'll later use for differential expression analysis of our RNA-seq count
-data, expects the counts as a matrix.
+Matrices are much less common than data frames,
+but are used by a number of omics data packages.
+For example, the DESeq2 package that you'll use in week 15 for differential expression analysis
+expects the RNA-seq gene counts as a matrix, with genes as rows and samples as columns.
+Row and column names are not part of a matrix's data itself,
+which is why gene IDs are stored as row names
+(in a data frame, they would usually be stored in a separate column instead).
+:::
 
 ## The _dplyr_ package
 
@@ -281,7 +274,7 @@ useful functions for **manipulating data in data frames** ("data wrangling").
 This type of data processing is often essential before you can move on to say,
 data visualization (**the next lecture**) or statistical data analysis.
 
-In this session, we'll cover the most commonly used _dplyr_ functions:
+In this lecture, we'll cover the most commonly used _dplyr_ functions:
 
 - `select()` to pick columns (variables)
 - `filter()` to pick rows (observations)
@@ -386,9 +379,7 @@ because the function now gets its input data via the pipe
 
 ::: {.callout-tip appearance='minimal'}
 Using pipes involves less typing and is especially more readable than using
-successive assignments^[
-Using pipes is also faster and uses less computer memory.
-].
+successive assignments.
 
 For code readability,
 it is good practice to always start a new line after a pipe `|>`,
@@ -438,8 +429,7 @@ meta <- meta |> select(sample_id, time)
 
 ### Filter based on one condition
 
-This first `filter()` example outputs only rows with the sampling time point 10dpi
-(remember, each row of time variable represents a sample at a given time point):
+This first `filter()` example outputs only rows (samples) from time point 10dpi:
 
 ```{r}
 meta |>
@@ -459,11 +449,11 @@ meta |>
 ### Filter based on multiple conditions
 
 It's also possible to filter based on multiple conditions.
-For example, you may want to see control samples collected at 10dpi excluding `S82`:
+For example, you may want to see control samples collected at 10dpi, excluding sample `S78`:
 
 ```{r}
 meta |>
-  filter(time == "10dpi", treatment == "control", sample_id != "S82")
+  filter(time == "10dpi", treatment == "control", sample_id != "S78")
 ```
 
 Like above, by default, multiple conditions are combined using a Boolean ***AND***.
@@ -495,19 +485,37 @@ meta |>
 ::: exercise
 #### {{< fa user-edit >}} Exercise: Pipes
 
-Use a "pipeline" like above to output a data frame with two
-columns (`sample_id` and `treatment`) only for the _cathemerium_ treatment.
-How many rows does your output data frame have?
+1. Use a "pipeline" like above to output a data frame with two
+   columns (`sample_id` and `treatment`) only for the _cathemerium_ treatment.
+   How many rows does your output data frame have?
 
-<details><summary>Click for the solution</summary>
-```{r}
-meta |>
-  select(sample_id, treatment) |>
-  filter(treatment == "cathemerium")
-```
+   <details><summary>Click for the solution</summary>
 
-The output data frame has 7 rows and 2 columns.
-</details>
+   ```{r}
+   meta |>
+     select(sample_id, treatment) |>
+     filter(treatment == "cathemerium")
+   ```
+
+   The output data frame has 7 rows and 2 columns.
+
+   </details>
+
+2. The two pipelines below differ only in the order of `filter()` and `select()`.
+   **Predict** whether each of them will work, and why. Then run them to check.
+
+   ```r
+   meta |> filter(time == "10dpi") |> select(sample_id, treatment)
+   meta |> select(sample_id, treatment) |> filter(time == "10dpi")
+   ```
+
+   <details><summary>Click for the solution</summary>
+
+   The first works, but the second fails with an error that the `time` column/object can't be found:
+   in a pipeline, each function only "sees" the output of the previous step,
+   and `select()` already removed the `time` column before `filter()` got the data.
+
+   </details>
 
 :::
 
@@ -547,6 +555,26 @@ Do this by simply listing the columns in the appropriate order:
 meta |>
   arrange(treatment, time, sample_id)
 ```
+
+::: callout-note
+#### Sorting in a custom order with factors
+You may have noticed that sorting by `time` puts `10dpi` before `24hpi`,
+because character strings are sorted alphabetically ---
+but 24 hpi is the earlier time point!
+
+To fix this, you can turn the column into a **factor**,
+R's way of storing categorical data with a set order of categories ("levels"):
+
+```{r}
+meta |>
+  mutate(time = factor(time, levels = c("24hpi", "10dpi"))) |>
+  arrange(time)
+```
+
+(You'll learn more about the `mutate()` function used here in the next section.)
+This order is also respected in plots and statistical analyses,
+and you'll use factors like this for the RNA-seq analysis in week 15.
+:::
 
 ## `mutate()` to modify columns and create new ones
 
@@ -661,27 +689,26 @@ here, one group for observations from each treatment.
 After that, operations like in `summarize()` will happen separately for each group,
 which is how we ended up with per-treatment counts.
 
-Before doing the exercise for `summarize()`, we will learn about the new function `str()`
-to understand the internal structure of your dataset/object. The argument for the `str()` is the name of the object you want to explore.
-
-
-```{r}
-str(iris)
-```
-
-The output for the `iris` dataset above shows:
-
-- The object has the class `data.frame`
-- There are 150 observations and 5 variables
-- A full list of the variable names (e.g. Sepal.Length, Sepal.Width, etc.)
-- The data type of each variable (e.g. num, factor)
-
-
 :::exercise
 #### {{< fa user-edit >}} Exercise: `summarize()`
-1. Use the iris dataset to summarize the average petal length and width for each species.
+
+1. Count the number of samples in `meta_time` for each _combination_ of treatment and time point
+   (hint: `group_by()` accepts multiple columns).
+   Before running your code, **predict** how many rows the output will have.
+
+2. Using the `iris` data set, compute the mean petal length and width for each species.
 
 <details><summary>*Click to see a solution*</summary>
+
+1. The output has 6 rows: one for each of the 3 treatments × 2 time points.
+
+```{r}
+meta_time |>
+  group_by(treatment, time) |>
+  summarize(n_samples = n())
+```
+
+2. The mean petal length and width for each iris species:
 
 ```{r}
 iris_summary <- iris |>
@@ -708,13 +735,14 @@ with argument `x` for the R object and argument `file` for the file path:
 # You can save in the present working directory
 write_tsv(x = meta_time, file = "metadata_ed.tsv")
 
-# Change the path if you want to save it in different directory
+# To save it in a different dir, include it in the path (the dir has to exist):
+dir.create("results")
 write_tsv(x = meta_time, file = "results/metadata_ed.tsv")
 ```
 
 Because we simply provided a file name, the file will have been written in your
-R working directory^[
-Recall that you can see where that is at the top of the Console tab, or by running `getwd()`.
+R working directory, which in a Quarto document is the folder that contains the document^[
+See the box "The working directory of a Quarto document" in [week 12](../week12/w12a_r-basics.qmd#creating-a-quarto-document).
 ].
 
 If you want to take a look at the file you just created,

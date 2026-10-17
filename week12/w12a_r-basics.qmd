@@ -1,5 +1,5 @@
 ---
-title: "Introduction to R and RStudio"
+title: "Introduction to R, RStudio, and Quarto"
 subtitle: "Week 12 -- Lecture A"
 pagetitle: "w12a: R Intro"
 date: 2026-11-09
@@ -17,12 +17,12 @@ other-links:
   - text: "Week 12 overview"
     icon: check2-all
     href: w12_overview.html
-  - text: "w12b: R data structures and data types"
+  - text: "Self-study: Vectors and data types"
     icon: book
-    href: w12b_data.html
-  - text: "Week 12 exercises"
-    icon: pencil
-    href: w12_exercises.html
+    href: "#self-study-vectors-and-data-types"
+  - text: "Optional self-study: R"
+    icon: book
+    href: ../bonus/r.html
 language:
   title-block-published: "Presented on"
   title-block-modified: "Page last modified"
@@ -48,10 +48,11 @@ of omics data, with an excellent array of packages for e.g.:
 
 Specifically, you will learn:
 
-- The basics of R (**this lecture**)
-- How data is stored in R, using e.g. vectors and different data types (**next lecture**)
+- The basics of R, and how to write R code in Quarto documents (**this lecture**)
+- How data is stored in R, using e.g. vectors and different data types
+  (**the self-study section at the end of this page**)
+- How to work with tabular data and visualize data with the ggplot2 package (week 13)
 - How to use Quarto to produce beautiful, reproducible documents (week 14)
-- How to visualize data in R with the ggplot2 package (week 13)
 - About the ecosystem of packages for omics data analysis (week 15)
 - By means of example, how to analyze the RNA-seq count data you have
   produced using the @garrigós2025 dataset
@@ -66,6 +67,8 @@ In this lecture, you will learn:
 - Calling R functions
 - Installing and loading R packages
 - Getting help in R
+- Writing, running, and rendering R code in a Quarto document
+- _Self-study_: Vectors, R's main data types, and comparisons
 
 ## Starting an RStudio Server session at OSC
 
@@ -191,10 +194,10 @@ From highest to lowest precedence:
 
 -   Parentheses: `(`, `)`
 -   Exponents: `^` or `**`
--   Multiply: `*`
--   Divide: `/`
--   Add: `+`
--   Subtract: `-`
+-   Multiplication and division: `*`, `/`
+-   Addition and subtraction: `+`, `-`
+
+Operators with the same precedence are evaluated from left to right.
 :::
 
 
@@ -219,9 +222,9 @@ you typed an incomplete command -- for example:
 ```
 
 And once again like in the Unix shell,
-you can either try to finish the command or abort it by pressing
-<kbd>Ctrl</kbd>+<kbd>C</kbd>.
-In R, <kbd>Esc</kbd> also works to cancel -- let's practice the latter here.
+you can either try to finish the command or abort it.
+However, in RStudio's console, you abort with <kbd>Esc</kbd> rather than with
+<kbd>Ctrl</kbd>+<kbd>C</kbd> --- let's practice that here.
 
 ::: callout-note
 #### Adding comments to your code
@@ -235,61 +238,51 @@ you can use `#` signs to comment your code, both inline and on separate lines:
 ```
 :::
 
-### Comparing things
-
-In R, you can use comparison operators to compare numbers.
-When you do this, R will return a so-called `logical`
-(one of R's "data types" -- more about these later):
-either `FALSE` or `TRUE`. For example:
-
-- Greater than and less than:
-
-  ```{r}
-  8 > 3
-  2 < 1
-  ```
-
-- Equal to or not equal to --
-  don't forget to use **two** equals signs `==` for the former:
-
-  ```{r}
-  7 == 7
-  # The exclamation mark in general is a "negator"
-  10 != 5
-  ```
-
-Here are the most common comparison operators in R:
-
-| **Operator** | **Description**          | **Example**            |
-|---------|--------------------|------------------------|
-| `>`           | Greater than             | 5 \> 6 returns `FALSE`   |
-| `<`           | Less than                | 5 \< 6 returns `TRUE`    |
-| `==`           | Equal to                | 10 == 10 returns `TRUE`  |
-| `!=`           | Not equal to             | 10 != 10 returns `FALSE` |
-| `>=`          | Greater than or equal to | 5 \>= 6 returns `FALSE`  |
-| `<=`          | Less than or equal to    | 6 \<= 6 returns `TRUE`   |
-
-: {.striped .hover}
-
 ::: exercise
-#### Exercise: R as a calculator
+#### {{< fa user-edit >}} Exercise: R as a calculator
 
-1. Find the natural log, log to the base 10, log to the base 2,
-   square root and the natural antilog of 20.
+**Predict** the output of each of the following lines, then run them one by one to check:
 
-   <details><summary>*Click to see a solution*</summary>
+```r
+8 / 2 * 4
+-2 ^ 2
+10 / 0
+(5 + 3 * 2
+```
 
-   - To print log of 20 in different bases and square root and natural antilog of 20:
+<details><summary>*Click to see the solution*</summary>
 
-   ```{r}
-   log(20)        # Natural log
-   log10(20)     # Log to the base 10
-   log2(20)      # Log to the base 2
-   sqrt(20)      # Square root
-   exp(20)       # Natural antilog
+```{r}
+8 / 2 * 4
+```
 
-   ```
-  </details>
+Multiplication and division have the same precedence, and are evaluated from left to right:
+first `8 / 2`, then `* 4`.
+
+```{r}
+-2 ^ 2
+```
+
+Exponents come before the minus sign, so this is `-(2 ^ 2)`.
+To square negative two, use `(-2) ^ 2`.
+
+```{r}
+10 / 0
+```
+
+Instead of an error, R returns `Inf` (infinity).
+
+```{r, eval=FALSE}
+(5 + 3 * 2
+```
+```r-out
++
+```
+
+The parenthesis isn't closed, so R waits for you to complete the command (`+` prompt).
+Type `)` and press <kbd>Enter</kbd> to finish it (result: `11`), or press <kbd>Esc</kbd> to cancel.
+
+</details>
 :::
 
 
@@ -571,21 +564,25 @@ R packages are basically add-ons or extensions to the functionality of the R lan
 For example:
 
 ```{r eval=FALSE}
-install.packages("stringr")
+install.packages("palmerpenguins")
 ```
 
 ```{r}
-library(stringr)
+library(palmerpenguins)
 ```
+
+::: callout-important
+#### Before week 13: install the tidyverse
+Next week, you'll use the _tidyverse_, a collection of packages for data science.
+Because installing it can take a while, please do so before next week,
+by running the following in the R console:
 
 ```{r eval=FALSE}
 install.packages("tidyverse")
 ```
 
-```{r}
-# (Output like that shown below is expected if the package can be loaded:)
-library(tidyverse)
-```
+Then, check that it loads without errors with `library(tidyverse)`.
+:::
 
 In RStudio server at OSC,
 packages will by default be installed into a standard location in your Home directory,
@@ -668,34 +665,267 @@ and so on.
 This is a good idea whenever you switch to a different project,
 for example to avoid irreproducible carry-over effects.
 
-## R scripts
+::: {.callout-tip appearance="simple"}
+You'll use this one RStudio Project for all of the course's R material:
+each week, you'll create a new folder (`week12`, `week13`, etc.) inside it.
+When you start a new RStudio Server session,
+RStudio will automatically reopen your project ---
+you can check this at the top right of the RStudio window, which shows the project's name.
+:::
 
-Once you open a file, a new RStudio panel will appear in the top-left,
-where you can view and edit text files, most commonly R scripts (`.R`).
-An R script is a text file that contains R code.
+## Quarto documents
 
-***Create and open a new R script by clicking File (top menu bar) \> New File \> R Script.***
+So far, you've typed code directly in the R console.
+That is fine for quick checks,
+but it's a good idea to write and save most of your code in a file.
+This helps you ***keep track of what you've been doing***,
+and to rerun your code after changing your input data or some of the code.
+
+You've done this before with shell code:
+you've been writing notes and code in Markdown files since week 2,
+and in [week 7](../week07/w7b_scripts2.qmd),
+some of you used the Quarto extension in VS Code
+to send code from `{bash}` code blocks to the terminal.
+For R, we'll use a very similar kind of file: a **Quarto document** (`.qmd`).
+A Quarto document is a Markdown file with two additions:
+
+- A **YAML header** with settings for the document
+- **Code chunks** that are actually _executed_,
+  so their output can be included in the document
+
+Quarto can turn ("render") such a document into a nicely formatted HTML file,
+or other formats like PDF and Word,
+that contains your text, your code, and your code's output:
+a fully reproducible record of your analysis.
+
+### Creating a Quarto document
+
+1. In the Files pane (bottom right), click the `New Folder` button
+   and create a folder `week12`.
+
+2. Click `File` \> `New File` \> `Quarto Document`:
+
+   ![](../img/quarto_file_open.png){width="70%" fig-align="center"}
+
+3. In the pop-up window, click **`Create Empty Document`** (bottom left).
+
+   ![](../img/new_quarto_doc.png){width="50%" fig-align="center"}
+
+4. Save the new file (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>S</kbd>)
+   as `week12a.qmd` inside your `week12` folder.
+
+The file opens in the editor pane in the top left.
+_From now on, you'll write your code there instead of directly in the console._
+
+::: callout-important
+#### The working directory of a Quarto document
+When you run code in a Quarto document, R's working directory is the folder
+that contains the document (here, `week12`) --- not your RStudio Project's folder.
+Therefore, to refer to files elsewhere in your personal dir,
+like the `garrigos` folder, you would use `../garrigos`.
+:::
+
+### The YAML header
+
+Type the following at the very top of your `week12a.qmd`:
+
+```yaml
+---
+title: "Week 12: R basics"
+author: "<your name>"
+date: 2026-11-09
+format:
+  html:
+    embed-resources: true
+---
+```
+
+The **YAML header** contains settings for the document,
+and is enclosed by two lines with three dashes (`---`):
+
+- Each line contains a `key: value` pair
+  (note that there should be a space after the colon).
+- Keys can be nested by indenting them with two spaces:
+  above, `embed-resources` is an option for the `html` output format.
+- `embed-resources: true` will make Quarto put everything,
+  including any figures, into a single HTML file,
+  so you can download that one file from OSC and open or share it.
+
+::: {.callout-tip appearance="simple"}
+Two other useful options are `toc: true` to add a table of contents,
+and `theme: <theme-name>` to pick one of
+[Quarto's built-in themes](https://quarto.org/docs/output-formats/html-themes.html)
+(e.g. `theme: cosmo`).
+Like `embed-resources`, these go below `html:`, indented by 4 spaces.
+You'll learn more YAML options in [week 14](../week14/w14a_quarto.qmd).
+:::
+
+### Code chunks
+
+In Markdown, you've been making code blocks that start with ```` ```bash ````.
+In Quarto, you make an executable **code chunk** by adding curly braces
+around the language name, as in ```` ```{r} ````:
+
+```{r}
+#| echo: fenced
+5 + 5
+```
+
+You can insert a new chunk with
+<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd>
+(Mac: <kbd>Cmd</kbd>+<kbd>Option</kbd>+<kbd>I</kbd>),
+or simply type the opening and closing lines.
+
+To **run code** from a chunk:
+
+- Press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd>
+  to run the line your cursor is on (or the selected lines).
+- Click the green "play" button at the top right of the chunk,
+  or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd>,
+  to run the entire chunk.
+
+The code is sent to the console and executed there,
+and in RStudio, the output is also shown right below the chunk.
+
+#### Chunk options
+
+You can change how a chunk behaves with **chunk options**:
+lines at the top of a chunk that start with `#|`.
+For example, this chunk would be shown in the rendered document, but not run:
+
+```{r}
+#| echo: fenced
+#| eval: false
+install.packages("tidyverse")
+```
+
+A few useful chunk options:
+
+- `#| eval: false` --- Show the code but don't run it.
+- `#| echo: false` --- Run the code and show its output, but hide the code itself.
+- `#| warning: false` and `#| message: false` --- Hide warnings and messages,
+  such as the ones printed when loading some packages.
+
+::: {.callout-tip appearance="simple"}
+Install packages in the console rather than in a chunk.
+Otherwise, they will be installed again every time you render the document.
+:::
+
+### Markdown text
+
+Everything outside of the YAML header and the code chunks is regular Markdown,
+just like in the files you've been writing since
+[week 2](../week02/w2d_markdown.qmd).
+Use headers to structure your document,
+and use text to describe what your code does and why ---
+this is where Quarto documents are much more informative than code alone.
+
+### Rendering
+
+To render your document to HTML, click the **`Render`** button
+at the top of the editor,
+or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>:
+
+![](../img/render.png){width="50%" fig-align="center"}
+
+This will create a file `week12a.html` next to `week12a.qmd`,
+and show a preview of it in the Viewer pane or a new browser tab.
+
+::: callout-important
+#### Rendering runs all code in a fresh R session
+When you render, Quarto runs all code chunks from top to bottom
+in a **new, empty R session**.
+This means that:
+
+- Your document only renders if it is self-contained:
+  any objects you created only in the console,
+  or packages you loaded only in the console, won't exist during rendering.
+- If any code produces an error, the document will not render.
+  The error message will be shown in the "Background Jobs" tab next to the Console.
+
+This may seem annoying at times,
+but it's exactly what makes Quarto documents reproducible.
+:::
+
+::: exercise
+#### Exercise: Your first Quarto document
+
+1. Make sure your `week12a.qmd` has the YAML header shown above.
+2. Add a header `## R basics` and below it, a code chunk with a few lines of code
+   from earlier in this lecture,
+   and a sentence of Markdown text that explains what the code does.
+3. Add a chunk that assigns a value to an object,
+   and another chunk below it that uses that object.
+4. Render the document and take a look at the HTML output.
+5. In the console (_not_ in your document), run `my_number <- 7`.
+   Then, add a chunk with `my_number * 2` to your document and render it again.
+   What happens, and why?
+
+<!----
+   <details><summary>*Click to see a solution*</summary>
+
+   - Steps 1-4: Your document should look something like this:
+
+   ````{.markdown filename="week12a.qmd"}
+   ---
+   title: "Week 12: R basics"
+   author: "Jane Doe"
+   date: 2026-11-09
+   format:
+     html:
+       embed-resources: true
+   ---
+
+   ## R basics
+
+   R can be used as a calculator:
+
+   ```{{r}}
+   5 + 5
+   log(20)
+   ```
+
+   Assign the value 250 to the object `length_cm`:
+
+   ```{{r}}
+   length_cm <- 250
+   ```
+
+   Convert this length to inches:
+
+   ```{{r}}
+   length_cm / 2.54
+   ```
+   ````
+
+   - Step 5: The document will not render,
+     and the error message will say that the object `my_number` was not found.
+     This is because rendering happens in a new R session,
+     where only objects created in the document itself exist.
+     To fix this, assign `my_number` in a chunk in your document.
+
+  </details>
+---->
+:::
+
+::: {.callout-note collapse="true"}
+#### R scripts _(Click to expand)_
+
+Instead of Quarto documents, you can also write R code in **R scripts** (`.R` files),
+which contain only code and comments,
+much like the shell scripts you wrote in week 7.
+To create one, click `File` \> `New File` \> `R Script`.
+Like in Quarto documents,
+you can run code from R scripts with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd>.
 
 ![](../img/script_file.png){fig-align="center" width="80%"}
 
-#### Why use a script?
-
-It's a good idea to write and save most of your code in scripts,
-instead of directly in the R console.
-This helps to ***keep track of what you've been doing***, especially in the longer run,
-and to re-run your code after modifying input data or one of the lines of code.
-
-#### Sending code to the console
-
-To send code from the editor to the console, where it will be executed by R,
-press `Ctrl` + `Enter` (or, on a Mac: `Cmd` + `Enter`)
-with the cursor anywhere in a line of code in the script.
-
-Practice that after typing the following command in the script:
-
-```{r}
-5 + 5
-```
+R scripts are a good choice for code that you simply want to run
+from start to finish, without needing a report with the output:
+for example, an R script can be run from the shell with `Rscript my-script.R`,
+including in a Slurm batch job.
+For your final project, both R scripts and Quarto documents are fine.
+:::
 
 ## Recap and looking forward
 
@@ -707,9 +937,350 @@ including:
 - How to call R functions and provide arguments to them, by name or by position
 - How to install and load R packages
 - How to get help in R
-- How to use RStudio Projects to keep your work organized and reproducible,
-  and R scripts to document your workflow for future use
+- How to use RStudio Projects to keep your work organized and reproducible
+- How to write, run, and render R code in Quarto documents
 
-In the next lecture, you'll learn about R's data structures and data types,
-starting with vectors.
+In the self-study section below, you'll learn about vectors and R's main data types.
+For that and all later R lectures, you'll write your code in Quarto documents.
+
+## Self-study: Vectors and data types
+
+::: callout-important
+#### Self-study
+Because there is no class on Wednesday of week 12 (Veteran's Day),
+please work through this section, including its exercises, on your own
+before the week 13 classes, which build on this material.
+Add a header `## Vectors and data types` to your `week12a.qmd`,
+and write the code from this section in code chunks below it.
+:::
+
+In this section, you'll learn about two of R's nuts and bolts:
+
+- **Data structures** are the kinds of objects that R can store data in.
+  Here, you'll learn about the simplest one, the **vector**.
+  Next week, you'll learn about the data structure for tabular data, the _data frame_.
+- **Data types** are how R distinguishes between different kinds of data,
+  like numbers versus character strings.
+
+### Vectors
+
+A vector in R is a collection of one or more items,
+which we'll call **elements**.
+Vectors can consist of just a single element,
+so each of the two lines of code below creates a vector:
+
+```{r}
+vector1 <- 8
+vector2 <- "panda"
+```
+
+In the `"panda"` example, which is a **character string** (_string_ for short):
+
+- `"panda"` constitutes _one element_, not 5 (its number of letters).
+- Unlike numbers, strings have to be quoted^[
+  Either double quotes (`"..."`) or single quotes (`'...'`) work,
+  but the former are more commonly used.].
+
+Recall that anything that is not quoted is interpreted as an object,
+like `iris` earlier.
+Therefore, the code below doesn't work, because there is no _object_ called `panda`:
+
+```{r, error=TRUE}
+vector_fail <- panda
+```
+
+A common way to make vectors with **multiple elements** is with the `c()` (combine) function:
+
+```{r}
+birds <- c("cardinal", "chickadee", "bald eagle")
+birds
+```
+
+To make a vector with a **series of whole numbers**, you can use the `:` operator:
+
+```{r}
+1:10
+```
+
+### Vectorization
+
+Consider the output of this command:
+
+```{r}
+numbers <- c(6, 7.5, 9, 10.2)
+numbers * 2
+```
+
+Above, **every individual element in `numbers` was multiplied by 2**.
+This behavior is called "vectorization", and is a key feature of the R language.
+(You may have expected this code to _repeat_ `numbers` twice instead,
+but that did not happen!)
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Vectorization
+
+What do you think the result of the following operation will be?
+We didn't cover this kind of scenario, but go ahead and test your intuition!
+After you've decided on your expectation, run the code and check if you were correct.
+
+```{r, eval=FALSE}
+1:5 * 1:5
+```
+
+<details><summary>*Click to see the solution*</summary>
+
+```{r}
+1:5 * 1:5
+```
+
+Both vectors are of length 5, which leads to "element-wise matching":
+the first element of the first vector is multiplied with the first element of the second vector,
+the second element with the second element, and so on.
+
+</details>
+:::
+
+### Extracting elements from vectors
+
+Extracting elements from objects like vectors is often called **"indexing"**.
+In R, you can do this using square brackets `[ ]` --- for example:
+
+- Get the second element with `[2]`^[
+  R starts counting at 1 like humans do, so index 2 is simply the second element.
+  Python and several other languages instead start counting at 0.]:
+
+  ```{r}
+  numbers[2]
+  ```
+
+- Get the second through the fourth elements with `[2:4]`:
+
+  ```{r}
+  numbers[2:4]
+  ```
+
+- Get the first and third elements with `[c(1, 3)]`:
+
+  ```{r}
+  numbers[c(1, 3)]
+  ```
+
+In other words, you extract elements from a vector by using _another vector_,
+whose values are the positions of the elements in the original vector.
+
+To _change_ an element, put the brackets on the left side of the assignment arrow:
+
+```{r}
+numbers[1] <- 30
+numbers
+```
+
+::: {.callout-tip appearance="simple"}
+R has many functions to get information about vectors,
+like `length()` to get the number of elements,
+and `mean()` to compute the mean of numbers.
+For more, see the [optional R self-study page](../bonus/r.qmd#exploring-vectors).
+:::
+
+### Data types
+
+R distinguishes between different kinds of data, such as character strings and numbers,
+using several pre-defined "data types".
+R's behavior depends heavily on the data type --- for example, the below fails:
+
+```{r, error=TRUE}
+"panda" * 5
+```
+
+You can ask what type of data something is with the `typeof()` function:
+
+```{r}
+typeof("panda")
+```
+
+R set the data type of `"panda"` to `character`, i.e. a (character) string.
+The earlier command failed because R can't perform mathematical operations
+("_binary operator_") on vectors of type `character` ("_non-numeric argument_").
+
+Anything that is placed between quotes is a `character` --- even plain numbers:
+
+```{r}
+typeof("5")
+```
+
+Besides `character`, the three other **common data types** are:
+
+- `double` / `numeric` --- numbers that can have decimal points:
+
+  ```{r}
+  typeof(3.14)
+  ```
+
+- `integer` --- whole numbers only:
+
+  ```{r}
+  typeof(1:3)
+  ```
+
+- `logical` --- either `TRUE` or `FALSE` (unquoted!):
+
+  ```{r}
+  typeof(TRUE)
+  ```
+
+Here is an overview in table format,
+including the abbreviations you'll often see in R output:
+
+| Data type            | Abbreviation  | Explanation                          |
+|----------------------|---------------|--------------------------------------|
+| `double` / `numeric` | `dbl` / `num` | Numbers that can have decimal points |
+| `integer`            | `int`         | Whole numbers                        |
+| `character`          | `chr`         | Character strings                    |
+| `logical`            | `lgl`         | `TRUE` or `FALSE`                    |
+
+: {.striped .hover}
+
+### Comparing things
+
+You'll often get `logical`s by **comparing** things.
+For example:
+
+- Greater than and less than:
+
+  ```{r}
+  8 > 3
+  2 < 1
+  ```
+
+- Equal to or not equal to ---
+  don't forget to use **two** equals signs `==` for the former:
+
+  ```{r}
+  7 == 7
+  # The exclamation mark in general is a "negator"
+  10 != 5
+  ```
+
+Comparisons are vectorized too,
+and logicals can be used as if they were numbers,
+where `TRUE` represents 1 and `FALSE` represents 0.
+Together, this provides an easy way to _count_ how many elements meet a condition:
+
+```{r}
+numbers
+numbers > 9
+sum(numbers > 9)
+```
+
+Here are the most common comparison operators in R:
+
+| **Operator** | **Description**          | **Example**              |
+|--------------|--------------------------|--------------------------|
+| `>`          | Greater than             | 5 \> 6 returns `FALSE`   |
+| `<`          | Less than                | 5 \< 6 returns `TRUE`    |
+| `==`         | Equal to                 | 10 == 10 returns `TRUE`  |
+| `!=`         | Not equal to             | 10 != 10 returns `FALSE` |
+| `>=`         | Greater than or equal to | 5 \>= 6 returns `FALSE`  |
+| `<=`         | Less than or equal to    | 6 \<= 6 returns `TRUE`   |
+
+: {.striped .hover}
+
+### A vector can only contain one data type
+
+A vector can only be composed of **a single data type**.
+As you saw above, R silently picks the "best-fitting" data type when you create a vector.
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Data types
+
+In each line below, what do you think the data type (if any) will be?
+Try it out and see if you were right.
+
+```{r, eval=FALSE}
+typeof("TRUE")
+typeof(banana)
+typeof(c(2, 6, "3"))
+```
+
+<details><summary>*Click to see the solutions*</summary>
+
+1. `"TRUE"` is `character` (and not `logical`) because of the quotes around it:
+
+   ```{r}
+   typeof("TRUE")
+   ```
+
+2. This returns an error because the object `banana` does not exist.
+   Any unquoted string (that is not a special keyword like `TRUE` and `FALSE`)
+   is interpreted as a reference to an object.
+
+   ```{r, error=TRUE}
+   typeof(banana)
+   ```
+
+3. This produces a `character` vector, and we'll talk about why next:
+
+   ```{r}
+   typeof(c(2, 6, "3"))
+   ```
+
+</details>
+:::
+
+R's behavior of returning a character vector for `c(2, 6, "3")` is called **type coercion**:
+when you combine a mix of data types (here, numbers and strings) into a single vector,
+R forces them all to be the same type,
+because a vector can only contain a single data type.
+Type coercion can be the source of many surprises,
+and is one reason you need to be aware of R's data types.
+
+You can also convert vectors yourself using the `as.` group of functions:
+
+```{r}
+as.integer(c("0", "2"))
+as.character(c(0, 2))
+```
+
+But not all conversions are possible ---
+for example, R can't turn `"kiwi"` into a number,
+so it returns a **missing value** (`NA`) instead, with a warning:
+
+```{r}
+as.double(c("4", "kiwi"))
+```
+
+### Missing values (`NA`)
+
+That `NA` brings us to R's concept of **missing data**,
+which is important in statistical computing,
+as not all measurements are always available for each sample.
+`NA` is not a character string, so like `TRUE` and `FALSE`, it is not quoted:
+
+```{r}
+vector_NA <- c(1, 3, NA, 7)
+vector_NA
+```
+
+Many functions that operate on vectors will return `NA` if **any** element is `NA`:
+
+```{r}
+sum(vector_NA)
+```
+
+You can get around this by setting `na.rm = TRUE` ("remove `NA`s") in such functions:
+
+```{r}
+sum(vector_NA, na.rm = TRUE)
+```
+
+### Self-study recap
+
+- A vector is a collection of elements of the same data type,
+  which you can create with e.g. `c()` or `:`.
+- Operations on vectors are vectorized: they happen for each element.
+- You can extract and change elements of vectors with `[ ]`.
+- R's four main data types are `character`, `double`, `integer`, and `logical`.
+  Mixing types in a vector causes automatic coercion.
+- Missing values are coded as `NA`;
+  use `na.rm = TRUE` to ignore them in functions like `sum()` and `mean()`.
 

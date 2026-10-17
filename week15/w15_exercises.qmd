@@ -1,0 +1,498 @@
+---
+title: "Week 15 exercises: RNA-seq analysis and Quarto reports"
+pagetitle: "Week 15 exercises"
+date: 2026-11-30
+date-modified: last-modified
+author:
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+    affiliation:
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://go.osu.edu/bioinformatics-core
+      - name: Dept. of Plant Pathology, Ohio State University
+        url: https://plantpath.osu.edu
+other-links:
+  - text: "Week 15 overview"
+    icon: check2-all
+    href: w15_overview.html
+  - text: "w15a: RNA-seq count data analysis in R"
+    icon: book
+    href: w15a_rnaseq.html
+  - text: "Optional self-study: Bioconductor"
+    icon: book
+    href: ../bonus/bioconductor.html
+language:
+  title-block-published: "Week starts on"
+  title-block-modified: "Page last modified"
+  other-links-title: "Also this week"
+number-sections: false
+---
+
+--------------------------------------------------------------------------------
+
+<hr style="height:1pt; visibility:hidden;" />
+
+## Introduction
+
+### Overview
+
+In Exercises 1--5, you'll continue exploring the RNA-seq results from
+[this week's lecture](w15a_rnaseq.qmd).
+In Exercise 6, you'll turn your analysis into a polished Quarto report,
+practicing with the Quarto material from
+[week 14](../week14/w14a_quarto.qmd).
+
+::: callout-tip
+#### Lecture page exercises
+Make sure to do any of the exercises on this week's lecture page that we did
+not do in class.
+Also, if you struggled with any of the exercises we did do in class,
+go over those again.
+:::
+
+### Setting up
+
+1. Start an RStudio session at OSC and open your RStudio Project
+   ([Starting an RStudio Server session at OSC](../week12/w12a_r-basics.qmd#starting-an-rstudio-server-session-at-osc)).
+
+2. Create a new Quarto document `w15_exercises.qmd` in your `week15` folder,
+   with a YAML header with a title, your name, the date, and `embed-resources: true`
+   ([Creating a Quarto document](../week12/w12a_r-basics.qmd#creating-a-quarto-document)).
+
+3. These exercises build on the DESeq2 object that you saved at the end of the lecture
+   ([Exporting the results](w15a_rnaseq.qmd#exporting-the-results)).
+   If you didn't run that code yet, do so in your lecture document first.
+   Then, add the following chunk to the top of your exercises document,
+   which will load the packages and recreate the objects from the lecture that you'll need:
+
+```{r, eval=FALSE}
+library(tidyverse)
+library(DESeq2)
+library(EnhancedVolcano)
+library(pheatmap)
+
+# Load the DESeq2 object that you saved in the lecture
+dds <- readRDS("results/DE/dds.rds")
+
+# Recreate some other objects from the lecture
+meta <- as.data.frame(colData(dds))
+count_mat <- counts(dds)
+dds_vst <- varianceStabilizingTransformation(dds)
+res_rc24 <- results(dds, contrast = c("group", "relictum_24hpi", "control_24hpi"))
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(DESeq2)
+library(EnhancedVolcano)
+library(pheatmap)
+
+dds <- readRDS(here::here("assets/dds.rds"))
+meta <- as.data.frame(colData(dds))
+count_mat <- counts(dds)
+dds_vst <- varianceStabilizingTransformation(dds)
+res_rc24 <- results(dds, contrast = c("group", "relictum_24hpi", "control_24hpi"))
+```
+
+## Exercise 1: Gene counts and library sizes
+
+1. How many genes have *mean* counts (across all samples) of at least 10?
+
+2. In the lecture, we computed the "library sizes" (summed gene counts per sample)
+   with `colSums(count_mat)`.
+   That output is not so easy to read or interpret.
+   Instead, get these numbers in millions, rounded to whole numbers,
+   and sorted from low to high.
+
+## Exercise 2: Volcano plots and outliers
+
+The `EnhancedVolcano()` function by default adds gene IDs to highly significant genes,
+but in the lecture, we turned off gene name labeling by setting `labSize = 0`.
+This is because the default p-value cut-off for point labeling is `1e-5`, and in this case,
+that would make the plot quite busy with gene labels.
+
+1. Play around with the p-value cut-off and the labeling to create a volcano plot you like.
+   Check [the vignette](https://bioconductor.org/packages/release/bioc/vignettes/EnhancedVolcano/inst/doc/EnhancedVolcano.html),
+   or the help page (`?EnhancedVolcano`) to see how you can do this.
+
+2. In the volcano plot, one gene stands out with a very high log2-fold change.
+   Figure out the identity of this gene,
+   either by labeling it in the plot, or by filtering the `res_rc24` table.
+
+3. Plot the expression levels of this gene across treatments and time points,
+   like we did for the top DEG in the lecture
+   ([Plot specific genes](w15a_rnaseq.qmd#plot-specific-genes)).
+   How would you interpret this?
+
+## Exercise 3: A customized PCA plot
+
+1. Compare the PCA plot with different numbers of included genes.
+   (Hint: figure out how to do so by looking at the help by running `?plotPCA`.)
+
+2. Customize the PCA plot: can you "separate" treatment and time point
+   (different shapes for one variable, and different colors for the other),
+   like in Fig. 1 of the paper?
+
+<details><summary>{{< fa lightbulb >}} _Click here for some hints for PCA plot customization_</summary>
+
+In the plot we made in the lecture, each combination of
+time point and treatment has a distinct color --- it would be better to use **point
+color** only to distinguish one of the variables, and **point shape** to distinguish the
+other variable (as was also done in the paper's Fig. 1).
+
+To be able to customize the plot properly, we best build it from scratch ourselves, rather
+than using the `plotPCA` function. But then how do we get the input data in the right
+shape?
+
+A nice trick is that we can use `returnData = TRUE` in the `plotPCA` function, to get
+plot-ready formatted data instead of an actual plot:
+
+```{r, eval=FALSE}
+pca_df <- plotPCA(
+  dds_vst,
+  ntop = 500,
+  intgroup = c("time", "treatment"),
+  returnData = TRUE
+)
+```
+
+With that `pca_df` dataframe in hand,
+it will be relatively straightforward to customize the plot using your knowledge
+of ggplot2.
+
+</details>
+
+## Exercise 4: More DEGs
+
+1. The paper's Table 1 also reports the number of DEGs with an **absolute LFC \> 1**.
+   Find out how many up- and downregulated DEGs with an absolute LFC \> 1
+   we have for the `relictum_24hpi` vs. `control_24hpi` comparison.
+
+2. Extract the results for one or more **other contrasts** in the paper's Table 1,
+   and compare the numbers of DEGs with those in the table.
+
+## Exercise 5: Heatmaps
+
+1. Make a heatmap with the top-25 **most highly expressed** genes
+   (i.e., genes with the highest mean expression levels across all samples).
+
+<details><summary>{{< fa lightbulb >}} _Click here for a hint: how to get that top-25_</summary>
+
+```{r}
+norm_mat <- assay(dds_vst)
+top25_hi <- names(sort(rowMeans(norm_mat), decreasing = TRUE)[1:25])
+```
+
+</details>
+
+## Exercise 6: A polished Quarto report
+
+Use the Quarto material from [week 14](../week14/w14a_quarto.qmd) to turn
+your `w15_exercises.qmd` into a nicely formatted report.
+
+1. Add the following to your YAML header:
+   a table of contents, a theme of your choice,
+   and `execute` options that hide all warnings and messages in the document.
+
+2. Add a header for each exercise,
+   and a sentence or two of Markdown text above or below each plot that describes what it shows.
+
+3. Hide the code (but not the output) of the setup chunk at the top of your document
+   with a chunk option.
+
+4. Give your volcano plot from Exercise 2 a figure caption and a custom width and height
+   ([Figure options in Quarto documents](../week13/w13b_data-viz.qmd#figure-options-in-quarto-documents)).
+
+5. In your text, report the number of DEGs for the `relictum_24hpi` vs. `control_24hpi`
+   comparison using **inline code**, so the number is computed when you render the document.
+
+6. Render the document and check that everything looks the way you intended.
+
+## Solutions
+
+### Exercise 1
+
+<details><summary>**1.** Genes with mean counts of at least 10</summary>
+
+We need to divide the row sums by the number of samples, which is the number of columns,
+which we can get with `ncol()`:
+
+```{r}
+nrow(count_mat[rowSums(count_mat) / ncol(count_mat) >= 10, ])
+```
+
+Alternatively, you can use the `rowMeans()` function:
+
+```{r}
+nrow(count_mat[rowMeans(count_mat) >= 10, ])
+```
+
+</details>
+
+<details><summary>**2.** Library sizes in millions</summary>
+
+```{r}
+sort(round(colSums(count_mat) / 1000000))
+```
+
+</details>
+
+### Exercise 2
+
+<details><summary>**1.** A volcano plot with gene labels</summary>
+
+```{r, fig.height=6.5}
+EnhancedVolcano(
+  toptable = res_rc24,
+  title = "relictum vs. control at 24 hpi",
+  x = "log2FoldChange",
+  y = "padj",
+  lab = rownames(res_rc24),
+  labSize = 4, # Now we will show the gene labels
+  pCutoff = 10e-10, # Modify the p-value cut-off
+  subtitle = NULL, # I'll also remove the silly subtitle
+  caption = NULL, # ... and the caption
+)
+```
+
+</details>
+
+<details><summary>**2.** The identity of the log2-fold change outlier</summary>
+
+- Labeling it in the plot:
+
+```{r}
+#| fig-height: 6.5
+EnhancedVolcano(
+  toptable = res_rc24,
+  title = "relictum vs. control at 24 hpi",
+  x = "log2FoldChange",
+  y = "padj",
+  lab = rownames(res_rc24),
+  labSize = 4,
+  pCutoff = 0.05, # Modify the p-value cut-off
+  FCcutoff = 20, # Modify the LFC cut-off
+)
+```
+
+- Finding it in the results table:
+
+```{r}
+as.data.frame(res_rc24) |> filter(log2FoldChange > 20)
+```
+
+(Interestingly, there's a second gene with a LFC \> 20 that we hadn't seen in the plot,
+because it has `NA` as the `pvalue` and `padj`.
+See the collapsed box "`NA` values in the DESeq2 results table" in the lecture
+for why p-values can be set to `NA`.)
+
+</details>
+
+<details><summary>**3.** Plot the outlier gene</summary>
+
+```{r}
+focal_gene_counts <- plotCounts(
+  dds,
+  gene = "LOC120431476",
+  intgroup = c("time", "treatment"),
+  returnData = TRUE
+)
+
+focal_gene_counts |>
+  ggplot(aes(x = treatment, y = count, fill = treatment)) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+  geom_point(size = 4, shape = 21, position = position_jitter(w = 0.1, h = 0)) +
+  facet_wrap(vars(time)) +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+Wow! It looks like in every single time + treatment combination, all but one (or in one
+case, two) of the samples have zero expression, but there are several extreme outliers.
+
+For our focal comparison at `24hpi` (left panel/facet), comparing `control` vs `relictum`,
+it looks like the difference between these two groups is solely due to the one outlier
+in `relictum`. Nevertheless, even the multiple-testing corrected p-value (`padj`) is
+significant for this gene:
+
+```{r}
+as.data.frame(res_rc24) |>
+  rownames_to_column("gene") |>
+  filter(gene == "LOC120431476")
+```
+
+So, we have to be careful with taking our statistical results at face value, and need to
+visualize important genes!
+
+</details>
+
+### Exercise 3
+
+<details><summary>**1.** PCA with different numbers of genes</summary>
+
+The `ntop` argument sets the number of genes (with the highest variance) to use,
+which is 500 by default:
+
+```{r, eval=FALSE}
+plotPCA(dds_vst, ntop = 100, intgroup = c("time", "treatment"))
+plotPCA(dds_vst, ntop = 5000, intgroup = c("time", "treatment"))
+```
+
+</details>
+
+<details><summary>**2.** A customized PCA plot</summary>
+
+First, get the data in the right format, as explained in the hint:
+
+```{r}
+pca_df <- plotPCA(
+  dds_vst,
+  ntop = 500,
+  intgroup = c("time", "treatment"),
+  returnData = TRUE
+)
+```
+
+Second, extract and store the percentage of variance explained by different
+principal components, so you can later add this information to the plot:
+
+```{r}
+pct_var <- round(100 * attr(pca_df, "percentVar"), 1)
+pct_var
+```
+
+Now we can make the plot:
+
+```{r}
+pca_df |>
+  ggplot(aes(x = PC1, y = PC2, color = treatment, shape = time)) +
+  geom_point(size = 5) +
+  labs(
+    x = paste0("PC1 (", pct_var[1], "%)"),
+    y = paste0("PC2 (", pct_var[2], "%)")
+  ) +
+  scale_color_brewer(palette = "Dark2", name = "Infection status") +
+  scale_shape(name = "Time points") +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank())
+```
+
+</details>
+
+### Exercise 4
+
+<details><summary>**1.** DEGs with an absolute LFC \> 1</summary>
+
+- **Solution using tidyverse/dplyr:**
+
+```{r}
+# First we need to convert the results table into a regular data frame
+as.data.frame(res_rc24) |>
+  # Then we only select the rows/genes that are significant
+  filter(padj < 0.05, abs(log2FoldChange) > 1) |>
+  # If we run count() on a logical test, we get the nrs. that are FALSE v. TRUE
+  dplyr::count(log2FoldChange > 0)
+```
+
+- **Solution using base R:**
+
+```{r}
+# Down-regulated (relictum < control):
+sum(res_rc24$log2FoldChange < -1 & res_rc24$padj < 0.05, na.rm = TRUE)
+
+# Up-regulated (relictum > control):
+sum(res_rc24$log2FoldChange > 1 & res_rc24$padj < 0.05, na.rm = TRUE)
+```
+
+</details>
+
+<details><summary>**2.** Other contrasts</summary>
+
+For example, for `cathemerium` vs. `control` at 24 hpi:
+
+```{r}
+res_cc24 <- results(dds, contrast = c("group", "cathemerium_24hpi", "control_24hpi"))
+sum(res_cc24$padj < 0.05, na.rm = TRUE)
+```
+
+</details>
+
+### Exercise 5
+
+<details><summary>**1.** A heatmap of the most highly expressed genes</summary>
+
+```{r}
+# In the normalized count matrix, select only the genes of interest
+norm_mat_sel <- norm_mat[match(top25_hi, rownames(norm_mat)), ]
+
+# Sort the metadata
+meta_sort <- meta |>
+  arrange(treatment, time) |>
+  select(treatment, time)
+
+# Create the heatmap
+pheatmap(
+  norm_mat_sel,
+  annotation_col = meta_sort,
+  cluster_cols = FALSE,
+  show_rownames = FALSE,
+  scale = "row"
+)
+```
+
+</details>
+
+### Exercise 6
+
+<details><summary>**1--5.** An example of the different elements of the report</summary>
+
+- The YAML header:
+
+  ```yaml
+  ---
+  title: "Week 15 exercises"
+  author: "Jane Doe"
+  date: 2026-11-30
+  format:
+    html:
+      embed-resources: true
+      toc: true
+      theme: cosmo
+  execute:
+    warning: false
+    message: false
+  ---
+  ```
+
+- The setup chunk:
+
+  ````markdown
+  ```{{r}}
+  #| echo: false
+  library(tidyverse)
+  # [...]
+  ```
+  ````
+
+- The volcano plot chunk:
+
+  ````markdown
+  ```{{r}}
+  #| fig-cap: "Volcano plot for relictum vs. control at 24 hpi"
+  #| fig-width: 8
+  #| fig-height: 6.5
+  EnhancedVolcano(
+    # [...]
+  )
+  ```
+  ````
+
+- Inline code to report the number of DEGs:
+
+  ```markdown
+  We found `r "\x60r sum(res_rc24$padj < 0.05, na.rm = TRUE)\x60"` DEGs
+  for the relictum vs. control comparison at 24 hpi.
+  ```
+
+</details>

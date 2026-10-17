@@ -1,8 +1,8 @@
 ---
 title: "RNA-seq count data analysis in R"
-subtitle: "Week 15 -- Lecture B"
-pagetitle: "w15b: RNA-seq"
-date: 2026-12-02
+subtitle: "Week 15 -- Lecture A"
+pagetitle: "w15a: RNA-seq"
+date: 2026-11-30
 date-modified: last-modified
 author:
   - name: Menuka Bhandari
@@ -22,12 +22,12 @@ other-links:
   - text: "Week 15 overview"
     icon: check2-all
     href: w15_overview.html
-  - text: "w15a: Bioconductor: R for omics data"
+  - text: "Week 15 exercises"
+    icon: pencil
+    href: w15_exercises.html
+  - text: "Optional self-study: Bioconductor"
     icon: book
-    href: w15a_bioconductor.html
-  - text: "w15c: Heatmaps"
-    icon: book
-    href: w15c_heatmaps.html
+    href: ../bonus/bioconductor.html
 language:
   title-block-published: "Presented on"
   title-block-modified: "Page last modified"
@@ -50,18 +50,55 @@ Today, with that gene count table, you will:
 - Create an R object that also incorporates the metadata
 - Perform exploratory data analysis including a PCA
 - Run a Differential Expression (DE) analysis
-- Extract and visualize the DE results
+- Extract and visualize the DE results, including with a heatmap
+
+### Bioconductor
+
+So far, you've installed R packages from CRAN with `install.packages()`.
+However, many packages for omics data analysis,
+including DESeq2 that we'll use today,
+are instead available from [Bioconductor](https://bioconductor.org/),
+a repository of over 2,000 R packages for the analysis of high-throughput biological data,
+such as bulk and single-cell RNA-seq, ChIP-seq, methylation, and metabolomics data.
+Bioconductor packages are known for their extensive documentation,
+including tutorials ("vignettes") and complete workflows.
+
+Bioconductor packages are installed with the `install()` function from the CRAN package `BiocManager`:
+
+```{r, eval=FALSE}
+install.packages("BiocManager")
+BiocManager::install("DESeq2")
+```
+
+::: {.callout-tip appearance="simple"}
+Unlike CRAN, Bioconductor releases a new version every 6 months,
+and each Bioconductor version is tied to a specific version of R.
+`BiocManager::install()` takes care of this for you by checking your version of R,
+and installing the matching versions of Bioconductor packages.
+:::
+
+For more about Bioconductor, including how to find packages,
+its specialized data structures,
+and examples of working with DNA sequences,
+see the [optional self-study page on Bioconductor](../bonus/bioconductor.qmd).
 
 ### Setting up
 
 1. At <https://ondemand.osc.edu>,
-   start an RStudio session like in the previous lecture
+   start an RStudio session
    ([Starting an RStudio Server session at OSC](../week12/w12a_r-basics.qmd#starting-an-rstudio-server-session-at-osc)) and open your RStudio Project.
-2. You should already have a `week15` folder from Monday's lecture.
-3. Create a new Quarto document by clicking `File` \> `New File` \>
-   `Quarto Document` and save it inside the `week15` directory.
+2. Create a `week15` folder, and in it, create a new Quarto document `week15a.qmd`
+   with a YAML header
+   ([Creating a Quarto document](../week12/w12a_r-basics.qmd#creating-a-quarto-document)).
 
 ## Install and load R packages
+
+::: callout-important
+#### Install the packages before class
+Installing DESeq2 and EnhancedVolcano can take 10--20 minutes,
+so please run the code below in the R console **before class**
+(see the [week 15 overview](w15_overview.qmd)).
+:::
 
 ```{r, eval=FALSE}
 if (!require("BiocManager")) {
@@ -291,16 +328,6 @@ nrow(count_mat[rowSums(count_mat) > 0, ])
 nrow(count_mat[rowSums(count_mat) >= 10, ])
 ```
 </details>
-
-- *Bonus*: How many genes have *mean* counts of at least 10?
-
-<details><summary>*Click to see the solution*</summary>
-```{r}
-# Now we need to divide by the number of samples, which is the number of columns,
-# which we can get with 'ncol'
-nrow(count_mat[rowSums(count_mat) / ncol(count_mat) >= 10, ])
-```
-</details>
 :::
 
 <hr style="height:1pt; visibility:hidden;" />
@@ -312,20 +339,6 @@ i.e. the summed per-sample gene counts, compare across samples?
 colSums(count_mat)
 ```
 
-::: exercise
-#### {{< fa user-edit >}} Bonus exercise: nicer counts
-
-That's not so easy to read / interpret. Can you instead get these numbers in millions,
-rounded to whole numbers, and sorted from low to high?
-
-<details><summary>*Click to see the solution*</summary>
-
-```{r}
-sort(round(colSums(count_mat) / 1000000))
-```
-
-</details>
-:::
 
 ### Principal Component Analysis (PCA)
 
@@ -379,83 +392,6 @@ using ntop=500 top features by variance
 <details><summary>*Click to see the paper's Figure 1*</summary>
 
 ![](../img/garrigo_PCA.jpeg)
-
-</details>
-
-<hr style="height:1pt; visibility:hidden;" />
-
-------------------------------------------------------------------------------------------
-
-- *Bonus*: Compare the PCA plot with different numbers of included genes
-  (Hint: figure out how to do so by looking at the help by running `?plotPCA`).
-
-- *Bonus*: Customize the PCA plot --- e.g. can you "separate" treatment and time point
-  (different shapes for one variable, and different colors for the other),
-  like in Fig. 1 of the paper?
-
-<details><summary>*Click to see some hints for PCA plot customization*</summary>
-
-To expand on the point of the exercise: in the plot we made above, each combination of
-time point and treatment has a distinct color --- it would be better to use **point
-color** only to distinguish one of the variables, and **point shape** to distinguish the
-other variable (as was also done in the paper's Fig. 1).
-
-To be able to customize the plot properly, we best build it from scratch ourselves, rather
-than using the `plotPCA` function. But then how do we get the input data in the right
-shape?
-
-A nice trick is that we can use `returnData = TRUE` in the `plotPCA` function, to get
-plot-ready formatted data instead of an actual plot:
-
-```{r}
-pca_df <- plotPCA(
-  dds_vst,
-  ntop = 500,
-  intgroup = c("time", "treatment"),
-  returnData = TRUE
-)
-```
-
-With that `pca_df` dataframe in hand,
-it will be relatively straightforward to customize the plot using your knowledge
-of ggplot2.
-
-</details><details><summary>*Click to see a possible solution*</summary>
-
-First, get the data in the right format, as explained in the hint:
-
-```{r}
-pca_df <- plotPCA(
-  dds_vst,
-  ntop = 500,
-  intgroup = c("time", "treatment"),
-  returnData = TRUE
-)
-```
-
-Second, extract and store the percentage of variance explained by different
-principal components, so you can later add this information to the plot:
-
-```{r}
-pct_var <- round(100 * attr(pca_df, "percentVar"), 1)
-pct_var
-```
-
-Now we can make the plot:
-
-```{r}
-pca_df |>
-  ggplot(aes(x = PC1, y = PC2, color = treatment, shape = time)) +
-  geom_point(size = 5) +
-  labs(
-    x = paste0("PC1 (", pct_var[1], "%)"),
-    y = paste0("PC2 (", pct_var[2], "%)")
-  ) +
-  scale_color_brewer(palette = "Dark2", name = "Infection status") +
-  scale_shape(name = "Time points") +
-  theme_bw() +
-  theme(panel.grid.minor = element_blank())
-```
 
 </details>
 :::
@@ -745,41 +681,6 @@ sum(res_rc24$log2FoldChange > 0 & res_rc24$padj < 0.05, na.rm = TRUE)
 ```
 
 </details>
-
-<hr style="height:1pt; visibility:hidden;" />
-
-------------------------------------------------------------------------------------------
-
-- *Bonus*: The table also reports the number of DEGs with an **absolute LFC \> 1**.
-  Can you find this out for our DEGs?
-
-<details><summary>*Click to see the solution*</summary>
-
-- **Solution using tidyverse/dplyr:**
-
-```{r}
-# First we need to convert the results table into a regular data frame
-as.data.frame(res_rc24) |>
-  # Then we only select the rows/genes that are significant
-  filter(padj < 0.05, abs(log2FoldChange) > 1) |>
-  # If we run count() on a logical test, we get the nrs. that are FALSE v. TRUE
-  dplyr::count(log2FoldChange > 0)
-```
-
-- **Solution using base R:**
-
-```{r}
-# Down-regulated (relictum < control):
-sum(res_rc24$log2FoldChange < -1 & res_rc24$padj < 0.05, na.rm = TRUE)
-
-# Up-regulated (relictum > control):
-sum(res_rc24$log2FoldChange > 1 & res_rc24$padj < 0.05, na.rm = TRUE)
-```
-
-</details>
-
-- *Bonus*: Extract the results for one or more **other contrasts** in the table,
-  and compare the results.
 :::
 
 ## Visualizing the DE results
@@ -805,72 +706,6 @@ EnhancedVolcano(
 )
 ```
 
-::: exercise
-#### {{< fa user-edit >}} Bonus exercise: Volcano plots
-
-The `EnhancedVolcano()` function by default adds gene IDs to highly significant genes,
-but above, we turned off gene name labeling by setting `labSize = 0`.
-I did this because the default p-value cut-off for point labeling is `1e-5` and in this case,
-that would make the plot quite busy with gene labels.
-We might want to try a plot with a stricter p-value cut-off that does show the gene labels.
-
-- **Play around with the p-value cut-off and the labeling to create a plot you like.**\
-  *Check [the vignette](https://bioconductor.org/packages/release/bioc/vignettes/EnhancedVolcano/inst/doc/EnhancedVolcano.html),*
-  *or the help page (accessed by running `?EnhancedVolcano`) to see how you can do this.*
-
-<details><summary>*Click for an example*</summary>
-
-```{r, fig.height=6.5}
-EnhancedVolcano(
-  toptable = res_rc24,
-  title = "relictum vs. control at 24 hpi",
-  x = "log2FoldChange",
-  y = "padj",
-  lab = rownames(res_rc24),
-  labSize = 4, # Now we will show the gene labels
-  pCutoff = 10e-10, # Modify the p-value cut-off
-  subtitle = NULL, # I'll also remove the silly subtitle
-  caption = NULL, # ... and the caption
-)
-```
-
-</details>
-
-- **Figure out the identity of the above-mentioned log2-fold change outlier.**\
-  *(You can do so either by labeling it in the plot, or by filtering the `res_rc24` table.)*
-
-<details><summary>*Click for the solution for how to label it in the plot*</summary>
-<hr style="height:1pt; visibility:hidden;" />
-
-```{r}
-#| fig-height: 6.5
-EnhancedVolcano(
-  toptable = res_rc24,
-  title = "relictum vs. control at 24 hpi",
-  x = "log2FoldChange",
-  y = "padj",
-  lab = rownames(res_rc24),
-  labSize = 4,
-  pCutoff = 0.05, # Modify the p-value cut-off
-  FCcutoff = 20, # Modify the LFC cut-off
-)
-```
-</details>
-
-<details><summary>*Click for the solution for how to find it in the results table*</summary>
-<hr style="height:1pt; visibility:hidden;" />
-
-```{r}
-as.data.frame(res_rc24) |> filter(log2FoldChange > 20)
-```
-
-(Interestingly, there's a second gene with a LFC \> 20 that we hadn't seen in the plot,
-because it has `NA` as the `pvalue` and `padj`. See the
-collapsed box "`NA` values in the DESeq2 results table" above
-for why p-values can be set to `NA`.)
-
-</details>
-:::
 
 ### Plot specific genes
 
@@ -934,56 +769,65 @@ focal_gene_counts |>
 
 - Plot one or a few more of the top-DE genes.
   Do they have similar expression patterns across treatment and time points as the first one?
-
-------------------------------------------------------------------------------------------
-
-- *Bonus*: Plot the gene with the very high LFC value that we saw when making the volcano plot.
-  How would you interpret this?
-
-<details><summary>*Click for the solution*</summary>
-
-```{r}
-focal_gene_counts <- plotCounts(
-  dds,
-  gene = "LOC120431476",
-  intgroup = c("time", "treatment"),
-  returnData = TRUE
-)
-
-focal_gene_counts |>
-  ggplot(aes(x = treatment, y = count, fill = treatment)) +
-  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
-  geom_point(size = 4, shape = 21, position = position_jitter(w = 0.1, h = 0)) +
-  facet_wrap(vars(time)) +
-  theme_bw() +
-  theme(legend.position = "none")
-```
-
-Wow! It looks like in every single time + treatment combination, all but one (or in one
-case, two) of the samples have zero expression, but there are several extreme outliers.
-
-For our focal comparison at `24hpi` (left panel/facet), comparing `control` vs `relictum`,
-it looks like the difference between these two groups is solely due to the one outlier
-in `relictum`. Nevertheless, even the multiple-testing corrected p-value (`padj`) is
-significant for this gene:
-
-```{r}
-as.data.frame(res_rc24) |>
-  rownames_to_column("gene") |>
-  filter(gene == "LOC120431476")
-```
-
-So, we have to be careful with taking our statistical results at face value, and need to
-visualize important genes!
-
-</details>
+:::
 
 ::: callout-important
 #### Outliers!
-You may want to check out the solution to the previous exercise, even if you don't get
-around to doing it yourself.
+The volcano plot above shows a gene with a very high log2-fold change.
+Check out [Exercise 2 in this week's exercises](w15_exercises.qmd#exercise-2-volcano-plots-and-outliers)
+to see why it's important to plot individual genes,
+even if you don't get around to doing the exercise yourself.
 :::
-:::
+
+### Heatmaps
+
+Rather than plotting expression levels for many individual genes,
+we can create "heatmap" plots to plot dozens (possibly even hundreds) of genes at once.
+We will create heatmaps with the `pheatmap()` function,
+and make a heatmap for the top-25 most highly significant DEGs for our focal contrast.
+
+Unlike with some of the functions we used before,
+we unfortunately can't directly use our DESeq2 object,
+but we have to extract and subset the count matrix,
+and also pass the metadata to the heatmap function:
+
+```{r}
+# We need a normalized count matrix, like for the PCA
+# We can simply extract the matrix from the normalized dds object we created for the PCA
+norm_mat <- assay(dds_vst)
+
+# In the normalized count matrix, select only the genes of interest
+# We'll reuse the 'top25_DE' vector that we created for the individual gene plots
+norm_mat_sel <- norm_mat[match(top25_DE, rownames(norm_mat)), ]
+
+# Sort the metadata
+meta_sort <- meta |>
+  arrange(treatment, time) |>
+  select(treatment, time)
+```
+
+Now we can create the plot:
+
+```{r}
+pheatmap(
+  norm_mat_sel,
+  annotation_col = meta_sort, # Add the metadata
+  cluster_cols = FALSE, # Don't cluster samples (=columns, cols)
+  show_rownames = FALSE, # Don't show gene names
+  scale = "row", # Perform z-scaling for each gene
+)
+```
+
+Notes on the code and plot above:
+
+- The z-scaling with `scale =` will make sure we can compare genes with very different
+  expression levels: after all, we're interested in relative expression levels across
+  samples/sample groups.
+
+- `pheatmap` will by default perform hierarchical clustering both at the sample (`col`)
+  and gene (`row`) level, such that more similar samples and genes will appear closer to
+  each other.
+  Above, we turned clustering off for samples, since we want to keep them in their by-group order.
 
 ### Exporting the results
 
@@ -1008,15 +852,12 @@ typical RNA-seq workflow. Specifically, you have:
 - Created a DESeq2 object from the gene count data and the experiment's metadata
 - Performed exploratory data analysis including a PCA
 - Run a Differential Expression (DE) analysis with DESeq2
-- Extracted, interpreted, and visualized the DE results
+- Extracted, interpreted, and visualized the DE results,
+  including with a volcano plot, single-gene plots, and a heatmap
 
 #### Next steps
 
 Typical next steps in such an analysis include:
-
-- Another very common type of plot used for gene expression data (and omics data
-  more generally) is a heatmap.
-  You'll create heatmaps in [the next lecture](./w15c_heatmaps.qmd).
 
 - Extracting, comparing, and synthesizing DE results across **all pairwise comparisons**
   (this would for example allow us to make the upset plot in *Figure 2 of the paper*)
@@ -1024,3 +865,6 @@ Typical next steps in such an analysis include:
 - **Functional enrichment analysis** with Gene Ontology (GO) terms,
    as done in the paper,
    and/or with KEGG pathways and other functional gene grouping systems.
+
+This wraps up the R portion of the course --
+next week, we'll shift focus to your Final Projects.
