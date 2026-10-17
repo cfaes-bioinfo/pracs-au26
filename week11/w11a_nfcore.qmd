@@ -74,7 +74,7 @@ Specifically, you will learn:
 
 ### Why run (nf-core) pipelines?
 
-In [week 10](../week10/w10c_workflow.qmd),
+In [week 10](../week10/w10b_slurm2.qmd#zooming-out-workflows),
 we talked about managing complex bioinformatics workflows,
 and the advantages that formal Workflow Management Systems like
 [Nextflow](https://www.nextflow.io/) (@ditommaso2017)
@@ -161,7 +161,7 @@ Here are some key aspects of running the nf-core _rnaseq_ pipeline
 
 - We only need access to an **installation** of Nextflow.
   The pipeline runs all its constituent tools (FastQC, STAR, Salmon, etc.)
-  via separate Singularity containers that it will download for us.
+  via separate Apptainer containers that it will download for us.
 
 - We can run the pipeline with a single command (`nextflow run [...]`).
   The resulting Nextflow process will **submit Slurm batch jobs for us**,
@@ -223,9 +223,11 @@ Then, we'll do a test run of the nf-core _rnaseq_ pipeline.
 ::: exercise
 ### {{< fa user-edit >}} Exercise
 
-Find the OSC Nextflow modules with a `module` command.
-Then, load the most recent Nextflow module.
-Finally, check that Nextflow can be run by printing the version with `nextflow -v`.
+We'll run version 3.26.0 of the _rnaseq_ pipeline,
+which requires Nextflow version 25.04.3 or later.
+Find the OSC Nextflow modules with a `module` command,
+and load one that is recent enough.
+Then, check which Nextflow version you're running with `nextflow -v`.
 
 <details><summary>Solution _(Click to expand)_</summary>
 
@@ -234,6 +236,7 @@ Finally, check that Nextflow can be run by printing the version with `nextflow -
   ```bash
   module avail nextflow
   ```
+  <!-- TODO: re-check the available modules at OSC -->
   ```bash-out
   --------------------------------------------------------------------------------
     nextflow:
@@ -251,7 +254,8 @@ Finally, check that Nextflow can be run by printing the version with `nextflow -
   ------------------------------------------------------------------------------
   ```
 
-- So, the most recent version is `nextflow/25.04.6` -- load it:
+- Only `nextflow/25.04.6` is recent enough
+  (version numbers start with year.month, so `24.10.4` is from October 2024) -- load it:
 
   ```bash
   module load nextflow/25.04.6
@@ -282,8 +286,8 @@ cd testrun
 
 ```bash
 nextflow run nf-core/rnaseq \
-  -r 3.22.0 \
-  -profile test,singularity \
+  -r 3.26.0 \
+  -profile test,apptainer \
   --outdir results/nfc-rnaseq
 ```
 
@@ -296,21 +300,28 @@ Explanation of the command above:
   If we had wanted to run the _sarek_ pipeline, for example,
   we would use `nf-core/sarek` instead.].
 - The `-r` option specifies the pipeline version to use
-  (here, version `3.22.0`, the currently most recent one).
+  (here, version `3.26.0`^[
+  The most recent version, 3.27.0, requires a newer version of Nextflow
+  than is available at OSC.]).
 - The `-profile` option specifies which "profile(s)" to use:
   - `test` tells the pipeline to use its built-in test data set
-  - `singularity` tells the pipeline to run software via Singularity containers
+  - `apptainer` tells the pipeline to run software via Apptainer containers
 - The `--outdir` option specifies the final output dir for the pipeline.
 
-<details><summary>{{< fa user-edit >}} In the above command, which are general Nextflow vs. pipeline-specific options? _(Click for the answer)_</summary>
+<details><summary>{{< fa user-edit >}} In the above command, which are general Nextflow vs. pipeline-specific options? And what do you think would happen if you typed `-outdir` instead of `--outdir`? _(Click for the answer)_</summary>
 
 Recall that general Nextflow options have a single dash (`-`),
 while pipeline-specific options have a double dash (`--`).
 As such, `--outdir` is the only pipeline-specific option in this command;
 all others are general Nextflow options.
+
+With `-outdir`, Nextflow would look for a general Nextflow option with that name,
+and since there is none, it would stop right away with an error like `Unknown option: -outdir`.
 </details>
 
 ### The test-run's progress log
+
+<!-- TODO: regenerate outputs with rnaseq 3.26.0 and the apptainer profile -->
 
 If you haven't done so already,
 execute the above `nextflow run` command to start the test run.
@@ -350,32 +361,19 @@ Reference genome options
   salmon_index              : https://raw.githubusercontent.com/nf-core/test-datasets/626c8fab639062eade4b10747e919341cbf9b41a/reference/salmon.tar.gz
 ```
 
-Below is some of the output regarding the processes that the pipeline spawns, where:
+Below is some of the output regarding the processes that the pipeline spawns:
 
-- The `executor > local` line indicates that the pipeline is running jobs "locally",
-  i.e. on the same node as the main Nextflow process.
-  (For the test run, this is just about fine,
-  but when we run the pipeline on our real data,
-  we will want to have these submitted as Slurm batch jobs instead.)
-
-- Each `process >` line indicates a specific process (_step in the pipeline_) that is being run.
-  - For some of these, it says `5 of 5` way on the right,
-    which indicates that for this process,
-    multiple jobs are being run in parallel
-    (typically one per sample, and this is true for the majority of processes)
-  - Other processes have `1 of 1`, indicating that only a single job is run
-    (e.g., for preparing the reference genome)
-  - In my example output below, one line says `retries: 2`,
-    indicating that this job failed twice but was retried and eventually succeeded
-  - The hexadecimal string at the start of each line (e.g., `[d2/97278b]`)
-    is a unique identifier for (one of) that process' jobs.
-    We'll get back to this later, as that string also identifies
-    the location where this job is run and its input and output files are stored
-    within the `work` dir^[
-    Note that when the same process is run multiple times in parallel,
-    each instance will have a different hexadecimal code, but not all instances
-    are shown -- this will be different when we run the pipeline on our data with
-    a slightly different setting.].
+- Each `process >` line is a step in the pipeline.
+  On the right, `5 of 5` means that 5 jobs (here, one per sample) were run for that step,
+  while steps like preparing the reference genome have a single job (`1 of 1`).
+- If a line says e.g. `retries: 1`,
+  a job failed but succeeded when Nextflow retried it.
+- The hexadecimal string at the start of each line (e.g., `[d2/97278b]`)
+  identifies one of that step's jobs,
+  and also the dir in which that job ran -- we'll get back to this below.
+- `executor > local` means that jobs are run on the same node as the main Nextflow process.
+  That's fine for this small test run,
+  but for our real data, we will have Nextflow submit Slurm batch jobs instead.
 
 ```bash-out-solo
 [d2/97278b] process > NFCORE_RNASEQ:RNASEQ:FASTQ_QC_TRIM_FILTER_SETSTRANDEDNESS:FQ_LINT_AFTER_TRIMMING (WT_REP1)                         [100%] 5 of 5 ✔
@@ -391,7 +389,7 @@ executor >  local (216)
 [07/5a941c] process > NFCORE_RNASEQ:PREPARE_GENOME:GTF_FILTER (genome.fasta)                                                             [100%] 1 of 1 ✔
 ```
 
-Here is some output related to the downloading of Singularity containers
+Here is some output related to the downloading of Apptainer containers
 (by default these are downloaded to a `singularity` subdir of the `work` dir):
 
 ```bash-out-solo
@@ -453,7 +451,9 @@ This can be handy for troubleshooting,
 or even just to take a closer look at what exactly the pipeline is running.
 
 Say we want to look at the files for the last process, MultiQC,
-which had the following printed in the log:
+which had the following printed in the log
+(your hexadecimal codes will be different,
+so use the one from your own log in the commands below):
 
 ```bash-out-solo
 [fb/68d030] process > NFCORE_RNASEQ:RNASEQ:MULTIQC (1) [100%] 1 of 1 ✔
@@ -517,18 +517,34 @@ END_VERSIONS
 ### Re-running the pipeline with `-resume`
 
 Let's quickly explore how the `-resume` option works.
-We can re-run the same command as above, but now adding `-resume`:
+We'll first remove the final output dir,
+and then re-run the same command as above, but now adding `-resume`:
 
 ```bash
+rm -r results
+
 nextflow run nf-core/rnaseq \
-  -r 3.22.0 \
-  -profile test,singularity \
+  -r 3.26.0 \
+  -profile test,apptainer \
   --outdir results/nfc-rnaseq \
   -resume
 ```
-This pipeline run should complete very quickly,
-because all steps were already completed successfully in the previous run --
-the process logging should look like this,
+
+<details class="details-quiz">
+<summary>Before running this: how long do you expect this run to take, and why?</summary>
+
+_The answer will be added after class._
+
+<!--
+It should finish very quickly:
+all jobs had already finished successfully in the previous run,
+and their outputs are still in the `work` dir, which we didn't remove.
+So, Nextflow doesn't rerun any jobs,
+and simply copies the final outputs from the `work` dir to the output dir again.
+-->
+</details>
+
+The process logging should look like this,
 where `cached: 1 ✔` indicates that the outputs were already present from before,
 and the job wasn't actually rerun:
 
@@ -560,8 +576,9 @@ If we'd changed an input file, only the processes affected by that change
 
 For the pipeline run with the @garrigós2025 data, we need to start with some prep:
 
-1. Create a "**sample sheet**" to tell the pipeline about our input FASTQ files.
-2. Create a small "**config file**" so Nextflow knows how to submit Slurm batch
+1. Download the **reference genome assembly** and unzip the reference genome files.
+2. Create a "**sample sheet**" to tell the pipeline about our input FASTQ files.
+3. Create a small "**config file**" so Nextflow knows how to submit Slurm batch
    jobs at OSC.
 
 First, we will move out of the `testrun` dir,
@@ -576,6 +593,21 @@ mkdir scripts software metadata
 
 # Create a README file (then open it):
 touch README.md
+```
+
+### Download the reference genome assembly
+
+The `garrigos` repo contains the reference genome annotation (GTF) file,
+but not the assembly (FASTA) file, which was too large to include.
+Download the assembly from NCBI with the `wget` command
+(you'll learn more about `wget` in Lecture B),
+and then unzip both reference files:
+
+```bash
+# [Paste this into README.md and then run it in the terminal]
+URL=https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_genomic.fna.gz
+wget -P ../garrigos/ref "$URL"
+gunzip -v ../garrigos/ref/*.gz
 ```
 
 ### Create a sample sheet
@@ -603,7 +635,7 @@ by pseudo-mapping a small proportion of the data with Salmon.
 
 The sample sheet should be a plain-text comma-separated values (CSV) file.
 Here is the example file from the
-[pipeline's documentation](https://nf-co.re/rnaseq/3.22.0/docs/usage#samplesheet-input):
+[pipeline's documentation](https://nf-co.re/rnaseq/3.26.0/docs/usage#samplesheet-input):
 
 ```bash-out-solo
 sample,fastq_1,fastq_2,strandedness
@@ -612,7 +644,10 @@ CONTROL_REP1,AEG588A1_S1_L003_R1_001.fastq.gz,AEG588A1_S1_L003_R2_001.fastq.gz,a
 CONTROL_REP1,AEG588A1_S1_L004_R1_001.fastq.gz,AEG588A1_S1_L004_R2_001.fastq.gz,auto
 ```
 
-So, we need a header row with column names, and then one row per sample.
+So, we need a header row with column names, and then one row per pair of FASTQ files^[
+In the example above, sample `CONTROL_REP1` was sequenced on three lanes,
+so it has three rows, which the pipeline will merge.
+We have one pair of FASTQ files per sample, so we'll have one row per sample.].
 The file should have the following columns:
 
 - `sample`: Sample ID (we will simply use the part of the file name shared by R1 and R2)
@@ -634,7 +669,7 @@ and the output file (`$samplesheet`):
 # [Paste this into README.md and then run it in the terminal]
 
 # Download the pipeline's helper script
-URL=https://raw.githubusercontent.com/nf-core/rnaseq/refs/tags/3.22.0/bin/fastq_dir_to_samplesheet.py
+URL=https://raw.githubusercontent.com/nf-core/rnaseq/refs/tags/3.26.0/bin/fastq_dir_to_samplesheet.py
 wget -P software "$URL"
 
 # Create the sample sheet for the nf-core pipeline
@@ -785,16 +820,16 @@ Here is the part of the command that includes **general Nextflow options**:
 ```bash
 # [Partial shell script code, don't copy or run]
 nextflow run nf-core/rnaseq \
-    -r 3.22.0 \
-    -profile singularity \
+    -r 3.26.0 \
+    -profile apptainer \
     -resume \
-    -ansi-log false \
     -work-dir "$workdir" \
+    -ansi-log false \
 ```
 
 - Like in the test run above, our command starts with `nextflow run` followed
   by the pipeline name and version.
-- The `-profile` will now simply be `singularity` (i.e. omitting `test`).
+- The `-profile` will now simply be `apptainer` (i.e. omitting `test`).
 - It's a good idea to by default use the `-resume` option,
   even if this option won't make any difference when we run the pipeline for the first time^[
   Nextflow will even give a warning along these lines, but this is not a problem.].
@@ -806,7 +841,7 @@ nextflow run nf-core/rnaseq \
 
 Next, we'll add the **pipeline-specific options**,
 starting with several _required_ options
-(see the [pipeline's documentation](https://nf-co.re/rnaseq/3.22.0/docs/usage)),
+(see the [pipeline's documentation](https://nf-co.re/rnaseq/3.26.0/docs/usage)),
 which represent the inputs and outputs discussed above -- the paths to:
 
 - **`--input`**: the "sample sheet"
@@ -830,9 +865,11 @@ Take a look at the
    can customize the pipeline.
 
 2. Say you want to (a) remove rRNA, (b) skip the STAR alignment and quantify
-   with Salmon only, and (c) have Nextflow produce an execution timeline report.
+   with Salmon only, and (c) give your run a name of your choice,
+   instead of a random one like `exotic_lavoisier`.
    For each of these three, decide **before looking it up** whether you expect
-   a single-dash or a double-dash option, then find the actual option name(s).
+   a single-dash or a double-dash option, then find the actual option name(s)
+   (if you can't find an option on the Parameters page, try `nextflow run -help`).
    Was your prediction right in all three cases?
    Why does the option for (c) have only one dash?
 
@@ -846,33 +883,14 @@ Take a look at the
   **`--skip_alignment`** (to skip STAR) and **`--pseudo_aligner salmon`**
   (to run Salmon on its own).
 
-- (c) Producing an execution timeline report is a **general Nextflow option**
-  (single dash): **`-with-timeline`**.
+- (c) Naming your run is a **general Nextflow option**
+  (single dash): **`-name`**.
   Unlike (a) and (b), this isn't something specific to the _rnaseq_ pipeline --
-  every Nextflow pipeline can produce this kind of report,
+  every Nextflow run has a name,
   because it's a feature of Nextflow itself rather than of this particular pipeline.
 
 </details>
 :::
-
-#### The final command
-
-With all above-mentioned options, the final `nextflow run` command is:
-
-```bash
-# [Partial shell script code, don't copy or run]
-nextflow run nf-core/rnaseq \
-    -r 3.22.0 \
-    -profile singularity \
-    -resume \
-    -ansi-log false \
-    -work-dir "$workdir" \
-    --input "$samplesheet" \
-    --fasta "$fasta" \
-    --gtf "$gtf" \
-    --outdir "$outdir" \
-    --remove_ribo_rna
-```
 
 ### The final script
 
@@ -931,8 +949,8 @@ mkdir -p "$outdir" "$workdir"
 
 # Run the workflow
 nextflow run nf-core/rnaseq \
-    -r 3.22.0 \
-    -profile singularity \
+    -r 3.26.0 \
+    -profile apptainer \
     -resume \
     -work-dir "$workdir" \
     -ansi-log false \
@@ -949,23 +967,24 @@ date
 ```
 
 ::: {.callout-tip collapse="true"}
-#### Want to use a different dir for Singularity containers? _(Click to expand)_
+#### Want to use a different dir for Apptainer containers? _(Click to expand)_
 
-By default, Nextflow will download Singularity containers to a `singularity` subdir
+<!-- TODO: check on the re-run whether the default cache subdir is `singularity` or `apptainer` -->
+By default, Nextflow will download Apptainer containers to a `singularity` subdir
 within the specified Nextflow work dir.
 However, these containers can take up quite some space (several GBs),
 and when running multiple pipelines,
-you might want to share a single dir for all Singularity containers.
+you might want to share a single dir for all Apptainer containers.
 
 To specify a dir for Nextflow to store containers,
-set the environment variable `NXF_SINGULARITY_CACHEDIR`^[
+set the environment variable `NXF_APPTAINER_CACHEDIR`^[
 There is no command-line option available for this:
 we have to use this environment variable, also when running the pipeline.].
 For example:
 
 ```bash
 # Create an environment variable for the container dir
-export NXF_SINGULARITY_CACHEDIR=/fs/scratch/PAS3493/containers
+export NXF_APPTAINER_CACHEDIR=/fs/scratch/PAS3493/containers
 ```
 :::
 
@@ -1019,6 +1038,8 @@ Submitted batch job 42175708
 
 ### Check the pipeline's progress
 
+<!-- TODO: regenerate outputs with rnaseq 3.26.0 and the apptainer profile -->
+
 Let's check whether your job has started running,
 and if so, whether Nextflow has already spawned jobs:
 
@@ -1065,7 +1086,7 @@ The following (awful-looking!) code can be used to make that column much wider,
 so you can see the jobs' full names which makes clear which steps are being run:
 
 ```bash
-# (The '%.100j' makes the NAME colum 100 characters wide)
+# (The '%.100j' makes the NAME column 100 characters wide)
 squeue -u $USER --format="%.9i %.9P %.100j %.8T %.10M %.10l %.4C %R %.16V"
 ```
 ```bash-out
@@ -1168,12 +1189,11 @@ Both of these warnings can be ignored:
 :::
 
 If any errors occur, they are reported in this file.
-Nextflow will retry failed jobs up to two times by default,
-which can help in case of things like random node failures or when a job initially
-had insufficient resources
-(the reruns will automatically have increased resource requests!).
-If there is something wrong with your input files or with the pipeline code,
-though, the jobs will naturally keep failing and you will have to investigate the problem.
+When a job fails because it ran out of memory or time,
+the pipeline will by default retry it once,
+with increased resource requests.
+Other errors, e.g. due to a problem with your input files,
+will make the pipeline stop, and you will have to investigate the problem.
 
 Your pipeline run may finish in as little as 15-30 minutes with our small data set,
 but this can vary substantially due to variation in Slurm queue times.
@@ -1190,8 +1210,8 @@ Successfully finished script nfc-rnaseq.sh
 Sun Nov 30 08:57:49 AM EST 2025
 ```
 
-::: exercise
-#### {{< fa user-edit >}} Exercise: check the contents of a `work` dir
+::: {.callout-tip collapse="true"}
+#### Explore a `work` dir of your own run _(Click to expand)_
 Let's practice checking out a Nextflow `work` dir.
 As mentioned before, this can be useful for debugging failed jobs,
 or simply to better understand what the pipeline is running.
@@ -1274,43 +1294,11 @@ and open and skim through Salmon's log in the `.command.log` file.
 
 :::
 
-::: exercise
-#### {{< fa user-edit >}} Exercise: rerun the pipeline
-Remove the entire folder with the final outputs and resubmit the script.
-What do you expect to happen?
-
-<details><summary> _Click for the solution_ </summary>
-
-```bash
-# Remove the folder
-rm -r results/nfc-rnaseq
-
-# Resubmit the script in the same way as before
-sbatch scripts/nfc-rnaseq.sh "$samplesheet" "$fasta" "$gtf" "$outdir" "$workdir"
-```
-
-First off, recall that we used the `-resume` option when running the pipeline.
-This means that Nextflow will check which processes have already been run
-(by checking the contents of the `work` dir),
-and will only rerun those processes for which the outputs are missing.
-
-In this case, since we only removed the final output dir,
-the only potential reason that any processes need to be rerun is that
-the outputs have been removed.
-Luckily, because all the outputs are also present in the `work` dir
-(which wasn't removed), all that Nextflow needs to do is (re)copy the final outputs
-from the `work` dir to the final output dir.
-
-Therefore, the pipeline should finish very quickly this time,
-and you should see lots of `cached` messages in the Slurm log file,
-indicating that the outputs were already present in the `work` dir.
-
-</details>
-:::
-
 ## The pipeline's outputs
 
 ### Overview
+
+<!-- TODO: regenerate outputs with rnaseq 3.26.0 and the apptainer profile -->
 
 Once the pipeline run has finished,
 take a look at the files and dirs in the specified output dir:
@@ -1352,6 +1340,8 @@ right-click on it, and select `Download...`) and then open it on your own comput
 **[copy of the MultiQC report on this website](../assets/multiqc_report_nfcore.html)**).
 There's a lot of information in the report, so we'll just highlight a few things here.
 
+<!-- TODO: re-check these notes and the screenshot with 3.26.0 (FastQC raw/trim/filt columns, %rRNA fix, paired-end row grouping) -->
+
 The **General Statistics** table (the first section) is useful but also a bit tricky --
 some notes:
 
@@ -1390,7 +1380,7 @@ The **STAR** > **Alignment Scores** plot shows, for each sample,
 the percentage of reads that was mapped.
 Note that "Mapped to multiple loci" reads _are_ also included in the final counts,
 and that "Unmapped: too short" really means unmapped rather than that the reads
-were too short^[It says "too short" because the aligned part of the read was too short].
+were too short^[It says "too short" because the aligned part of the read was too short.].
 
 ![This is a pretty good result, with 80-90% of reads mapped.](../img/multiqc_star.png){fig-align="center" width="90%"}
 

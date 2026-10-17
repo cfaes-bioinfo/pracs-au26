@@ -67,10 +67,10 @@ This week, we'll cover how you can submit your shell scripts as batch jobs.
 #### This session
 
 - Different ways to start "compute jobs":
-  via OnDemand, with interactive jobs, and with Slurm batch jobs.
-- Strategies around requesting appropriate resources for your compute jobs.
-- Slurm commands like `sbatch` to submit, monitor and manage batch jobs.
-- How to use Slurm options to request specific resources for your compute jobs.
+  via OnDemand, with interactive jobs, and with Slurm batch jobs
+- How to submit scripts as batch jobs with `sbatch`, and where their output goes
+- How to specify `sbatch` options on the command line and inside scripts
+- How to monitor and cancel batch jobs with `squeue` and `scancel`
 
 ### Getting ready
 
@@ -153,7 +153,7 @@ Here are the main ways to start a compute job at OSC:
 We've already worked a lot with the VS Code Interactive App,
 and interactive shell jobs are covered in
 [this week's optional self-study material](../bonus/slurm.qmd#interactive-shell-jobs)
-(you shouldn't rarely need these).
+(you should rarely need these).
 What we'll focus on in this session are **batch jobs**.
 
 ## Basics of Slurm batch jobs
@@ -333,7 +333,7 @@ scripts, commands, and programs can have:
    - We've seen that most shell commands by default print their output to the screen.
    - Other programs, like you've seen with FastQC, only print "logging"-type output
      to the screen^[
-       But some programs will by default also print their main results to the screen
+       But some programs will by default also print their main results to the screen.
        This can sometimes be changed with a program's options, and otherwise,
        you can always redirect (`>`) output to a file.].
 2. Output that is **written to files**.
@@ -453,114 +453,6 @@ Finally, longer-running jobs and those that ask for many cores sometimes
 remain queued for a while before they start.
 For these reasons, it's important to know how you can monitor your batch jobs.
 
-### A sleepy script for practice
-
-We'll use another short shell script to practice monitoring and managing batch jobs.
-First create a new file:
-
-```bash
-touch scripts/sleep.sh
-```
-
-Open the file in the VS Code editor and copy the following into it:
-
-```{.bash .file filename="scripts/sleep.sh"}
-#!/bin/bash
-#SBATCH --account=PAS3493
-set -euo pipefail
-
-echo "I will sleep for 30 seconds" > sleep.txt
-
-sleep 30s
-
-echo "I'm awake! Successfully finished script sleep.sh"
-```
-
-<hr style="height:1pt; visibility:hidden;" />
-
-:::exercise
-#### {{< fa user-edit >}} Exercise 1: Batch job output recap
-
-First, predict what would happen if you submit the `sleep.sh` script above as a
-batch job using `sbatch scripts/sleep.sh`:
-
-1. How many output files will this batch job produce?
-2. What will be in each of those files?
-3. In which directory will the file(s) appear?
-
-Then, test your predictions by running the script.
-
-<!----
-<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
-
-1. The job will produce 2 files:
-    - `slurm-<job-number>.out`: The Slurm log file, containing output normally printed to screen.
-    - `sleep.txt`: Containing output that was redirected to this file in the script.
-
-2. Those files will contain the following:
-    - `slurm-<job-number>.out`: _I'm awake! Successfully finished script sleep.sh_
-    - `sleep.txt`: _"I will sleep for 30 seconds"_
-
-3. Both files will end up in your current working directory.
-   Slurm log files always go to the directory from which you submitted the job.
-   Slurm jobs also _run_ from the directory from which you submitted your job,
-   and since we redirected the output simply to `sleep.txt`,
-   that file was created in our working directory.
-
-Run the script and check the outputs:
-
-```bash
-sbatch scripts/sleep.sh
-```
-```bash-out
-Submitted batch job 27935840
-```
-```bash
-cat sleep.txt
-```
-```bash-out
-I will sleep for 30 seconds
-```
-```bash
-cat slurm-27935840.out
-```
-```bash-out
-I'm awake! Successfully finished script sleep.sh
-```
-</details>
----->
-
-Now, let's reason through a couple of variations on this, without actually
-running them:
-
-4. In terms of output files, what would be different if we instead ran the
-   original script above using `bash scripts/sleep.sh`?
-
-5. Suppose you change the script's `echo` line to
-   `echo "I will sleep for 30 seconds" > results/sleep.txt`,
-   but the `results` dir doesn't exist yet.
-   Will the job fail? If so, where would you find out that it did?
-
-<!----
-<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
-
-4. If we had run the script directly with `bash`, `sleep.txt` would have also
-   been created with the same content, but
-   "_I'm awake! Successfully finished script sleep.sh_" would have been printed
-   to screen instead of going into a Slurm log file.
-
-5. Yes, the job will fail: `echo` can't redirect its output to a file inside a
-   directory that doesn't exist, so this command will produce an error
-   (something like _"No such file or directory"_), and because of our strict
-   `set -euo pipefail` settings, the script will exit immediately at that point.
-   You would find out about this in the Slurm log file `slurm-<job-number>.out`,
-   which Slurm still creates by default in your submission dir --
-   it will contain the error message.
-
-</details>
----->
-:::
-
 ### Checking a job's status
 
 #### Batch job behavior
@@ -620,16 +512,70 @@ The following pieces of information about each job are listed:
 
 : {.striped .hover}
 
-#### `squeue` example
+### A sleepy script for practice
 
-Now, let's see a batch job in the `squeue` listing.
-Start by submitting the `sleep.sh` script as a batch job:
+We'll use another short shell script to practice monitoring and managing batch jobs.
+First create a new file:
+
+```bash
+touch scripts/sleep.sh
+```
+
+Open the file in the VS Code editor and copy the following into it:
+
+```{.bash .file filename="scripts/sleep.sh"}
+#!/bin/bash
+#SBATCH --account=PAS3493
+set -euo pipefail
+
+echo "I will sleep for 30 seconds" > sleep.txt
+
+sleep 30s
+
+echo "I'm awake! Successfully finished script sleep.sh"
+```
+
+<hr style="height:1pt; visibility:hidden;" />
+
+:::exercise
+#### {{< fa user-edit >}} Exercise 1: A sleepy batch job
+
+First, predict what would happen if you submit the `sleep.sh` script above as a
+batch job using `sbatch scripts/sleep.sh`:
+
+1. How many output files will this batch job produce?
+2. What will be in each of those files?
+3. In which directory will the file(s) appear?
+
+Then, test your predictions by submitting the script.
+Right after submitting, check the queue with `squeue -u $USER -l` a few times:
+can you catch the job as `PENDING`, and then `RUNNING`?
+What happens to it in the `squeue` output after about 30 seconds?
+
+<!----
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
+1. The job will produce 2 files:
+    - `slurm-<job-number>.out`: The Slurm log file, containing output normally printed to screen.
+    - `sleep.txt`: Containing output that was redirected to this file in the script.
+
+2. Those files will contain the following:
+    - `slurm-<job-number>.out`: _I'm awake! Successfully finished script sleep.sh_
+    - `sleep.txt`: _"I will sleep for 30 seconds"_
+
+3. Both files will end up in your current working directory.
+   Slurm log files always go to the directory from which you submitted the job.
+   Slurm jobs also _run_ from the directory from which you submitted your job,
+   and since we redirected the output simply to `sleep.txt`,
+   that file was created in our working directory.
+
+Submit the script:
 
 ```bash
 sbatch scripts/sleep.sh
 ```
-``` {.bash-out}
-Submitted batch job 12520046
+```bash-out
+Submitted batch job 27935840
 ```
 
 If you're quick enough, you may be able to catch the job's `STATE` as `PENDING`
@@ -638,71 +584,92 @@ before it starts:
 ```bash
 squeue -u $USER -l
 ```
-``` {.bash-out}
+```bash-out
 Thu Apr 4 15:48:26 2025
          JOBID PARTITION     NAME     USER    STATE       TIME TIME_LIMI  NODES NODELIST(REASON)
-      12520046 serial-40 sleep.sh   jelmer  PENDING       0:00   1:00:00      1 (None)
+      27935840 serial-40 sleep.sh   jelmer  PENDING       0:00   1:00:00      1 (None)
       23640814 condo-osu ondemand   jelmer  RUNNING       7:12   2:00:00      1 p0133
 ```
 
 But soon enough it should read `RUNNING`:
 
-```sh
+```bash
 squeue -u $USER -l
 ```
-``` {.bash-out}
+```bash-out
 Thu Apr 4 15:48:39 2025
          JOBID PARTITION     NAME     USER    STATE       TIME TIME_LIMI  NODES NODELIST(REASON)
-      12520046 condo-osu sleep.sh   jelmer  RUNNING       0:12   1:00:00      1 p0133
+      27935840 condo-osu sleep.sh   jelmer  RUNNING       0:12   1:00:00      1 p0133
       23640814 condo-osu ondemand   jelmer  RUNNING       8:15   2:00:00      1 p0133
 ```
 
-The script should finish after 30 seconds (because your command was `sleep 30s`),
-after which the job will immediately disappear from the `squeue` listing,
+The script finishes after 30 seconds (because of `sleep 30s`),
+after which the job immediately disappears from the `squeue` listing,
 because only pending and running jobs are shown:
 
 ```bash
 squeue -u $USER -l
 ```
-``` {.bash-out}
+```bash-out
 Thu Apr 4 15:49:26 2025
          JOBID PARTITION     NAME     USER    STATE       TIME TIME_LIMI  NODES NODELIST(REASON)
       23640814 condo-osu ondemand   jelmer  RUNNING       9:02   2:00:00      1 p0133
 ```
 
-#### Checking a job's output files
+Then, check the outputs:
 
-Whenever you've run a script as a batch job,
-even if you've been monitoring it with `squeue`,
-you should also make sure it ran _successfully_.
-You can do this by checking the output file(s) ---
-as mentioned above, you'll usually have **two types of output** from a batch job:
+```bash
+cat sleep.txt
+```
+```bash-out
+I will sleep for 30 seconds
+```
+```bash
+cat slurm-27935840.out
+```
+```bash-out
+I'm awake! Successfully finished script sleep.sh
+```
+</details>
+---->
 
-- A Slurm log file with the script's standard output and standard error,
-  which would have been printed to screen if the job hadn't been submitted with `sbatch`
-  (_typically: logging-type output and errors_).
-- Output file(s) created inside the script (_typically: the main results_).
+Now, let's reason through a couple of variations on this, without actually
+running them:
 
-And as you saw in the exercise above,
-this is also the case for the output of our sleepy script:
+4. In terms of output files, what would be different if we instead ran the
+   original script above using `bash scripts/sleep.sh`?
 
-- The output file that the code in the script directly produced:
+5. Suppose you change the script's `echo` line to
+   `echo "I will sleep for 30 seconds" > results/sleep.txt`,
+   but the `results` dir doesn't exist yet.
+   Will the job fail? If so, where would you find out that it did?
 
-  ```bash
-  cat sleep.txt
-  ```
-  ``` {.bash-out}
-  I will sleep for 30 seconds
-  ```
+<!----
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
-- The Slurm log file:
+4. If we had run the script directly with `bash`, `sleep.txt` would have also
+   been created with the same content, but
+   "_I'm awake! Successfully finished script sleep.sh_" would have been printed
+   to screen instead of going into a Slurm log file.
 
-  ```bash
-  cat slurm-12520046.out
-  ```
-  ``` {.bash-out}
-  I'm awake! Successfully finished script sleep.sh
-  ```
+5. Yes, the job will fail: `echo` can't redirect its output to a file inside a
+   directory that doesn't exist, so this command will produce an error
+   (something like _"No such file or directory"_), and because of our strict
+   `set -euo pipefail` settings, the script will exit immediately at that point.
+   You would find out about this in the Slurm log file `slurm-<job-number>.out`,
+   which Slurm still creates by default in your submission dir --
+   it will contain the error message.
+
+</details>
+---->
+:::
+
+### Checking a job's output files
+
+Even if you've been monitoring a job with `squeue`,
+you should always check its output to make sure it ran _successfully_:
+both the Slurm log file and any output files created by the script,
+like you did in Exercise 1.
 
 Let's keep things tidy and remove the script's outputs:
 
@@ -734,7 +701,8 @@ You can cancel jobs that are either pending or running using `scancel`:
 # Cancel a specific job:
 scancel 2979968
 
-# Cancel all your running and queued jobs (careful with this!):
+# Cancel all your running and queued jobs (careful with this!
+# This also cancels your VS Code session, since that is a compute job too):
 scancel -u $USER
 ```
 
@@ -787,12 +755,14 @@ Here are some additional job management commands and options:
 In this lecture, you've learned the basics of submitting scripts as Slurm batch
 jobs with the `sbatch` command:
 
-- How to specify `sbatch` options on the command-line or inside the script.
-- The basic behavior and outputs associated with batch jobs.
-- How to check the job queue and monitor your jobs.
+- How to specify `sbatch` options on the command line or inside the script
+- The basic behavior and outputs associated with batch jobs
+- How to check the job queue, and monitor and cancel your jobs
 
 In the next lecture, you will learn other commonly used `sbatch` options so
 you can reserve more time, cores, etc. for your job.
-You will also see some more practical examples of running batch jobs.
+You will also see some more practical examples of running batch jobs,
+learn what to watch out for when using genAI with Slurm,
+and zoom out to look at whole workflows.
 
 <hr style="height:1pt; visibility:hidden;" />

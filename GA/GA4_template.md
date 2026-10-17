@@ -17,7 +17,7 @@ GA4 README template.
 
 ## Part A: Your project dir and Git repo
 
-### 1: Create subdirs and copy `CLAUDE.md`
+### 1: Create subdirs, and copy `CLAUDE.md` and a FastQC report
 
 <!-- No command/output needed. -->
 
@@ -31,11 +31,9 @@ GA4 README template.
 
 <!-- Reminder: no genAI in this Part! -->
 
-### 3: Get a TrimGalore container link
+### 3: A TrimGalore container, its help info, and three options
 
 *Answer*: The container link (URI) is:
-
-### 4: TrimGalore's help info, and three options
 
 Code to run `trim_galore --help` with the container:
 
@@ -51,17 +49,17 @@ Code to run `trim_galore --help` with the container:
 
 *Answer*: The option to run FastQC on the trimmed FASTQ files:
 
-### 5: Default thresholds
+### 4: Default thresholds
 
-*Answer*: The default base quality score threshold, and what TrimGalore does with it:
+*Answer*: A) The default base quality score threshold:
 
-*Answer*: The default read length threshold, and what TrimGalore does with it:
+*Answer*: B) The default read length threshold:
 
-### 6: Write the `trimgalore.sh` script
+### 5: Write the `trimgalore.sh` script
 
 <!-- No need to paste the script: we'll look at scripts/trimgalore.sh directly. -->
 
-### 7: Run the script for sample `S63`, and check the output files
+### 6: Run the script for sample `S63`, and check the output files
 
 Code to run the script:
 
@@ -84,47 +82,43 @@ The output of the command was:
 
 *Answer*: What each type of output file contains:
 
-### 8: Trimming results
+<!-- If your script failed at first: describe the problem and your fix here. -->
+
+### 7: Trimming results
+
+*Answer*: Which adapter sequence TrimGalore looked for, and how it decided on this:
 
 *Answer*: Percentage of reads with adapters in R1 and R2:
 
-*Answer*: Percentage of bases that were quality-trimmed in R1 and R2:
+*Answer*: In R1 and R2, were more bases removed by quality trimming or by adapter trimming?
 
-*Answer*: Percentage of read pairs removed because they were too short:
+*Answer*: Percentage of read pairs that were removed:
+
+### 8: Poly-G trimming
+
+*Answer*: Did TrimGalore do poly-G trimming, and did you have to tell it to?
+
+*Answer*: What TrimGalore concludes about the sequencing technology:
+
+*Answer*: Was more poly-G trimming done in R1 or R2? (Optional: any idea why?)
 
 ### 9: Compare the FastQC reports before and after trimming
 
-*Answer*: At least two differences between the reports:
+*Answer*: At least two differences between the reports,
+and whether things look better in terms of pass/warn/fail status:
 
-*Answer*: Were the short reads with only `N`s removed? How could TrimGalore have removed them?
+*Answer*: Were the short reads with only `N`s removed?
+If so, was that due to the length threshold, or something else?
 
-### 10: Parameter expansion for trimmed file names
-
-```bash
-# Your commands to test `${R1/_R1/_R2}`:
-```
-
-The output of the command(s) was:
-
-```
-```
-
-*Answer*: Does it give the correct trimmed R2 file name? Why/why not?
-
-```bash
-# Your commands to test a parameter expansion that does work (if needed):
-```
-
-The output of the command(s) was:
-
-```
-```
+*Answer*: Something you didn't expect or are confused about:
 
 ------------------------------------------------------------------------
 
 ## Part C: Bring in genAI
 
-### 11: Claude reviews your script
+<!-- Export the conversations for questions 10, 11, 13, and 14 to `doc/ai`. -->
+
+### 10: Sonnet reviews your script
 
 *Answer*: Your prompt:
 
@@ -133,6 +127,23 @@ or don't understand it, and why:
 
 *Answer*: Was anything wrong, or in conflict with the course's practices?
 Did Claude refer to your `CLAUDE.md` conventions?
+
+*Answer*: The estimated cost of this conversation (from `/usage`):
+
+### 11: Opus reviews your script
+
+*Answer*: The estimated cost of this conversation (from `/usage`):
+
+*Answer*: Which suggestions did only one of the two models make?
+
+*Answer*: Did either model claim something that you know is wrong?
+
+*Answer*: Did either model check its claims, for example by running commands?
+
+*Answer*: Did Opus's review change your mind about any of your answers to question 10?
+
+*Answer*: How did the costs compare? Which review would you trust more, and why?
+Was the difference worth the difference in cost?
 
 ### 12: Run the script with a non-existent file
 
@@ -162,7 +173,7 @@ The output of the command was:
 
 *Answer*: Does it behave the way Claude claimed it would?
 
-*Answer*: How useful is this check?
+*Answer*: Given what you saw in question 12, how useful is this check?
 
 ### 14: Claude writes a loop
 
@@ -177,11 +188,10 @@ The loop that Claude wrote:
 *Answer*: Does it run the script once per sample?
 
 *Answer*: Does it get the correct R2 file for each R1 file?
-Would it have the `S61` pitfall?
 
-*Answer*: Does it only include the 7 `S6` samples?
+*Answer*: Does it only run for the 7 `S6` samples?
 
-*Answer*: Did you have to fix the loop? If so, what did you change and why?
+*Answer*: Did you change the loop? If so, what did you change and why?
 
 ### 15: Test and run the loop
 
@@ -207,9 +217,9 @@ The output of the command(s) was:
 ```
 ```
 
-*Answer*: How many files did you expect in `results/trimgalore`, and is that what you found?
+*Answer*: Are all 7 samples represented?
 
-### 16: A summary table
+### 16: A summary command
 
 *Answer*: Your prompt:
 
@@ -222,15 +232,23 @@ The output of the command was:
 ```
 ```
 
-*Answer*: Does the value for `S63` match your answer to question 8?
+*Answer*: Did the output look right? If not, what did you do?
+
+*Answer*: Does the value for `S63` match your answer to question 7?
 
 *Answer*: In your own words, how does the command work?
 
-### 17: Export your conversations
+### 17: Document your genAI use
 
 <!-- No command/output needed here -- we check your `doc/ai` dir in the repo directly. -->
 
-### 18: Reflection
+### 18: Update your `CLAUDE.md`
+
+*Answer*: What you added to `CLAUDE.md`, and why:
+
+*Answer*: Did Claude follow the new instruction?
+
+### 19: Reflection
 
 *Answer*:
 
@@ -238,35 +256,6 @@ The output of the command was:
 
 ## Part D: Publish your repo on GitHub
 
-### 19: Create a GitHub repository, connect it, and push
+### 20: Create a GitHub repository, push, and create an Issue
 
 <!-- No command/output needed here -- we check your GitHub repo directly. -->
-
-### 20: Create an Issue to tag the instructors
-
-<!-- No command/output needed here -- we check your GitHub repo directly. -->
-
-------------------------------------------------------------------------
-
-## Bonus
-
-### 21: Something you don't know how to do yourself
-
-*Answer*: Your prompt:
-
-```bash
-# The code you got from Claude:
-```
-
-The output of the code was:
-
-```
-```
-
-*Answer*: How did you check that the code does what you think it does?
-
-### 22: Update your `CLAUDE.md`
-
-*Answer*: What you added to `CLAUDE.md`, and why:
-
-*Answer*: Did Claude follow the new instruction?

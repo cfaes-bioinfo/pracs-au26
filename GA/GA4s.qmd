@@ -7,11 +7,12 @@ and file dates, etc. will differ from yours.
 
 ### Part A: Your project dir and Git repo
 
-<details><summary>**1.** Create subdirs and copy `CLAUDE.md`</summary>
+<details><summary>**1.** Create subdirs, and copy `CLAUDE.md` and a FastQC report</summary>
 
 ```bash
-mkdir scripts results
+mkdir -p scripts results/fastqc
 cp ../week09/CLAUDE.md .
+cp ../week07/results/fastqc/S63_R1_fastqc.html results/fastqc/
 ```
 
 </details>
@@ -42,7 +43,7 @@ git commit -m "Add README, CLAUDE.md, and .gitignore"
 
 ### Part B: A TrimGalore script --- without genAI
 
-<details><summary>**3.** Get a TrimGalore container link</summary>
+<details><summary>**3.** A TrimGalore container, its help info, and three options</summary>
 
 The container link (URI) for TrimGalore version 2.3.0 is:
 
@@ -52,9 +53,7 @@ oras://community.wave.seqera.io/library/trim-galore:2.3.0--a56e49e832976df4
 
 Make sure to use the `oras://` URI rather than the Docker one.
 
-</details>
-
-<details><summary>**4.** TrimGalore's help info, and three options</summary>
+To print the help info:
 
 ```bash
 apptainer exec oras://community.wave.seqera.io/library/trim-galore:2.3.0--a56e49e832976df4 \
@@ -65,15 +64,25 @@ The relevant parts of the output:
 
 ```bash-out-solo
  USAGE:
-trim_galore [options] <filename(s)>
+Usage: trim_galore [OPTIONS] <INPUT>...
 
---paired                This option performs length trimming of quality/adapter/RRBS trimmed reads for
-                        paired-end files.
+Arguments:
+  <INPUT>...
+          Input FASTQ file(s). For paired-end, provide two files
 
--o/--output_dir <DIR>   If specified all output will be written to this directory instead of the current
-                        directory. If the directory doesn't exist it will be created for you.
+Options:
 
---fastqc                Run FastQC in the default mode on the FastQ file once trimming is complete.
+  --paired
+        Paired-end mode. Accepts an even number of input files as consecutive
+        R1/R2 pairs (e.g. --paired R1.fq.gz R2.fq.gz, or a glob matching multiple samples)
+
+  -o, --output_dir <OUTPUT_DIR>
+        Output directory for trimmed files. Created if it doesn't exist
+
+  --fastqc
+        Run FastQC on the trimmed output files
+        (built in via the bundled fastqc-rust library; no external Java or FastQC binary needed).
+        Produces FastQC 0.12.1-compatible *_fastqc.html / *_fastqc.zip artifacts
 ```
 
 - `--paired` to indicate that the FASTQ files are paired-end
@@ -82,55 +91,57 @@ trim_galore [options] <filename(s)>
 
 </details>
 
-<details><summary>**5.** Default thresholds</summary>
+<details><summary>**4.** Default thresholds</summary>
 
 The relevant parts of the help output:
 
 ```bash-out-solo
--q/--quality <INT>      Trim low-quality ends from reads in addition to adapter removal. [...]
-                        Default Phred score: 20.
+  -q, --quality <QUALITY>
+        Quality trimming cutoff (Phred score). Bases below this are trimmed from 3' end
+        [default: 20]
 
---length <INT>          Discard reads that became shorter than length INT because of either
-                        quality or adapter trimming. A value of '0' effectively disables
-                        this behaviour. Default: 20 bp.
+--length <LENGTH>
+        Minimum required sequence length after trimming. Default: 20 (18 for smallRNA adapter).
+        In paired-end mode, both reads must pass; see --retain_unpaired to keep single survivors
 ```
 
-- The option `-q` (short notation) or `--quality` (long notation) sets
-  the base quality score threshold, which has the Phred unit we've discussed.
-  The default threshold is **20**, which corresponds to an estimated 0.01 error rate.
+- A\) The default base quality score threshold (option `-q`/`--quality`) is **20**,
+  which corresponds to an estimated 0.01 error rate.
   TrimGalore will trim bases with a lower quality score than this threshold
-  from the **end** (3' end) of the reads.
-  It will **not** remove or mask low-quality bases elsewhere in the read,
+  from the **end** (3' end) of the reads ---
+  it will **not** remove or mask low-quality bases elsewhere in the read,
   such as in the middle.
 
-- The option `--length` sets the read length threshold:
+- B\) The default read length threshold (option `--length`) is **20 bp**:
   any reads that are shorter than this after adapter and quality trimming will be removed.
-  The default threshold is **20 bp**.
   With paired-end input, the corresponding other read will also be removed,
   regardless of its length:
   paired-end FASTQ files always need to contain both the R1 and R2 for each pair.
 
 </details>
 
-<details><summary>**6.** Write the `trimgalore.sh` script</summary>
+<details><summary>**5.** Write the `trimgalore.sh` script</summary>
 
 ```{.bash .file filename="scripts/trimgalore.sh"}
 #!/bin/bash
 set -euo pipefail
 
+# Run TrimGalore on the paired-end FASTQ files of one sample
+# Usage: bash scripts/trimgalore.sh <R1 FASTQ file> <R2 FASTQ file> <output dir>
+
 # Constants
 TRIMGALORE_CONTAINER=oras://community.wave.seqera.io/library/trim-galore:2.3.0--a56e49e832976df4
 
 # Copy the placeholder variables
-R1="$1"
-R2="$2"
+fastq_r1="$1"
+fastq_r2="$2"
 outdir="$3"
 
 # Initial logging
 echo "Starting script trimgalore.sh"
 date
-echo "Input R1 FASTQ file:      $R1"
-echo "Input R2 FASTQ file:      $R2"
+echo "Input R1 FASTQ file:      $fastq_r1"
+echo "Input R2 FASTQ file:      $fastq_r2"
 echo "Output dir:               $outdir"
 echo
 
@@ -143,14 +154,11 @@ apptainer exec "$TRIMGALORE_CONTAINER" \
     --paired \
     --fastqc \
     --output_dir "$outdir" \
-    "$R1" \
-    "$R2"
+    "$fastq_r1" \
+    "$fastq_r2"
 
 # Final logging
 echo
-echo "TrimGalore version:"
-apptainer exec "$TRIMGALORE_CONTAINER" \
-    trim_galore -v
 echo "Successfully finished script trimgalore.sh"
 date
 ```
@@ -163,7 +171,7 @@ date
 
 </details>
 
-<details><summary>**7.** Run the script for sample `S63`, and check the output files</summary>
+<details><summary>**6.** Run the script for sample `S63`, and check the output files</summary>
 
 ```bash
 bash scripts/trimgalore.sh \
@@ -173,38 +181,82 @@ bash scripts/trimgalore.sh \
 ```
 ```bash-out
 Starting script trimgalore.sh
-Thu Mar 28 10:34:24 EDT 2024
-Input R1 FASTQ file:      ../garrigos/fastq/S63_R1.fastq.gz
-Input R2 FASTQ file:      ../garrigos/fastq/S63_R2.fastq.gz
-Output dir:               results/trimgalore
+Fri Oct 16 03:07:17 PM EDT 2026
+Input FASTQ file 1: ../garrigos/fastq/S63_R1.fastq.gz
+Input FASTQ file 2: ../garrigos/fastq/S63_R2.fastq.gz
+Output dir:         results/trimgalore
 
-Multicore support not enabled. Proceeding with single-core trimming.
-Path to Cutadapt set as: 'cutadapt' (default)
-Cutadapt seems to be working fine (tested command 'cutadapt --version')
-Cutadapt version: 4.4
+INFO:    Using cached SIF image
+INFO:    gocryptfs not found, will not be able to use gocryptfs
 
-# [...output truncated...]
+Trim Galore v2.3.0
+unknown — linux/x86_64 — built 2026-06-27T16:23:35Z
+==================================================
+
+Auto-detecting adapter type...
+Using Illumina adapter for trimming (count: 1). Second best hit was Nextera (count: 0).
+Adapter: Illumina (AGATCGGAAGAGC)
+
+Poly-G trimming: ENABLED (auto-detected). 1132 of 500000 reads (0.23%) have poly-G tails (>=10bp) — consistent with 2-colour chemistry (NovaSeq/NextSeq). To disable: --no_poly_g
+Trimming (paired-end):
+  R1: ../garrigos/fastq/S63_R1.fastq.gz
+  R2: ../garrigos/fastq/S63_R2.fastq.gz
+  Output R1: results/trimgalore/S63_R1_val_1.fq.gz
+  Output R2: results/trimgalore/S63_R2_val_2.fq.gz
+
+=== Summary (Read 1) ===
+
+Total reads processed:               500000
+Reads with adapters:                  65070 (13.0%)
+
+=== Summary (Read 2) ===
+
+Total reads processed:               500000
+Reads with adapters:                  50357 (10.1%)
+R1 reads with poly-G trimmed:         11919 (2.4%)
+  R1 poly-G bases removed:            90248
+R2 reads with poly-G trimmed:         43397 (8.7%)
+  R2 poly-G bases removed:          1187383
+
+=== Paired-end validation ===
+
+Pairs analyzed:                      500000
+Pairs removed:                        37016 (7.4%)
+Report: results/trimgalore/S63_R1.fastq.gz_trimming_report.txt
+JSON report: results/trimgalore/S63_R1.fastq.gz_trimming_report.json
+Report: results/trimgalore/S63_R2.fastq.gz_trimming_report.txt
+JSON report: results/trimgalore/S63_R2.fastq.gz_trimming_report.json
+
+Running FastQC on results/trimgalore/S63_R1_val_1.fq.gz
+
+Running FastQC on results/trimgalore/S63_R2_val_2.fq.gz
+
+Successfully finished script trimgalore.sh
+Fri Oct 16 03:07:29 PM EDT 2026
 ```
 
 ```bash
 ls -lh results/trimgalore
 ```
 ```bash-out
-total 42M
--rw-rw----+ 1 <user> PAS3493 2.4K Mar 28 10:49 S63_R1.fastq.gz_trimming_report.txt
--rw-rw----+ 1 <user> PAS3493 674K Mar 28 10:49 S63_R1_val_1_fastqc.html
--rw-rw----+ 1 <user> PAS3493 349K Mar 28 10:49 S63_R1_val_1_fastqc.zip
--rw-rw----+ 1 <user> PAS3493  20M Mar 28 10:49 S63_R1_val_1.fq.gz
--rw-rw----+ 1 <user> PAS3493 2.3K Mar 28 10:49 S63_R2.fastq.gz_trimming_report.txt
--rw-rw----+ 1 <user> PAS3493 676K Mar 28 10:50 S63_R2_val_2_fastqc.html
--rw-rw----+ 1 <user> PAS3493 341K Mar 28 10:50 S63_R2_val_2_fastqc.zip
--rw-rw----+ 1 <user> PAS3493  21M Mar 28 10:49 S63_R2_val_2.fq.gz
+-rw-rw----+ 1 jelmer PAS0471 2.6K Oct 17 11:34 S63_R1.fastq.gz_trimming_report.json
+-rw-rw----+ 1 jelmer PAS0471 2.3K Oct 17 11:34 S63_R1.fastq.gz_trimming_report.txt
+-rw-rw----+ 1 jelmer PAS0471 288K Oct 17 11:34 S63_R1_val_1_fastqc.html
+-rw-rw----+ 1 jelmer PAS0471 355K Oct 17 11:34 S63_R1_val_1_fastqc.zip
+-rw-rw----+ 1 jelmer PAS0471  25M Oct 17 11:34 S63_R1_val_1.fq.gz
+-rw-rw----+ 1 jelmer PAS0471 2.3K Oct 17 11:34 S63_R2.fastq.gz_trimming_report.json
+-rw-rw----+ 1 jelmer PAS0471 2.4K Oct 17 11:34 S63_R2.fastq.gz_trimming_report.txt
+-rw-rw----+ 1 jelmer PAS0471 274K Oct 17 11:34 S63_R2_val_2_fastqc.html
+-rw-rw----+ 1 jelmer PAS0471 334K Oct 17 11:34 S63_R2_val_2_fastqc.zip
+-rw-rw----+ 1 jelmer PAS0471  25M Oct 17 11:34 S63_R2_val_2.fq.gz
 ```
 
-For each of the two input files, there are four output files:
+For each of the two input files, there are five output files:
 
 - `*_val_*.fq.gz`: the trimmed FASTQ file
 - `*_trimming_report.txt`: a text report of the trimming results
+- `*_trimming_report.json`: the same kind of information,
+  in a format that is easy for other programs to read (e.g. MultiQC)
 - `*_fastqc.html` and `*_fastqc.zip`: the FastQC results for the trimmed FASTQ file
 
 Then, commit the script:
@@ -216,48 +268,63 @@ git commit -m "Add TrimGalore script"
 
 </details>
 
-<details><summary>**8.** Trimming results</summary>
+<details><summary>**7.** Trimming results</summary>
 
-The adapter and quality trimming results for the R1 and R2 files
-are separated widely among all the output that TrimGalore prints.
-They are shown below, first for the R1 and then for the R2 file:
-
-```bash-out-solo
-=== Summary ===
-
-Total reads processed:                 500,000
-Reads with adapters:                    65,070 (13.0%)
-Reads written (passing filters):       500,000 (100.0%)
-
-Total basepairs processed:    35,498,138 bp
-Quality-trimmed:               1,274,150 bp (3.6%)
-Total written (filtered):     34,138,461 bp (96.2%)
-```
-
-```bash-out-solo
-=== Summary ===
-
-Total reads processed:                 500,000
-Reads with adapters:                    50,357 (10.1%)
-Reads written (passing filters):       500,000 (100.0%)
-
-Total basepairs processed:    36,784,563 bp
-Quality-trimmed:               1,283,793 bp (3.5%)
-Total written (filtered):     35,440,230 bp (96.3%)
-```
-
-Just before the FastQC logs is a line that reports how many read pairs were removed
-due to the length filter:
-
-```bash-out-solo
-Number of sequence pairs removed because at least one read was shorter than the length cutoff (20 bp): 33955 (6.79%)
-```
-
-So:
-
+- **Adapters**: TrimGalore looked for the standard Illumina adapter (`AGATCGGAAGAGC`).
+  You didn't tell it which adapter to look for: it auto-detected this,
+  by counting how often each of several common adapter sequences occurred in the reads
+  (the Illumina adapter was the best hit, and Nextera the second-best).
 - **13.0%** (R1) and **10.1%** (R2) of reads had adapters.
-- **3.6%** (R1) and **3.5%** (R2) of bases were quality-trimmed.
-- **6.79%** of read pairs were removed because they were too short.
+- **Quality vs. adapter trimming**: in both files, far more bases were removed by
+  **quality trimming**.
+  The "Summary" section of each trimming report lists the quality-trimmed bases directly,
+  first for R1 and then for R2:
+
+  ```bash-out-solo
+  Total basepairs processed:     35,498,138 bp
+  Quality-trimmed:                1,274,150 bp (3.6%)
+  Total written (filtered):      34,138,461 bp (96.2%)
+  ```
+
+  ```bash-out-solo
+  Total basepairs processed:     36,784,563 bp
+  Quality-trimmed:                1,283,793 bp (3.5%)
+  Total written (filtered):      35,440,230 bp (96.3%)
+  ```
+
+  The adapter-trimmed bases aren't listed directly,
+  but they make up the rest of the difference between "processed" and "written":
+  for R1, 35,498,138 − 1,274,150 − 34,138,461 = **85,527 bp** (0.24%),
+  and for R2, **60,540 bp** (0.16%).
+  Alternatively, the "Overview of removed sequences" table in each report shows that
+  most adapter matches are only 1--3 bp long:
+  for example, 54,817 of the 65,070 R1 reads with adapters had just 1 base removed.
+  (The `expect` column shows that 125,000 such 1-bp matches would be expected by chance alone,
+  so many of these "adapters" are probably just a read ending in an `A`.)
+
+- **7.4%** of read pairs (37,016 of 500,000) were removed altogether:
+  see the "Paired-end validation" section of the logging output,
+  or of the R2 trimming report:
+
+  ```bash-out-solo
+  Number of sequence pairs removed because at least one read was shorter than the length cutoff (7.40%):
+                                   37,016
+  ```
+
+</details>
+
+<details><summary>**8.** Poly-G trimming</summary>
+
+- TrimGalore **did** do poly-G trimming, and you didn't have to tell it to:
+  "Poly-G trimming: ENABLED (auto-detected)".
+- It concludes that the reads were likely generated with
+  **two-color chemistry** (NovaSeq or NextSeq),
+  since 0.23% of reads have poly-G tails of 10 bp or more.
+- Much more poly-G trimming was done in the **R2** file:
+  8.7% of reads and ~1.19 million bases, versus 2.4% of reads and ~90,000 bases in R1.
+  _Optional_: R2 reads are sequenced after the R1 reads,
+  by which time the clusters on the flow cell give a weaker signal ---
+  just like you typically see lower quality scores in R2 files.
 
 </details>
 
@@ -265,46 +332,30 @@ So:
 
 There are clear differences in, for example:
 
-- The mean quality scores, as shown by both the "Per base sequence quality" and the
-  "Per sequence quality scores" graphs: qualities are higher after trimming.
+- **Pass/warn/fail** status:
+  "Per base N content" went from warn to pass,
+  and "Overrepresented sequences" from fail to pass.
+  Other modules kept their status, including "Per sequence GC content" (still fail).
+- **Basic statistics**: the number of reads went from 500,000 to 462,984
+  (500,000 minus the 37,016 removed pairs from question 7),
+  and the read length range from 35--74 to 20--74 bp.
 - The "Per sequence GC content", "Sequence Length Distribution",
   and "Overrepresented sequences" graphs,
   all of which had artefacts related to the very short reads that only
   contained `N`s: these reads have been removed by the trimming process.
 
-Even reads like the 35-bp example from week 4 were removed:
+Even reads like the 35-bp example from week 4 were removed,
+even though they're longer than the 20-bp length threshold:
 all of their bases had quality score `#` (Phred score 2),
 so quality trimming removed every base.
 The resulting empty (0 bp) reads were then removed by the length filter,
 together with their mates.
 
-</details>
-
-<details><summary>**10.** Parameter expansion for trimmed file names</summary>
-
-```bash
-trimmed_R1=results/trimgalore/S63_R1_val_1.fq.gz
-echo "${trimmed_R1/_R1/_R2}"
-```
-```bash-out
-results/trimgalore/S63_R2_val_1.fq.gz
-```
-
-- This is **not** the correct file name:
-  the trimmed R2 file is `S63_R2_val_2.fq.gz`,
-  because TrimGalore's suffix also contains the read number (`_val_1` vs. `_val_2`).
-- A parameter expansion that does work:
-
-  ```bash
-  echo "${trimmed_R1/_R1_val_1/_R2_val_2}"
-  ```
-  ```bash-out
-  results/trimgalore/S63_R2_val_2.fq.gz
-  ```
-
-- Other solutions are fine too, such as two consecutive parameter expansions.
-  But note that `${trimmed_R1//1/2}`, which replaces all `1`s,
-  would fail for sample IDs that contain a `1`, like `S61`.
+There is no single correct answer to the last part.
+For example, you might have been surprised that some modules still fail:
+"Per base sequence content" commonly fails for RNA-seq data
+because of biases in the first bases of the reads,
+which trimming doesn't (and shouldn't) fix.
 
 </details>
 
@@ -313,7 +364,7 @@ results/trimgalore/S63_R2_val_1.fq.gz
 Your genAI answers will vary,
 so the notes below focus on what we're looking for.
 
-<details><summary>**11.** Claude reviews your script</summary>
+<details><summary>**10.** Sonnet reviews your script</summary>
 
 There is no single correct answer here.
 We're looking for a thoughtful evaluation of each suggestion:
@@ -323,13 +374,27 @@ We're looking for a thoughtful evaluation of each suggestion:
 - Suggestions that conflict with how we write scripts in this course,
   or that are unnecessary in this context,
   such as using multi-threading, or adding complex argument parsing.
+- Claude may point out that the script doesn't report the TrimGalore version,
+  as asked by your `CLAUDE.md`.
+  That's fair as a reference to `CLAUDE.md`,
+  but not needed here, since TrimGalore prints its version itself.
 - If your script uses uppercase variable names like `R1`,
   Claude may flag that as conflicting with the `CLAUDE.md` convention
   that uppercase is only for constants.
   That's a matter of convention, not correctness:
   the script works either way.
   If you prefer `R1`, you could change the convention in `CLAUDE.md`
-  (see bonus question 22).
+  (see question 18).
+- The estimated cost from `/usage`.
+
+</details>
+
+<details><summary>**11.** Opus reviews your script</summary>
+
+There is no single correct answer here.
+We're looking for a concrete comparison of the two reviews,
+including the costs of both conversations from `/usage`,
+and a reasoned answer to which review you'd trust more and whether that was worth the cost.
 
 </details>
 
@@ -342,7 +407,9 @@ bash scripts/trimgalore.sh \
     results/trimgalore
 ```
 ```bash-out
-# TODO: paste output from OSC
+INFO:    Using cached SIF image
+INFO:    gocryptfs not found, will not be able to use gocryptfs
+Error: Input file not found: ../garrigos/fastq/S99_R1.fastq.gz
 ```
 
 Even without an explicit check, the script stops with an error thanks to `set -e`,
@@ -358,7 +425,7 @@ Claude's exact code will vary, but it will likely look something like this:
 
 ```bash
 # Check that the input files exist
-for fastq in "$R1" "$R2"; do
+for fastq in "$fastq_r1" "$fastq_r2"; do
     if [[ ! -f "$fastq" ]]; then
         echo "Error: input file $fastq does not exist" >&2
         exit 1
@@ -381,16 +448,16 @@ done
 A correct loop:
 
 ```bash
-for R1 in ../garrigos/fastq/S6*_R1.fastq.gz; do
-    R2="${R1/_R1/_R2}"
-    bash scripts/trimgalore.sh "$R1" "$R2" results/trimgalore
+for fastq_r1 in ../garrigos/fastq/S6*_R1.fastq.gz; do
+    fastq_r2="${fastq_r1/_R1/_R2}"
+    bash scripts/trimgalore.sh "$fastq_r1" "$fastq_r2" results/trimgalore
 done
 ```
 
 - It loops over R1 files only, so it runs the script once per sample.
 - It gets the R2 file name by replacing `_R1` with `_R2`.
   Because the search pattern includes the underscore,
-  it doesn't have the `S61` pitfall:
+  it doesn't have the `S61` pitfall from the w7b self-study:
   the `1` in a sample ID like `S61` is not preceded by `_R`.
 - The `S6*` glob matches only the 7 samples `S63` to `S69`.
 - Other correct approaches are fine too,
@@ -403,9 +470,9 @@ done
 Test the loop:
 
 ```bash
-for R1 in ../garrigos/fastq/S6*_R1.fastq.gz; do
-    R2="${R1/_R1/_R2}"
-    echo bash scripts/trimgalore.sh "$R1" "$R2" results/trimgalore
+for fastq_r1 in ../garrigos/fastq/S6*_R1.fastq.gz; do
+    fastq_r2="${fastq_r1/_R1/_R2}"
+    echo bash scripts/trimgalore.sh "$fastq_r1" "$fastq_r2" results/trimgalore
 done
 ```
 ```bash-out
@@ -418,47 +485,83 @@ bash scripts/trimgalore.sh ../garrigos/fastq/S68_R1.fastq.gz ../garrigos/fastq/S
 bash scripts/trimgalore.sh ../garrigos/fastq/S69_R1.fastq.gz ../garrigos/fastq/S69_R2.fastq.gz results/trimgalore
 ```
 
-Then, run the loop without `echo`, and check the output files:
+Then, run the loop without `echo`, and check the output files,
+for example by listing only the trimmed R1 files:
 
 ```bash
-ls results/trimgalore | wc -l
+ls results/trimgalore/*_val_1.fq.gz
 ```
 ```bash-out
-56
+results/trimgalore/S63_R1_val_1.fq.gz
+results/trimgalore/S64_R1_val_1.fq.gz
+results/trimgalore/S65_R1_val_1.fq.gz
+results/trimgalore/S66_R1_val_1.fq.gz
+results/trimgalore/S67_R1_val_1.fq.gz
+results/trimgalore/S68_R1_val_1.fq.gz
+results/trimgalore/S69_R1_val_1.fq.gz
 ```
 
-- You'd expect **56** files: 8 output files per sample (see question 7) × 7 samples.
-- The files for `S63` from question 7 were overwritten, so they don't add to this count.
+All 7 samples are represented.
+(The files for `S63` from question 6 were overwritten.)
 
 </details>
 
-<details><summary>**16.** A summary table</summary>
+<details><summary>**16.** A summary command</summary>
 
-Claude's exact command will vary. A simple version:
+Claude's exact command will vary. One version:
 
 ```bash
-grep "pairs removed" results/trimgalore/*_trimming_report.txt
+for report in results/trimgalore/*_R2.fastq.gz_trimming_report.txt; do
+    sample=$(basename "$report" _R2.fastq.gz_trimming_report.txt)
+    percent=$(grep "sequence pairs removed because" "$report" | cut -d'(' -f2 | cut -d')' -f1)
+    echo "$sample $percent"
+done
 ```
 ```bash-out
-# TODO: paste output from OSC
+S63 7.40%
+S64 3.35%
+S65 1.94%
+S66 3.71%
+S67 1.78%
+S68 2.56%
+S69 4.81%
 ```
 
-<!-- TODO: check which trimming report(s) contain the "pairs removed" line in TrimGalore 2.3.0 -->
+A simpler alternative uses the one-line summary that both trimming reports of each sample contain,
+which gives the same numbers (rounded to one decimal):
 
-- The value for `S63` should match your answer to question 8 (6.79%).
+```bash
+grep "shorter than the length cutoff" results/trimgalore/*_R1.fastq.gz_trimming_report.txt
+```
+
+Each output line starts with the file name (and thereby the sample ID),
+followed by the matching line, e.g. for `S63`:
+`Sequences removed because they became shorter than the length cutoff of 20 bp: 37016 (7.4%)`.
+
+- The value for `S63` should match your answer to question 7 (7.4%).
 - You should be able to explain each part of the command,
   including any constructs we didn't cover in class.
 
 </details>
 
-<details><summary>**17.** Export your conversations</summary>
+<details><summary>**17.** Document your genAI use</summary>
 
-Your repo should contain a `doc/ai` dir with the exported conversations from Part C,
-with descriptive file names like `2026-10-22_review-trimgalore-script.txt`.
+Your repo should contain a `doc/ai` dir with the exported conversations
+for questions 10, 11, 13, and 14,
+with file names that include the question number, like `q10_review-sonnet.txt`.
+If Claude kept a diary (question 13), `doc/ai/ai-diary.md` may be there too.
 
 </details>
 
-<details><summary>**18.** Reflection</summary>
+<details><summary>**18.** Update your `CLAUDE.md`</summary>
+
+There is no single correct answer here.
+We're looking for an instruction that is clearly motivated by your experiences in Part C,
+and a description of whether Claude followed it in a new conversation.
+
+</details>
+
+<details><summary>**19.** Reflection</summary>
 
 There is no single correct answer here.
 
@@ -466,7 +569,7 @@ There is no single correct answer here.
 
 ### Part D: Publish your repo on GitHub
 
-<details><summary>**19--20.** Create a GitHub repo, push, and create an Issue</summary>
+<details><summary>**20.** Create a GitHub repo, push, and create an Issue</summary>
 
 After creating the repo on GitHub:
 
@@ -480,21 +583,5 @@ git push -u origin main
 - Your GitHub repo should contain your final `README.md`, `CLAUDE.md`, `.gitignore`,
   `scripts`, and `doc/ai`, but not `results`.
 - Your Issue should tag `@kstarr791` and `@jelmerp` in its text box.
-
-</details>
-
-### Bonus
-
-<details><summary>**21.** Something you don't know how to do yourself</summary>
-
-There is no single correct answer here.
-We're looking for a clear description of how you checked the code,
-for example by comparing its output with a value you computed in another way.
-
-</details>
-
-<details><summary>**22.** Update your `CLAUDE.md`</summary>
-
-There is no single correct answer here.
 
 </details>

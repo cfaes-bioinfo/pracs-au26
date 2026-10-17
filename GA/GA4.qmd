@@ -1,5 +1,4 @@
 ---
-draft: true
 title: "Graded Assignment 4:<br>Shell scripts with and without genAI"
 pagetitle: "GA4"
 date: 2026-10-25
@@ -37,13 +36,11 @@ number-sections: false
 
 ### What you'll practice
 
-In this graded assignment, you will first write a shell script to run the
-program TrimGalore, run it, and interpret its output, all **without** genAI.
+In this graded assignment, you will first do the following **without** genAI:
+write a shell script to run the program TrimGalore, run it, and interpret its output.
 Then, you'll use **Claude Code** to review and extend your script,
 to write a loop that runs it for multiple samples,
 and to summarize the results.
-Along the way, you'll critically check what Claude produces,
-and document your genAI use.
 
 ### Submission expectations
 
@@ -81,7 +78,7 @@ in which case you should also be able to explain any code that genAI wrote for y
 : {.striped tbl-colwidths="[7,93]"}
 
 :::
-::: {.column width=8%"}
+::: {.column width="8%"}
 
 :::
 :::
@@ -97,13 +94,14 @@ The general guidelines from now on are:
   do the research needed to understand them.
 - Whatever the source, you remain responsible for whether the code is correct.
 
-That said, this assignment has two exceptions:
+That said, this assignment has two exceptions to these guidelines:
 
 - You must do **Part B without** genAI assistance (same rules as GA1–GA3).
   This is because in Part C, you'll compare genAI output with
   a script and answers you produced yourself.
-- In Part C, on the other hand, you are _required_ to use Claude Code and to
-  document how you used it.
+- In **Part C**, genAI use is not just allowed but _required_:
+  you must use Claude Code specifically (not another genAI tool),
+  and document how you used it (item 17).
 :::
 
 ### Rubric
@@ -123,8 +121,10 @@ and 0 points for missing or incorrect answers).
   - Add the commands you ran only where the template has a `bash` code block for them.
   - Include a command's output only where the template has an output block for it.
 
-- For each **shell script** you write, follow the practices from class:
+- For any **shell script** you write, follow the practices from class:
   start with the shebang and safe-settings lines,
+  followed by a comment block with the script's purpose and a usage line
+  (as introduced in w9a),
   and copy any placeholder variables like `$1` to descriptively named variables.
 
 - **Commit** your files to your Git repo as you go along,
@@ -149,15 +149,30 @@ and 0 points for missing or incorrect answers).
 
 ### Part A: Your project dir and Git repo
 
-01. Inside dir `GA4`, create subdirs `scripts` and `results`.
-    Then, copy the `CLAUDE.md` file you created in class into your working dir,
-    so that in part C, Claude will follow the instructions that it contains.
+01. Inside dir `GA4`, create subdirs `scripts` and `results/fastqc`.
+    Then:
 
-    <details><summary>{{< fa lightbulb >}} Help! I don't have the `CLAUDE.md` file.</summary>
-    In that case, copy the `CLAUDE.md` file from the share dir instead:
+    - Copy the `CLAUDE.md` file you created in class into your working dir
+      (Claude will use this in Part C).
+
+    - Copy a FastQC report from week 7 (you'll compare this to a later FastQC report in Part B):
+
+      ```bash
+      cp ../week07/results/fastqc/S63_R1_fastqc.html results/fastqc/
+      ```
+
+    <details><summary>{{< fa lightbulb >}} Help! I don't have one or both of the files.</summary>
+
+    You can copy the `CLAUDE.md` file from the share dir like so:
 
     ```bash
     cp /fs/ess/PAS3493/share/GA4/CLAUDE.md .
+    ```
+
+    And the FastQC report from the share dir like so:
+
+    ```bash
+    cp /fs/ess/PAS3493/share/GA3/results/fastqc/S63_R1_fastqc.html results/fastqc/
     ```
 
     </details>
@@ -168,7 +183,7 @@ and 0 points for missing or incorrect answers).
 
 ### Part B: A TrimGalore script --- without genAI
 
-TrimGalore [@krueger2021] is a commonly used tool to preprocess the reads
+TrimGalore [@krueger2026] is a commonly used tool to preprocess the reads
 in FASTQ files before further analysis.
 It's the next step in the RNA-seq analysis workflow we're gradually applying to
 the @garrigós2025 data in this course:
@@ -177,21 +192,21 @@ the @garrigós2025 data in this course:
 
 <hr style="height:1pt; visibility:hidden;" />
 
-TrimGalore takes FASTQ files as input, and removes:
+TrimGalore takes FASTQ files as input,
+and outputs filtered FASTQ files, along the way removing:
 
 - Any adapter sequences that are present in the reads^[
   Adapters are always added to DNA/cDNA fragments of interest prior to Illumina sequencing,
-  and the last bases of a read can "read-through" into the adapter if the fragment
+  and the last bases of a read can "read through" into the adapter if the fragment
   is shorter than the read length.]
 - Poor-quality bases at the end of the reads
 - Reads that have become very short after the prior two steps
 
-It then writes the filtered reads to new FASTQ files.
-But unlike FastQC, you don't run it on one FASTQ file at a time.
-When you have paired-end reads, like with the @garrigós2025 data,
+Unlike FastQC, TrimGalore isn't run on one FASTQ file at a time:
+when you have paired-end reads, like we do with the @garrigós2025 data,
 a **single** TrimGalore run should include **both** the R1 (forward read) and
 R2 (reverse read) file for one sample.
-This is because R1 and R2 files need to remain "synced":
+This is because R1 and R2 files should remain "synced":
 generally, you can't remove a read from an R1 file without also removing
 its mate from the R2 file.
 
@@ -201,8 +216,8 @@ its mate from the R2 file.
 Several largely equivalent tools exist for this kind of FASTQ preprocessing ---
 [Trimmomatic](http://www.usadellab.org/cms/index.php?page=trimmomatic) and
 [fastp](https://github.com/OpenGene/fastp) are two other commonly used ones.
-TrimGalore itself is "just" a wrapper around yet another tool called Cutadapt,
-but it is simpler to use.
+TrimGalore started out as a "wrapper" around yet another tool called Cutadapt,
+but since version 2 (which we're using), it is a standalone program.
 Two advantages of TrimGalore are:
 
 - It will auto-detect the adapters that are present in your reads.
@@ -210,30 +225,29 @@ Two advantages of TrimGalore are:
 :::
 
 03. Get a link from the Seqera Containers website to a **container** with
-    TrimGalore version 2.3.0.
+    TrimGalore version 2.3.0 (note: the package is called `trim-galore`).
     Then, print TrimGalore's help info by running `trim_galore --help` with your
-    container link. Use the help info to find the options to:
-    - Tell TrimGalore that the reads in your input FASTQ files are **paired-end**^[
+    container link. Use this help info to find the TrimGalore options to:
+    - Tell it that your reads are **paired-end**^[
       If you don't do this, TrimGalore will process the two FASTQ files independently.]
     - Set the **output dir**
     - Make it **run FastQC** on the trimmed FASTQ files
 
-04. Also use the help info to find the **default thresholds** for the
-    base quality score and the read length.
-    In your own words, what does TrimGalore do with each of these thresholds?
-    For example, will it remove a low-quality base in the middle of a read?
+04. Also use the help info to find the **default thresholds** for
+    A\) the base quality score and B\) the read length, and report what they are.
     _(You don't have to change these thresholds, the defaults work fine for us.)_
 
-05. Write a shell script `scripts/trimgalore.sh` that runs TrimGalore
+05. **Write a shell script** `scripts/trimgalore.sh` that runs TrimGalore
     on the R1 and R2 FASTQ files of **one** sample:
     - The script should accept three arguments:
       the R1 FASTQ file, the R2 FASTQ file, and the output dir.
-    - Use the three options from question 4.
-    - Include "logging statements" with `echo`, like in the FastQC script from class,
-      and a line that prints the TrimGalore version.
+    - Use the three options from question 3.
+    - Include "logging statements" with `echo`, like in the FastQC script from class.
+      (You don't need to separately print the TrimGalore version,
+      since it is printed automatically when you run the program.)
 
     ::: {.callout-warning collapse="true"}
-    #### Stick to using the default setting for the number of cores, for now _(Click to expand)_
+    #### Stick to using the default setting for the number of cores, for now. _(Click to expand)_
     Since you're running the program interactively on your single-core VS Code
     compute job, you only have 1 core at your disposal.
     Using 1 core is TrimGalore's default,
@@ -242,53 +256,92 @@ Two advantages of TrimGalore are:
     which gives you the opportunity to use multiple cores to speed things up.
     :::
 
-06. Run your script for the FASTQ files of sample `S63`,
+06. **Run your script** for the FASTQ files of sample `S63` (in `../garrigos/fastq`),
     with `results/trimgalore` as the output dir.
     Then, list the files in the output dir,
-    and briefly describe what each _type_ of output file contains.
+    and briefly **describe** what each type of output file contains.
     Once your script works, commit it.
-    _(If something went wrong, go back to your script and try to fix it,_
-    _and briefly describe the problem and your fix in the README.)_
+    (If it failed, try to fix your script,
+    and briefly describe the problem and your fix in the README.)
 
-07. TrimGalore printed a lot of output to the screen,
-    most of which is also saved in its `*_trimming_report.txt` output files.
-    Use this output to answer the following:
+07. TrimGalore printed quite a bit of logging output to the screen,
+    while additional information is saved in the `*_trimming_report.txt` output files.
+    Use this information to answer the following:
+    - Which [adapter](../week01/w1b_omics-data.html#/a-closer-look-at-the-processed-dna-fragments)
+      sequence did TrimGalore look for in the reads,
+      and how did it decide on this (you didn't tell it which adapter to look for)?
     - In each file (R1 and R2), in what percentage of reads were adapters detected?
-    - In each file (R1 and R2), what percentage of bases were quality-trimmed?
-    - What percentage of read pairs were removed because they were too short?
+    - In each file, were more bases removed as a result of quality trimming or adapter trimming?
+    - What percentage of read pairs were removed altogether?
 
-08. Compare TrimGalore's FastQC report for the **trimmed** R1 file with
-    your earlier (GA3/week 7) FastQC report for the **raw** R1 file of the same sample.
+08. TrimGalore also reports on **poly-G trimming**.
+    Newer Illumina sequencers, such as the NextSeq and NovaSeq,
+    use a "two-color" chemistry in which `G` bases produce no signal.
+    As a result, when the signal is lost near the end of a read,
+    the sequencer calls a stretch of false `G`s,
+    which should be trimmed off.
+    Use TrimGalore's logging output and the trimming reports to answer the following:
+    - Did TrimGalore do poly-G trimming, and did you have to tell it to?
+    - What does TrimGalore conclude about the sequencing technology
+      that was used to generate these reads?
+    - Was more poly-G trimming done in the R1 or the R2 file?
+      _(Optional: any idea why?)_
+
+09. Compare TrimGalore's FastQC report for the **trimmed** R1 file with the FastQC
+    report for the **raw** R1 file of the same sample (the one you copied to `results/fastqc`).
     - Name at least two differences between the reports.
+      Do things look better now in terms of pass/warn/fail status?
     - Do the short reads with only `N`s,
       which you saw [in week 4](/week04/w4c_shell-files2.qmd#less-to-page-through-files),
       appear to have been removed?
-      The example read in week 4 was 35 bp long,
-      which is longer than TrimGalore's default length threshold.
-      So how could TrimGalore have removed it?
+      If so, was that due to the length threshold, or something else?
+    - Name something you didn't expect or are confused about.
+
+    <details><summary>{{< fa lightbulb >}} To see the two files side by side, download one or both _(Click to expand)_</summary>
+
+    The HTML preview in VS Code won't let you preview each file in a separate tab.
+    So, to view them side by side, you can download one or both of the FastQC reports:
+    in the file explorer, right-click on a file and click "Download...".
+    Then, open the downloaded file(s) in your browser.
+
+    </details>
 
 ### Part C: Bring in genAI
 
 Now that you have a script that you wrote yourself and that you know works,
 you'll use Claude Code to review and extend it.
+Some general guidelines:
 
-- Use the Claude extension in VS Code,
-  and keep the permission mode at **Manual** throughout.
-- Start a new conversation for each question,
+- Use the Claude extension in VS Code, with:
+  - The permission mode set to **Manual** throughout
+  - The default model and effort level (Sonnet 5 Medium),
+    except where a question explicitly asks you to change them
+- Start a **new conversation** for each question,
   to keep the context window small (and to save costs).
-- For each question, record in your README what you asked,
+- For questions 10, 11, 13, and 14,
+  **export** the conversation when you're done with it, using the `/export` command
+  as shown in [class](/week09/w9a_claude.qmd#documenting-ai-use).
+  Save it in a dir `doc/ai` in your working dir,
+  with a file name that includes the question number, like `q10_review-sonnet.txt`.
+  (These are the conversations that produced code you kept,
+  or that informed your decisions.
+  For the other questions, your notes in the README are enough.)
+- For each question, **record** in your README what you asked,
   what you got, and what you concluded after checking it.
 - In this specific case, you are graded on your evaluation of Claude's output,
   not on whether Claude happened to give a good answer.
   A well-documented case in which you caught Claude being wrong
   is worth full points.
 
-09. With your `scripts/trimgalore.sh` open in the editor, and the Claude panel open,
+10. With your `scripts/trimgalore.sh` open in the editor, and the Claude panel open,
     check that the script is added as context
     (you should see its name below the prompt box).
-    Then, ask Claude to **review** your script, for example:
+    Then, using the default model and effort level (Sonnet 5 Medium),
+    ask Claude to **review** your script, for example:
 
-    > Review this shell script. What could be wrong with it, and what would you improve?
+    > Review this shell script.
+    > List the 5 most important problems or improvements, most important first,
+    > with a one-sentence reason for each.
     > Don't change it yet.
 
     In your README, briefly list Claude's suggestions,
@@ -298,25 +351,69 @@ you'll use Claude Code to review and extend it.
     or that conflicts with how we've been writing scripts in this course?
     Did it refer to any of the conventions in your `CLAUDE.md`?
 
-10. Before making changes,
+    Finally, type `/usage` in the prompt box,
+    and add the estimated cost of this conversation to your README.
+
+    <details><summary>{{< fa lightbulb >}} Some hints about possible feedback _(Click to expand)_</summary>
+
+    - If you use "# Copy the placeholder variables" as a comment,
+      Claude is likely to comment on that, calling it confusing or inaccurate.
+      This is technically fair, but rather nitpicky, and you can ignore it.
+
+    </details>
+
+11. Now, get a second review from an even more capable model.
+    Start a new conversation,
+    so that this model doesn't see the first review.
+    Then, switch the model to **Opus 5.5** with effort level **High**.
+    Give it the exact same prompt as in the previous question.
+    If Opus asks permission to run a command that only prints information,
+    such as TrimGalore's help info, you can allow it.
+    When it's done, type `/usage` again,
+    and add the estimated cost of this conversation to your README.
+
+    You don't need to evaluate each of Opus's suggestions separately.
+    Instead, compare the two reviews:
+    - Which suggestions did only one of the two models make?
+    - Did either model claim something that you know is wrong,
+      for example based on your successful run in question 6?
+    - Did either model check its claims, for example by running commands?
+    - Did Opus's review change your mind about any of your answers to question 10?
+    - How did the costs of the two reviews compare?
+    - Which review would you trust more, and why?
+      Was the difference worth the difference in cost?
+
+    The output of genAI models varies between runs,
+    so there is no single "correct" outcome of this comparison.
+    When you're done, **switch back to Sonnet 5 Medium**
+    for the remaining questions.
+
+12. Both reviews probably suggested checking that the input FASTQ files exist
+    (if not, you'll make this change anyway in the next question).
+    Before making any changes,
     run your script with an R1 FASTQ file path that doesn't exist.
     What happens, and at which point does the script stop?
 
-11. Ask Claude to add a check to your script, for example:
+13. Now, ask Claude to implement this suggestion, for example:
 
-    > Add a check that both input FASTQ files exist, and exit with an informative
-    > error message if they don't
+    > In scripts/trimgalore.sh, add a check that both input FASTQ files exist,
+    > and exit with an informative error message if they don't.
 
     Claude will show you the proposed change as a diff:
     read it before you accept it.
-    Then, **test** the updated script with the same non-existent file name as above.
+
+    It may also ask permission to create a diary file, as per your `CLAUDE.md`:
+    if so, allow that too.
+
+    Then, **test** the updated script with the same non-existent file name as in
+    the previous question.
     Does it behave the way Claude claimed it would?
-    And given what you saw in the previous question, how useful is this check?
+    And given what you saw before the change, how useful is this check?
 
     Finally, **commit** the updated script.
     Your Git history now shows exactly what Claude changed in your script.
 
-12. Ask Claude to write a `for` loop that runs your script for multiple samples,
+14. Ask Claude to write a `for` loop that runs your script for multiple samples,
     for example:
 
     > Write a for loop that runs scripts/trimgalore.sh for the 7 samples whose IDs
@@ -331,46 +428,77 @@ you'll use Claude Code to review and extend it.
     - Run the script once per sample, rather than once per FASTQ file?
     - Get the correct R2 file for each R1 file?
       If you don't understand how it does this, ask Claude to explain that part.
-      Would Claude's approach have the `S61` pitfall from the self-study exercise 1
-      in [that w7b section](/week07/w7b_scripts2.html#self-study-looping-over-samples)?
-    - Only run for the 7 samples whose IDs start with `S6` (`S61`, `S62`, etc.)?
+    - Only run for the 7 samples whose IDs start with `S6` (`S63` to `S69`)?
 
     If you ended up changing the loop because of concerns with the above points,
     explain what you changed and why.
 
-13. Test the loop by putting `echo` before the `bash` command,
+15. Test the loop by putting `echo` before the `bash` command,
     so that it only prints the commands it would run.
     If those look right, remove the `echo` and **run the loop** for real
-    (this will take about 10 minutes).
+    (this will take about 2 minutes).
     If you get any errors, fix them with help from Claude.
-    When it's done, how many files do you expect to be in `results/trimgalore`,
-    and is that what you find?
+    When it's done, check the output files in `results/trimgalore`:
+    are all 7 samples represented?
 
-14. Ask Claude for a command that produces a small **summary table**
-    of all your TrimGalore results,
-    with one line per sample and the percentage of read pairs that were removed
-    because they were too short.
+16. Ask Claude for a **command** that summarizes your TrimGalore results:
+    for each sample, the percentage of read pairs that were removed.
+    For example:
+
+    > Give me a simple command that prints, for each sample,
+    > the percentage of read pairs that TrimGalore removed,
+    > based on the output files in results/trimgalore.
+    > I'm a shell beginner, so only use basic commands like `grep`, `cut`, and `for` loops.
+
     Run the command, and verify its output:
-    - Does the value for `S63` match your answer to question 8?
+    - If the output doesn't look right, ask Claude to explain how it works and/or to fix it.
+    - Does the value for `S63` match your answer to question 7?
     - In your own words, how does the command work?
       If it uses anything we didn't cover in class, ask Claude to explain it.
 
-15. **Document** your genAI use by saving your Part C conversations
-    with the `/export` command, as shown in
-    [class](/week09/w9a_claude.qmd#documenting-ai-use).
-    Save them in a dir `doc/ai` in your working dir, with descriptive file names,
-    and commit them to your Git repo.
-    _[Or: check **diary** and only then save 1-2 of the most relevant conversations]_
+17. **Document** your genAI use:
+    check that your `doc/ai` dir contains the exported conversations
+    for questions 10, 11, 13, and 14.
+    If you forgot one, reopen that conversation from Claude's list of past conversations,
+    and export it then. Then, commit the `doc/ai` dir to your Git repo.
 
-16. Write a short **reflection** in your README (one or two paragraphs)
+18. Based on your experiences in this part, add one or more instructions to your
+    `CLAUDE.md` that would have improved Claude's output
+    (for example, to prevent a suggestion you disagreed with in question 10 or 11).
+    If you really can't think of anything along these lines,
+    you can instead add an instruction that you simply think would be interesting to try.
+    Then, start a new conversation and test whether Claude follows the new instruction.
+    In your README, describe what you added and what happened,
+    and commit your updated `CLAUDE.md`.
+
+19. Write a short **reflection** in your README (one or two paragraphs)
     about your experience with Claude in this assignment.
     Any thoughtful reflection will earn full points,
-    but here are some example questions to get you started:
+    but here are some example questions you can answer if you like:
     - What did you find most helpful about using Claude?
     - What challenges did you encounter?
     - Did Claude tell you anything that turned out to be wrong, and how did you find out?
     - Were its explanations clear, or did you have to do additional research to understand them?
 
+### Part D: Publish your repo on GitHub
+
+Finally, you'll publish your Git repo on GitHub and submit your assignment
+by creating an Issue.
+
+20. Make sure you have committed your final `README.md`.
+    Then, create a new, empty, public repository on **GitHub**
+    (e.g., named "GA4" or "PLNTPTH5006-GA4"),
+    connect it to your local repo, and push your local repo to GitHub.
+
+    On the GitHub page for your repo, create a new **Issue**.
+    Use whatever title you like, and in the text box (not the title),
+    tag the instructors: GitHub users `kstarr791` and `jelmerp`
+    (using the `@` notation like `@kstarr791`),
+    asking them to take a look at your assignment.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+<!----
 17. Ask Claude for help with something related to this assignment that you
     genuinely don't know how to do yourself.
     Some ideas:
@@ -382,29 +510,4 @@ you'll use Claude Code to review and extend it.
     Run the code you get, and describe how you checked that it does what you
     think it does.
     Also export this conversation to `doc/ai`.
-
-18. Based on your experiences in this part,
-    add one or more instructions to your `CLAUDE.md` that would have improved
-    Claude's output
-    (for example, to prevent a suggestion you disagreed with in question 11).
-    Then, start a new conversation and test whether Claude follows the new instruction.
-    In your README, describe what you added and what happened,
-    and commit your updated `CLAUDE.md`.
-
-### Part D: Publish your repo on GitHub
-
-Finally, you'll publish your Git repo on GitHub and "hand in" your assignment
-by creating an Issue.
-
-19. Make sure you have committed your final `README.md`.
-    Then, create a new, empty, public repository on **GitHub**
-    (e.g., named "GA4" or "PLNTPTH5006-GA4"),
-    connect it to your local repo, and push your local repo to GitHub.
-
-20. On the GitHub page for your repo, create a new **Issue**.
-    Use whatever title you like, and in the text box (not the title),
-    tag the instructors: GitHub users `kstarr791` and `jelmerp`
-    (using the `@` notation like `@kstarr791`),
-    asking them to take a look at your assignment.
-
-<hr style="height:1pt; visibility:hidden;" />
+---->
