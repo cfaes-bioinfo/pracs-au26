@@ -38,6 +38,10 @@ language:
 <hr style="height:1pt; visibility:hidden;" />
 <hr style="height:1pt; visibility:hidden;" />
 
+<!----
+TODO: Trigger inline suggestion keyboard shortcut is not set by default in Code Server!
+---->
+
 ## Introduction
 
 In class, we used the Claude extension in VS Code Server
@@ -317,19 +321,13 @@ and in an appendix, to **inline chat**, a related feature that also works right 
 
 ### Set up a practice file
 
-Let's start by creating a dir for the work you'll do following along with this page,
-and navigating there:
+You'll work directly in your `week09` dir while following along with this page.
+Start by making a decompressed copy of the GTF file in a new `data` dir, for easy access:
 
 ```bash
 # You should be in /fs/ess/PAS3493/people/$USER/week09
-mkdir -p copilot
-cd copilot
-```
-
-Next, make a decompressed copy of the GTF file into your working dir for easy access:
-
-```bash
-zcat ../../garrigos/ref/annot.gtf.gz > annot.gtf
+mkdir -p data
+zcat ../garrigos/ref/annot.gtf.gz > data/annot.gtf
 ```
 
 Finally, create a file `copilot.sh`, and open it in the editor.
@@ -337,6 +335,12 @@ If Copilot is active, you should see some ghost text startup suggestions in the
 file already:
 
 ![](/img/copilot-new-file.png){fig-align="center" width="65%" .no-border fig-alt="A screenshot of a new shell script file in VS Code, with ghost text suggestions from GitHub Copilot." .lightbox}
+
+To run the code in your file,
+you can either copy it to the terminal and press <kbd>Enter</kbd>,
+or use a keyboard shortcut to send the code from the editor to the terminal.
+You should have set up that shortcut in week 7,
+but if not, see the next box for instructions.
 
 ::: {.callout-note collapse="true"}
 #### Why a `.sh` file instead of a Markdown file? _(Click to expand)_
@@ -358,12 +362,6 @@ just like the code in your Markdown files.
 You won't run it with `bash` or `sbatch`,
 which is why it doesn't need a shebang line or `set` settings.
 :::
-
-To run the code in your file,
-you can either copy it to the terminal and press <kbd>Enter</kbd>,
-or use a keyboard shortcut to send the code from the editor to the terminal.
-You should have set up that shortcut in week 7,
-but if not, see the next box for instructions.
 
 ::: {.callout-note collapse="true"}
 #### Set a keyboard shortcut to send code from the editor to the terminal _(Click to expand)_
@@ -455,7 +453,7 @@ Let's try this in your `copilot.sh` file. First, add the following into it:
 
 ```{.bash .file filename="copilot.sh"}
 # GTF file:
-GTF=annot.gtf
+GTF=data/annot.gtf
 ```
 
 #### A first example
@@ -494,8 +492,8 @@ and then pipe the result into `wc -l` to count the lines:
 
 ![](/img/copilot-gtf-count-entries2.png){fig-align="center" width="55%" .no-border fig-alt="A screenshot of a shell script in which a comment line asks to count the number of entries in a GTF file, and Copilot suggests a command to do so." .lightbox}
 
-::: callout-note
-#### Shellcheck knows better, here
+::: {.callout-note collapse="true"}
+#### Shellcheck knows better, here _(Click to expand)_
 
 Interestingly, in this specific case, we get a blue squiggly line under the command
 from shellcheck:
@@ -510,8 +508,6 @@ we don't need to pipe into `wc -l`, but can count directly with `grep -c`:
 
 :::
 
-::: callout-tip
-#### Does it suggest two lines that first create a variable and then echo the result?
 You never know exactly what you'll get, but when I tried this,
 Copilot suggested saving the output to a variable,
 and then `echo`-ing a sentence with the result:
@@ -524,8 +520,6 @@ When I deleted the initial command and then added "print directly, no variable"
 to the prompt comment, it stopped doing this:
 
 ![](/img/copilot-print-directly2.png){fig-align="center" width="80%" .no-border fig-alt="A screenshot of a shell script with a comment line asking to count the entries in the GTF file, 'print directly, no variable', followed by a one-line grep and wc command." .lightbox}
-
-:::
 
 #### A second example
 
@@ -560,7 +554,7 @@ Copilot is likely to use commands or syntax you haven't seen yet;
 in particular, it often uses `awk`.
 Get Copilot to explain these commands,
 and optionally dig deeper with Claude Code or Gemini.
-You can also add notes like "avoid awk" and "use only very basic commands"
+You can also add notes like "_avoid awk_" and "_use only very basic commands_"
 to your prompt comments, to see if Copilot can do it in a simpler way.
 
 > \# Count the number of gene features in the GTF file
@@ -578,12 +572,31 @@ your abilities:
 > \# Find all Markdown files in /fs/ess/PAS3493 and its subdirs
 
 > \# Print a list of files that contain the word "cathemerium",
-> \# anywhere in /fs/ess/PAS3493/people/$USER and its subdirs
+> anywhere in /fs/ess/PAS3493/people/$USER and its subdirs
 
 > \# List the top 5 largest files in the /fs/ess/PAS3493 directory and its subdirs
 
-Sometimes, multiple suggestions are available for a prompt,
-and you can hover over the ghost text to see them:
+#### Tips and pitfalls
+
+- Overall, mistakes are much more likely here than in the (Claude Code) chat,
+  because it will use a low-tier model,
+  and sometimes also because it has less context to work with. For example:
+
+  ![](/img/copilot-error.png){fig-align="center" width="85%" .no-border fig-alt="A screenshot of a shell script in which a comment line asks to count the number of genes on the + versus - strand, and Copilot suggests a command that is incorrect." .lightbox}
+
+  ::: legend2
+  This suggestion is wrong, because the string gene can occur in many lines<br>
+  that do not represent a gene-level feature in the GTF file.
+  :::
+
+  ![](/img/copilot-error-fix.png){fig-align="center" width="80%" .no-border fig-alt="A screenshot of a shell script in which a comment line asks to count the number of genes on the + versus - strand, and Copilot suggests a command that is incorrect, followed by a corrected command." .lightbox}
+
+  ::: legend2
+  You can follow up with a comment asking Copilot to fix the command, and it may do so.
+  :::
+
+- Sometimes, multiple suggestions are available for a prompt,
+  and you can hover over the ghost text to see them:
 
 ![](/img/copilot-hover-suggestions.png){fig-align="center" width="85%" .no-border fig-alt="A screenshot showing alternative Copilot suggestions revealed by hovering over the ghost text, with navigation arrows in the top right." .lightbox}
 
@@ -591,10 +604,6 @@ and you can hover over the ghost text to see them:
 Here, two suggestions are available, as the `1/2` in the box indicates,
 and you can click the arrows to navigate between them.
 :::
-
-<hr style="height:1pt; visibility:hidden;" />
-
-#### Other ways to get ghost text suggestions
 
 - After you've accepted and run a command, go to a new line,
   type only a comment symbol (`#`), and wait:
@@ -676,7 +685,7 @@ but also to avoid mistakes like forgetting to change one of the instances.
 ::: exercise
 #### {{< fa user-edit >}} Exercise 1: Rename a variable
 
-In `copilot.sh`, rename the variable `GTF` to `gtf` in the line `GTF=annot.gtf`.
+In `copilot.sh`, rename the variable `GTF` to `gtf` in the line `GTF=data/annot.gtf`.
 Does Copilot suggest updating `$GTF` in the commands below it,
 and does it get all of them?
 :::
@@ -936,22 +945,15 @@ or which of your scripts creates a certain output file.
 In Agent mode, Copilot may start editing files or running commands
 when all you wanted was an explanation.
 
-::: {.callout-tip appearance="simple"}
-For general questions that don't involve your files,
-such as what a concept means or how a command works, consider using
-[Gemini in the browser](../week08/w8a_genAI.qmd#/signing-in-to-google-gemini) instead.
-That way, you save your limited Copilot "AI Credits"
-for tasks where its access to your files actually helps.
-:::
-
 To keep this first example simple,
-it's a general question that doesn't involve your files ---
-one that Gemini could answer just as well.
+well ask a general question that doesn't involve your files
+(just note that in your actual research, such questions may be better asked to Gemini,
+so you don't use up your Copilot credits).
 Select "Ask" mode and type the following prompt:
 
-> In a Bash script with `set -euo pipefail`, why could the line
-> `zcat sample.fastq.gz | head -n 8` make my script stop with an error,
-> even though the FASTQ file is fine?
+> ***In a Bash script with set -euo pipefail, why could the line***
+> ***zcat sample.fastq.gz | head -n 8 make my script stop with an error,***
+> ***even though the FASTQ file is fine?***
 
 Does its explanation make sense to you?
 
@@ -978,7 +980,8 @@ what often happens is:
 4. Because of `pipefail`, the pipeline status becomes non-zero.
 5. Because of `-e`, your script exits.
 
-So the FASTQ can be perfectly fine; it’s a **broken-pipe side effect** from intentionally truncating output with `head`.
+So the FASTQ can be perfectly fine; it’s a **broken-pipe side effect** from
+intentionally truncating output with `head`.
 
 Typical fixes:
 
@@ -996,9 +999,25 @@ Typical fixes:
    set -o pipefail
    ```
 
-3. Use a command that can stop decompressing cleanly for small previews (depends on tools available), but the above is the common practical fix.
+3. Use a command that can stop decompressing cleanly for small previews (depends on tools available),
+but the above is the common practical fix.
 
 Most robust pattern in strict-mode scripts is to explicitly allow this known benign case.
+
+-----
+
+**Be careful with Copilot’s first suggested fix, `|| true`**
+
+`||` means "or": the command after it only runs if the command before it fails.
+And `true` is a command that does nothing except succeed.
+So, adding `|| true` to a line makes it "succeed" no matter what went wrong.
+
+That solves the problem above,
+but if the FASTQ file were missing or corrupt,
+your script would now also carry on as if nothing happened ---
+exactly what `set -e` is meant to prevent.
+This is a common pattern in AI suggestions:
+a fix that makes the error go away, but also hides errors you'd want to see.
 
 </details>
 
@@ -1013,7 +1032,7 @@ an exit status of `0` means success, and anything else means failure.
 First, run the command without `pipefail`, which is the default in the shell:
 
 ```bash
-zcat ../../garrigos/fastq/S63_R1.fastq.gz | head -n 8
+zcat ../garrigos/fastq/S63_R1.fastq.gz | head -n 8
 echo $?
 ```
 
@@ -1028,7 +1047,7 @@ Then, run it again with `pipefail` turned on
 
 ```bash
 set -o pipefail
-zcat ../../garrigos/fastq/S63_R1.fastq.gz | head -n 8
+zcat ../garrigos/fastq/S63_R1.fastq.gz | head -n 8
 echo $?
 set +o pipefail
 ```
@@ -1054,29 +1073,14 @@ like "How can I avoid this?".
 You could also ask it to further explain something it said,
 or to give a simpler explanation.
 
-::: {.callout-warning collapse="true"}
-#### Be careful with Copilot's first suggested fix, `|| true` _(Click to expand)_
-
-`||` means "or": the command after it only runs if the command before it fails.
-And `true` is a command that does nothing except succeed.
-So, adding `|| true` to a line makes it "succeed" no matter what went wrong.
-
-That solves the problem above,
-but if the FASTQ file were missing or corrupt,
-your script would now also carry on as if nothing happened ---
-exactly what `set -e` is meant to prevent.
-This is a common pattern in AI suggestions:
-a fix that makes the error go away, but also hides errors you'd want to see.
-:::
-
 ### An example in "Agent" mode
 
 Select "Agent" mode. Your workspace is your `week09` dir,
 which contains the scripts from the lecture and your `CLAUDE.md` file.
 Let's ask for a new script:
 
-> Write a shell script that prints the unique chromosome names in an
-> uncompressed GTF file. Use commands like cut and sort, not awk
+> ***Write a shell script that prints the unique chromosome names in an***
+> ***uncompressed GTF file. Use commands like cut and sort, not awk***
 
 ::: {.callout-tip collapse="true"}
 #### Why "not awk"? And thoughts on providing constraints. _(Click to expand)_
@@ -1169,10 +1173,10 @@ and you become dependent on the AI to maintain them.
   Does the new script follow the shell script conventions in your `CLAUDE.md`?
 - Where did it save the script, and why there?
 - Did it do exactly what you asked, or did it add things you didn't ask for?
-- Run the script on the `annot.gtf` file in your `copilot` dir.
+- Run the script on the `data/annot.gtf` file.
   Does the output look reasonable?
 - The GTF file starts with a few header lines that begin with `#`.
-  Predict what the simple command `cut -f 1 annot.gtf | sort -u` would print for those lines.
+  Predict what the simple command `cut -f 1 data/annot.gtf | sort -u` would print for those lines.
   Does the output of Copilot's script contain such lines?
   Look at the script to see how it handles them.
 
@@ -1192,7 +1196,7 @@ Next, ask for an edit to that script:
 When it's done and you open the modified script,
 you should see a diff that highlights both additions and deletions:
 
-![](/img/copilot-agent-example-10.png){fig-align="center" width="50%" .no-border fig-alt="A screenshot of a diff view of the script, with removed lines in red and added lines in green, adding an output file argument." .lightbox}
+![](/img/copilot-agent-example-10.png){fig-align="center" width="55%" .no-border fig-alt="A screenshot of a diff view of the script, with removed lines in red and added lines in green, adding an output file argument." .lightbox}
 
 And the final script may look something like this.
 (It's using an if-statement to check whether two arguments were passed to the script,
