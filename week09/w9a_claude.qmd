@@ -41,10 +41,6 @@ language:
 
 ## Introduction
 
-<!----
-Include img/claude-out-of-budget
------>
-
 ### Learning goals
 
 In this lecture, you will learn how to:
@@ -122,7 +118,7 @@ Here, we'll use its VS Code extension.
    'week07/scripts/fastqc.sh' -> 'week09/scripts/fastqc.sh'
    ```
 
-   (If you're worried your own astQC script is not correct or not complete,
+   (If you're worried your own FastQC script is not correct or not complete,
    you can instead copy this version: `/fs/ess/PAS3493/share/week07/scripts/fastqc.sh`.)
 
 3. **Open** the `week09` dir as your VS Code folder with `File` > `Open Folder`.
@@ -214,11 +210,6 @@ Here is what the file looks like before you add your own key:
   "theme": "auto"
 }
 ```
-
-<!---
-Note for self: sonnet-5-5 and sonnet-5.5 are listed as possible models,
-but don't seem to work.
----->
 
 The file is in JSON format, a plain-text format with key-value pairs:
 a colon `:` separates each key from its value, pairs are separated by commas,
@@ -400,7 +391,7 @@ We'll go over the other buttons across the bottom of the box in more detail belo
   You'll need this one least often.
 - Once Claude has responded, a **clock icon** with a number of minutes appears.
   This shows how long until the conversation's "cache" expires,
-  after which your next message will be more expensive,
+  after which your next message will be more expensive.
 - `Sonnet 5 Medium` is the current **model** and **effort level**.
   Keep it at that for now,
   and don't select "Default (recommended)", which switches to the much more expensive Opus.
@@ -444,7 +435,8 @@ but you may well see differences in a later version of the extension.
 
 ### Ask Claude to write a script
 
-Start a new conversation with the `+` icon, and submit the following prompt:
+Start a new conversation with the new-conversation icon (top right of the panel),
+and submit the following prompt:
 
 > ***Write a script scripts/count_reads.sh that counts the number of reads in a***
 > ***gzipped FASTQ file. The FASTQ file should be an argument to the script.***
@@ -655,7 +647,7 @@ _then work through the below questions collaboratively._
    you can ask Claude (or Gemini) to explain it.
    And does it use a `for` loop like we did in week 7?
 
-   <details><summary> {{< fa lightbulb >}} Click here a possible script</summary>
+   <details><summary> {{< fa lightbulb >}} Click here for a possible script</summary>
 
    It's likely that it will loop over files with `"$@"`,
    which is a special variable that expands to all arguments given to the script.
@@ -726,7 +718,15 @@ To find out, have Claude write the script again without that line.
    mv scripts/count_reads.sh ~
    ```
 
-2. Start a **new conversation** with the `+` icon
+   If you're doing this exercise after class,
+   also move your `CLAUDE.md` out of the workspace,
+   since its script conventions would affect both versions of the script:
+
+   ```bash
+   mv CLAUDE.md ~
+   ```
+
+2. Start a **new conversation** with the new-conversation icon
    (otherwise, Claude would still "remember" the first script),
    and submit the original prompt with a different script name
    and without the "Keep it simple" line:
@@ -734,11 +734,12 @@ To find out, have Claude write the script again without that line.
    > Write a script scripts/count_reads2.sh that counts the number of reads in a
    > gzipped FASTQ file. The FASTQ file should be an argument to the script.
 
-3. Move your first script back,
+3. Move your first script (and, if needed, your `CLAUDE.md`) back,
    so you can look at both scripts side by side:
 
    ```bash
    mv ~/count_reads.sh scripts/
+   mv ~/CLAUDE.md .    # only if you moved it in step 1
    ```
 
 4. Compare the two scripts.
@@ -836,8 +837,22 @@ This also lets you upload files from your own computer.
    Watch how Claude finds the answer: which files does it look at?
    Does its answer match your prediction?
 
+   <details><summary> {{< fa check-circle >}} Click here for the solution</summary>
+
+   As long as every variable that holds a file name is double-quoted (e.g. `"$fastq"`),
+   like in our week 7 script, a space in a file name is no problem.
+   (You do still need to quote such a file name when you pass it to the script.)
+
+   Note that our question assumed that some scripts _would_ break.
+   With such a "leading" question,
+   Claude may go along with the assumption and point out problems that aren't real.
+   If its answer didn't match your prediction, who was right?
+   A more neutral way to ask is: _"Would any scripts in this project break if ...?"_
+
+   </details>
+
 3. _Optional:_ The command below "accidentally" passes the two arguments in the wrong order.
-   Then run it:
+   Run it:
 
    ```bash
    bash scripts/fastqc.sh results/fastqc ../garrigos/fastq/S63_R1.fastq.gz
@@ -895,9 +910,8 @@ Once you're comfortable reviewing Claude's work, though,
 the many permission requests can become tedious,
 and it's easy to start clicking "Yes" without really reading what you approve.
 
-At that point, "**Auto mode**" is a good alternative.
-In this mode, a separate AI model checks each action before it runs:
-routine actions, like editing files in your project, are permitted without asking,
+At that point, "**Auto mode**" is a good alternative:
+routine actions, like editing files in your project, are then permitted without asking,
 while risky ones, like deleting many files or doing things you didn't ask for, are blocked.
 :::
 
@@ -1559,10 +1573,12 @@ Also brought the script in line with project shell conventions
 (`set -euo pipefail`, purpose/usage comment block) since it was missing those.
 ```
 
-Note the last two lines: interestingly, in this specific case,
-it looks like Claude initially overlooked two of the script conventions we told it
-about in `CLAUDE.md`, and it realized that while making the unrelated change
-to the output format: see also the box below!
+Note the last two lines:
+Claude also brought the script in line with two conventions from our `CLAUDE.md`,
+which didn't exist yet when it first wrote `count_reads.sh`.
+That's helpful here, but it's a change we didn't ask for:
+always check the full diff, not just the part you asked for.
+(The diary made this change easy to spot.)
 
 ::: {.callout-warning appearance="simple"}
 Like any `CLAUDE.md` instruction, Claude will **usually** but not always follow it.
@@ -1686,7 +1702,7 @@ Two slash commands related to this:
 
 - **`/clear`** (or `/new`) also starts a new conversation.
   It may look like it deletes the current conversation,
-  because it doesn't visibly switch to a new one like the `+` icon does,
+  because it doesn't visibly switch to a new one like the new-conversation icon does,
   but the previous conversation is still available under the clock icon.
 
 - **`/compact`** replaces the conversation so far with a summary, to free up space.

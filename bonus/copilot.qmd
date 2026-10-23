@@ -571,9 +571,6 @@ your abilities:
 
 > \# Find all Markdown files in /fs/ess/PAS3493 and its subdirs
 
-> \# Print a list of files that contain the word "cathemerium",
-> anywhere in /fs/ess/PAS3493/people/$USER and its subdirs
-
 > \# List the top 5 largest files in the /fs/ess/PAS3493 directory and its subdirs
 
 #### Tips and pitfalls
@@ -596,14 +593,7 @@ your abilities:
   :::
 
 - Sometimes, multiple suggestions are available for a prompt,
-  and you can hover over the ghost text to see them:
-
-![](/img/copilot-hover-suggestions.png){fig-align="center" width="85%" .no-border fig-alt="A screenshot showing alternative Copilot suggestions revealed by hovering over the ghost text, with navigation arrows in the top right." .lightbox}
-
-::: legend2
-Here, two suggestions are available, as the `1/2` in the box indicates,
-and you can click the arrows to navigate between them.
-:::
+  and you can hover over the ghost text to see them.
 
 - After you've accepted and run a command, go to a new line,
   type only a comment symbol (`#`), and wait:
@@ -642,53 +632,106 @@ As always, press <kbd>Tab</kbd> to accept the suggestion.
 
 ### Recurring patterns
 
-As an example of the second kind, if you change a comment line that is followed by a command,
-Copilot should suggest updating the command accordingly.
-Here, I changed "Markdown files" to "Shell scripts" in one of the prompts from above,
-and Copilot suggested changing `*.md` to `*.sh`:
+When you change one instance of a recurring pattern,
+such as a sample ID, a variable name, or a file name,
+Copilot will often suggest changing the other instances as well.
+We'll go through two examples.
 
-![](/img/copilot-next-edit2.png){fig-align="center" width="70%" .no-border fig-alt="A screenshot of a Copilot next edit suggestion to change '*.md' to '*.sh' in a find command, after its comment line was changed from 'Markdown files' to 'Shell scripts'." .lightbox}
+#### A shell script for a single sample
 
-For another example, paste the following lines into `copilot.sh`,
-which run three commands to get information about a dir `people` and its contents
-(there is no such dir in your working dir, so don't run these lines):
+Create a new file `fastq_summary.sh`, and paste the following script into it.
+This script summarizes the FASTQ files for sample `S63`
+(you don't need to run it):
 
-```{.bash .file filename="copilot.sh (excerpt)"}
-# Count the number of dirs
-find people -type d | wc -l
+```{.bash .file filename="fastq_summary.sh"}
+#!/bin/bash
+set -euo pipefail
 
-# List all files and dirs (non-recursively)
-ls -lh people
+# Summarize the FASTQ files for sample S63
+R1=../garrigos/fastq/S63_R1.fastq.gz
+R2=../garrigos/fastq/S63_R2.fastq.gz
+outdir=results/fastq_summary/S63
 
-# Get the total size of the `people` dir and its contents (recursively)
-du -sh people
+mkdir -p "$outdir"
+
+# Count the number of lines in each FASTQ file
+n_R1=$(zcat "$R1" | wc -l)
+n_R2=$(zcat "$R2" | wc -l)
+
+# Write the line counts to a TSV file
+echo -e "S63\tR1\t$n_R1" > "$outdir"/S63_counts.tsv
+echo -e "S63\tR2\t$n_R2" >> "$outdir"/S63_counts.tsv
+
+# Save the first read of each file
+zcat "$R1" | head -n 4 > "$outdir"/S63_R1_first-read.txt
+zcat "$R2" | head -n 4 > "$outdir"/S63_R2_first-read.txt
+
+echo "Done with sample S63"
 ```
 
-But let's say that you have since renamed this dir to `data`, or
-were simply wrong about the name of the dir in the first place.
-If you change the first instance of `people` to `data`,
-Copilot is likely to suggest changing the next instance as well:
-
-![](/img/copilot-nextedit-pattern1.png){fig-align="center" width="45%" .no-border fig-alt="A screenshot of a Copilot next edit suggestion to change 'people' to 'data' in the line 'ls -lh people', after the first instance was changed." .lightbox}
-
+Let's say that you now want to summarize the FASTQ files for sample `S64` instead.
+Change `S63` to `S64` in the line that starts with `R1=`, and wait a second:
+Copilot is likely to suggest changing the next instance as well.
 Press <kbd>Tab</kbd> to accept a suggestion, <kbd>Tab</kbd> again to move on
-to the next suggestion, <kbd>Tab</kbd> again to accept that one, and so on:
+to the next suggestion, <kbd>Tab</kbd> again to accept that one, and so on.
+Did Copilot catch all instances of `S63`,
+including the ones in the comment line and in the final `echo` command?
 
-![](/img/copilot-nextedit-pattern2.png){fig-align="center" width="45%" .no-border fig-alt="A screenshot of a Copilot next edit suggestion to change 'people' to 'data' in the line 'du -sh people'." .lightbox}
+A better solution would be to make the script work for any sample,
+by having it accept the sample ID as an argument, as you learned in week 7.
+To do so, first add the line `sample_id=$1` above the `R1=` line.
+Then, change the `R1=` line to:
 
-These suggestions are sometimes off-target ---
-e.g., maybe you don't actually want to change the other instances of `people` to `data`!
-But in my experience, they are often quite useful:
-not just to save time,
-but also to avoid mistakes like forgetting to change one of the instances.
+```bash
+R1=../garrigos/fastq/${sample_id}_R1.fastq.gz
+```
 
-::: exercise
-#### {{< fa user-edit >}} Exercise 1: Rename a variable
+Copilot should now suggest replacing the other hard-coded sample IDs with `${sample_id}` as well.
+Check its suggestions carefully:
+for example, does it keep the curly braces in `${sample_id}_counts.tsv`?
+Without them, the shell would look for a (nonexistent) variable `sample_id_counts`.
 
-In `copilot.sh`, rename the variable `GTF` to `gtf` in the line `GTF=data/annot.gtf`.
-Does Copilot suggest updating `$GTF` in the commands below it,
-and does it get all of them?
-:::
+#### An R script
+
+Next edit suggestions are not limited to changing identical pieces of text.
+The R script below uses the built-in `iris` dataset to summarize, plot,
+and test the sepal length of three iris species.
+Even if you don't know R yet, you should be able to follow along.
+Create a new file `iris.R`, and paste the following code into it
+(again, you don't need to run it):
+
+```{.r .file filename="iris.R"}
+library(ggplot2)
+
+# Mean sepal length per species
+aggregate(Sepal.Length ~ Species, data = iris, FUN = mean)
+
+# Boxplot of sepal length per species
+p <- ggplot(iris, aes(x = Species, y = Sepal.Length)) +
+  geom_boxplot() +
+  labs(y = "Sepal length (cm)", title = "Sepal length by species")
+ggsave("sepal_length_boxplot.png", p)
+
+# Test whether sepal length differs between versicolor and virginica
+iris_sub <- subset(iris, Species != "setosa")
+t.test(Sepal.Length ~ Species, data = iris_sub)
+```
+
+Note that sepal length is referred to in four different ways in this script:
+"sepal length" in the comments, `Sepal.Length` as the column name,
+"Sepal length" in the plot labels, and `sepal_length` in the file name.
+So, if you wanted to switch to a different variable,
+a single find-and-replace wouldn't do the trick.
+
+Change "sepal length" to "petal width" in the first comment line,
+and see whether Copilot suggests changing `Sepal.Length` to `Petal.Width` in the next line.
+Keep pressing <kbd>Tab</kbd> to see if it also updates the plot labels,
+the output file name, and the other comment lines.
+
+This works in the other direction, too:
+change `geom_boxplot()` to `geom_violin()` to make a violin plot instead,
+and see whether Copilot suggests updating the "Boxplot" comment
+and the `_boxplot.png` part of the file name.
 
 ::: {.callout-tip}
 #### Code completions and your data
