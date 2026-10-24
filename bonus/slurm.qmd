@@ -50,18 +50,20 @@ To run the commands on this page yourself, start a VS Code session at
 
 ### Requesting large amounts of memory
 
-The **maximum** amount of memory you can request on regular Pitzer compute nodes
+The maximum amount of memory you can request on **regular** Pitzer compute nodes
 is 178 GB.
-If you need more than that, there are specialized `largemem` or `hugemem` nodes.
-Switching to such a node generally happens *automatically* based on
-your requested amount, **but** unfortunately,
-there are "gaps" between the maximum and minimum amounts of RAM on different nodes,
+If you need more than that, there are **specialized** `largemem` or `hugemem` nodes.
+
+Switching to such a node generally happens automatically based on your requested
+amount.
+Unfortunately,
+there are "**gaps**" between the maximum and minimum amounts of RAM on these node types,
 which means that certain amounts of memory cannot be requested on any node
 (See [this OSC page](https://www.osc.edu/resources/technical_support/supercomputers/pitzer/batch_limit_rules)
-for details on node types and associated memory on Pitzer).
+for details on Pitzer nodes).
 
-To request that a batch job runs on a non-default node type, you should use
-the `--partition` option. For example:
+To request that a batch job runs on a non-default node type,
+you should use the `--partition` option. For example:
 
 ```{.bash .file filename="myscript.sh (excerpt)"}
 #!/bin/bash
@@ -72,7 +74,7 @@ the `--partition` option. For example:
 ### Separating standard output and standard error
 
 By default, both _stdout_ and _stderr_ end up in the same Slurm log file,
-but you can separate them into different files with the `--error` option, e.g.:
+but you can **separate them** into different files with the `--error` option, e.g.:
 
 ```{.bash .file filename="myscript.sh (excerpt)"}
 #SBATCH --output=slurm-fastqc-%j.out
@@ -90,7 +92,7 @@ some programs print their main output (results) not to a file but to standard ou
 in which case all logging output, i.e. errors and regular messages alike,
 is designated as standard error.
 And some other programs use _stdout_ for all messages.
-Therefore, with Slurm, I personally only specify `--output`,
+Therefore, with Slurm, I **personally** only specify `--output`,
 such that both _stdout_ and _stderr_ end up in that file.
 
 ### Get warned when your job is close to its time limit
@@ -102,6 +104,10 @@ This can be useful because you can email OSC to ask for an extension on individu
 You shouldn't do this often, but if you have a job that ran for 6 days and it
 looks like it may time out, this may well be worth it.
 
+```{.bash .file filename="myscript.sh (excerpt)"}
+#SBATCH --mail-type=TIME_LIMIT_90,FAIL
+```
+
 ## Slurm environment variables
 
 Slurm automatically makes a number of environment variables available
@@ -109,17 +115,19 @@ inside a shell script that you submit as a batch job, such as:
 
 | Variable               | Corresponding option | Description                                                       |
 | ---------------------- | -------------------- | ----------------------------------------------------------------- |
-| `$SLURM_JOB_ID`        | --                   | Job ID assigned by Slurm                                          |
+| `$SLURM_JOB_ID`        | ---                   | Job ID assigned by Slurm                                          |
 | `$SLURM_JOB_NAME`      | `--job-name`         | Job name (by default, the name of the script)                     |
-| `$SLURM_CPUS_PER_TASK` | `--cpus-per-task`    | Number of reserved cores (only set if you used `--cpus-per-task`) |
-| `$SLURM_MEM_PER_NODE`  | `--mem`              | Amount of reserved memory in MB (only set if you used `--mem`)    |
-| `$SLURM_SUBMIT_DIR`    | --                   | Path to the dir from which the job was submitted                  |
-| `$TMPDIR`              | --                   | Path to fast temporary storage on the compute node, which is deleted when the job ends |
+| `$SLURM_CPUS_PER_TASK` | `--cpus-per-task`    | Number of reserved cores<br>(only set if you used `--cpus-per-task`) |
+| `$SLURM_MEM_PER_NODE`  | `--mem`              | Amount of reserved memory in MB<br>(only set if you used `--mem`)    |
+| `$SLURM_SUBMIT_DIR`    | ---                   | Path to the dir from which the job was submitted                  |
+| `$TMPDIR`              | ---                   | Path to fast temporary storage on the compute node |
 
-: {.striped .hover}
+: {.striped .hover tbl-colwidths="[24,22,54]"}
+
+<hr style="height:1pt; visibility:hidden;" />
 
 As an example of how these environment variables can be useful,
-compare the two ways of telling the program STAR how many threads to use below.
+compare these two ways of telling the program STAR how many threads to use.
 First, hardcoding the number of threads,
 which means the number has to be specified twice:
 
@@ -161,6 +169,9 @@ cores="${SLURM_CPUS_PER_TASK:-1}"
 
 STAR --runThreadN "$cores" --genomeDir [...]
 ```
+
+<hr style="height:1pt; visibility:hidden;" />
+
 :::
 
 You can also use these variables to record a job's resources in its Slurm log file,
@@ -183,29 +194,27 @@ You may wonder why you shouldn't simply include a dir in the `--output` path, e.
 so that log files don't have to be moved manually after the job has finished.
 But this has two disadvantages:
 
-- **The dir must already exist when you submit the job.**
+- **The dir must already exist when you submit the job.**\
   Slurm creates the log file when the job starts,
-  _before_ any line of your script has run,
-  and it won't create missing dirs for you.
-  So, a `mkdir -p` line _inside_ the script would come too late:
-  the job would fail right away, and **no log file would be created at all** --
+  before any line of your script has run, and it won't create missing dirs for you.
+  So, a `mkdir -p` line inside the script would come too late:
+  the job would fail right away, and **no log file would be created at all** ---
   leaving you with nowhere to look to find out what went wrong.
   You'd instead need a `mkdir -p` line right above your `sbatch` command(s)
   in your protocol Markdown file.
 
-- **It's good to do the manual work.**
+- **It's good to do the manual work.**\
   When log files show up in your working dir,
   you'll notice them, and that is a reminder to check them
   for errors before moving them to their final location.
   When they quietly end up elsewhere,
   it's easier to forget about a job and never check whether it succeeded.
 
-Instead, your script itself can put a _copy_ of its Slurm log file in the output dir.
+Instead, your script itself can put a **copy** of its Slurm log file in the output dir.
 The original log file will then still show up in your working dir,
 so you'll notice it and check it ---
 but afterwards, you can simply delete it,
 since a copy is already stored alongside the outputs.
-
 To do this, add the following lines to the very end of your script:
 
 ```{.bash .file filename="scripts/fastqc.sh (excerpt)"}
@@ -250,8 +259,8 @@ your terminal already runs in an interactive job on a compute node!
 
 However, that job only has 1 core and 4 GB of memory,
 and there is no way of changing this.
-If you want to interactively run commands that need more resources ---
-for example, to try out a memory-hungry command before putting it in a script ---
+If you want to interactively run commands that need more resources
+(for example, to try out a jobs that needs substanial resources, before putting it in a script),
 you can start an interactive shell job with Slurm's `srun` command[^1].
 Add `--pty /bin/bash` to get an interactive Bash shell.
 In the example below, we ask for 5 cores for 2 hours:
@@ -306,8 +315,6 @@ Memory Utilized: 245.32 MB
 Memory Efficiency: 5.38% of 4.45 GB
 ```
 
-<!-- TODO: replace with real seff output for one of the w10b FastQC jobs -->
-
 The most useful lines are:
 
 - **`State`** --- whether the job completed successfully
@@ -325,8 +332,8 @@ The most useful lines are:
 Only use `seff` after a job has finished:
 for running jobs, the numbers are incomplete.
 
-::: {.callout-note collapse="true"}
-#### `osc-seff` for GPU jobs _(Click to expand)_
+::: {.callout-note}
+#### `osc-seff` for GPU jobs
 OSC also has its own version of this command,
 [`osc-seff`](https://www.osc.edu/resources/getting_started/osc_custom_commands/osc_seff),
 which additionally reports GPU usage for jobs that used GPUs.
@@ -343,13 +350,13 @@ sacct -X --format=JobID,JobName%15,State,ExitCode,Elapsed
 ```bash-out
        JobID         JobName      State ExitCode    Elapsed
 ------------ --------------- ---------- -------- ----------
+37615614     ondemand/sys/d+    RUNNING      0:0   00:21:32
+37615705            sleep.sh    TIMEOUT      0:0   00:01:11
 37615718           fastqc.sh  COMPLETED      0:0   00:00:10
 37615719           fastqc.sh  COMPLETED      0:0   00:00:11
 37615720           fastqc.sh     FAILED      1:0   00:00:02
 # [...output truncated...]
 ```
-
-<!-- TODO: replace with real sacct output -->
 
 - By default, `sacct` shows your own jobs that started since midnight.
   To go back further, use `--starttime`, e.g. `--starttime=2026-10-26`.
@@ -390,6 +397,30 @@ sacct -X --starttime=2026-10-26 \
     --state=FAILED,TIMEOUT,OUT_OF_MEMORY,CANCELLED \
     --format=JobID,JobName%15,State,ExitCode,Elapsed
 ```
+```bash-out
+JobID                JobName      State ExitCode    Elapsed
+------------ --------------- ---------- -------- ----------
+37615705            sleep.sh    TIMEOUT      0:0   00:01:11
+```
+
+### `sstat`: running jobs
+
+`seff` and `sacct` only give complete information after a job has finished.
+To check the memory use of a job _while it is running_
+(e.g. if you're worried that it may run out of memory), use `sstat`:
+
+```bash
+sstat -j 37615718.batch --format=JobID,MaxRSS,AveCPU
+```
+```bash-out
+JobID            MaxRSS     AveCPU
+------------ ---------- ----------
+37615705.ba+   2405304K   00:02:19
+```
+
+Here, `MaxRSS` is the peak memory use so far.
+Note the `.batch` after the job ID: `sstat` reports on job "steps",
+and the main step of a batch job is called `batch`.
 
 ### Aliases for long job monitoring commands
 
@@ -399,7 +430,6 @@ this is a case where aliases are really handy. For instance:
 
 ```sh
 alias sact='sacct -X --format=JobID,JobName%15,State,ExitCode,Elapsed'
-
 alias sst='sstat --format=JobID,MaxRSS,AveCPU'
 ```
 
@@ -407,19 +437,24 @@ You can then add other options when you use an alias, for example:
 
 ```sh
 sact -j 123456
+```
+
+```sh
 sst -j 123456.batch
 ```
 
-An alias only lasts for the current shell session.
-To make these aliases always available in interactive sessions,
+An alias only lasts for the current shell session,
+so to make them always available in interactive sessions,
 add the lines to your Bash configuration file `~/.bashrc`.
 See the page on [configuring your shell](shell-config.qmd)
 for more on [`~/.bashrc`](shell-config.qmd#shell-configuration-files)
 and [aliases](shell-config.qmd#aliases).
 
+::: {.callout-warning appearance="simple"}
 Aliases are not available in scripts,
 so make sure to write out the full commands in scripts
 (e.g. your Slurm batch job scripts).
+:::
 
 ### `/usr/bin/time` and `$SECONDS` in a script
 
@@ -463,86 +498,6 @@ For example, add this line to the end of your script:
 ```{.bash .file filename="scripts/fastqc.sh (excerpt)"}
 echo "This script ran for $SECONDS seconds"
 ```
-
-### `sstat`: running jobs
-
-`seff` and `sacct` only give complete information after a job has finished.
-To check the memory use of a job _while it is running_
-(e.g. if you're worried that it may run out of memory), use `sstat`:
-
-```bash
-sstat -j 37615718.batch --format=JobID,MaxRSS,AveCPU
-```
-
-Here, `MaxRSS` is the peak memory use so far.
-Note the `.batch` after the job ID:
-`sstat` reports on job "steps", and the main step of a batch job is called `batch`.
-
-## Job arrays
-
-Job arrays are an alternative to submitting many batch jobs with a `for` loop.
-
-::: {.callout-note collapse="true"}
-#### How to use job arrays _(Click to expand)_
-In [w10b](../week10/w10b_slurm2.qmd#submit-a-job-for-each-file),
-you used a `for` loop to submit a separate batch job for each FASTQ file.
-An alternative is to submit a single **job array** with the `--array` option:
-Slurm will then run your script multiple times, as "tasks" of a single job,
-and in each task, the variable `$SLURM_ARRAY_TASK_ID` contains a different number.
-
-For example, with `--array=1-44`,
-Slurm will run 44 tasks, with `$SLURM_ARRAY_TASK_ID` set to `1`, `2`, ..., `44`.
-Your script then needs to use this number to pick a different input file in each task.
-A simple way to do this is with a file that lists all input files:
-
-```bash
-ls ../garrigos/fastq/*fastq.gz > fastq_list.txt
-wc -l fastq_list.txt
-```
-```bash-out
-44 fastq_list.txt
-```
-
-In the script, you then pick the line from this file that matches the task number:
-
-```{.bash .file filename="scripts/fastqc_array.sh (excerpt)"}
-#!/bin/bash
-#SBATCH --account=PAS3493
-#SBATCH --output=slurm-fastqc-%A_%a.out
-set -euo pipefail
-
-# Copy the placeholder variables
-fastq_list="$1"
-outdir="$2"
-
-# Get the FASTQ file on line number $SLURM_ARRAY_TASK_ID of the file list
-fastq=$(head -n "$SLURM_ARRAY_TASK_ID" "$fastq_list" | tail -n 1)
-
-# [...rest of the script as before...]
-```
-
-- In the `--output` file name,
-  `%A` is the job ID of the whole array, and `%a` is the task number.
-- [Command substitution](shell-scripting.qmd#command-substitution) (`$( )`)
-  stores the output of the `head | tail` command in the variable `fastq`.
-
-Submit all 44 tasks with a single command, without a loop:
-
-```{.bash .norun}
-sbatch --array=1-44 scripts/fastqc_array.sh fastq_list.txt results/fastqc
-```
-
-Advantages of job arrays over loops include:
-
-- All tasks share one job ID, so you can e.g. cancel all of them at once with `scancel <job-id>`.
-- You can limit how many tasks run at the same time with `%`:
-  for example, `--array=1-44%10` runs at most 10 tasks at a time.
-
-But they also have downsides:
-your script now only works as part of a job array,
-and you need a file list in addition to your script.
-So, for the numbers of jobs in this course, a loop is just fine.
-:::
 
 ## Automating multi-step workflows
 
@@ -596,7 +551,8 @@ fi
 Then, to only rerun the mapping step for a sample:
 
 ```{.bash .norun}
-sbatch scripts/trim_and_map.sh data/fastq/S63_R1.fastq.gz data/fastq/S63_R2.fastq.gz false true
+sbatch scripts/trim_and_map.sh \
+  data/fastq/S63_R1.fastq.gz data/fastq/S63_R2.fastq.gz false true
 ```
 
 To learn more about `if` statements,
@@ -611,7 +567,8 @@ and it's easy to mix them up.
 Instead, you can write your script such that it accepts options, e.g.:
 
 ```{.bash .norun}
-sbatch scripts/trim_and_map.sh --skip_trim data/fastq/S63_R1.fastq.gz data/fastq/S63_R2.fastq.gz
+sbatch scripts/trim_and_map.sh \
+  --skip_trim data/fastq/S63_R1.fastq.gz data/fastq/S63_R2.fastq.gz
 ```
 
 To learn how to do this,

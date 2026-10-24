@@ -144,11 +144,13 @@ When you exceed the time limit, an error message will be printed.
    ---->
 
 4. Submit the script.
-   The job will only be killed after a minute or two.
-   Once the job is no longer in the `squeue` output, check whether your predictions were correct.
+   The job will be killed after a little over a minute.
+   Once the job is no longer in the `squeue` output,
+   check whether your predictions were correct.
+   Then, **remove** the generated files.
 :::
 
-### Table with `sbatch` options
+### `sbatch` options overview
 
 Here are the main options from the slides:
 
@@ -183,8 +185,6 @@ And some additional ones:
 For more about `--error`, `--partition`, and email warnings before a job hits its time limit,
 see the [optional self-study page on Slurm](../bonus/slurm.qmd#more-sbatch-options).
 
-### Notes on cores, memory, and log files
-
 :::{.callout-note collapse="true"}
 ##### What about nodes and tasks? _(Click to expand)_
 
@@ -214,10 +214,6 @@ resubmit it with an increased requested amount of memory.
 :::
 
 ## Batch job examples with FastQC
-
-<!-- TODO: regenerate outputs with the container script (job IDs, R1/R2 order, Apptainer INFO lines;
-the `ls` output should show 44 log files starting at the first submitted job ID;
-the `tail` output should have a blank line before "Used FastQC version:") -->
 
 In week 7, we used a `for` loop to run FastQC for every FASTQ file, one after the other.
 This ran quickly,
@@ -356,6 +352,7 @@ don't forget to look at the output files to confirm this:
 Check that the Slurm log file ends with the "marker" line that indicates a successful run:
 
 ```bash
+# (You can also Tab-complete your filename instead)
 tail slurm-fastqc*.out
 ```
 ```bash-out
@@ -365,6 +362,8 @@ Approx 100% complete for S63_R1.fastq.gz
 Analysis complete for S63_R1.fastq.gz
 
 Used FastQC version:
+INFO:    Using cached SIF image
+INFO:    gocryptfs not found, will not be able to use gocryptfs
 FastQC v0.12.1
 
 Successfully finished script fastqc.sh
@@ -559,6 +558,8 @@ Here's what I would generally recommend:
    Approx 100% complete for S63_R1.fastq.gz
    Analysis complete for S63_R1.fastq.gz
    Used FastQC version:
+   INFO:    Using cached SIF image
+   INFO:    gocryptfs not found, will not be able to use gocryptfs
    FastQC v0.12.1
 
    Successfully finished script fastqc.sh
@@ -571,6 +572,8 @@ Here's what I would generally recommend:
    Approx 100% complete for S64_R1.fastq.gz
    Analysis complete for S64_R1.fastq.gz
    Used FastQC version:
+   INFO:    Using cached SIF image
+   INFO:    gocryptfs not found, will not be able to use gocryptfs
    FastQC v0.12.1
 
    Successfully finished script fastqc.sh
@@ -709,6 +712,61 @@ Copy it into your `week10` dir:
 ```bash
 cp ../week09/CLAUDE.md .
 ```
+
+<details><summary>{{< fa info-circle >}} Help! I don't have the `CLAUDE.md` file</summary>
+
+Create a new file CLAUDE.md in your `week10` dir, and copy the following into it:
+
+```{.markdown .file filename="CLAUDE.md"}
+# Practice RNA-Seq project
+
+Practice project for the course PLNTPTH 5006, using RNA-Seq data from Garrigós et al.
+(2025) on Culex pipiens mosquitoes infected with two avian Plasmodium species.
+
+## Data
+
+- FASTQ files are in `../garrigos/fastq`: paired-end, ~75-bp Illumina reads for
+  22 samples, subsampled to 500,000 reads per file
+- Sample metadata is in `../garrigos/meta/metadata.tsv`
+- Never modify, move, or delete anything in `../garrigos`
+
+## Project structure
+
+- `scripts/`: scripts
+- `results/`: all output, in a separate subdir for each step (e.g. `results/fastqc`)
+
+## Computing infrastructure
+
+- We work at the Ohio Supercomputer Center (OSC)
+- I haven't yet learned how to submit batch jobs, so don't propose to use these
+  (and therefore run programs with a single core/thread)
+
+## Shell script conventions
+
+- Start scripts with `#!/bin/bash` and `set -euo pipefail`
+- Below that, add a comment block with the script's purpose and a usage line
+  (e.g. `# Usage: bash scripts/fastqc.sh <FASTQ file> <output dir>`)
+- Copy arguments to descriptively named, lowercase variables (e.g. `fastq="$1"`);
+  use uppercase only for constants (e.g. `CONTAINER=...`)
+- At the start, report the script name, the date, and the inputs;
+  at the end, report the program version, a success message, and the date
+- Create output dirs with `mkdir -p` before writing to them
+- Strike a balance between script functionality and robustness vs. simplicity and
+  readability: I am a shell beginner
+- In script comments, briefly explain any non-obvious commands, options, and constructs
+- Programs that aren't available in the system path should be run with Apptainer
+  containers from Seqera Containers (`oras://` URLs),
+  not with `module load` or by installing them
+
+## AI diary
+
+- After completing a task, add an entry at the bottom of `doc/ai/ai-diary.md`
+  with the date, what I asked for, which files you created or changed,
+  and any key findings and decisions (including alternatives that were rejected)
+- Keep entries short
+```
+
+</details>
 
 Then, remove that line from the "Computing infrastructure" section,
 and add a section like this one,
