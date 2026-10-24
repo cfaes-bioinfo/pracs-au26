@@ -4409,8 +4409,7 @@ font-family: inherit;
   <li><a href="#common-slurmsbatch-options" id="toc-common-slurmsbatch-options" class="nav-link" data-scroll-target="#common-slurmsbatch-options"><span class="header-section-number">2</span> Common Slurm/<code>sbatch</code> options</a>
   <ul class="collapse">
   <li><a href="#exceed-the-time-limit" id="toc-exceed-the-time-limit" class="nav-link" data-scroll-target="#exceed-the-time-limit"><span class="header-section-number">2.1</span> Exceed the time limit</a></li>
-  <li><a href="#table-with-sbatch-options" id="toc-table-with-sbatch-options" class="nav-link" data-scroll-target="#table-with-sbatch-options"><span class="header-section-number">2.2</span> Table with <code>sbatch</code> options</a></li>
-  <li><a href="#notes-on-cores-memory-and-log-files" id="toc-notes-on-cores-memory-and-log-files" class="nav-link" data-scroll-target="#notes-on-cores-memory-and-log-files"><span class="header-section-number">2.3</span> Notes on cores, memory, and log files</a></li>
+  <li><a href="#sbatch-options-overview" id="toc-sbatch-options-overview" class="nav-link" data-scroll-target="#sbatch-options-overview"><span class="header-section-number">2.2</span> <code>sbatch</code> options overview</a></li>
   </ul></li>
   <li><a href="#batch-job-examples-with-fastqc" id="toc-batch-job-examples-with-fastqc" class="nav-link" data-scroll-target="#batch-job-examples-with-fastqc"><span class="header-section-number">3</span> Batch job examples with FastQC</a>
   <ul class="collapse">
@@ -4585,12 +4584,12 @@ if it's missing from the Slurm log file, you know the script didn't finish.
 
 </details>
 ----></li>
-<li><p>Submit the script. The job will only be killed after a minute or two. Once the job is no longer in the <code>squeue</code> output, check whether your predictions were correct.</p></li>
+<li><p>Submit the script. The job will be killed after a little over a minute. Once the job is no longer in the <code>squeue</code> output, check whether your predictions were correct. Then, <strong>remove</strong> the generated files.</p></li>
 </ol>
 </section>
 </section>
-<section id="table-with-sbatch-options" class="level3" data-number="2.2">
-<h3 data-number="2.2" class="anchored" data-anchor-id="table-with-sbatch-options"><span class="header-section-number">2.2</span> Table with <code>sbatch</code> options</h3>
+<section id="sbatch-options-overview" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="sbatch-options-overview"><span class="header-section-number">2.2</span> <code>sbatch</code> options overview</h3>
 <p>Here are the main options from the slides:</p>
 <table class="table-striped table-hover caption-top table">
 <colgroup>
@@ -4695,9 +4694,6 @@ if it's missing from the Slurm log file, you know the script didn't finish.
 </tbody>
 </table>
 <p>For more about <code>--error</code>, <code>--partition</code>, and email warnings before a job hits its time limit, see the <a href="../bonus/slurm.html#more-sbatch-options">optional self-study page on Slurm</a>.</p>
-</section>
-<section id="notes-on-cores-memory-and-log-files" class="level3" data-number="2.3">
-<h3 data-number="2.3" class="anchored" data-anchor-id="notes-on-cores-memory-and-log-files"><span class="header-section-number">2.3</span> Notes on cores, memory, and log files</h3>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -4737,9 +4733,6 @@ if it's missing from the Slurm log file, you know the script didn't finish.
 </section>
 <section id="batch-job-examples-with-fastqc" class="level2" data-number="3">
 <h2 data-number="3" class="anchored" data-anchor-id="batch-job-examples-with-fastqc"><span class="header-section-number">3</span> Batch job examples with FastQC</h2>
-<!-- TODO: regenerate outputs with the container script (job IDs, R1/R2 order, Apptainer INFO lines;
-the `ls` output should show 44 log files starting at the first submitted job ID;
-the `tail` output should have a blank line before "Used FastQC version:") -->
 <p>In week 7, we used a <code>for</code> loop to run FastQC for every FASTQ file, one after the other. This ran quickly, but keep in mind that our practice FASTQ files are only 5% of their original sizes. Additionally, other bioinformatics programs may take much longer, even for small files. To speed things up, and not block the terminal while programs are running, we will <strong>submit a batch job for each sample/file</strong>, so that many jobs can run simultaneously<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
 <p>So, let’s practice with submitting a batch job for each FastQC run. We’ll first submit a job for a single file, and then loop over all files to submit many jobs. You should have the FastQC script in <code>scripts/fastqc.sh</code>.</p>
 <section id="modify-the-script-for-usage-with-slurm" class="level3" data-number="3.1">
@@ -4820,13 +4813,16 @@ Always check what a program's "threads" or "cores" option actually does!
 <li><p><strong>The program’s main output files</strong>: As discussed, most bioinformatics tools don’t just print “logging” information that ends up in the Slurm log file, but will also have output files (in the case of FastQC, an HTML and a Zip file). Therefore, always check the output dir for the presence of such output files.</p></li>
 </ul>
 <p>Check that the Slurm log file ends with the “marker” line that indicates a successful run:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> slurm-fastqc<span class="pp">*</span>.out</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (You can also Tab-complete your filename instead)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> slurm-fastqc<span class="pp">*</span>.out</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>Approx 90% complete for S63_R1.fastq.gz
 Approx 95% complete for S63_R1.fastq.gz
 Approx 100% complete for S63_R1.fastq.gz
 Analysis complete for S63_R1.fastq.gz
 
 Used FastQC version:
+INFO:    Using cached SIF image
+INFO:    gocryptfs not found, will not be able to use gocryptfs
 FastQC v0.12.1
 
 Successfully finished script fastqc.sh
@@ -4961,6 +4957,8 @@ Approx 95% complete for S63_R1.fastq.gz
 Approx 100% complete for S63_R1.fastq.gz
 Analysis complete for S63_R1.fastq.gz
 Used FastQC version:
+INFO:    Using cached SIF image
+INFO:    gocryptfs not found, will not be able to use gocryptfs
 FastQC v0.12.1
 
 Successfully finished script fastqc.sh
@@ -4973,6 +4971,8 @@ Approx 95% complete for S64_R1.fastq.gz
 Approx 100% complete for S64_R1.fastq.gz
 Analysis complete for S64_R1.fastq.gz
 Used FastQC version:
+INFO:    Using cached SIF image
+INFO:    gocryptfs not found, will not be able to use gocryptfs
 FastQC v0.12.1
 
 Successfully finished script fastqc.sh
@@ -5064,20 +5064,77 @@ slurm-fastqc-37615719.out:1
 <p>GenAI can help with Slurm in many ways: writing <code>#SBATCH</code> lines, writing loops to submit many jobs, and especially figuring out why a job failed from its Slurm log file.</p>
 <p>The <code>CLAUDE.md</code> you made in week 9 tells Claude that you haven’t learned about batch jobs, and should therefore run programs with a single core. Copy it into your <code>week10</code> dir:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> ../week09/CLAUDE.md .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details>
+<summary>
+<i class="fa-solid fa-info-circle" aria-label="info-circle"></i> Help! I don’t have the <code>CLAUDE.md</code> file
+</summary>
+<p>Create a new file CLAUDE.md in your <code>week10</code> dir, and copy the following into it:</p>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>CLAUDE.md</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31" data-filename="CLAUDE.md"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># Practice RNA-Seq project</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>Practice project for the course PLNTPTH 5006, using RNA-Seq data from Garrigós et al.</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>(2025) on Culex pipiens mosquitoes infected with two avian Plasmodium species.</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="fu">## Data</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>FASTQ files are in <span class="in">`../garrigos/fastq`</span>: paired-end, ~75-bp Illumina reads for</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>  22 samples, subsampled to 500,000 reads per file</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Sample metadata is in <span class="in">`../garrigos/meta/metadata.tsv`</span></span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Never modify, move, or delete anything in <span class="in">`../garrigos`</span></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a><span class="fu">## Project structure</span></span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`scripts/`</span>: scripts</span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`results/`</span>: all output, in a separate subdir for each step (e.g. <span class="in">`results/fastqc`</span>)</span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a><span class="fu">## Computing infrastructure</span></span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>We work at the Ohio Supercomputer Center (OSC)</span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>I haven&#39;t yet learned how to submit batch jobs, so don&#39;t propose to use these</span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a>  (and therefore run programs with a single core/thread)</span>
+<span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-24"><a href="#cb31-24" aria-hidden="true" tabindex="-1"></a><span class="fu">## Shell script conventions</span></span>
+<span id="cb31-25"><a href="#cb31-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-26"><a href="#cb31-26" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Start scripts with <span class="in">`#!/bin/bash`</span> and <span class="in">`set -euo pipefail`</span></span>
+<span id="cb31-27"><a href="#cb31-27" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Below that, add a comment block with the script&#39;s purpose and a usage line</span>
+<span id="cb31-28"><a href="#cb31-28" aria-hidden="true" tabindex="-1"></a>  (e.g. <span class="in">`# Usage: bash scripts/fastqc.sh &lt;FASTQ file&gt; &lt;output dir&gt;`</span>)</span>
+<span id="cb31-29"><a href="#cb31-29" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Copy arguments to descriptively named, lowercase variables (e.g. <span class="in">`fastq=&quot;$1&quot;`</span>);</span>
+<span id="cb31-30"><a href="#cb31-30" aria-hidden="true" tabindex="-1"></a>  use uppercase only for constants (e.g. <span class="in">`CONTAINER=...`</span>)</span>
+<span id="cb31-31"><a href="#cb31-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>At the start, report the script name, the date, and the inputs;</span>
+<span id="cb31-32"><a href="#cb31-32" aria-hidden="true" tabindex="-1"></a>  at the end, report the program version, a success message, and the date</span>
+<span id="cb31-33"><a href="#cb31-33" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Create output dirs with <span class="in">`mkdir -p`</span> before writing to them</span>
+<span id="cb31-34"><a href="#cb31-34" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Strike a balance between script functionality and robustness vs. simplicity and</span>
+<span id="cb31-35"><a href="#cb31-35" aria-hidden="true" tabindex="-1"></a>  readability: I am a shell beginner</span>
+<span id="cb31-36"><a href="#cb31-36" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>In script comments, briefly explain any non-obvious commands, options, and constructs</span>
+<span id="cb31-37"><a href="#cb31-37" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Programs that aren&#39;t available in the system path should be run with Apptainer</span>
+<span id="cb31-38"><a href="#cb31-38" aria-hidden="true" tabindex="-1"></a>  containers from Seqera Containers (<span class="in">`oras://`</span> URLs),</span>
+<span id="cb31-39"><a href="#cb31-39" aria-hidden="true" tabindex="-1"></a>  not with <span class="in">`module load`</span> or by installing them</span>
+<span id="cb31-40"><a href="#cb31-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-41"><a href="#cb31-41" aria-hidden="true" tabindex="-1"></a><span class="fu">## AI diary</span></span>
+<span id="cb31-42"><a href="#cb31-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-43"><a href="#cb31-43" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>After completing a task, add an entry at the bottom of <span class="in">`doc/ai/ai-diary.md`</span></span>
+<span id="cb31-44"><a href="#cb31-44" aria-hidden="true" tabindex="-1"></a>  with the date, what I asked for, which files you created or changed,</span>
+<span id="cb31-45"><a href="#cb31-45" aria-hidden="true" tabindex="-1"></a>  and any key findings and decisions (including alternatives that were rejected)</span>
+<span id="cb31-46"><a href="#cb31-46" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Keep entries short</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</details>
 <p>Then, remove that line from the “Computing infrastructure” section, and add a section like this one, so that Claude writes scripts that follow this week’s conventions:</p>
 <div class="code-with-filename">
 <div class="code-with-filename-file">
 <pre><strong>CLAUDE.md (excerpt)</strong></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31" data-filename="CLAUDE.md (excerpt)"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">## Slurm batch jobs</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>We submit shell scripts as Slurm batch jobs with <span class="in">`sbatch`</span></span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Put <span class="in">`#SBATCH`</span> lines directly below the shebang line, with at least:</span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="in">`--account=PAS3493`</span>, <span class="in">`--output=slurm-&lt;program&gt;-%j.out`</span>, and <span class="in">`--mail-type=FAIL`</span></span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>If a program can use multiple cores, request them with <span class="in">`--cpus-per-task`</span>,</span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  and set the program&#39;s cores/threads option to the same number</span>
-<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>In the usage line of a script, use <span class="in">`sbatch`</span> instead of <span class="in">`bash`</span></span>
-<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Don&#39;t submit jobs yourself: show me the <span class="in">`sbatch`</span> command instead</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32" data-filename="CLAUDE.md (excerpt)"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">## Slurm batch jobs</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>We submit shell scripts as Slurm batch jobs with <span class="in">`sbatch`</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Put <span class="in">`#SBATCH`</span> lines directly below the shebang line, with at least:</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>  <span class="in">`--account=PAS3493`</span>, <span class="in">`--output=slurm-&lt;program&gt;-%j.out`</span>, and <span class="in">`--mail-type=FAIL`</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>If a program can use multiple cores, request them with <span class="in">`--cpus-per-task`</span>,</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  and set the program&#39;s cores/threads option to the same number</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>In the usage line of a script, use <span class="in">`sbatch`</span> instead of <span class="in">`bash`</span></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Don&#39;t submit jobs yourself: show me the <span class="in">`sbatch`</span> command instead</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="zooming-out-workflows" class="level2" data-number="5">
@@ -5104,77 +5161,77 @@ slurm-fastqc-37615719.out:1
 <div class="code-with-filename-file">
 <pre><strong>protocol.md</strong></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32" data-filename="protocol.md"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># RNA-seq analysis of _Culex pipiens_</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Author: Jane Doe</span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Date: 2026-10-28</span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>This was run at the Ohio Supercomputer Center (OSC)</span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a><span class="fu">## Set up: Set the input file paths</span></span>
-<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_dir</span><span class="op">=</span>data/fastq</span>
-<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a><span class="va">ref_assembly</span><span class="op">=</span>results/01_refseqs/assembly.fna</span>
-<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a><span class="va">ref_annotation</span><span class="op">=</span>results/01_refseqs/annotation.gtf</span>
-<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 1: Read QC with FastQC</span></span>
-<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a><span class="in">`fastqc.sh`</span> runs FastQC on 1 FASTQ file,</span>
-<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>and takes 2 arguments: the FASTQ file and the output dir.</span>
-<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq <span class="kw">in</span> <span class="st">&quot;</span><span class="va">$fastq_dir</span><span class="st">&quot;</span>/<span class="pp">*</span>fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/fastqc.sh <span class="st">&quot;</span><span class="va">$fastq</span><span class="st">&quot;</span> results/fastqc</span>
-<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
-<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 2: FastQC summary with MultiQC</span></span>
-<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a><span class="in">`multiqc.sh`</span> runs MultiQC once for all FastQC outputs,</span>
-<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a>and takes 2 arguments: the input dir (the FastQC output dir) and the output dir.</span>
-<span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-31"><a href="#cb32-31" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb32-32"><a href="#cb32-32" aria-hidden="true" tabindex="-1"></a><span class="ex">sbatch</span> scripts/multiqc.sh results/fastqc results/multiqc</span>
-<span id="cb32-33"><a href="#cb32-33" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb32-34"><a href="#cb32-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-35"><a href="#cb32-35" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 3: Read trimming with TrimGalore</span></span>
-<span id="cb32-36"><a href="#cb32-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-37"><a href="#cb32-37" aria-hidden="true" tabindex="-1"></a><span class="in">`trimgalore.sh`</span> runs TrimGalore on the paired-end FASTQ files of 1 sample,</span>
-<span id="cb32-38"><a href="#cb32-38" aria-hidden="true" tabindex="-1"></a>and gives the output files the same names as the input files.</span>
-<span id="cb32-39"><a href="#cb32-39" aria-hidden="true" tabindex="-1"></a>It takes 3 arguments: the R1 FASTQ file, the R2 FASTQ file, and the output dir.</span>
-<span id="cb32-40"><a href="#cb32-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-41"><a href="#cb32-41" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb32-42"><a href="#cb32-42" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_r1 <span class="kw">in</span> <span class="st">&quot;</span><span class="va">$fastq_dir</span><span class="st">&quot;</span>/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb32-43"><a href="#cb32-43" aria-hidden="true" tabindex="-1"></a>    <span class="va">fastq_r2</span><span class="op">=</span><span class="va">${fastq_r1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span></span>
-<span id="cb32-44"><a href="#cb32-44" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/trimgalore.sh <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span> results/trimgalore</span>
-<span id="cb32-45"><a href="#cb32-45" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
-<span id="cb32-46"><a href="#cb32-46" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb32-47"><a href="#cb32-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-48"><a href="#cb32-48" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 4: Alignment to a reference genome with STAR</span></span>
-<span id="cb32-49"><a href="#cb32-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-50"><a href="#cb32-50" aria-hidden="true" tabindex="-1"></a><span class="in">`star.sh`</span> aligns the trimmed reads of 1 sample to the reference genome,</span>
-<span id="cb32-51"><a href="#cb32-51" aria-hidden="true" tabindex="-1"></a>and takes 4 arguments: the trimmed R1 and R2 FASTQ files,</span>
-<span id="cb32-52"><a href="#cb32-52" aria-hidden="true" tabindex="-1"></a>the reference genome FASTA file, and the output dir.</span>
-<span id="cb32-53"><a href="#cb32-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-54"><a href="#cb32-54" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb32-55"><a href="#cb32-55" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_r1 <span class="kw">in</span> results/trimgalore/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb32-56"><a href="#cb32-56" aria-hidden="true" tabindex="-1"></a>    <span class="va">fastq_r2</span><span class="op">=</span><span class="va">${fastq_r1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span></span>
-<span id="cb32-57"><a href="#cb32-57" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/star.sh <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$ref_assembly</span><span class="st">&quot;</span> results/star</span>
-<span id="cb32-58"><a href="#cb32-58" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
-<span id="cb32-59"><a href="#cb32-59" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb32-60"><a href="#cb32-60" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-61"><a href="#cb32-61" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 5: Gene-level counting with Salmon</span></span>
-<span id="cb32-62"><a href="#cb32-62" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-63"><a href="#cb32-63" aria-hidden="true" tabindex="-1"></a><span class="in">`salmon.sh`</span> counts the reads per gene for 1 sample,</span>
-<span id="cb32-64"><a href="#cb32-64" aria-hidden="true" tabindex="-1"></a>and takes 3 arguments: the BAM file from STAR, the reference annotation GTF file,</span>
-<span id="cb32-65"><a href="#cb32-65" aria-hidden="true" tabindex="-1"></a>and the output dir.</span>
-<span id="cb32-66"><a href="#cb32-66" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-67"><a href="#cb32-67" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb32-68"><a href="#cb32-68" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> bam <span class="kw">in</span> results/star/<span class="pp">*</span>bam<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb32-69"><a href="#cb32-69" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/salmon.sh <span class="st">&quot;</span><span class="va">$bam</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$ref_annotation</span><span class="st">&quot;</span> results/salmon</span>
-<span id="cb32-70"><a href="#cb32-70" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
-<span id="cb32-71"><a href="#cb32-71" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33" data-filename="protocol.md"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># RNA-seq analysis of _Culex pipiens_</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Author: Jane Doe</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Date: 2026-10-28</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>This was run at the Ohio Supercomputer Center (OSC)</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="fu">## Set up: Set the input file paths</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_dir</span><span class="op">=</span>data/fastq</span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a><span class="va">ref_assembly</span><span class="op">=</span>results/01_refseqs/assembly.fna</span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a><span class="va">ref_annotation</span><span class="op">=</span>results/01_refseqs/annotation.gtf</span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 1: Read QC with FastQC</span></span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a><span class="in">`fastqc.sh`</span> runs FastQC on 1 FASTQ file,</span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>and takes 2 arguments: the FASTQ file and the output dir.</span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq <span class="kw">in</span> <span class="st">&quot;</span><span class="va">$fastq_dir</span><span class="st">&quot;</span>/<span class="pp">*</span>fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/fastqc.sh <span class="st">&quot;</span><span class="va">$fastq</span><span class="st">&quot;</span> results/fastqc</span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-26"><a href="#cb33-26" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 2: FastQC summary with MultiQC</span></span>
+<span id="cb33-27"><a href="#cb33-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-28"><a href="#cb33-28" aria-hidden="true" tabindex="-1"></a><span class="in">`multiqc.sh`</span> runs MultiQC once for all FastQC outputs,</span>
+<span id="cb33-29"><a href="#cb33-29" aria-hidden="true" tabindex="-1"></a>and takes 2 arguments: the input dir (the FastQC output dir) and the output dir.</span>
+<span id="cb33-30"><a href="#cb33-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-31"><a href="#cb33-31" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb33-32"><a href="#cb33-32" aria-hidden="true" tabindex="-1"></a><span class="ex">sbatch</span> scripts/multiqc.sh results/fastqc results/multiqc</span>
+<span id="cb33-33"><a href="#cb33-33" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb33-34"><a href="#cb33-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-35"><a href="#cb33-35" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 3: Read trimming with TrimGalore</span></span>
+<span id="cb33-36"><a href="#cb33-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-37"><a href="#cb33-37" aria-hidden="true" tabindex="-1"></a><span class="in">`trimgalore.sh`</span> runs TrimGalore on the paired-end FASTQ files of 1 sample,</span>
+<span id="cb33-38"><a href="#cb33-38" aria-hidden="true" tabindex="-1"></a>and gives the output files the same names as the input files.</span>
+<span id="cb33-39"><a href="#cb33-39" aria-hidden="true" tabindex="-1"></a>It takes 3 arguments: the R1 FASTQ file, the R2 FASTQ file, and the output dir.</span>
+<span id="cb33-40"><a href="#cb33-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-41"><a href="#cb33-41" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb33-42"><a href="#cb33-42" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_r1 <span class="kw">in</span> <span class="st">&quot;</span><span class="va">$fastq_dir</span><span class="st">&quot;</span>/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb33-43"><a href="#cb33-43" aria-hidden="true" tabindex="-1"></a>    <span class="va">fastq_r2</span><span class="op">=</span><span class="va">${fastq_r1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span></span>
+<span id="cb33-44"><a href="#cb33-44" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/trimgalore.sh <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span> results/trimgalore</span>
+<span id="cb33-45"><a href="#cb33-45" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb33-46"><a href="#cb33-46" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb33-47"><a href="#cb33-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-48"><a href="#cb33-48" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 4: Alignment to a reference genome with STAR</span></span>
+<span id="cb33-49"><a href="#cb33-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-50"><a href="#cb33-50" aria-hidden="true" tabindex="-1"></a><span class="in">`star.sh`</span> aligns the trimmed reads of 1 sample to the reference genome,</span>
+<span id="cb33-51"><a href="#cb33-51" aria-hidden="true" tabindex="-1"></a>and takes 4 arguments: the trimmed R1 and R2 FASTQ files,</span>
+<span id="cb33-52"><a href="#cb33-52" aria-hidden="true" tabindex="-1"></a>the reference genome FASTA file, and the output dir.</span>
+<span id="cb33-53"><a href="#cb33-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-54"><a href="#cb33-54" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb33-55"><a href="#cb33-55" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_r1 <span class="kw">in</span> results/trimgalore/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb33-56"><a href="#cb33-56" aria-hidden="true" tabindex="-1"></a>    <span class="va">fastq_r2</span><span class="op">=</span><span class="va">${fastq_r1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span></span>
+<span id="cb33-57"><a href="#cb33-57" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/star.sh <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$ref_assembly</span><span class="st">&quot;</span> results/star</span>
+<span id="cb33-58"><a href="#cb33-58" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb33-59"><a href="#cb33-59" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb33-60"><a href="#cb33-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-61"><a href="#cb33-61" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 5: Gene-level counting with Salmon</span></span>
+<span id="cb33-62"><a href="#cb33-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-63"><a href="#cb33-63" aria-hidden="true" tabindex="-1"></a><span class="in">`salmon.sh`</span> counts the reads per gene for 1 sample,</span>
+<span id="cb33-64"><a href="#cb33-64" aria-hidden="true" tabindex="-1"></a>and takes 3 arguments: the BAM file from STAR, the reference annotation GTF file,</span>
+<span id="cb33-65"><a href="#cb33-65" aria-hidden="true" tabindex="-1"></a>and the output dir.</span>
+<span id="cb33-66"><a href="#cb33-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-67"><a href="#cb33-67" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb33-68"><a href="#cb33-68" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> bam <span class="kw">in</span> results/star/<span class="pp">*</span>bam<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb33-69"><a href="#cb33-69" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/salmon.sh <span class="st">&quot;</span><span class="va">$bam</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$ref_annotation</span><span class="st">&quot;</span> results/salmon</span>
+<span id="cb33-70"><a href="#cb33-70" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb33-71"><a href="#cb33-71" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Structuring your workflow like this makes it relatively straightforward to rerun everything (e.g. with different samples or settings), or to reuse it in another project. And the protocol documents all steps that were taken.</p>
 <p>However, you <strong>cannot</strong> run all of this code at once:</p>
