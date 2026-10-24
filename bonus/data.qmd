@@ -1,7 +1,7 @@
 ---
 title: "Additional project and data management notes"
 subtitle: "Optional self-study content for week 11"
-pagetitle: "Project and data management bonus"
+pagetitle: "Bonus: Data management"
 date: 2026-11-02
 date-modified: last-modified
 author:
@@ -17,14 +17,13 @@ other-links:
   - text: "Week 11 overview"
     icon: check2-all
     href: ../week11/w11_overview.html
-  - text: "Bonus: SSH connections"
+  - text: "Bonus: SSH and file transfer"
     icon: book
     href: ssh.html
 language:
   title-block-published: "Published on"
   title-block-modified: "Page last modified"
 bibliography: ../references.bib
-number-depth: 4
 ---
 
 ------
@@ -34,8 +33,10 @@ number-depth: 4
 ## Introduction
 
 This page contains additional notes on project and data management:
-sharing data and code across projects, checking file integrity with checksums,
-symbolic links, file compression, and transferring files to and from OSC.
+sharing data and code across projects, symbolic links,
+checking file integrity with checksums, and file compression.
+(For transferring files to and from OSC, see the
+[SSH and command-line file transfer](ssh.qmd) page.)
 
 ## When projects share data and/or code
 
@@ -53,14 +54,15 @@ From @wilson2017:
 >   *the common code should probably be in a project of its own.*
 
 To access files outside of the project (e.g., shared across projects),
-it is easiest to create **links** (i.e. shortcuts/aliases) to these files:
+it is easiest to create **links** (i.e. shortcuts/aliases) to these files
+(see [below](#symbolic-links) for how to do this):
 
 ![The data is located in `project1` but used in both projects.<br>`project2` contains a link to the data.](../img/proj-dirs-4.svg){fig-align="center" width="50%" fig-alt="A diagram showing two research project folder hierarchies, with the data folder from one project being linked to the other project." .lightbox}
 
 But shared data or scripts are generally better stored in separate folders,
 and then linked to by each project using them:
 
-![Now, the data is in it's own top-level folder, with links to it in both projects.](../img/proj-dirs-5.svg){fig-align="center" width="50%"  fig-alt="A diagram showing two research project folder hierarchies, with a separate shared-data folder that is linked to both projects." .lightbox}
+![Now, the data is in its own top-level folder, with links to it in both projects.](../img/proj-dirs-5.svg){fig-align="center" width="50%"  fig-alt="A diagram showing two research project folder hierarchies, with a separate shared-data folder that is linked to both projects." .lightbox}
 
 These strategies do decrease the portability of your project,
 and moving the shared files even within your own computer will cause links/shortcuts to break.
@@ -69,39 +71,144 @@ this is especially feasible for **scripts** under version control:
 
 ![A set of scripts shared by two projects is stored in an online repository like at GitHub.](../img/proj-dirs-6.svg){fig-align="center" width="70%" fig-alt="A diagram showing two research project folder hierarchies, both of which have a connection to an online script repository." .lightbox}
 
-For **data**, this is also possible but often not practical due to file sizes._
-It's easier after data has been deposited in a public repository._
+For **data**, this is also possible but often not practical due to file sizes.
+It's easier after data has been deposited in a public repository.
+
+## Symbolic links
+
+As shown above, a convenient way to use files that are stored outside of a project
+is with **symbolic links** ("symlinks"):
+small files that merely point to another file or dir,
+much like a shortcut (Windows) or alias (Mac).
+
+### Creating symlinks
+
+Create a symlink with `ln -s <source> [<link-name>]`:
+
+<!---- TODO: Check that /fs/ess/PAS3493/share/garrigos/data/fastq/ exists,
+and replace the illustrative `ls -l` output below with real output from OSC
+(the size, date, and group fields were guessed). ---->
+
+```bash
+cd sandbox
+
+# Only provide the source => create a link of the same name in your working dir:
+ln -s /fs/ess/PAS3493/share/garrigos/data/fastq/S63_R1.fastq.gz
+
+# You can also give the link a different name:
+ln -s /fs/ess/PAS3493/share/garrigos/data/fastq/S63_R1.fastq.gz shared.fastq.gz
+
+ls -l
+```
+```bash-out
+lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 S63_R1.fastq.gz -> /fs/ess/PAS3493/share/garrigos/data/fastq/S63_R1.fastq.gz
+lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 shared.fastq.gz -> /fs/ess/PAS3493/share/garrigos/data/fastq/S63_R1.fastq.gz
+```
+
+In the long-format `ls` output, symlinks start with an `l` and show their target after the `->`.
+Otherwise, you can use a link as if it were the file itself,
+e.g. `zcat shared.fastq.gz | head -n 4`.
+
+You can link to a dir in the same way,
+or link to all files in a dir at once with a wildcard:
+
+```bash
+# [Fictional examples, don't run these]
+# Link to a dir: creates a link 'project1/scripts/shared_scripts':
+ln -s /fs/ess/PAS3493/shared_scripts project1/scripts/
+
+# Link to each of the files in a dir:
+ln -s /fs/ess/PAS3493/shared_scripts/* project1/scripts/
+```
+
+::: callout-warning
+#### Relative source paths are relative to the _link_
+If you use a relative path for the source,
+it is interpreted relative to the location of the link, not to your working dir.
+For example, running the following from your personal dir creates a **broken link**,
+because it points to `sandbox/garrigos/README.md`, which doesn't exist:
+
+```bash
+# [Don't run this]
+ln -s garrigos/README.md sandbox/
+```
+
+The easiest way to avoid this is to use absolute paths for the source,
+e.g. with the `$PWD` variable, which contains your working dir:
+
+```bash
+ln -s "$PWD"/garrigos/README.md sandbox/
+```
+:::
+
+### Removing symlinks
+
+A symlink to a dir is a **point of entry to the original dir**:
+anything you do _through_ the link affects the original files.
+For example, `rm my-link/*.fastq.gz` removes the original FASTQ files.
+
+To remove only the link itself, use `rm my-link` (no `-r` needed: the link is a file)
+or `unlink my-link`.
+
+<!---- TODO: Verify at OSC (GNU rm) that `rm -r my-link/` deletes the contents of the
+original dir (and then fails to remove the link itself with "Not a directory"),
+while `rm -r my-link` only removes the link. Also check the matching exercise answers below.
+Test:
+mkdir -p /fs/scratch/PAS3493/$USER/lntest/target && touch /fs/scratch/PAS3493/$USER/lntest/target/{a,b}
+cd /fs/scratch/PAS3493/$USER/lntest && ln -s target mylink
+rm -r mylink/; ls target    # expected: error about 'mylink/', and 'target' is now empty ---->
+
+::: callout-warning
+#### Watch out for trailing slashes
+`rm -r my-link` only removes the link,
+but **`rm -r my-link/`** (with a trailing slash, which tab completion may add)
+follows the link and removes the _contents_ of the original dir!
+:::
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Symbolic links
+
+1. Create a symlink called `pp5006` in your Home dir that points to your personal dir
+   in the project dir (`/fs/ess/PAS3493/people/$USER`).
+   What would the link have been called if you hadn't given it a name?
+
+2. Predict what each of the following commands would remove (_don't run them!_):
+   a. `rm ~/pp5006`
+   b. `rm -r ~/pp5006/garrigos`
+   c. `rm -r ~/pp5006/`
+
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+1. Without a link name, the link gets the name of the last part of the source path,
+   which is your username:
+
+   ```bash
+   ln -s /fs/ess/PAS3493/people/$USER ~/pp5006
+   ```
+
+2. a. Only the link.
+   b. Your _original_ `garrigos` dir in the project dir.
+   c. Everything inside your personal dir in the project dir (the link itself remains)!
+
+</details>
+:::
 
 ## Checking file integrity with checksums
 
-When you receive your FASTQ files from a sequencing facility,
+When you receive FASTQ files from a sequencing facility,
 or download files from a public repository,
-a small text file will often accompany these files.
-This file will have a name along the lines of
-`md5.txt`, `md5checksums.txt`, or `shasums.txt`.
+they are often accompanied by a small text file with a name like
+`md5.txt`, `md5checksums.txt`, or `sha256sums.txt`.
 
 Such a file contains so-called **checksums**,
 a sort of digital fingerprint for files,
-which can be used to **check whether your copy of these files is completely intact**.
-Checksums are extremely compact summaries of files,
-computed so that even if just one character is changed in the data,
-the checksum will be different.
-
-::: {.callout-note}
-#### More on checksums
-Several algorithms and their associated shell commands can compute checksums.
-Like in our case, you'll most often see _md5_ checksums accompany
-genomic data files,
-which can be computed and checked with the `md5sum` command
-(the newer _SHA-1_ checksums can be computer and checked with the very
-similar `shasum` command).
-
-Checksums consist of _hexadecimal_ characters only: numbers and the letters a-f.
-
-We typically compute or check checksums for one or more _files_,
-but we can even do it for a _string of text_ &mdash;
-the example below demonstrates that the slightest change in a string
-(or file alike) will generate a completely different checksum:
+which you can use to **check whether your copy of these files is completely intact**
+(e.g., that a transfer didn't get cut short).
+A checksum is a short string computed from a file's contents,
+in such a way that if even one character in the file changes,
+the checksum will be completely different.
+For example, you can compute an md5 checksum with the `md5sum` command ---
+here, for a string of text rather than a file:
 
 ```bash
 echo "bioinformatics is fun" | md5sum
@@ -115,246 +222,96 @@ echo "bioinformatic is fun" | md5sum
 ```{.bash-out}
 45cc2b76c02b973494954fd664fc0456  -
 ```
-:::
 
-Let's take a look at our checksums &mdash;
-the file has one row per file and two columns,
-the first with the checksum and the second with the corresponding file name:
+(The `-` means that `md5sum` read its input from standard in rather than from a file.)
+
+### Checking a downloaded file
+
+The NCBI FTP dir with the _Culex pipiens_ genome files that you
+[downloaded from in week 11](../week11/w11b_data.qmd#wget)
+also contains a checksum file, `md5checksums.txt`.
+Download it into your `garrigos/ref` dir:
 
 ```bash
-head -n 4 /fs/ess/PAS0471/jelmer/assist/2023-08_hy/data/fastq/md5.txt
+wget -P garrigos/ref https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/md5checksums.txt
+```
+
+The file has one line per file in the FTP dir,
+with the checksum in the first column and the file name in the second.
+Let's look up the line for the protein FASTA file that you downloaded in the w11b exercise[^protein]:
+
+[^protein]: If you didn't do that exercise, first run:
+            `wget -P garrigos/ref https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_protein.faa.gz`
+
+```bash
+cd garrigos/ref
+grep "V2_protein.faa.gz" md5checksums.txt
 ```
 ```{.bash-out}
-54224841f172e016245843d4a8dbd9fd        X10790_Cruz-MonserrateZ_Panc1_vec_V1N_1_S31_R2_001.fastq.gz
-cf22012ae8c223a309cff4b6182c7d62        X10790_Cruz-MonserrateZ_Panc1_vec_V1N_1_S31_R1_001.fastq.gz
-647a4a15c0d55e56dd347cf295723f22        X10797_Cruz-MonserrateZ_Miapaca2_RASD1_V1N_1_S38_R2_001.fastq.gz
-ce5d444f8f9d87d325dbe9bc09ef0470        X10797_Cruz-MonserrateZ_Miapaca2_RASD1_V1N_1_S38_R1_001.fastq.gz
+d593406dc180606713164a17c1a05d0a  ./GCF_016801865.2_TS_CPP_V2_protein.faa.gz
 ```
 
-This file was created by the folks at the sequencing facility,
-and now that we have the data at OSC and are ready to analyze it,
-we can check if they are still fully intact
-and didn't &ndash;for example&ndash; get incompletely transferred.
-
-I have done this check for the original files,
-but this takes a little while, and for a quick exercise,
-we can now do so with our subsampled FASTQ files.
-First, let's copy a file `md5.txt` from the `demo` directory,
-which has the checksums for the subsampled FASTQ files as I created them:
+Now, compute the checksum for your copy of the file:
 
 ```bash
-cp /fs/ess/PAS0471/demo/202307_rnaseq/data/fastq/md5sums.txt data/fastq/
-```
-
-To check whether the checksums for one or more files in a file correspond to
-those for the files,
-we can run `mdsum -c <mdsum-file>`,
-and should do so _while inside the dir with the files of interest_[^7].
-For example:
-
-[^7]: This technically depends on how the file names are shown in the text file
-      with the checksums:
-      if there are just file names without directories (or `./<filename>`, etc.),
-      you'll have to be in the dir with the files to run `md5sum -c`.
-      (This in turn depends on from where the checksums were _generated_:
-      if you generate them while in the dir with the focal files,
-      which is the only sensible way to do this, that's how they will be displayed.)
-
-```bash
-cd data/fastq
-md5sum -c md5sums.txt
+md5sum GCF_016801865.2_TS_CPP_V2_protein.faa.gz
 ```
 ```{.bash-out}
-ASPC1_A178V_R1.fastq.gz: OK
-ASPC1_A178V_R2.fastq.gz: OK
-ASPC1_G31V_R1.fastq.gz: OK
-ASPC1_G31V_R2.fastq.gz: OK
-Miapaca2_A178V_R1.fastq.gz: OK
-Miapaca2_A178V_R2.fastq.gz: OK
-Miapaca2_G31V_R1.fastq.gz: OK
-Miapaca2_G31V_R2.fastq.gz: OK
+d593406dc180606713164a17c1a05d0a  GCF_016801865.2_TS_CPP_V2_protein.faa.gz
 ```
 
-If there were any differences,
-the `md5sum` command would clearly warn you about them,
-as you can see in the exercise below.
-
-::: {.callout-note collapse="true"}
-#### Making the checksum check fail (Click to expand)
-
-Let's compute a checksum for the `README.md` file and save it in a file:
+The two are identical, so your download is intact.
+Rather than comparing checksums by eye,
+you can let `md5sum` do the comparison with its `-c` (check) option.
+This option takes lines in the format above (from a file or from standard in),
+computes the checksum for each listed file, and compares it to the listed one:
 
 ```bash
-# Assuming you went into data/fastq above;
-# you need to be in /fs/ess/PAS0471/$USER/rnaseq-intro
-cd ../..
-
-md5sum README.md > md5sum_for_README.txt
-
-cat md5sum_for_README.txt
+grep "V2_protein.faa.gz" md5checksums.txt | md5sum -c
 ```
 ```{.bash-out}
-d4c4a8df4870f68808553ac0f5484aa3  README.md
+./GCF_016801865.2_TS_CPP_V2_protein.faa.gz: OK
 ```
 
-Now, let's add a line to our `README.md` that says where the reference genome
-files are:
+- We only passed the line for the protein file,
+  because `md5checksums.txt` lists ~190 files and we only have a few of them.
+  When a sequencing facility sends you a checksum file for exactly your FASTQ files,
+  you can simply run `md5sum -c md5.txt`.
+- Run the check from inside the dir with the files,
+  because the file names in a checksum file are usually relative paths
+  (here, `./<file-name>`).
 
-```bash
-# (You'll need single quotes like below, or the shell will interpret the backticks)
-echo 'Files for the GRCh38.p14 human genome are in the `data/ref` dir' >> README.md
+If a file doesn't match, `md5sum` clearly says so,
+and you should download or transfer that file again:
 
-tail -n 3 README.md
-```
 ```{.bash-out}
-and columns specifying the read direction, sample ID, cell line, and variant.
-
-Files for the GRCh38.p14 human genome are in the `data/ref` dir
-```
-
-Finally, let's check the checksum, and watch it fail:
-
-```bash
-md5sum -c md5sum_for_README.txt
-```
-```{.bash-out}
-README.md: FAILED
+./GCF_016801865.2_TS_CPP_V2_protein.faa.gz: FAILED
 md5sum: WARNING: 1 computed checksum did NOT match
 ```
-:::
 
-::: {.callout-note collapse="true"}
-#### Checking the checksums for the downloaded FASTA and GTF (Click to expand)
-
-The [NCBI FTP directory for the human genome](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.40_GRCh38.p14/)
-also contains a file with checksums, `md5checksums.txt`.
-
-Let's download it --
-we'll use the `-P` option to tell `wget` to put it directly in the `data/ref` dir:
-
-```bash
-wget -P data/ref https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.40_GRCh38.p14/md5checksums.txt
-```
-
-It's a little harder to check the file integrity in these cases because we
-only have two out of the several dozen files listed in this `md5checksums.txt`
-file (namely, all those in the FTP dir),
-and to make matters worse, we renamed them.
-
-```bash
-cd data/ref
-
-grep "GCF_000001405.40_GRCh38.p14_genomic.gtf.gz" md5checksums.txt
-```
-```{.bash-out}
-f573144e507a9fd85150cf6a3c8f8471  ./GCF_000001405.40_GRCh38.p14_genomic.gtf.gz
-```
-```bash
-grep "GCF_000001405.40_GRCh38.p14_genomic.fna.gz" md5checksums.txt
-```
-```{.bash-out}
-c30471567037b2b2389d43c908c653e1  ./GCF_000001405.40_GRCh38.p14_genomic.fna.gz
-```
-
-```bash
-md5sum GCF*
-```
-```{.bash-out}
-689762f267eafe361b6ee4b21638eb51  GCF_000001405.40_GRCh38.p14_genomic.fna
-a5274984906df2cc65319dfc1b307a01  GCF_000001405.40_GRCh38.p14_genomic.gtf
-```
-:::
-
-## Using symbolic links
-
-For example to use files across projects - recall week 2 - TBA
-
-#### Single files
-
-A symbolic (or soft) links only links to the *path* of the original file,
-whereas a hard link directly links to the *contents* of the original file.
-Note that modifying a file via either a hard or soft link *will* modify the original file.
-
-Create a *symlink* to a file using `ln -s <source-file> [<link-name>]`:
-
-```sh
-# Only provide source => create link of the same name in the wd:
-ln -s /fs/ess/PAS3493/share/garrigos/data/fastq/S63_R1.fastq.gz
-
-# The link can also be given an arbitrary name/path:
-ln -s /fs/ess/PAS3493/share/garrigos/data/fastq/S63_R1.fastq.gz shared-fastq.fastq.gz
-```
-
-::: callout-note
-#### Use an absolute path to refer to the source file when creating links
-At least at OSC, you have to **use an absolute path for the source file(s)**,
-or the link will not work.
-The `$PWD` environment variable, which contains your current working directory
-can come in handy to do so:
-
-```sh
-# (Fictional example, don't run this)
-ln -s $PWD/shared-scripts/align.sh project1/scripts/
-```
-:::
-
-#### Multiple files
-
-Link to multiple files in a directory at once:
-
-```sh
-# (Fictional example, don't run this)
-ln -s $PWD/shared_scripts/* project1/scripts/
-```
-
-Link to a directory:
-
-```sh
-# (Fictional example, don't run this)
-ln -s $PWD/shared_scripts/ project1/scripts/
-ln -s $PWD/shared_scripts/ project1/scripts/ln-shared-scripts
-```
-
-::: callout-warning
-#### Be careful not to remove source files!
-
-Be careful when linking to *directories*:
-you are creating a **point of entry to the original dir**.
-Therefore, even if you enter via the symlink, you are interacting with the original files.
-
-This means that a command like the following would remove the original directory!
-
-```bash
-rm -r symlink-to-dir
-```
-
-Instead, use `rm symlink-to-dir` (the link itself is a file, not a dir, so you don't need `-r`!)
-or `unlink symlink-to-dir` to only remove the link.
+::: {.callout-note}
+#### SHA checksums
+Instead of md5 checksums, you may also encounter SHA-256 checksums.
+These work the same way, with the `sha256sum` command (e.g. `sha256sum -c sha256sums.txt`).
 :::
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Creating symbolic links
+#### {{< fa user-edit >}} Exercise: Checksums of an unzipped file
 
-- Create a symbolic link in your `$HOME` dir that points to your personal dir in
-  the project dir (`/fs/ess/PAS3493/people/$USER`).
+In week 11, you unzipped the genome FASTA file,
+so you now have `GCF_016801865.2_TS_CPP_V2_genomic.fna` rather than `...fna.gz`.
 
-  If you don't provide a name for the link, it will be your username (why?),
-  which is not particularly informative about its destination.
-  Therefore, give it a name that makes sense to you, like `PLNTPTH6193-SP24` or `pracs-sp24`.
+1. If you computed the md5 checksum of your unzipped FASTA file,
+   would it match the one listed in `md5checksums.txt` for `..._genomic.fna.gz`? Why (not)?
+2. What does this imply about _when_ you should check checksums of downloaded files?
 
-<details><summary>Click for the solution</summary>
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-```sh
-ln -s /fs/ess/PAS1855/users/$USER ~/PLNTPTH6193-SP24
-```
-
-</details>
-
-- What would happen if you do `rm -rf ~/PLNTPTH8300-SP21`? Don't try this.
-
-<details><summary>Click for the solution</summary>
-
-The content of the original dir will be removed.
+1. No: the checksum is computed from the exact contents of a file,
+   and the unzipped file has completely different contents (bytes) than the zipped file,
+   even though it represents the same sequences.
+2. Check checksums right after downloading or transferring,
+   _before_ you modify, unzip, or rename the files.
 
 </details>
 :::
@@ -371,32 +328,38 @@ Use the `du` (**d**isk **u**sage) command -- for example:
 - Get the total size for a single dir:
 
   ```bash
-  # -h: human-readable file sizes / -s: specify a dir
-  du -hs fastq/
+  # -h: human-readable file sizes / -s: summarize, i.e. only show the total
+  du -hs garrigos/fastq
   ```
   ```bash-out
-  941M    fastq/
+  941M    garrigos/fastq
   ```
 
-- Get the total size for all top-level dirs as well as the current working dir:
+  <!---- TODO: Check both `du` outputs at OSC: the numbers in the second one
+  are from an old project (e.g. `garrigos/ref` now also holds the genome files). ---->
+
+- Get the total size of each dir directly inside a dir, plus that of the dir itself:
 
   ```bash
-  # -d 1: summarize sizes at a depth of 1 (= top-level dirs below current)
-  du -h -d 1
+  # -d 1: show sizes down to a depth of 1 (= the dirs directly inside 'garrigos')
+  du -h -d 1 garrigos
   ```
   ```bash-out
-  1.0K    ./meta
-  5.1M    ./ref
-  941M    ./fastq
-  946M    ./.git
-  1.9G    .
+  1.0K    garrigos/meta
+  5.1M    garrigos/ref
+  941M    garrigos/fastq
+  946M    garrigos/.git
+  1.9G    garrigos
   ```
 :::
 
-Let's start with downloading a file to play around with:
+Let's start by downloading two human chromosome FASTA files to play around with,
+in your `sandbox` dir:
 
 ```bash
-wget http://hgdownload.soe.ucsc.edu/goldenPath/hg19/chromosomes/chr22.fa.gz
+cd sandbox
+wget https://hgdownload.soe.ucsc.edu/goldenPath/hg19/chromosomes/chr21.fa.gz
+wget https://hgdownload.soe.ucsc.edu/goldenPath/hg19/chromosomes/chr22.fa.gz
 ```
 
 ### Decompress files
@@ -458,10 +421,20 @@ will by default be to standard out!)*
 
 ### Working with compressed data directly
 
-Several familiar shell commands have `z` counterparts that can work with
-gzipped files directly, such as `zgrep` and `zcat`.
+Several familiar shell commands have `z` counterparts that work with gzipped files directly.
+You've been using `zcat`, the counterpart of `cat`, since week 4:
 
-- `zgrep` is `grep` for gzipped files:
+```bash
+zcat chr22.fa.gz | head -n 4
+```
+```{.bash-out}
+>chr22
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+```
+
+Similarly, `zgrep` is `grep` for gzipped files:
 
 ```bash
 zgrep -i -n --color "AGATAGATATAT" chr22.fa.gz
@@ -472,25 +445,13 @@ zgrep -i -n --color "AGATAGATATAT" chr22.fa.gz
 966248:tatagatagatatataaaggggagtttattaagtattaactcacatgatc
 ```
 
-- `zcat` is `cat` for gzipped files:
-
-```bash
-zcat chr22.fa.gz | head
-```
-```{.bash-out}
->chr22
-NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
-NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
-NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
-```
-
 ::: {.callout-note collapse="true"}
 #### Concatenating compressed data
 
 Concatenating files means you combine them into a single file,
 simply printing them back-to-back.
 When it is okay to concatenate files^[
-This does mean you'll lose information about the origin of the original files]
+This does mean you'll lose information about the origin of the original files],
 this can be done very easily.
 
 To add a second FASTQ file to an existing gzipped file,
@@ -506,7 +467,7 @@ in.fastq.gz in2.fastq
 gzip -c in2.fastq >> in.fastq.gz
 ```
 
-Even more conveniently, if we have two gzipped FASTQ file for the same sample
+Even more conveniently, if we have two gzipped FASTQ files for the same sample
 but from different Illumina lanes:
 
 ```bash
@@ -514,280 +475,53 @@ cat smpA_L001_R1.fastq.gz smpA_L002_R1.fastq.gz > smpA_R1.fastq.gz
 ```
 :::
 
-#### `tar`
+### Archives with `tar`
 
-TBA
-
-## More on file transfer to and from OSC
-
-### Remote transfer commands
-
-For small transfers, an alternative to the OnDemand Files menu is using
-**remote transfer commands** like `scp`, `rsync`, or `rclone`.
-These commands can be more convenient than OnDemand especially if you want to keep
-certain directories synced between OSC and your computer.
-
-Because at OSC, these transfers will happen using a login node,
-these commands are unfortunately not recommended for large transfers^[
-This may be different at other supercomputer centers: there are no inherent transfer
-size limitations to these commands.].
-
-#### `scp`
-
-One option is `scp` (secure copy), which works much like the regular `cp` command,
-including the need for the `-r` option for recursive transfers.
-The key difference is that we have to somehow refer to a path on a remote computer,
-and we do so by starting with the remote computer's address,
-followed by `:`, and then the path:
-
-```bash-out-solo
-# Copy from remote (OSC) to local (your computer):
-scp <user>@pitzer.osc.edu:<remote-path> <local-path>
-
-# Copy from local (your computer) to remote (OSC)
-scp <local-path> <user>@pitzer.osc.edu:<remote-path>
-```
-
-Here are two examples of copying from OSC to your local computer:
+Software, databases, and sometimes data sets are often distributed as a single
+`.tar.gz` (or `.tgz`) file, a so-called "**tarball**".
+This is an "archive" file that contains multiple files and dirs,
+which were combined into a single file with the `tar` command and then gzip-compressed.
+Since `gzip` itself can only compress individual files,
+`tar` is also what you would use to pack up a dir, e.g. to share it or to back it up.
 
 ```bash
-# Copy a file from OSC to a local computer - namely, to your current working dir ('.'):
-scp jelmer@pitzer.osc.edu:/fs/ess/PAS0471/jelmer/mcic-scripts/misc/fastqc.sh .
+# Create (-c) a gzip-compressed (-z) archive file (-f) from the dir 'results':
+tar -czvf results.tar.gz results/
 
-# Copy a directory from OSC to a local computer - namely, to your home dir ('~'):
-scp -r jelmer@pitzer.osc.edu:/fs/ess/PAS0471/jelmer/mcic-scripts ~
+# List (-t) the contents of an archive without extracting it:
+tar -tzvf results.tar.gz
+
+# Extract (-x) the contents of an archive into your working dir:
+tar -xzvf results.tar.gz
 ```
 
-And two examples of copying from your local computer to OSC:
+- The `-v` (verbose) option makes `tar` print the names of the files it processes.
+- The `-f` option should come last, because it must be directly followed by the name of the archive file.
+- When extracting, `tar` recreates the dirs stored in the archive,
+  and overwrites existing files with the same names without asking ---
+  so when in doubt, list the contents first.
 
-```bash
-# Copy a file from your computer to OSC --
-# namely, a file in from your current working dir to your home dir at OSC:
-scp fastqc.sh jelmer@pitzer.osc.edu:~
+::: exercise
+#### {{< fa user-edit >}} Exercise: Compression
 
-# Copy a file from my local computer's Desktop to the Scratch dir for PAS0471:
-scp /Users/poelstra.1/Desktop/fastqc.sh jelmer@pitzer.osc.edu:/fs/scratch/PAS0471
-```
+You have a dir with three FASTQ files: `A.fastq`, `B.fastq`, and `C.fastq`.
+Predict which files you would end up with after running each of the following commands
+(each starting from the same three files):
 
-Some nuances for remote copying:
+1. `gzip *.fastq`
+2. `gzip -c *.fastq > all.fastq.gz`
+3. `tar -czf all.tar.gz *.fastq`
 
-- For both transfer directions (remote-to-local and local-to-remote),
-  you **issue the copying commands from your local computer.**
-- The path for the remote computer (OSC) should always be absolute but that
-  for your local computer can be relative or absolute.
-- Since all files are accessed at the same paths at Pitzer and at other clusters,
-  it doesn't matter whether you use `@pitzer.osc.edu` or e.g.
-  `@cardinal.osc.edu` in the `scp` command.
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-::: {.callout-note collapse="true"}
-#### Transferring directly to and from OneDrive _(Click to expand)_
+1. `A.fastq.gz`, `B.fastq.gz`, and `C.fastq.gz`:
+   `gzip` compresses each file separately, and removes the originals.
+2. The three original files, plus `all.fastq.gz`,
+   which contains the reads of all three files back-to-back
+   (see the box on concatenating compressed data above) ---
+   so you can no longer tell which reads came from which file!
+3. The three original files, plus `all.tar.gz`,
+   from which you can extract the three separate files again.
 
-If your OneDrive is mounted on or synced to your local computer
-(i.e., if you can see it in your computer's file brower),
-you can also transfer directly between OSC and OneDrive.
-For example, the path to my OneDrive files on my laptop is:
-`/Users/poelstra.1/Library/CloudStorage/OneDrive-TheOhioStateUniversity`.
-So if I had a file called `fastqc.sh` in my top-level OneDrive dir,
-I could transfer it to my Home dir at OSC as follows:
-
-```bash
-scp /Users/poelstra.1/Library/CloudStorage/OneDrive-TheOhioStateUniversity jelmer@pitzer.osc.edu:~
-```
+</details>
 :::
-
-#### `rsync`
-
-Another option, which I recommend, is the `rsync` command,
-especially when you have directories that you repeatedly want to sync:
-`rsync` won't copy any files that are identical in source and destination.
-
-A useful combination of options is `-avz --progress`:
-
-- `-a` enables archival mode (among other things, this makes it work recursively).
-- `-v` increases verbosity &mdash; tells you what is being copied.
-- `-z` enables compressed file transfer (=> generally faster).
-- `--progress` to show transfer progress for individual files.
-
-The way to refer to remote paths is the same as with `scp`.
-For example, I could copy a `dir_with_results` in my local Home dir to my
-OSC Home dir as follows:
-
-```bash
-rsync -avz --progress ~/dir_with_results jelmer@pitzer.osc.edu:~
-```
-
-<hr style="height:1pt; visibility:hidden;" />
-
-::: {.callout-warning collapse="true"}
-#### Trailing slashes in `rsync` _(Click to expand)_
-
-One tricky aspect of using `rsync` is that the presence/absence of a
-**trailing slash for source directories** makes a difference for its behavior.
-The following commands work as intended &mdash;
-to create a backup copy of a `scripts` dir inside a dir called `backup`[^2]:
-
-[^2]: For simplicity, these commands are copying between local dirs,
-      which is also possible with `rsync`.
-
-```bash
-# With trailing slash: copy the *contents* of source "scripts" into target "scripts":
-rsync -avz scripts/ backup/scripts
-
-# Without trailing slash: copy the source dir "scripts" into target dir "backup"
-rsync -avz scripts backup
-```
-
-But these commands don't:
-
-```bash
-# This would result in a dir 'backup/scripts/scripts':
-rsync -avz scripts backup/scripts
-
-# This would copy the files in "scripts" straight into "backup":
-rsync -avz scripts/ backup
-```
-:::
-
-### Command-line SFTP
-
-The first of two options for larger transfers is **SFTP**.
-You can use the **`sftp` command** when you have access to a Unix shell on your computer,
-and this what I'll cover below.
-
-#### Logging in
-
-To log in to OSC's SFTP server, issue the following command in your local
-computer's terminal,
-substituting `<user>` by your OSC username:
-
-```bash
-sftp <user>@sftp.osc.edu   # E.g., 'jelmer@sftp.osc.edu'
-```
-
-``` {.bash-out}
-The authenticity of host 'sftp.osc.edu (192.148.247.136)' can't be established.
-ED25519 key fingerprint is SHA256:kMeb1PVZ1XVDEe2QiSumbM33w0SkvBJ4xeD18a/L0eQ.
-This key is not known by any other names
-Are you sure you want to continue connecting (yes/no/[fingerprint])?
-```
-
-If this is your first time connecting to OSC SFTP server,
-you'll get a message like the one shown above:
-you should type `yes` to confirm.
-
-Then, you may be asked for your OSC password, and after that,
-you should see a "welcome" message like this:
-
-``` {.bash-out}
-******************************************************************************
-
-This system is for the use of authorized users only.  Individuals using
-this computer system without authority, or in excess of their authority,
-are subject to having all of their activities on this system monitored
-and recorded by system personnel.  In the course of monitoring individuals
-improperly using this system, or in the course of system maintenance,
-the activities of authorized users may also be monitored.  Anyone using
-this system expressly consents to such monitoring and is advised that if
-such monitoring reveals possible evidence of criminal activity, system
-personnel may provide the evidence of such monitoring to law enforcement
-officials.
-
-******************************************************************************
-Connected to sftp.osc.edu.
-```
-
-Now, you will have an `sftp` prompt (`sftp>`) instead of a regular shell prompt.
-
-Familiar commands like `ls`, `cd`, and `pwd` will operate on the remote computer
-(OSC, in this case),
-and there are **local counterparts for them: `lls`, `lcd`, `lpwd`** &mdash;
-for example:
-
-```bash
-# NOTE: I am prefacing sftp commands with the 'sftp>' prompt to make it explicit
-#       these should be issued in an sftp session; but don't type that part.
-sftp> pwd
-```
-
-``` {.bash-out}
-Remote working directory: /users/PAS0471/jelmer
-```
-
-```bash
-sftp> lpwd
-```
-
-``` {.bash-out}
-Local working directory: /Users/poelstra.1/Desktop
-```
-
-#### Uploading files to OSC
-
-To upload files to OSC, use `sftp`'s **`put` command**.
-
-The syntax is `put <local-path> <remote-path>`,
-and unlike with `scp` etc., you don't need to include the address to the remote
-(because in an `stfp` session, you are simultaneously connected to both computers).
-But like with `cp` and `scp`, you'll need the `-r` flag for recursive transfers,
-i.e. transferring a directory and its contents.
-
-```bash
-# Upload fastqc.sh in a dir 'scripts' on your local computer to the PAS0471 Scratch dir:
-sftp> put scripts/fastqc.sh /fs/scratch/PAS0471/sandbox
-
-# Use -r to transfer directories:
-sftp> put -r scripts /fs/scratch/PAS0471/sandbox
-
-# You can use wildcards to upload multiple files:
-sftp> put scripts/*sh /fs/scratch/PAS0471/sandbox
-```
-
-::: {.callout-warning}
-#### `sftp` is rather primitive
-The `~` shortcut to your Home directory does not work in `sftp`!
-`sftp` is generally quite primitive and you also cannot use, for example,
-tab completion or the recalling of previous commands with the up arrow.
-:::
-
-#### Downloading files from OSC
-
-To download files from OSC, use the `get` command,
-which has the syntax `get <remote-path> <local-path>`
-(this is the other way around from `put` in that the remote path comes first,
-but the same in that both use the order `<source> <target>`, like `cp` and so on).
-
-For example:
-
-```bash
-sftp> get /fs/scratch/PAS0471/mcic-scripts/misc/fastqc.sh .
-
-sftp> get -r /fs/scratch/PAS0471/sandbox/ .
-```
-
-#### Closing the SFTP connection
-
-When you're done, you can type `exit` or press <kbd>Ctrl</kbd>+<kbd>D</kbd>
-to exit the `sftp` prompt.
-
-### Globus
-
-The second option for large transfers is **Globus**,
-which has a browser-based GUI,
-and is especially your best bet for very large transfers.
-Some advantages of using Globus are that:
-
-- It checks whether all files were transferred correctly and completely
-- It can pause and resume automatically when you e.g. turn off your computer for a while
-- It can be used to share files from OSC directly with collaborators even at
-  different institutions.
-
-Globus does need some setup,
-including the installation of a piece of software that will run in the
-background on your computer.
-
-- Globus installation and configuration instructions:
-  [Windows](https://docs.globus.org/how-to/globus-connect-personal-windows) /
-  [Mac](https://docs.globus.org/how-to/globus-connect-personal-mac) /
-  [Linux](https://docs.globus.org/how-to/globus-connect-personal-linux)
-- [Globus transfer instructions](https://docs.globus.org/how-to/get-started/)
-- [OSC's page on Globus](https://www.osc.edu/resources/getting_started/howto/howto_use_globus_overview)

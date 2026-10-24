@@ -35,6 +35,16 @@ language:
 
 <!---
 - Jonathan's suggestion: Introduce NCBI more: SRA, GEO, BLAST
+
+::: {.callout-note collapse="true"}
+## This week's reading: Reproducibility in plant pathology _(Click to expand)_
+In 2024, the journal _Phytopathology_ published a special issue on
+"Key Challenges in Plant Pathology in the Next Decade",
+and reproducibility was one of these challenges [@wang2024].
+In that issue, @grünwald2024 provide guidelines for publishing in
+the American Phytopathological Society (APS) journals,
+including on data sharing and code deposition.
+:::
 ---->
 
 <br>
@@ -46,7 +56,7 @@ language:
 - Why you should prefer relative paths over absolute paths
 - How you can manage your data and share it after publication
 - How to transfer files between OSC and other computers like your own
-- How to download files at the command-line
+- How to download files at the command line
 - How to manage file permissions
 
 ### Getting ready
@@ -54,9 +64,12 @@ language:
 1. At <https://ondemand.osc.edu>,
    start a VS Code session in `/fs/ess/PAS3493/people/$USER`
 
+2. Make sure you have installed FileZilla on your computer
+   ([instructions](#filezilla-a-gui-based-sftp-client)).
+
 ## Relative and absolute paths
 
-#### Why you should prefer relative paths
+### Why you should prefer relative paths
 
 <details class="details-quiz">
 <summary>Absolute paths don't depend on your working dir -- so what could be a disadvantage of using them?</summary>
@@ -82,6 +95,25 @@ Absolute paths:
 Relative paths keep working after moving project dirs --
 **as long as you consistently use the project's top-level dir as your working dir**.
 :::
+
+<details class="details-quiz">
+<summary>On Monday, you referred to input files from `week11` with relative paths like `../garrigos/fastq/S63_R1.fastq.gz`. Would these still work after moving `week11` into a new dir? And after moving your entire personal dir?</summary>
+
+_The answer will be added after class._
+
+<!----
+- Moving only `week11` breaks them:
+  `..` would now point to the new dir, which has no `garrigos` dir inside it.
+- Moving your entire personal dir keeps them working,
+  since `week11` and `garrigos` move together.
+
+This is why it's best to keep all files for a project, including its raw data,
+inside the project's top-level dir, so that relative paths never need to leave it.
+(When multiple projects use the same data,
+you can use symbolic links: see the [bonus material](../bonus/data.qmd#symbolic-links).)
+---->
+
+</details>
 
 ## Raw data management
 
@@ -127,7 +159,7 @@ However, similar principles apply with other types of data/files.
     consider making your data read-only with file permissions _([covered below](#file-permissions))_
   - After downloading or when sharing key data,
     consider using "checksums" to check that files were transferred entirely
-    _([bonus material](../bonus/data.qmd))_
+    _([bonus material](../bonus/data.qmd#checking-file-integrity-with-checksums))_
 
 ### Metadata in spreadsheets
 
@@ -199,7 +231,7 @@ This policy is now in effect:
   which journals increasingly require upon publication.
 - Code can be shared via GitHub (or similar platforms like GitLab and Bitbucket),
   ideally with a permanent Digital Object Identifier (DOI) via
-  [Zenodo's GitHub integration](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content) ^[
+  [Zenodo's GitHub integration](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content)^[
   Some journals require code to be shared via a general repository like Dryad as well,
   where the code (and especially its documentation) may be subject to manual quality control.].
 
@@ -255,7 +287,8 @@ For more and OSU-specific information about data management and sharing,
 You can't keep files synced between OSC and your local computer
 in a fully automatic way like with OneDrive or Dropbox.
 And because the amount of data on OSC is typically very large,
-you may not want to either. Instead, here is a good strategy:
+you may not want to either.
+Instead, here is a good strategy:
 
 - Keep the files you have under version control (code, etc.) synced via Git/GitHub.
 - Periodically sync all or a selection of other files with the data transfer
@@ -282,7 +315,7 @@ Here is a table with methods to transfer files between your computer and OSC:
 | Method                                                                                          | Transfer size         | CLI or GUI        | Ease of use   | Flexibility/options   |
 |-------------------------------------------------------------------------------------------------|-----------------------|-------------------|---------------|-----------------------|
 | **OnDemand Files menu**                                                                         | smaller (<1GB)        | GUI               | Easy          | Limited               |
-| **Remote transfer commands** (e.g. [`scp`, `rsync`](../bonus/data.qmd#remote-transfer-commands)) | smaller (<1GB)        | CLI               | Moderate      | Extensive             |
+| **Remote transfer commands** (e.g. [`scp`, `rsync`](../bonus/ssh.qmd#remote-transfer-commands))  | any                   | CLI               | Moderate      | Extensive             |
 | **SFTP**                                                                                        | larger (>1GB)         | Either            | Moderate      | Extensive             |
 | **Globus**                                                                                      | larger (>1GB)         | GUI               | Moderate      | Extensive             |
 
@@ -294,7 +327,7 @@ Here, we'll go over what is probably overall the most convenient and versatile
 way to transfer files to and from OSC,
 since it works for transfers of any size, and is easy and quick:
 **file transfer with a GUI-based SFTP client**.
-There are several such programs, but I can recommend FileZilla ^[
+There are several such programs, but I can recommend FileZilla^[
 E.g. because it works on all operating systems and has a more intuitive user
 interface than Cyberduck,
 another very commonly used program that works both on Mac and Windows.].
@@ -396,7 +429,9 @@ The files for that genome can be found at this
 You can right-click on any of the files there and then click "Copy Link Address"
 (or similar, depending on your browser).
 That's how I got the URL to the assembly FASTA (`.fna.gz`) file
-that we used on Monday:
+that we used on Monday.
+Here is the command again, but with paths relative to your personal dir
+(on Monday, you ran it from `week11`, hence the `../garrigos/ref` there):
 
 ```bash
 # [Don't run this -- you already downloaded this file on Monday]
@@ -425,11 +460,9 @@ Right after downloading, the file looked like this
 (on Monday, you then unzipped it):
 
 ```bash
-ls -lh garrigos/ref
+ls -lh garrigos/ref/*fna.gz
 ```
-```bash-out
--rw-rw----+ 1 jelmer PAS0471 165M Dec 22  2022 GCF_016801865.2_TS_CPP_V2_genomic.fna.gz
-```
+<pre class="bash-out"><code>-rw-rw----+ 1 jelmer PAS0471 165M Dec 22  2022 <span class="ls-red">garrigos/ref/GCF_016801865.2_TS_CPP_V2_genomic.fna.gz</span></code></pre>
 
 Note that the date shown, `Dec 22 2022`, is when NCBI last modified the file,
 not when you downloaded it.
@@ -577,14 +610,12 @@ which should show you something like this:
 ```bash
 ls -lh garrigos
 ```
-```bash-out
-total 2.5K
-drwxrwx---+ 2 jelmer PAS0471 4.0K Sep  9 13:46 fastq
-drwxrwx---+ 2 jelmer PAS0471 4.0K Sep  9 13:46 meta
+<pre class="bash-out"><code>total 2.5K
+drwxrwx---+ 2 jelmer PAS0471 4.0K Sep  9 13:46 <span class="ls-blue">fastq</span>
+drwxrwx---+ 2 jelmer PAS0471 4.0K Sep  9 13:46 <span class="ls-blue">meta</span>
 -rw-rw----+ 1 jelmer PAS0471 2.3K Sep  9 13:46 README.md
-drwxrwx---+ 2 jelmer PAS0471 4.0K Sep  9 13:46 ref
-drwxrwx---+ 2 jelmer PAS0471 4.0K Sep 16 13:26 sandbox
-```
+drwxrwx---+ 2 jelmer PAS0471 4.0K Sep  9 13:46 <span class="ls-blue">ref</span>
+drwxrwx---+ 2 jelmer PAS0471 4.0K Sep 16 13:26 <span class="ls-blue">sandbox</span></code></pre>
 
 With annotations:
 
@@ -594,9 +625,12 @@ With annotations:
 #### "Groups" at OSC
 
 When you create a file in the PAS3493 project dir,
-its "**group**" will include all members of the OSC project PAS3493.
-That is true even if the primary group displayed in the `ls -l` output shown above
+all members of the OSC project PAS3493 get the "**group**" permissions for it.
+That is true even if the group displayed in the `ls -l` output shown above
 is a different one, e.g. `PAS0471` for me (my personal default group at OSC).
+This works through so-called "access control lists" (ACLs),
+which is what the `+` at the end of the permission string indicates
+(to see the ACL of a file, run `getfacl <file>`).
 :::
 
 Here is an overview of the file permission notation in `ls -l` output:
@@ -811,11 +845,9 @@ so let's check the initial permissions first:
 cd ..
 ls -l garrigos/fastq/ | head -n 3
 ```
-```bash-out
-total 963552
--rw-rw----+ 1 jelmer PAS0471 21266097 Sep  9 13:46 S63_R1.fastq.gz
--rw-rw----+ 1 jelmer PAS0471 22700521 Sep  9 13:46 S63_R2.fastq.gz
-```
+<pre class="bash-out"><code>total 963552
+-rw-rw----+ 1 jelmer PAS0471 21266097 Sep  9 13:46 <span class="ls-red">S63_R1.fastq.gz</span>
+-rw-rw----+ 1 jelmer PAS0471 22700521 Sep  9 13:46 <span class="ls-red">S63_R2.fastq.gz</span></code></pre>
 
 To make this data read-only, you can for example run:
 
@@ -829,11 +861,9 @@ After running this command, let's check the permissions:
 ```sh
 ls -l garrigos/fastq/ | head -n 3
 ```
-```bash-out
-total 963552
--r--r--r--+ 1 jelmer PAS0471 21266097 Sep  9 13:46 S63_R1.fastq.gz
--r--r--r--+ 1 jelmer PAS0471 22700521 Sep  9 13:46 S63_R2.fastq.gz
-```
+<pre class="bash-out"><code>total 963552
+-r--r--r--+ 1 jelmer PAS0471 21266097 Sep  9 13:46 <span class="ls-red">S63_R1.fastq.gz</span>
+-r--r--r--+ 1 jelmer PAS0471 22700521 Sep  9 13:46 <span class="ls-red">S63_R2.fastq.gz</span></code></pre>
 
 What happens when you try to remove a write-protected file?
 Let's test this on a copy of one of the files in `sandbox/`,
@@ -854,17 +884,6 @@ If you answer `y` (yes), the file is in fact removed:
 as mentioned above, removing a file is controlled by the permissions of its dir.
 So, read-only file permissions protect against accidentally _modifying_ a file,
 but only add a confirmation prompt when removing it.
-
-To also protect your raw data against removal,
-remove write permissions for the dir itself:
-
-```bash
-chmod a-w garrigos/fastq
-```
-
-Now, `rm` (even `rm -f`) will fail with a "Permission denied" error
-for any file in `garrigos/fastq` ---
-unless you first add write permissions back.
 
 ::: callout-tip
 #### Force-remove with `rm -f`
@@ -896,6 +915,17 @@ rm -rf garrigos/
 However, **you must be careful when using the `-f` option** to prevent accidental
 removal of files.
 :::
+
+To also protect your raw data against removal,
+remove write permissions for the dir itself:
+
+```bash
+chmod a-w garrigos/fastq
+```
+
+Now, `rm` (even `rm -f`) will fail with a "Permission denied" error
+for any file in `garrigos/fastq` ---
+unless you first add write permissions back.
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise: Changing file permissions

@@ -20,6 +20,9 @@ other-links:
   - text: "w10a: Slurm batch jobs I"
     icon: book
     href: ../week10/w10a_slurm1.html
+  - text: "w10b: Common Slurm options (slides)"
+    icon: easel
+    href: ../week10/w10b_slurm-options.html
   - text: "w10b: Slurm batch jobs II"
     icon: book
     href: ../week10/w10b_slurm2.html
@@ -36,12 +39,68 @@ language:
 
 This page covers some additional Slurm topics that build on the
 [w10a](../week10/w10a_slurm1.qmd) and [w10b](../week10/w10b_slurm2.qmd) lectures:
-Slurm environment variables, copying Slurm log files to output dirs,
+more `sbatch` options, Slurm environment variables, copying Slurm log files to output dirs,
 interactive shell jobs, checking how many resources your jobs used, job arrays,
 and ways to automate multi-step workflows with Bash and Slurm.
 
 To run the commands on this page yourself, start a VS Code session at
 <https://ondemand.osc.edu> in `/fs/ess/PAS3493/people/$USER`, as per usual.
+
+## More `sbatch` options
+
+### Requesting large amounts of memory
+
+The **maximum** amount of memory you can request on regular Pitzer compute nodes
+is 178 GB.
+If you need more than that, there are specialized `largemem` or `hugemem` nodes.
+Switching to such a node generally happens *automatically* based on
+your requested amount, **but** unfortunately,
+there are "gaps" between the maximum and minimum amounts of RAM on different nodes,
+which means that certain amounts of memory cannot be requested on any node
+(See [this OSC page](https://www.osc.edu/resources/technical_support/supercomputers/pitzer/batch_limit_rules)
+for details on node types and associated memory on Pitzer).
+
+To request that a batch job runs on a non-default node type, you should use
+the `--partition` option. For example:
+
+```{.bash .file filename="myscript.sh (excerpt)"}
+#!/bin/bash
+#SBATCH --partition=hugemem
+#SBATCH --mem=900G
+```
+
+### Separating standard output and standard error
+
+By default, both _stdout_ and _stderr_ end up in the same Slurm log file,
+but you can separate them into different files with the `--error` option, e.g.:
+
+```{.bash .file filename="myscript.sh (excerpt)"}
+#SBATCH --output=slurm-fastqc-%j.out
+#SBATCH --error=slurm-fastqc-%j.err
+```
+
+In the above example, only _stdout_ will go into the file specified with `--output`,
+and _stderr_ will go into the file specified with `--error`.
+Separating _stdout_ and _stderr_ like that could be useful because it may make
+it easier to spot errors,
+and an empty `--error` file would mean that there were no errors.
+
+However, reality is more messy:
+some programs print their main output (results) not to a file but to standard out,
+in which case all logging output, i.e. errors and regular messages alike,
+is designated as standard error.
+And some other programs use _stdout_ for all messages.
+Therefore, with Slurm, I personally only specify `--output`,
+such that both _stdout_ and _stderr_ end up in that file.
+
+### Get warned when your job is close to its time limit
+
+You may also find the `--mail-type` values `TIME_LIMIT_90`, `TIME_LIMIT_80`,
+and `TIME_LIMIT_50` useful for very long-running jobs,
+which will warn you when the job is at 90/80/50% of the time limit.
+This can be useful because you can email OSC to ask for an extension on individual jobs.
+You shouldn't do this often, but if you have a job that ran for 6 days and it
+looks like it may time out, this may well be worth it.
 
 ## Slurm environment variables
 
@@ -118,7 +177,30 @@ echo "Number of cores:    ${SLURM_CPUS_PER_TASK:-1}"
 In [w10b](../week10/w10b_slurm2.qmd#submit-a-job-for-each-file),
 you moved your Slurm log files into a `logs` subdir of the output dir by hand,
 after checking them.
-Alternatively, your script itself can put a _copy_ of its Slurm log file there.
+
+You may wonder why you shouldn't simply include a dir in the `--output` path, e.g.
+`#SBATCH --output=results/fastqc/logs/slurm-fastqc-%j.out`,
+so that log files don't have to be moved manually after the job has finished.
+But this has two disadvantages:
+
+- **The dir must already exist when you submit the job.**
+  Slurm creates the log file when the job starts,
+  _before_ any line of your script has run,
+  and it won't create missing dirs for you.
+  So, a `mkdir -p` line _inside_ the script would come too late:
+  the job would fail right away, and **no log file would be created at all** --
+  leaving you with nowhere to look to find out what went wrong.
+  You'd instead need a `mkdir -p` line right above your `sbatch` command(s)
+  in your protocol Markdown file.
+
+- **It's good to do the manual work.**
+  When log files show up in your working dir,
+  you'll notice them, and that is a reminder to check them
+  for errors before moving them to their final location.
+  When they quietly end up elsewhere,
+  it's easier to forget about a job and never check whether it succeeded.
+
+Instead, your script itself can put a _copy_ of its Slurm log file in the output dir.
 The original log file will then still show up in your working dir,
 so you'll notice it and check it ---
 but afterwards, you can simply delete it,
@@ -452,7 +534,7 @@ sbatch --array=1-44 scripts/fastqc_array.sh fastq_list.txt results/fastqc
 
 Advantages of job arrays over loops include:
 
-- All tasks share one job ID, so you can e.g. cancel all of them at once with `scancel <job-ID>`.
+- All tasks share one job ID, so you can e.g. cancel all of them at once with `scancel <job-id>`.
 - You can limit how many tasks run at the same time with `%`:
   for example, `--array=1-44%10` runs at most 10 tasks at a time.
 
@@ -544,7 +626,7 @@ but tell Slurm that a job should only start after the jobs whose outputs it need
 have successfully finished.
 For that, you need the job IDs of those earlier jobs.
 The `--parsable` option makes `sbatch` print only the job ID
-(instead of `Submitted batch job <job-number>`),
+(instead of `Submitted batch job <job-id>`),
 which you can store in a variable with
 [command substitution](shell-scripting.qmd#command-substitution):
 

@@ -1,7 +1,7 @@
 ---
-title: "Connecting to OSC with SSH in a terminal"
+title: "SSH and command-line file transfer"
 subtitle: "Optional self-study content for week 11"
-pagetitle: "SSH bonus"
+pagetitle: "Bonus: SSH & file transfer"
 date: 2026-11-02
 date-modified: last-modified
 author:
@@ -14,9 +14,15 @@ author:
       - name: Dept. of Plant Pathology, Ohio State University
         url: https://plantpath.osu.edu
 other-links:
-  - text: "Bonus: Data management part 2"
+  - text: "Week 11 overview"
+    icon: check2-all
+    href: ../week11/w11_overview.html
+  - text: "Bonus: Data management"
     icon: book
     href: data.html
+  - text: "Local VS Code at OSC"
+    icon: book
+    href: vscode-local.html
 language:
   title-block-published: "Published on"
   title-block-modified: "Page last modified"
@@ -30,24 +36,45 @@ language:
 
 This page shows you how to connect to OSC with the `ssh` command
 in a terminal on your own computer, rather than through the OnDemand web portal.
+It also covers transferring files between your computer and OSC
+with commands like `scp` and `rsync`, which use the same kind of SSH connection,
+and with Globus.
+
+Why would you use SSH when OnDemand works fine?
+
+- It's quick: there are no forms or waiting,
+  which is handy to e.g. check on running jobs or have a quick look at a file.
+- SSH is also what commands like `scp` and `rsync` use to transfer files
+  ([see below](#remote-transfer-commands)).
+- Many other remote computers, like other supercomputers or lab servers,
+  don't have a web portal like OnDemand,
+  but nearly all of them accept SSH connections.
 
 ### Setting up
 
+<!---- TODO: The local VS Code page is still marked as a draft:
+check that its two subsections linked below work before publishing this page,
+incl. that they create ~/.ssh/config with the `osc-pitzer-login` alias
+(referred to in "Custom names for your SSH connections" below).
+Also consider making its `ssh-keygen -t rsa` consistent with week 5's `-t ed25519`. ---->
+
 You'll need a terminal application on your own computer (see step 1 below).
 To avoid having to type your OSC password every time you connect,
-first do the [no-password setup on the local VS Code page](vscode-local.qmd#avoid-being-prompted-for-your-osc-password).
+first follow the two subsections
+["The SSH configuration file"](vscode-local.qmd#the-ssh-configuration-file) and
+["Avoid being prompted for your OSC password"](vscode-local.qmd#avoid-being-prompted-for-your-osc-password)
+on the local VS Code page.
 
 ## Basic SSH connection in a terminal
 
-To connect to OSC or other remote computers without using a web portal like
-OnDemand, you can use SSH.
-You can do so via the **`ssh` command**, which works in Windows and Unix-based
-(Max/Linux) terminals alike.
+You can connect with the **`ssh` command**, which works in Windows and Unix-based
+(Mac/Linux) terminals alike.
 
 1. On your own computer, open a terminal application.
    - On a Mac, you should have an app called "Terminal" and potentially other
-     options like "iTerm": any of these fill work
-   - On Windows 11+, this should be called the "Windows Terminal"
+     options like "iTerm": any of these will work.
+   - On Windows, use the "Windows Terminal" app (the default on Windows 11)
+     or "PowerShell".
 
 2. Type the command `ssh <user>@<host>`, replacing:
 
@@ -64,19 +91,37 @@ You can do so via the **`ssh` command**, which works in Windows and Unix-based
    ```
    ``` {.bash-out}
    The authenticity of host 'pitzer.osc.edu' can't be established.
-   RSA key fingerprint is 2a:b6:f6:8d:9d:c2:f8:2b:8c:c5:03:06:a0:f8:59:12.
-   Are you sure you want to continue connecting (yes/no)?
+   ED25519 key fingerprint is SHA256:zUgn1K3+FK+25JtG6oFI9hVZjVxty1xEqw/K7DEwZdc.
+   This key is not known by any other names.
+   Are you sure you want to continue connecting (yes/no/[fingerprint])?
    ```
 
 3. If this is the first time you are connecting to Pitzer via SSH,
-   you’ll encounter a message similar to the one above.
+   you'll encounter a message similar to the one above.
    While the phrase _"The authenticity of host 'pitzer.osc.edu' can't be established."_
    sounds ominous, you will always get this warning when you attempt to connect to a
    remote computer for the first time, and you should type `yes` to proceed
    (you then won't see this message again).
 
-4. Assuming that you did the
-   [no-password setup on the local VS Code page](vscode-local.qmd#avoid-being-prompted-for-your-osc-password),
+   ::: {.callout-warning collapse="true"}
+   #### "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!" _(Click to expand)_
+
+   Your computer remembers the "key" of each remote computer you have connected to
+   (in the file `~/.ssh/known_hosts`),
+   and if that key ever changes, `ssh` refuses to connect and shows a big warning.
+   This is meant to protect you against someone impersonating the remote computer,
+   but at OSC, it usually just means that a cluster was upgraded.
+   If you get this message, check OSC's announcements or ask OSC Help if in doubt,
+   and then remove the old key for that host from your computer:
+
+   ```bash
+   ssh-keygen -R pitzer.osc.edu
+   ```
+
+   The next time you connect, you'll get the first-connection message shown above again.
+   :::
+
+4. Assuming that you did the [setup above](#setting-up),
    you should not be prompted for your password.
    (If you are asked for your password, then type it followed by <kbd>Enter</kbd>,
    and keep in mind that when you do so,
@@ -90,58 +135,377 @@ You can do so via the **`ssh` command**, which works in Windows and Unix-based
    [jelmer@pitzer-login04 ~]$
    ```
 
+::: callout-warning
+#### You're on a login node
+With `ssh`, you always land on a login node,
+just like when you use the `Clusters` menu in OnDemand.
+That's fine for light work like managing and viewing files,
+and submitting and monitoring Slurm batch jobs,
+but run anything heavier as a batch job ([week 10](../week10/w10a_slurm1.qmd)).
+:::
+
+To disconnect and return to your own computer's shell,
+type `exit` or press <kbd>Ctrl</kbd>+<kbd>D</kbd>.
+
 ## Custom names for your SSH connections
 
 ### Set up custom names
 
-You can set up alternative names ("aliases") for your SSH connections,
-such as shortening `jelmer@pitzer.osc.edu` to `jp`.
-This can be convenient when you use SSH a lot,
-especially when transferring files to and from OSC with SSH-based commands
-like `scp` and `rsync`
-(see [this optional self-study page](./data.qmd#remote-transfer-commands)).
+You can set up short alternative names ("aliases") for your SSH connections,
+such as `pitzer` for `jelmer@pitzer.osc.edu`.
+These are especially convenient with the file transfer commands
+[below](#remote-transfer-commands).
 
-These two steps should both be done *on your local machine*:
+You define aliases in an SSH configuration file on your own computer, `~/.ssh/config`:
 
-1. Create a file called `~/.ssh/config`:
+- If you followed the [local VS Code page](vscode-local.qmd),
+  you already have this file, with aliases like `osc-pitzer-login`
+  (so `ssh osc-pitzer-login` already works!),
+  and you can add more aliases to it.
+- Otherwise, the easiest way to create and open the file is in VS Code
+  with the Remote Development extension:
+  open the Command Palette, select "Remote-SSH: Open SSH Configuration File...",
+  and then select the top option.
+  (Alternatively, on a Mac, run `touch ~/.ssh/config` and open the file in a text editor.)
 
-   ```bash
-   touch ~/.ssh/config
-   ```
+Add aliases to the file in the following format:
 
-2. Open the file in a text editor and add your alias(es) in the following format:
+```bash-out-solo
+Host <alias>
+   HostName <remote-address>
+   User <user>
+```
 
-   ```bash-out-solo
-   Host <arbitrary-alias-name>
-      HostName <remote-address>
-      User <user>
-   ```
+For instance, my file contains the following,
+so I can connect to Pitzer with `pitzer`,
+and to OSC's file transfer server with `osc-sftp`:
 
-   For instance, my file contains the following so as to connect to Pizer with
-   `jp` and to Cardinal with `jc`:
+```bash-out-solo
+Host pitzer
+   HostName pitzer.osc.edu
+   User jelmer
 
-   ```bash-out-solo
-   Host jp
-      HostName pitzer.osc.edu
-      User jelmer
-
-   Host jc
-      HostName cardinal.osc.edu
-      User jelmer
-  ```
+Host osc-sftp
+   HostName sftp.osc.edu
+   User jelmer
+```
 
 ### Connecting from now on
 
 From now on, you just need to use your alias to log in:
 
 ```bash
-ssh jp
+ssh pitzer
 ```
 
-And these shortcuts also work with
-[remote transfer commands like `scp` and `rsync`](data.qmd#remote-transfer-commands)!
+And aliases also work with the remote transfer commands [below](#remote-transfer-commands).
+For example, to copy a `scripts` dir on your computer to your personal dir at OSC:
+
+```bash
+rsync -av ~/scripts osc-sftp:/fs/ess/PAS3493/people/jelmer/
+```
+
+## File transfer to and from OSC
+
+### Remote transfer commands
+
+Besides the OnDemand Files menu and FileZilla,
+you can transfer files with **remote transfer commands** like `scp` and `rsync`,
+which you run in a terminal on your own computer.
+These are especially convenient when you repeatedly transfer the same files,
+or want to keep certain dirs in sync between OSC and your computer.
+
+::: callout-tip
+#### Use `sftp.osc.edu` as the address for file transfers
+If you use `pitzer.osc.edu` or `cardinal.osc.edu` as the remote address,
+your transfer runs on a login node,
+where any process is killed after 20 minutes of CPU time ---
+which large transfers can exceed.
+OSC's dedicated file transfer server, **`sftp.osc.edu`**, has no such limit,
+so use that address in transfer commands, as in the examples below.
+(All OSC addresses give you access to the same files.)
+:::
+
+#### `scp`
+
+One option is `scp` (secure copy), which works much like the regular `cp` command,
+including the need for the `-r` option for recursive transfers.
+The key difference is that we have to somehow refer to a path on a remote computer,
+and we do so by starting with the remote computer's address,
+followed by `:`, and then the path:
+
+```bash-out-solo
+# Copy from remote (OSC) to local (your computer):
+scp <user>@sftp.osc.edu:<remote-path> <local-path>
+
+# Copy from local (your computer) to remote (OSC)
+scp <local-path> <user>@sftp.osc.edu:<remote-path>
+```
+
+Here are two examples of copying from OSC to your local computer:
+
+```bash
+# Copy a file from OSC to a local computer - namely, to your current working dir ('.'):
+scp jelmer@sftp.osc.edu:/fs/ess/PAS3493/people/jelmer/garrigos/README.md .
+
+# Copy a directory from OSC to a local computer - namely, to your home dir ('~'):
+scp -r jelmer@sftp.osc.edu:/fs/ess/PAS3493/people/jelmer/garrigos/meta ~
+```
+
+And two examples of copying from your local computer to OSC:
+
+```bash
+# Copy a file from your computer to OSC --
+# namely, a file in your current working dir to your home dir at OSC:
+scp fastqc.sh jelmer@sftp.osc.edu:~
+
+# Copy a file from my local computer's Desktop to my personal dir in the PAS3493 project dir:
+scp /Users/poelstra.1/Desktop/fastqc.sh jelmer@sftp.osc.edu:/fs/ess/PAS3493/people/jelmer
+```
+
+Some nuances for remote copying:
+
+- For both transfer directions (remote-to-local and local-to-remote),
+  you **issue the copying commands from your local computer.**
+- A relative path on the remote computer (OSC) is interpreted relative to your Home dir there,
+  so you'll usually want to use absolute paths for OSC.
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Where am I?
+
+You've logged in to Pitzer with `ssh` in your computer's terminal.
+In that same terminal, you then run:
+
+1. `ls ~/Desktop`, hoping to see the files on your computer's Desktop
+2. `scp jelmer@sftp.osc.edu:/fs/ess/PAS3493/people/jelmer/garrigos/README.md .`,
+   hoping to download this file to your computer
+
+What happens in each case, and why?
+
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+Neither does what you hoped,
+because after logging in with `ssh`, your terminal is running a shell _at OSC_:
+
+1. `~` now refers to your Home dir at OSC, which has no `Desktop` dir,
+   so you'll get a "No such file or directory" error.
+2. The file is copied from OSC to your working dir... at OSC!
+   To download it to your computer, first log out with `exit`,
+   and then run the `scp` command.
+
+</details>
+:::
+
+::: {.callout-note collapse="true"}
+#### Transferring directly to and from OneDrive _(Click to expand)_
+
+If your OneDrive is mounted on or synced to your local computer
+(i.e., if you can see it in your computer's file browser),
+you can also transfer directly between OSC and OneDrive.
+For example, the path to my OneDrive files on my laptop is:
+`/Users/poelstra.1/Library/CloudStorage/OneDrive-TheOhioStateUniversity`.
+So if I had a file called `fastqc.sh` in my top-level OneDrive dir,
+I could transfer it to my Home dir at OSC as follows:
+
+```bash
+scp /Users/poelstra.1/Library/CloudStorage/OneDrive-TheOhioStateUniversity/fastqc.sh jelmer@sftp.osc.edu:~
+```
+:::
+
+#### `rsync`
+
+Another option, which I recommend, is the `rsync` command,
+especially when you have directories that you repeatedly want to sync:
+`rsync` won't copy any files that are identical in source and destination.
+
+A useful combination of options is `-avz --progress`:
+
+- `-a` enables archival mode (among other things, this makes it work recursively).
+- `-v` increases verbosity &mdash; tells you what is being copied.
+- `-z` enables compressed file transfer (=> generally faster).
+- `--progress` to show transfer progress for individual files.
+
+The way to refer to remote paths is the same as with `scp`.
+For example, I could copy a `dir_with_results` in my local Home dir to my
+OSC Home dir as follows:
+
+```bash
+rsync -avz --progress ~/dir_with_results jelmer@sftp.osc.edu:~
+```
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-warning collapse="true"}
+#### Trailing slashes in `rsync` _(Click to expand)_
+
+One tricky aspect of using `rsync` is that the presence/absence of a
+**trailing slash for source directories** makes a difference for its behavior.
+The following commands work as intended &mdash;
+to create a backup copy of a `scripts` dir inside a dir called `backup`[^2]:
+
+[^2]: For simplicity, these commands are copying between local dirs,
+      which is also possible with `rsync`.
+
+```bash
+# With trailing slash: copy the *contents* of source "scripts" into target "scripts":
+rsync -avz scripts/ backup/scripts
+
+# Without trailing slash: copy the source dir "scripts" into target dir "backup"
+rsync -avz scripts backup
+```
+
+But these commands don't:
+
+```bash
+# This would result in a dir 'backup/scripts/scripts':
+rsync -avz scripts backup/scripts
+
+# This would copy the files in "scripts" straight into "backup":
+rsync -avz scripts/ backup
+```
+:::
+
+::: {.callout-note collapse="true"}
+#### Interactive transfers with the `sftp` command _(Click to expand)_
+
+FileZilla, which you used in class, is a graphical SFTP client.
+You can also start an interactive SFTP session in a terminal with the `sftp` command:
+
+**Logging in**
+
+To log in to OSC's SFTP server, issue the following command in your local
+computer's terminal,
+substituting `<user>` by your OSC username:
+
+```bash
+sftp <user>@sftp.osc.edu   # E.g., 'jelmer@sftp.osc.edu'
+```
+
+``` {.bash-out}
+The authenticity of host 'sftp.osc.edu (192.148.247.136)' can't be established.
+ED25519 key fingerprint is SHA256:kMeb1PVZ1XVDEe2QiSumbM33w0SkvBJ4xeD18a/L0eQ.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])?
+```
+
+If this is your first time connecting to OSC SFTP server,
+you'll get a message like the one shown above:
+you should type `yes` to confirm.
+
+Then, you may be asked for your OSC password, and after that,
+you should see a "welcome" message like this:
+
+``` {.bash-out}
+******************************************************************************
+
+This system is for the use of authorized users only.  Individuals using
+this computer system without authority, or in excess of their authority,
+are subject to having all of their activities on this system monitored
+and recorded by system personnel.  In the course of monitoring individuals
+improperly using this system, or in the course of system maintenance,
+the activities of authorized users may also be monitored.  Anyone using
+this system expressly consents to such monitoring and is advised that if
+such monitoring reveals possible evidence of criminal activity, system
+personnel may provide the evidence of such monitoring to law enforcement
+officials.
+
+******************************************************************************
+Connected to sftp.osc.edu.
+```
+
+Now, you will have an `sftp` prompt (`sftp>`) instead of a regular shell prompt.
+
+Familiar commands like `ls`, `cd`, and `pwd` will operate on the remote computer
+(OSC, in this case),
+and there are **local counterparts for them: `lls`, `lcd`, `lpwd`** &mdash;
+for example:
+
+```bash
+# NOTE: I am prefacing sftp commands with the 'sftp>' prompt to make it explicit
+#       these should be issued in an sftp session; but don't type that part.
+sftp> pwd
+```
+
+``` {.bash-out}
+Remote working directory: /users/PAS0471/jelmer
+```
+
+```bash
+sftp> lpwd
+```
+
+``` {.bash-out}
+Local working directory: /Users/poelstra.1/Desktop
+```
+
+**Uploading files to OSC**
+
+To upload files to OSC, use `sftp`'s **`put` command**.
+
+The syntax is `put <local-path> <remote-path>`,
+and unlike with `scp` etc., you don't need to include the address to the remote
+(because in an `sftp` session, you are simultaneously connected to both computers).
+But like with `cp` and `scp`, you'll need the `-r` flag for recursive transfers,
+i.e. transferring a directory and its contents.
+
+```bash
+# Upload fastqc.sh in a dir 'scripts' on your local computer to your sandbox dir at OSC:
+sftp> put scripts/fastqc.sh /fs/ess/PAS3493/people/jelmer/sandbox
+
+# Use -r to transfer directories:
+sftp> put -r scripts /fs/ess/PAS3493/people/jelmer/sandbox
+
+# You can use wildcards to upload multiple files:
+sftp> put scripts/*sh /fs/ess/PAS3493/people/jelmer/sandbox
+```
+
+::: {.callout-warning}
+#### `sftp` is rather basic
+`sftp` only knows a limited set of commands: type `help` to list them.
+:::
+
+**Downloading files from OSC**
+
+To download files from OSC, use the `get` command,
+which has the syntax `get <remote-path> <local-path>`
+(this is the other way around from `put` in that the remote path comes first,
+but the same in that both use the order `<source> <target>`, like `cp` and so on).
+
 For example:
 
 ```bash
-rsync ~/scripts op:/fs/scratch/PAS3493
+sftp> get /fs/ess/PAS3493/people/jelmer/garrigos/README.md .
+
+sftp> get -r /fs/ess/PAS3493/people/jelmer/sandbox .
 ```
+
+**Closing the SFTP connection**
+
+When you're done, you can type `exit` or press <kbd>Ctrl</kbd>+<kbd>D</kbd>
+to exit the `sftp` prompt.
+:::
+
+### Globus
+
+For very large transfers, your best bet is **Globus**,
+which has a browser-based GUI.
+Some advantages of using Globus are that:
+
+- It checks whether all files were transferred correctly and completely.
+- It can pause and resume automatically when you e.g. turn off your computer for a while.
+- It can be used to share files from OSC directly with collaborators even at
+  different institutions.
+
+To transfer files to or from your own computer,
+Globus needs some setup,
+including the installation of a piece of software ("Globus Connect Personal")
+that will run in the background on your computer.
+(This is not needed to transfer files between OSC and other institutions
+that use Globus.)
+
+- Globus installation and configuration instructions:
+  [Windows](https://docs.globus.org/how-to/globus-connect-personal-windows) /
+  [Mac](https://docs.globus.org/how-to/globus-connect-personal-mac) /
+  [Linux](https://docs.globus.org/how-to/globus-connect-personal-linux)
+- [Globus transfer instructions](https://docs.globus.org/how-to/get-started/)
+- [OSC's page on Globus](https://www.osc.edu/resources/getting_started/howto/howto_use_globus_overview)

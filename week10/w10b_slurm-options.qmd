@@ -1,0 +1,394 @@
+---
+title: "Common Slurm options"
+subtitle: "Week 10 -- Lecture B"
+pagetitle: "w10b: Slurm options (slides)"
+date: October 28, 2026
+date-format: MMMM DD, YYYY
+author: Jelmer Poelstra
+institute: "CFAES Bioinformatics Core, OSU"
+format:
+  revealjs:
+    theme: [default, ../theme_slides.scss]
+    css: ../slides.css
+    smaller: true
+    scrollable: false
+    progress: true
+    incremental: false
+    slide-number: true
+    slide-level: 2
+    highlight-style: atom-one
+    embed-resources: false # Can't be used with chalkboard
+    chalkboard:
+      theme: whiteboard
+    footer: "[~ PRACS-AU26 ~](/index.qmd){target='_blank'}"
+    logo: ../img/CFAES-Horiz-RGBHEX.svg
+    template-partials:
+      - ../title-slide.html
+    menu:
+      width: wide
+      numbers: true
+---
+
+## Overview
+
+- [Specifying `sbatch` options](#common-sbatch-options)
+- [Time limits with `--time`](#time-limits-introduction)
+- [Cores with `--cpus-per-task`](#cores-with---cpus-per-task)
+- [Memory with `--mem`](#memory-with---mem)
+- [Slurm log file names with `--output`](#slurm-log-file-names-with---output)
+- [Notification emails with `--mail-type`](#notification-emails-with---mail-type)
+- [Summary](#summary-of-sbatch-options)
+
+## Common `sbatch` options
+
+We'll go through the most commonly used `sbatch` options\
+(except `--account`, which you saw in the previous lecture).
+
+<hr style="height:1pt; visibility:hidden;" />
+
+. . .
+
+Recall that any `sbatch` option can be:
+
+- Passed on the command line: `sbatch --account=PAS3493 myscript.sh`
+- Added at the top of the script you're submitting: `#SBATCH --account=PAS3493`
+
+<hr style="height:1pt; visibility:hidden;" />
+
+. . .
+
+Also note that:
+
+- If an option is specified in both places, the command-line option takes **precedence**.
+- Many options have a long (e.g. `--account`) and a short format (e.g. `-A`).\
+  For clarity, we'll stick to **long-format options** in this material.
+
+## Time limits: introduction
+
+::: {.columns}
+::: {.column width="47%"}
+
+- The **default time limit is 1 hour** ---
+  and your job will be **killed** as soon as it hits the time limit!
+
+- You can request up to 7 days of time
+  (or request access to a different queue for longer jobs).
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-tip .fragment data-fragment-index="1"}
+#### The time you reserve is the "**wall time**"
+This is simply the amount of time that passes on the (wall) clock.
+In contrast, "**core hours**" are the wall time multiplied by the number of cores.
+For example, a job that runs for 2 hours on 8 cores has a wall time of 2 hours
+and uses 16 core hours.
+:::
+
+:::
+::: {.column width="6%"}
+<div class="fragment" data-fragment-index="2" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
+:::
+::: {.column width="47%" .fragment data-fragment-index="2"}
+
+- OSC bills projects for **the time that jobs actually used**, not what you reserved,
+  and jobs stop as soon as the script has finished running.
+  - Given that you're often unsure how long a job will take,
+    it's common to request (substantially) **more time** than your best guesstimate.
+  - While you should be aware that jobs that request more time are likely to
+    **wait longer** before they start, OSC tends to have short queueing times.
+
+:::
+:::
+
+::: footer
+:::
+
+## Time limits: how to specify
+
+The `--time` option specifies the maximum wall time for your job.\
+A number of formats can be used to specify the amount of time, including:
+
+| Format                |  Example  |            Meaning             |
+| :-------------------- | :-------: | :----------------------------: |
+| minutes               |   `60`    |           60 minutes           |
+| hours:minutes:seconds | `1:00:00` |           60 minutes           |
+| days-hours            |  `2-12`   | two-and-a-half days (60 hours) |
+
+: {.striped .hover}
+
+<br>
+
+. . .
+
+For example, requesting 2 hours in the "minute-format" inside a shell script:
+
+```{.bash .file filename="myscript.sh (excerpt)" code-line-numbers="false"}
+#!/bin/bash
+#SBATCH --time=120
+```
+
+## Exercise 1: Specifying time
+
+::: callout-quiz
+::: callout-note
+#### 1. How would you specify 90 minutes and two-and-a-half days with `--time`?
+
+Give two different formats for each.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+<!-----
+<details><summary> {{< fa square-check >}} &nbsp; &nbsp; _Click for the answer_</summary>
+
+- 90 minutes: `--time=90` or `--time=1:30:00`
+- Two-and-a-half days: `--time=2-12` or `--time=60:00:00`
+
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+------>
+:::
+:::
+
+<br>
+
+::: callout-quiz
+::: callout-note
+#### 2. How many core hours will OSC bill?
+
+Your job reserved 10 hours with `--time=10:00:00` and 8 cores,
+but the script finished after 2 hours.\
+How many core hours will OSC bill your project for?
+
+<hr style="height:1pt; visibility:hidden;" />
+
+<!-----
+<details><summary> {{< fa square-check >}} &nbsp; &nbsp; _Click for the answer_</summary>
+
+16 core hours (2 hours × 8 cores):
+OSC bills for the time a job actually used, not for the time you reserved.
+
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+------>
+:::
+:::
+
+## Cores with `--cpus-per-task`
+
+- Slurm uses the terms "core" and "CPU" interchangeably,
+  and bioinformatics tools often say "thread":
+  therefore **think of core, CPU, and thread as synonyms**.
+
+- Running a program with multiple cores is very common,
+  and can make it run much faster.\
+  **8--12 cores** is often a sweet spot
+  (more can suffer from strongly diminishing returns).
+
+<hr style="height:1pt; visibility:hidden;" />
+
+. . .
+
+- Use **`--cpus-per-task`**,
+  and **also tell the program** that the script runs about this number:
+
+```{.bash .file filename="myscript.sh (excerpt)" code-line-numbers="false"}
+#!/bin/bash
+#SBATCH --cpus-per-task=8
+
+# We tell a fictional program about the number of available cores:
+trimming_program.py --cores 8 sampleA_R1.fastq.gz
+```
+
+## Memory with `--mem`
+
+- The `--mem` option sets the maximum amount of RAM memory available to your job.
+- The **default** is **4 GB per core**:
+  e.g., `--cpus-per-task=4` gives you 16 GB of memory.\
+  Therefore, you'll often have enough memory automatically, and may not need to specify `--mem`.
+- Like with time, your job is **killed** when it hits the memory limit
+  (but the error messages are less clear).
+
+. . .
+
+<hr style="height:1pt; visibility:hidden;" />
+
+- The default `--mem` unit is MB (MegaBytes): append `G` for GB.
+  For example, to request 20 GB:
+
+```{.bash .file filename="myscript.sh (excerpt)" code-line-numbers="false"}
+#!/bin/bash
+#SBATCH --mem=20G
+```
+
+<br>
+
+. . .
+
+::: {.callout-note appearance="simple"}
+Regular Pitzer nodes have up to 178 GB of memory.
+To request more, see the
+[optional self-study page](../bonus/slurm.qmd#requesting-large-amounts-of-memory).
+:::
+
+## Exercise 2: Adjusting cores and memory
+
+Which `#SBATCH` lines will you use to run a bioinformatics program in these scenarios?
+
+::: callout-quiz
+::: callout-note
+#### 1. `--cores 12`, needs 60 GB of memory
+
+A) `--cpus-per-task=12`
+B) `--cpus-per-task=12` and `--mem=60G`
+C) `--cpus-per-task=12` and `--mem=60`
+
+<hr style="height:1pt; visibility:hidden;" />
+
+<!-----
+<details><summary> {{< fa square-check >}} &nbsp; &nbsp; _Click for the answer_</summary>
+
+**B**: the default memory for 12 cores is only 48 GB (option A),
+and option C would request only 60 MB.
+
+Alternatively, you could ask for 15 cores
+(which gives you 60 GB of memory),
+and tell the program to use 12 or all 15 of them.
+
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+------>
+:::
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: callout-quiz
+::: callout-note
+#### 2. `--threads 8`, needs 25 GB of memory
+
+A) `--cpus-per-task=8`
+B) `--cpus-per-task=8` and `--mem=25G`
+
+<hr style="height:1pt; visibility:hidden;" />
+
+<!-----
+<details><summary> {{< fa square-check >}} &nbsp; &nbsp; _Click for the answer_</summary>
+
+**A**: 8 cores give you 8 × 4 = 32 GB of memory, so you don't need `--mem`.
+Option B would also work,
+but there is no point in "downgrading" the amount of memory.
+
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+------>
+:::
+:::
+
+## Slurm log file names with `--output`
+
+- By default, the Slurm log file is created in the dir from which you submitted the script,
+  and is called `slurm-<job-id>.out`, e.g. `slurm-12431942.out`.
+
+. . .
+
+- It can be useful to include the purpose of the script in the Slurm log file name,
+  typically by including the name of the program that the script runs.
+
+- You'll want to **keep the job ID** in the file name too,
+  so log files from different runs don't overwrite each other.
+  Since you won't know the job ID in advance, use **`%j`**, which represents the job ID:
+
+```{.bash .file filename="myscript.sh (excerpt)" code-line-numbers="false"}
+#!/bin/bash
+#SBATCH --output=slurm-fastqc-%j.out
+```
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-warning .fragment}
+#### I prefer not to include a dir in `--output`
+For one, that dir must already exist when you submit the job:
+otherwise, the job fails right away, **without even producing a log file**.
+See the [optional self-study page](../bonus/slurm.qmd#copying-the-slurm-log-file-to-the-output-dir)
+for additional considerations.
+:::
+
+## Notification emails with `--mail-type`
+
+Slurm can email you when a job begins, completes successfully, or fails ---
+at the address linked to your OSC account. I recommend the following:
+
+<br>
+
+::: {.columns}
+::: {.column width="47%"}
+
+### [Shorter jobs (up to a few hours)]{style="display:block; text-align:center;"}
+
+Only get emails if they **fail**:
+
+```{.bash .file filename="myscript.sh (excerpt)" code-line-numbers="false"}
+#!/bin/bash
+#SBATCH --mail-type=FAIL
+```
+
+Especially when you submit many jobs at a time,
+you may otherwise overlook failures for some jobs.
+
+:::
+::: {.column width="6%"}
+<div class="fragment" data-fragment-index="1" style="border-left: 1px solid #A7B1B7; height: 100%; margin: 0 auto; width: 0;"></div>
+:::
+::: {.column width="47%" .fragment data-fragment-index="1"}
+
+### [Longer jobs (> a few hours)]{style="display:block; text-align:center;"}
+
+Get emails when they **fail or finish**:
+
+```{.bash .file filename="myscript.sh (excerpt)" code-line-numbers="false"}
+#!/bin/bash
+#SBATCH --mail-type=END,FAIL
+```
+
+You don't want to have to keep checking in on jobs that run for many hours.
+(But for shorter jobs, you may get inundated with emails
+and then quickly start ignoring them altogether.)
+
+:::
+:::
+
+## Summary of `sbatch` options
+
+::: {.smaller-table}
+
+| Resource/use                                     | long option example                            | short option |    default     |
+| ------------------------------------------------ | ---------------------------------------------- | ------------ | :------------: |
+| Project to be billed                             | `--account=PAS3493`                            | `-A`         |     *N/A*      |
+| Time limit                                       | `--time=4:00:00`                               | `-t`         |    1:00:00     |
+| Nr of cores                                      | `--cpus-per-task=1`                            | `-c`         |       1        |
+| Memory limit per node                            | `--mem=20G`                                    | &mdash;           |  4G per core   |
+| Log output file                                  | `--output=slurm-fastqc-%j.out`                 | `-o`         | `slurm-%j.out` |
+| Get email when job fails<br>/ ends or fails      | `--mail-type=FAIL` <br> `--mail-type=END,FAIL` | &mdash;       |  *(none)*               |
+
+: {.striped .hover tbl-colwidths="[25,40,15,20]"}
+
+:::
+
+<br>
+
+. . .
+
+::: {.callout-tip appearance="simple"}
+The lecture page has [this table plus some additional options](./w10b_slurm2.qmd#table-with-sbatch-options),
+for later reference.
+:::
+
+# Questions? {background-color="#A7B1B7" .unlisted}
+
+<br><br>
+
+[[_Click here to continue on the lecture page_](./w10b_slurm2.qmd#exceed-the-time-limit)]{style="display:block; text-align:center"}
