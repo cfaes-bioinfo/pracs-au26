@@ -52,7 +52,7 @@ you will learn:
   - An email notification when jobs e.g. fail or finish
 - How to run Slurm jobs in practice, including how to submit many jobs at the same time
 - How to make sure that your jobs succeeded
-- What to watch out for when using genAI to help with Slurm batch jobs
+- How to make Claude write scripts for Slurm batch jobs
 - How to structure a multi-step workflow,
   and what workflow management systems and nf-core pipelines are
 
@@ -207,7 +207,7 @@ Whereas you get a very clear Slurm error message when you hit the time limit
 
 But look for keywords such as "Killed", "Out of Memory" / "OOM",
 and "Core Dumped", as well as actual "dumped cores" in your working dir
-(large files with names like `core.<number>`, these can be deleted).
+(large files with names like `core.<number>`, which can be deleted).
 
 If you see these or otherwise suspect that your job ran out of memory,
 resubmit it with an increased requested amount of memory.
@@ -434,9 +434,9 @@ rm -r results/fastqc slurm-fastqc*
 
    - Because of `set -u`, the script will stop at the line `fastq="$1"`,
      and the Slurm log file will contain an error like
-     `/var/spool/slurmd/job37615711/slurm_script: line 11: $1: unbound variable`.
-     (Slurm runs a copy of your script, which explains that odd path.)
-     (The line number will depend on how many `#SBATCH` lines your script has.)
+     `/var/spool/slurmd/job37615711/slurm_script: line 14: $1: unbound variable`.
+     (Slurm runs a copy of your script, which explains that odd path,
+     and the line number depends on how many `#SBATCH` lines your script has.)
 
    - No: the script exits before it gets to the `mkdir -p` line.
 
@@ -520,10 +520,14 @@ you should have many Slurm log files:
 ```bash
 ls
 ```
-<pre class="bash-out"><code><span class="ls-blue">results</span>                    slurm-fastqc-37615719.out  slurm-fastqc-37615723.out  slurm-fastqc-37615727.out  slurm-fastqc-37615731.out  slurm-fastqc-37615735.out
-<span class="ls-blue">scripts</span>                    slurm-fastqc-37615720.out  slurm-fastqc-37615724.out  slurm-fastqc-37615728.out  slurm-fastqc-37615732.out  slurm-fastqc-37615736.out
-slurm-fastqc-37615717.out  slurm-fastqc-37615721.out  slurm-fastqc-37615725.out  slurm-fastqc-37615729.out  slurm-fastqc-37615733.out  slurm-fastqc-37615737.out
-slurm-fastqc-37615718.out  slurm-fastqc-37615722.out  slurm-fastqc-37615726.out  slurm-fastqc-37615730.out  slurm-fastqc-37615734.out  slurm-fastqc-37615738.out</code></pre>
+<pre class="bash-out"><code><span class="ls-blue">results</span>                    slurm-fastqc-37615724.out  slurm-fastqc-37615732.out  slurm-fastqc-37615740.out  slurm-fastqc-37615748.out  slurm-fastqc-37615756.out
+<span class="ls-blue">scripts</span>                    slurm-fastqc-37615725.out  slurm-fastqc-37615733.out  slurm-fastqc-37615741.out  slurm-fastqc-37615749.out  slurm-fastqc-37615757.out
+slurm-fastqc-37615718.out  slurm-fastqc-37615726.out  slurm-fastqc-37615734.out  slurm-fastqc-37615742.out  slurm-fastqc-37615750.out  slurm-fastqc-37615758.out
+slurm-fastqc-37615719.out  slurm-fastqc-37615727.out  slurm-fastqc-37615735.out  slurm-fastqc-37615743.out  slurm-fastqc-37615751.out  slurm-fastqc-37615759.out
+slurm-fastqc-37615720.out  slurm-fastqc-37615728.out  slurm-fastqc-37615736.out  slurm-fastqc-37615744.out  slurm-fastqc-37615752.out  slurm-fastqc-37615760.out
+slurm-fastqc-37615721.out  slurm-fastqc-37615729.out  slurm-fastqc-37615737.out  slurm-fastqc-37615745.out  slurm-fastqc-37615753.out  slurm-fastqc-37615761.out
+slurm-fastqc-37615722.out  slurm-fastqc-37615730.out  slurm-fastqc-37615738.out  slurm-fastqc-37615746.out  slurm-fastqc-37615754.out
+slurm-fastqc-37615723.out  slurm-fastqc-37615731.out  slurm-fastqc-37615739.out  slurm-fastqc-37615747.out  slurm-fastqc-37615755.out</code></pre>
 
 You now arguably have too many Slurm log files to go through, so what to do next?
 Here's what I would generally recommend:
@@ -551,7 +555,7 @@ Here's what I would generally recommend:
    tail slurm-fastqc-*
    ```
    ```bash-out
-   ==> slurm-fastqc-37615717.out <==
+   ==> slurm-fastqc-37615718.out <==
    Approx 85% complete for S63_R1.fastq.gz
    Approx 90% complete for S63_R1.fastq.gz
    Approx 95% complete for S63_R1.fastq.gz
@@ -565,12 +569,12 @@ Here's what I would generally recommend:
    Successfully finished script fastqc.sh
    Wed Oct 28 02:42:05 PM EDT 2026
 
-   ==> slurm-fastqc-37615718.out <==
-   Approx 85% complete for S64_R1.fastq.gz
-   Approx 90% complete for S64_R1.fastq.gz
-   Approx 95% complete for S64_R1.fastq.gz
-   Approx 100% complete for S64_R1.fastq.gz
-   Analysis complete for S64_R1.fastq.gz
+   ==> slurm-fastqc-37615719.out <==
+   Approx 85% complete for S63_R2.fastq.gz
+   Approx 90% complete for S63_R2.fastq.gz
+   Approx 95% complete for S63_R2.fastq.gz
+   Approx 100% complete for S63_R2.fastq.gz
+   Analysis complete for S63_R2.fastq.gz
    Used FastQC version:
    INFO:    Using cached SIF image
    INFO:    gocryptfs not found, will not be able to use gocryptfs
@@ -588,16 +592,16 @@ Here's what I would generally recommend:
    ls -lh results/fastqc
    ```
    ```bash-out
-   total 25M
+   total 48M
    -rw-rw----+ 1 jelmer PAS0471 718K Oct 28 14:42 S63_R1_fastqc.html
    -rw-rw----+ 1 jelmer PAS0471 364K Oct 28 14:42 S63_R1_fastqc.zip
+   -rw-rw----+ 1 jelmer PAS0471 712K Oct 28 14:42 S63_R2_fastqc.html
+   -rw-rw----+ 1 jelmer PAS0471 359K Oct 28 14:42 S63_R2_fastqc.zip
    -rw-rw----+ 1 jelmer PAS0471 714K Oct 28 14:42 S64_R1_fastqc.html
    -rw-rw----+ 1 jelmer PAS0471 366K Oct 28 14:42 S64_R1_fastqc.zip
+   -rw-rw----+ 1 jelmer PAS0471 709K Oct 28 14:42 S64_R2_fastqc.html
+   -rw-rw----+ 1 jelmer PAS0471 361K Oct 28 14:42 S64_R2_fastqc.zip
    -rw-rw----+ 1 jelmer PAS0471 713K Oct 28 14:42 S65_R1_fastqc.html
-   -rw-rw----+ 1 jelmer PAS0471 367K Oct 28 14:42 S65_R1_fastqc.zip
-   -rw-rw----+ 1 jelmer PAS0471 718K Oct 28 14:42 S66_R1_fastqc.html
-   -rw-rw----+ 1 jelmer PAS0471 372K Oct 28 14:42 S66_R1_fastqc.zip
-   -rw-rw----+ 1 jelmer PAS0471 710K Oct 28 14:42 S67_R1_fastqc.html
    # [...output truncated...]
    ```
 
@@ -768,13 +772,13 @@ Practice project for the course PLNTPTH 5006, using RNA-Seq data from Garrigós 
 
 </details>
 
-Then, remove that line from the "Computing infrastructure" section,
-and add a section like this one,
-so that Claude writes scripts that follow this week's conventions:
+Then, adjust the "Computing infrastructure" section to make Claude write scripts
+that follow this week's conventions, so it now reads:
 
 ```{.markdown .file filename="CLAUDE.md (excerpt)"}
-## Slurm batch jobs
+## Computing infrastructure
 
+- We work at the Ohio Supercomputer Center (OSC)
 - We submit shell scripts as Slurm batch jobs with `sbatch`
 - Put `#SBATCH` lines directly below the shebang line, with at least:
   `--account=PAS3493`, `--output=slurm-<program>-%j.out`, and `--mail-type=FAIL`
@@ -808,7 +812,10 @@ it is a good idea to keep separate Markdown files for:
 
 ### A protocol example
 
-Here is a (hypothetical) protocol for the workflow above.
+Here is a (hypothetical) protocol for the workflow above^[
+  The STAR and Salmon steps are simplified.
+  For example, STAR also uses the reference genome's annotation (GTF) file,
+  and has to output alignments to transcripts, which is what Salmon needs.].
 Each step runs a single-step script that takes in- and output files as arguments,
 and is submitted as one or more batch jobs:
 
@@ -824,7 +831,7 @@ and is submitted as one or more batch jobs:
 ```bash
 fastq_dir=data/fastq
 ref_assembly=results/01_refseqs/assembly.fna
-ref_annotation=results/01_refseqs/annotation.gtf
+ref_transcripts=results/01_refseqs/transcripts.fna
 ```
 
 ## Step 1: Read QC with FastQC
@@ -876,12 +883,12 @@ done
 ## Step 5: Gene-level counting with Salmon
 
 `salmon.sh` counts the reads per gene for 1 sample,
-and takes 3 arguments: the BAM file from STAR, the reference annotation GTF file,
+and takes 3 arguments: the BAM file from STAR, the reference transcript FASTA file,
 and the output dir.
 
 ```bash
 for bam in results/star/*bam; do
-    sbatch scripts/salmon.sh "$bam" "$ref_annotation" results/salmon
+    sbatch scripts/salmon.sh "$bam" "$ref_transcripts" results/salmon
 done
 ```
 ````
@@ -949,8 +956,8 @@ My recommendation is therefore to either:
 - Accept that your workflow isn't fully automated
   and use a Markdown protocol like the one above
 - Go all-in and use a workflow management system (specifically, Nextflow).
-  The latter has become a lot more accessible with genAI,
-  and is an **excellent use case for genAI**, because you can check it's work:
+  This has become a lot more accessible with genAI,
+  and is an **excellent use case for genAI**, because you can check its work:
   if you already have a working protocol, you can run the genAI-written pipeline
   and compare its outputs to those of your protocol.
 
@@ -976,7 +983,7 @@ In this lecture, you've learned:
   to name your Slurm log files, and to get emails when jobs fail
 - How to submit a batch job for each file with a loop
 - How to check that your batch jobs ran successfully
-- What to watch out for when using genAI to help with Slurm batch jobs
+- How to make Claude write scripts for Slurm batch jobs
 - How to structure a multi-step workflow with a Markdown protocol,
   and what workflow management systems and nf-core pipelines are
 

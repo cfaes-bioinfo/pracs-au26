@@ -1,5 +1,5 @@
 ---
-title: "Introduction to R, RStudio, and Quarto"
+title: "Introduction to R, Positron, and Quarto"
 subtitle: "Week 12 -- Lecture A"
 pagetitle: "w12a: R Intro"
 date: 2026-11-09
@@ -17,6 +17,9 @@ other-links:
   - text: "Week 12 overview"
     icon: check2-all
     href: w12_overview.html
+  - text: "Before class: Positron setup"
+    icon: gear
+    href: w12a_positron-setup.html
   - text: "Self-study: Vectors and data types"
     icon: book
     href: "#self-study-vectors-and-data-types"
@@ -61,7 +64,7 @@ Specifically, you will learn:
 
 In this lecture, you will learn:
 
-- The RStudio layout and the functions of the different panes and tabs
+- The Positron layout and the functions of its different regions and panes
 - The basics of interacting with R by using R as a calculator
 - Defining variables/objects in R, and assigning values/data to them
 - Calling R functions
@@ -70,70 +73,84 @@ In this lecture, you will learn:
 - Writing, running, and rendering R code in a Quarto document
 - _Self-study_: Vectors, R's main data types, and comparisons
 
-## Starting an RStudio Server session at OSC
+## Starting Positron and connecting to OSC
 
 You can use R with a "console" that can simply be run inside the terminal
 (at OSC, you can do so after loading the R module).
 However, we'll use R with a fancy editor (or "IDE", Integrated Development Environment)
-called [RStudio](https://www.rstudio.com/products/rstudio/download/#download),
+called [Positron](https://positron.posit.co),
 which makes working with it much more pleasant!
 
-Similar to VS Code, we can run a version of RStudio ("RStudio Server") within our
-browsers by starting an Interactive App through OSC OnDemand.
-
-1. Log in to OSC’s OnDemand portal at <https://ondemand.osc.edu>.
-2. In the blue top bar, select **`Interactive Apps`** at the bottom,
-   click **`RStudio Server`**.
-3. Fill out the form as follows:
-   - Cluster: **`pitzer`**
-   - R version: **`4.5.2`**
-   - Project: **`PAS3493`**
-   - Number of hours: **`2`**
-   - Node type: **`any`**
-   - Number of cores: **`1`**
-4. Click **`Launch`**.
-5. Click the **`Connect to RStudio Server`** button once it appears.
-
-::: callout-tip
-#### Number of cores
-Note that unlike with Code Server,
-we can choose how many cores we want when starting an RStudio server job.
-Changing the number of cores is also the way to go if you need more than the
-default 4 GB of memory (RAM):
-recall that each core is associated with 4 GB of memory,
-so asking for 4 cores will get you 16 GB RAM.
+::: callout-important
+#### Positron setup
+Before class, you should have installed Positron and set up its connection to OSC,
+following the [Positron setup page](w12a_positron-setup.qmd).
 :::
 
-::: callout-note
-#### Installing R on your own computer
-While you don't need to do so for this course,
-you can also easily install R and RStudio on your computer.
-For more information, see [this page](https://osu-codeclub.github.io/carpentries-aug-2025/0_setup.html).
+1. Open Positron on your computer.
+2. On the Welcome tab, under "Recent", click on your
+   `/fs/ess/PAS3493/people/<user>` folder (with `[SSH: osc-pitzer-compute]` after it).
+3. A new Positron window will open and connect to a compute node at OSC,
+   which may take a little while.
+4. Once connected, check that an R console is running
+   (bottom of the window, see the
+   [setup page](w12a_positron-setup.qmd#check-that-r-works) if not).
+
+<!---- TODO: Add screenshot of the Welcome tab with the Recent folder ---->
+
+::: {.callout-tip collapse="true"}
+#### Number of cores and memory _(Click to expand)_
+The compute job you get when you connect to `osc-pitzer-compute` has a single core,
+and therefore 4 GB of memory (RAM).
+To get more cores and memory --- recall that each core is associated with 4 GB of memory ---
+you can add `-c <n-cores>` to the `salloc` command in the proxy script at OSC,
+`~/osc-compute-proxy.sh`.
+For example, `salloc -c 4 ...` will get you 4 cores and 16 GB of memory.
 :::
 
-## Orienting to RStudio (basic layout)
+## Orienting to Positron (basic layout)
 
-When you first open RStudio, you will be greeted by four panes,
-each of which have multiple tabs:
+Because Positron is built on VS Code, much of it should look familiar,
+but it adds some important components for data science.
+The Positron window has five main regions:
 
-- **Top left:** The editor/source pane, where you can open and edit documents like scripts
+![Image from <https://positron.posit.co/layout.html>](../img/positron-layout.jpeg){.no-border fig-align="center" width="98%" fig-alt="Diagram of the Positron interface, with the five regions labeled: Editor, Panel, Activity Bar, Primary Side Bar, Secondary Side Bar."}
 
-- **Bottom left:** the default and most useful tab in this pane is your R
-  "Console", where you can type and execute R code
+| Region                 | Where           | What's in it                                                   |
+| ---------------------- | --------------- | -------------------------------------------------------------- |
+| **Editor**             | Center (top)    | Open scripts and other documents, in tabs                      |
+| **Panel**              | Center (bottom) | R **Console** and Terminal                                     |
+| **Activity Bar**       | Far left        | Icons that _switch_ what the Primary Side Bar shows            |
+| **Primary Side Bar**   | Left            | Explorer (files), Search, Source Control, Extensions, Packages |
+| **Secondary Side Bar** | Right           | **Variables**, **Plots**, **Help**, Viewer, History            |
 
-- **Top right:** the default and most useful tab in this pane this is your
-  "Environment",
-  which shows you all the objects that are active in your R environment
+: {.striped tbl-colwidths="[20, 18, 62]"}
 
-- **Bottom right:** the default tab in this pane is "Files",
-  which is a file explorer starting in your initial working directory
-  (more about that next).
-  The additional tabs are also commonly used, such as those to show plots and help.
+Compared to VS Code, the most important additions are:
 
-![](../img/R_studio_panes.png){width="100%" fig-align="center"}
+- The **Console**, where you can type and execute R code.
+  It's a tab next to the Terminal, in the bottom panel.
+
+- The **Variables** pane, which shows you all the objects that are active in your
+  R environment (more about objects below).
+
+- The **Plots** and **Help** panes, which show the plots you make and R's
+  documentation, respectively.
+
+- The **interpreter picker** at the top right, which shows the version of R
+  your Console is using.
+
+Like in VS Code, you can resize all panes, and drag them to other locations.
+If you make a mess of things,
+you can get back to the default layout with the _View: Reset View Locations_
+command in the Command Palette.
+
+<!---- TODO: Add a screenshot of Positron connected to OSC, with the regions in use ---->
 
 ::: {.callout-tip appearance="simple"}
-[Click here for a useful RStudio cheatsheet](https://rstudio.github.io/cheatsheets/html/rstudio-ide.html)
+To learn more about Positron's features,
+see this [Code Club session on Positron](https://osu-codeclub.github.io/posts/S12E01_positron_01/)
+and Positron's [documentation](https://positron.posit.co/).
 :::
 
 ## R basics
@@ -223,8 +240,16 @@ you typed an incomplete command -- for example:
 
 And once again like in the Unix shell,
 you can either try to finish the command or abort it.
-However, in RStudio's console, you abort with <kbd>Esc</kbd> rather than with
-<kbd>Ctrl</kbd>+<kbd>C</kbd> --- let's practice that here.
+In Positron's console, you can abort with <kbd>Esc</kbd>
+(or with <kbd>Ctrl</kbd>+<kbd>C</kbd>) --- let's practice that here.
+
+<!---- TODO: Verify Esc / Ctrl+C behavior in the Positron console ---->
+
+::: {.callout-tip appearance="simple"}
+Unlike in the Unix shell,
+pressing <kbd>Enter</kbd> on an incomplete command in Positron's console
+may simply add a new line to your input, with a `+` in front of it.
+:::
 
 ::: callout-note
 #### Adding comments to your code
@@ -378,9 +403,12 @@ round(digits = 1, x = 6.53)
 ```
 
 You can usually see which arguments a function takes by pausing after you
-type the function and its parentheses, e.g. `round()`:
+type the function and its opening parenthesis, e.g. `round(`:
+Positron will show a pop-up with the function's arguments and a short description.
 
-![](../img/round_1.png){width="75%" fig-align="center"}
+<!---- TODO: Add a Positron screenshot of the signature help pop-up for round() ---->
+<!---- ![](../img/round_1.png){width="75%" fig-align="center"} ---->
+
 
 Below, we'll also see more extensive options to find out how a function works and
 what arguments it takes.
@@ -413,9 +441,15 @@ For example:
 ?list.files
 ```
 
-The output should appear in the Help tab of the bottom-right pane in RStudio and should look something like this:
+The output should appear in the **Help** pane in the Secondary Side Bar (right).
 
-![](../img/help_list_files.png){width="75%" fig-align="center"}
+<!---- TODO: Add a Positron screenshot of the Help pane for list.files ---->
+<!---- ![](../img/help_list_files.png){width="75%" fig-align="center"} ---->
+
+::: {.callout-tip appearance="simple"}
+You can also put your cursor on a function name in the editor or console
+and press <kbd>F1</kbd> to open its help page.
+:::
 
 ## R objects
 
@@ -439,6 +473,9 @@ and that terminology is also used for R objects like the above ones.
 However, R objects can take on many forms (we will talk about _data structures_ in a bit),
 including more complicated things like tables.
 That's why the general term object is used here.
+
+Take a look at the **Variables** pane on the right:
+`length_cm` and `conversion` should now be listed there, along with their values.
 
 To see the contents of an object, you can use the `print()` function as the
 equivalent of `echo` in the Unix shell:
@@ -584,7 +621,7 @@ install.packages("tidyverse")
 Then, check that it loads without errors with `library(tidyverse)`.
 :::
 
-In RStudio server at OSC,
+At OSC,
 packages will by default be installed into a standard location in your Home directory,
 so they can be accessed through time and regardless of what your working directory is,
 or what OSC project you are using^[And this works equivalently on your own computer.].
@@ -592,85 +629,65 @@ or what OSC project you are using^[And this works equivalently on your own compu
 However, package installation is done separately for:
 
 - Different major versions of R
-  (e.g. 4.1 versus 4.2, but not R 4.1.1 versus 4.1.5).
+  (e.g. 4.4 versus 4.5, but not R 4.5.0 versus 4.5.2).
   Therefore, when you switch to a different R version, you will start over with
   package installation^[This too, works the same with R on your own computer.].
 
 - Each OSC cluster, like Pitzer versus Cardinal.
 
-## Working directory and RStudio Projects
+::: {.callout-tip appearance="simple"}
+Positron's **Packages** pane (cube icon in the Activity Bar)
+lists all your installed packages,
+and has buttons to install, update, and remove packages.
+:::
+
+## Working directory and opening a folder
 
 As shown earlier, you can figure out what your working directory is with `getwd()`,
 and change it with `setwd()`.
 
 However, there is a better way of dealing with working directories,
-which is to avoid using `setwd()` altogether and to use RStudio Projects instead.
-This is similar to the Open Folder functionality of VS Code,
-but then a bit more formalized.
+which is to avoid using `setwd()` altogether, and instead
+**open a folder** in Positron, like you've been doing in VS Code.
+When you open a folder,
+Positron makes it R's working directory, and starts a fresh R session.
 
-RStudio Projects are useful for several reasons:
+Run `getwd()` to check that your working directory is your personal dir:
 
-- **Automatically manage your working directory**: RStudio treats the project folder as
-  the working directory, so there is no need to manually set the working directory.
+```r
+getwd()
+```
+```r-out
+[1] "/fs/ess/PAS3493/people/jelmer"
+```
+
+Working this way is useful for several reasons:
+
+- **Automatically manage your working directory**: no need to manually set it.
 
 - **Keep your work organized**: organize your project inside self-contained folders,
   which helps to manage, share and reproduce results.
 
-- **Ensure clean R sessions**: switching projects will restart R and remove all objects
-  and loaded packages.
+- **Ensure clean R sessions**: switching folders will restart R,
+  which removes all objects and unloads all packages.
+  This helps to avoid irreproducible carry-over effects.
 
-- **Easy to collaborate**: all paths in an RStudio Project are relative to the project
-  folder, so your code will work without modification.
-
-To create a new RStudio Project inside your personal dir in `/fs/ess/PAS3493`:
-
-1.  Click **`File`** (top bar, below your browser's address bar) \> **`New Project`**.
-2.  In the popup window, click **`Existing Directory`**.
-
-<details><summary>*Click to see a screenshot*</summary>
-<hr style="height:1pt; visibility:hidden;" />
-
-![](../img/rstudio_proj_existingdir.png){fig-align="center" width="40%"}
-
-</details>
-
-3.  Click **`Browse...`** to select your personal dir.
-
-<details><summary>*Click to see a screenshot*</summary>
-
-![](../img/rstudio_proj_browse.png){fig-align="center" width="40%"}
-
-</details>
-
-4.  In the next window, you should be in your Home directory (abbreviated as **`~`**),
-    from which you can't click your way to `/fs/ess`!
-    Instead, you first have to click on the (very small!) **`...`**
-    highlighted in the screenshot below:
-
-![](../img/rstudio_proj_dotdotdot_ed.png){fig-align="center" width="50%"}
-
-5.  Type at least part of the path to your dir in `/fs/ess/PAS3493`,
-    e.g. as shown below, and click **`OK`**:
-
-![](../img/rstudio_proj_path_Menuka.png){fig-align="center" width="35%"}
-
-6.  Now you should be able to browse/click the rest of the way to your dir
-    (`/fs/ess/PAS3493/people/$USER`).
-7.  Click **`Choose`** to pick your selected directory.
-8.  Click **`Create Project`**.
-
-This will make R restart, which is by design.
-When R restarts, all objects are removed from the environment, packages are unloaded,
-and so on.
-This is a good idea whenever you switch to a different project,
-for example to avoid irreproducible carry-over effects.
+- **Easy to collaborate**: use paths relative to the folder,
+  so your code will work without modification for others and on other computers.
 
 ::: {.callout-tip appearance="simple"}
-You'll use this one RStudio Project for all of the course's R material:
+You'll use this one folder, your personal dir,
+for all of the course's R material:
 each week, you'll create a new folder (`week12`, `week13`, etc.) inside it.
-When you start a new RStudio Server session,
-RStudio will automatically reopen your project ---
-you can check this at the top right of the RStudio window, which shows the project's name.
+:::
+
+::: {.callout-note collapse="true"}
+#### RStudio Projects _(Click to expand)_
+In RStudio, the equivalent of opening a folder is using an "RStudio Project",
+which creates a `.Rproj` file in the project's folder.
+If you open a folder with an `.Rproj` file in Positron,
+Positron simply ignores that file,
+so a folder can work both as an RStudio Project and in Positron.
 :::
 
 ## Quarto documents
@@ -686,6 +703,7 @@ you've been writing notes and code in Markdown files since week 2,
 and in [week 7](../week07/w7b_scripts2.qmd),
 some of you used the Quarto extension in VS Code
 to send code from `{bash}` code blocks to the terminal.
+Positron comes with that same Quarto extension built in.
 For R, we'll use a very similar kind of file: a **Quarto document** (`.qmd`).
 A Quarto document is a Markdown file with two additions:
 
@@ -700,29 +718,47 @@ a fully reproducible record of your analysis.
 
 ### Creating a Quarto document
 
-1. In the Files pane (bottom right), click the `New Folder` button
+1. In the Explorer (Primary Side Bar), click the `New Folder` button
    and create a folder `week12`.
 
-2. Click `File` \> `New File` \> `Quarto Document`:
+2. Click on your new `week12` folder, then click the `New File` button,
+   and create a file `week12a.qmd`.
 
-   ![](../img/quarto_file_open.png){width="70%" fig-align="center"}
-
-3. In the pop-up window, click **`Create Empty Document`** (bottom left).
-
-   ![](../img/new_quarto_doc.png){width="50%" fig-align="center"}
-
-4. Save the new file (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>S</kbd>)
-   as `week12a.qmd` inside your `week12` folder.
-
-The file opens in the editor pane in the top left.
+The file opens in the Editor.
 _From now on, you'll write your code there instead of directly in the console._
+
+::: {.callout-tip appearance="simple"}
+You can also create a new Quarto document with `File` \> `New File...`
+and then selecting `Quarto Document`.
+You'll then have to save it (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>S</kbd>)
+as `week12a.qmd` inside your `week12` folder.
+:::
+
+<!----
+TODO: Decide how to handle the working directory mismatch below. Options:
+- Have students enable inline output (setting `quarto.inlineOutput.enabled`):
+  then interactive code also runs in the document's folder, matching rendering,
+  and week 13's `../garrigos/...` paths keep working.
+  But this is a newer feature that runs a separate R session per document,
+  without a Console by default (see `console.showNotebookConsoles`).
+- Keep the default, and have later weeks use paths that work in both cases,
+  e.g. with the `here` package, or with `execute-dir: project` in a `_quarto.yml`.
+---->
 
 ::: callout-important
 #### The working directory of a Quarto document
-When you run code in a Quarto document, R's working directory is the folder
-that contains the document (here, `week12`) --- not your RStudio Project's folder.
-Therefore, to refer to files elsewhere in your personal dir,
-like the `garrigos` folder, you would use `../garrigos`.
+In Positron, the working directory for your code depends on how you run it:
+
+- When you **run code interactively** (see below),
+  it is executed in the Console,
+  whose working directory is the folder you opened (your personal dir).
+- When you **render** the document (see further below),
+  the working directory is the folder that contains the document (here, `week12`).
+
+Therefore, relative paths to files may work in one case but not the other.
+For example, to refer to the `garrigos` folder in your personal dir,
+you would use `garrigos` when running code interactively,
+but `../garrigos` when rendering.
 :::
 
 ### The YAML header
@@ -772,20 +808,33 @@ around the language name, as in ```` ```{r} ````:
 ```
 
 You can insert a new chunk with
-<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd>
-(Mac: <kbd>Cmd</kbd>+<kbd>Option</kbd>+<kbd>I</kbd>),
+<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd>,
 or simply type the opening and closing lines.
 
 To **run code** from a chunk:
 
 - Press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd>
   to run the line your cursor is on (or the selected lines).
-- Click the green "play" button at the top right of the chunk,
+- Click `Run Cell` just above the chunk,
   or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd>,
   to run the entire chunk.
 
-The code is sent to the console and executed there,
-and in RStudio, the output is also shown right below the chunk.
+The code is sent to the Console and executed there,
+so that is where you'll see its output.
+Plots will be shown in the Plots pane.
+
+<!---- TODO: Add screenshot of a chunk with the Run Cell button and output in the Console ---->
+
+::: {.callout-tip collapse="true"}
+#### Showing the output below each chunk _(Click to expand)_
+Positron can optionally show the output of each chunk right below it in the editor,
+as RStudio does by default.
+To turn this on, open the Settings and enable `quarto.inlineOutput.enabled`.
+
+Note that with this setting turned on,
+Positron starts a separate R session for each Quarto document,
+whose working directory is the document's folder.
+:::
 
 #### Chunk options
 
@@ -822,14 +871,24 @@ this is where Quarto documents are much more informative than code alone.
 
 ### Rendering
 
-To render your document to HTML, click the **`Render`** button
-at the top of the editor,
-or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>:
+To render your document to HTML, click the **`Preview`** button
+at the top right of the editor,
+or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.
 
-![](../img/render.png){width="50%" fig-align="center"}
+<!---- TODO: Add a Positron screenshot of the Preview button ---->
 
 This will create a file `week12a.html` next to `week12a.qmd`,
-and show a preview of it in the Viewer pane or a new browser tab.
+and show a preview of it in the **Viewer** pane.
+Every time you save the document, the preview will update.
+
+::: {.callout-tip appearance="simple"}
+You can also render a Quarto document in the terminal with
+`quarto render week12/week12a.qmd`.
+:::
+
+<!---- TODO: Check whether the `quarto` command is available in the terminal when
+connected to OSC (there is no Quarto module at OSC) ---->
+
 
 ::: callout-important
 #### Rendering runs all code in a fresh R session
@@ -841,7 +900,8 @@ This means that:
   any objects you created only in the console,
   or packages you loaded only in the console, won't exist during rendering.
 - If any code produces an error, the document will not render.
-  The error message will be shown in the "Background Jobs" tab next to the Console.
+  The error message will be shown in a Terminal tab named "Quarto Preview",
+  in the bottom panel.
 
 This may seem annoying at times,
 but it's exactly what makes Quarto documents reproducible.
@@ -914,11 +974,10 @@ but it's exactly what makes Quarto documents reproducible.
 Instead of Quarto documents, you can also write R code in **R scripts** (`.R` files),
 which contain only code and comments,
 much like the shell scripts you wrote in week 7.
-To create one, click `File` \> `New File` \> `R Script`.
+To create one, create a new file with the `.R` extension in the Explorer,
+or click `File` \> `New File...` \> `R File`.
 Like in Quarto documents,
 you can run code from R scripts with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd>.
-
-![](../img/script_file.png){fig-align="center" width="80%"}
 
 R scripts are a good choice for code that you simply want to run
 from start to finish, without needing a report with the output:
@@ -929,15 +988,15 @@ For your final project, both R scripts and Quarto documents are fine.
 
 ## Recap and looking forward
 
-In this lecture, you've learned the basics of working with R and RStudio,
+In this lecture, you've learned the basics of working with R and Positron,
 including:
 
-- The RStudio layout and the functions of the different panes and tabs
+- The Positron layout and the functions of its different regions and panes
 - How to use R as a calculator, and how to define objects/variables
 - How to call R functions and provide arguments to them, by name or by position
 - How to install and load R packages
 - How to get help in R
-- How to use RStudio Projects to keep your work organized and reproducible
+- How opening a folder in Positron keeps your work organized and reproducible
 - How to write, run, and render R code in Quarto documents
 
 In the self-study section below, you'll learn about vectors and R's main data types.

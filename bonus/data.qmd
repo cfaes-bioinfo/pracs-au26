@@ -34,9 +34,14 @@ bibliography: ../references.bib
 
 This page contains additional notes on project and data management:
 sharing data and code across projects, symbolic links,
-checking file integrity with checksums, and file compression.
+NCBI's databases and downloading genomes and reads from NCBI,
+checking file integrity with checksums, file permissions,
+and more about file compression.
 (For transferring files to and from OSC, see the
 [SSH and command-line file transfer](ssh.qmd) page.)
+
+Run the commands on this page from your personal dir, `/fs/ess/PAS3493/people/$USER`,
+and follow the sections in order, since some of them change your working dir.
 
 ## When projects share data and/or code
 
@@ -81,39 +86,61 @@ is with **symbolic links** ("symlinks"):
 small files that merely point to another file or dir,
 much like a shortcut (Windows) or alias (Mac).
 
-### Creating symlinks
-
-Create a symlink with `ln -s <source> [<link-name>]`:
-
-<!---- TODO: Check that /fs/ess/PAS3493/share/garrigos/data/fastq/ exists,
-and replace the illustrative `ls -l` output below with real output from OSC
-(the size, date, and group fields were guessed). ---->
-
 ```bash
 cd sandbox
-
-# Only provide the source => create a link of the same name in your working dir:
-ln -s /fs/ess/PAS3493/share/garrigos/data/fastq/S63_R1.fastq.gz
-
-# You can also give the link a different name:
-ln -s /fs/ess/PAS3493/share/garrigos/data/fastq/S63_R1.fastq.gz shared.fastq.gz
-
-ls -l
-```
-```bash-out
-lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 S63_R1.fastq.gz -> /fs/ess/PAS3493/share/garrigos/data/fastq/S63_R1.fastq.gz
-lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 shared.fastq.gz -> /fs/ess/PAS3493/share/garrigos/data/fastq/S63_R1.fastq.gz
 ```
 
-In the long-format `ls` output, symlinks start with an `l` and show their target after the `->`.
-Otherwise, you can use a link as if it were the file itself,
-e.g. `zcat shared.fastq.gz | head -n 4`.
+### Creating symlinks
 
-You can link to a dir in the same way,
-or link to all files in a dir at once with a wildcard:
+You can create a symlink with `ln -s`:
+
+- When you only provide the source file or or dir,
+  it creates a link of the same name in your working dir:
+
+  ```bash
+  ln -s /fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz
+  ```
+
+  ```bash
+  ls -l
+  ```
+  ```bash-out
+  lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 S64_R1.fastq.gz -> /fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz
+  ```
+
+- You can also give a path to the link, such as simply a different name:
+
+  ```bash
+  ln -s /fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz shared.fastq.gz
+  ```
+
+  ```bash
+  # Both the original link and the new link are now in your working dir:
+  ls -l
+  ```
+  ```bash-out
+  lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 S64_R1.fastq.gz -> /fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz
+  lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 shared.fastq.gz -> /fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz
+  ```
+
+Above, you could see that in the long-format `ls` output,
+symlinks start with an `l` and show their target after the `->`.
+
+Once you have a symlink, you can **use it** like the original file or dir.
+For example:
 
 ```bash
-# [Fictional examples, don't run these]
+zcat shared.fastq.gz | head -n 4
+```
+```bash-out
+TODO
+```
+
+You can link to a **dir** in the same way,
+or link to **all files in a dir** at once with a wildcard:
+
+```{.bash .norun}
+# Fictional examples
 # Link to a dir: creates a link 'project1/scripts/shared_scripts':
 ln -s /fs/ess/PAS3493/shared_scripts project1/scripts/
 
@@ -122,14 +149,16 @@ ln -s /fs/ess/PAS3493/shared_scripts/* project1/scripts/
 ```
 
 ::: callout-warning
-#### Relative source paths are relative to the _link_
+#### Use absolute paths for the source to be safe
+
+Above, you may have noticed that we used the **absolute path** to the source file.
+This is not strictly necessary, but it is safer than using a relative path.
 If you use a relative path for the source,
 it is interpreted relative to the location of the link, not to your working dir.
 For example, running the following from your personal dir creates a **broken link**,
 because it points to `sandbox/garrigos/README.md`, which doesn't exist:
 
-```bash
-# [Don't run this]
+```{.bash .norun}
 ln -s garrigos/README.md sandbox/
 ```
 
@@ -143,12 +172,51 @@ ln -s "$PWD"/garrigos/README.md sandbox/
 
 ### Removing symlinks
 
+To remove a symlink, use `rm` or `unlink`.
+This only removes the link itself, not the file or dir it points to.
+For example, remove the two links you created above:
+
+```bash
+rm shared.fastq.gz
+unlink S64_R1.fastq.gz
+```
+
+The original file is still there:
+
+```bash
+ls /fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz
+```
+```bash-out
+/fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz
+```
+
 A symlink to a dir is a **point of entry to the original dir**:
 anything you do _through_ the link affects the original files.
-For example, `rm my-link/*.fastq.gz` removes the original FASTQ files.
+To see this, create a link to your `garrigos/fastq` dir
+(the relative source path works here,
+because it is relative to the location of the link, `sandbox`):
 
-To remove only the link itself, use `rm my-link` (no `-r` needed: the link is a file)
-or `unlink my-link`.
+```bash
+ln -s ../garrigos/fastq fastq-link
+```
+
+Listing the link's contents shows the files in the original dir:
+
+```bash
+ls fastq-link | head -n 2
+```
+```bash-out
+S63_R1.fastq.gz
+S63_R2.fastq.gz
+```
+
+So, `rm fastq-link/*.fastq.gz` would remove your original FASTQ files!
+To remove only the link itself, use `rm` without `-r`
+(the link is a file, even when it points to a dir):
+
+```bash
+rm fastq-link
+```
 
 <!---- TODO: Verify at OSC (GNU rm) that `rm -r my-link/` deletes the contents of the
 original dir (and then fails to remove the link itself with "Not a directory"),
@@ -160,8 +228,8 @@ rm -r mylink/; ls target    # expected: error about 'mylink/', and 'target' is n
 
 ::: callout-warning
 #### Watch out for trailing slashes
-`rm -r my-link` only removes the link,
-but **`rm -r my-link/`** (with a trailing slash, which tab completion may add)
+`rm -r fastq-link` only removes the link,
+but **`rm -r fastq-link/`** (with a trailing slash, which tab completion may add)
 follows the link and removes the _contents_ of the original dir!
 :::
 
@@ -191,6 +259,202 @@ follows the link and removes the _contents_ of the original dir!
    c. Everything inside your personal dir in the project dir (the link itself remains)!
 
 </details>
+:::
+
+## Downloading data from NCBI
+
+In week 11, you [downloaded files with `wget`](../week11/w11c_data.qmd#wget)
+from an NCBI FTP dir.
+This section introduces NCBI's databases more broadly,
+and shows two more convenient ways to download genomes and sequencing reads.
+
+### NCBI's databases
+
+The [National Center for Biotechnology Information (NCBI)](https://www.ncbi.nlm.nih.gov),
+part of the US National Institutes of Health (NIH),
+hosts dozens of databases, all of which you can search from its homepage.
+Those you are most likely to use for omics work are:
+
+- **GenBank** ---
+  The archive of all publicly available DNA sequences,
+  from single genes to entire genome assemblies.
+  Records are submitted by researchers, and NCBI doesn't curate them,
+  so GenBank can contain many (near-)identical sequences and quality varies.
+  GenBank exchanges data daily with its European (ENA) and Japanese (DDBJ) counterparts,
+  so all three contain the same sequences.
+- **RefSeq** ("Reference Sequence") ---
+  A curated, non-redundant set of genomes, transcripts, and proteins,
+  derived from GenBank records and annotated by NCBI.
+  You can recognize RefSeq records by their accession number prefixes:
+  for example, genome assemblies start with `GCF_` in RefSeq and with `GCA_` in GenBank.
+  The _Culex pipiens_ genome you've worked with (`GCF_016801865.2`) is a RefSeq assembly.
+- **Sequence Read Archive (SRA)** ---
+  Raw reads from high-throughput sequencing.
+  Each sequencing run has an accession number starting with `SRR`
+  (or `ERR` or `DRR` when it was submitted to ENA or DDBJ, respectively),
+  and runs are grouped into BioSamples (`SAMN...`) and BioProjects (`PRJNA...`).
+  For example, the reads in your `garrigos/fastq/S63_R1.fastq.gz` file
+  have headers starting with `@ERR10802863`,
+  the accession number of that sample's sequencing run.
+- **Gene Expression Omnibus (GEO)** ---
+  Processed gene expression data like count tables, with links to the raw reads in the SRA.
+- **BLAST databases** ---
+  BLAST is a tool to find sequences that are similar to a query sequence.
+  It searches databases that NCBI builds from the above,
+  such as `core_nt` (nucleotide sequences) and `nr` (non-redundant protein sequences).
+  You can run BLAST searches on the [BLAST website](https://blast.ncbi.nlm.nih.gov),
+  or for many sequences, with the command-line version (BLAST+)
+  and pre-built databases that you can download from
+  [NCBI's FTP site](https://ftp.ncbi.nlm.nih.gov/blast/db/)
+  (note that these databases are very large).
+
+### Finding a reference genome for any species
+
+1. Go to the genome part of NCBI's datasets portal <https://www.ncbi.nlm.nih.gov/datasets/genome/>.
+2. Type in the name of a species (or other taxonomic level).
+
+![](../img/ncbi-datasets-search.png){fig-align="center" width="95%" .no-border fig-alt="A screenshot of the NCBI datasets website" .lightbox}
+
+3. Select an appropriate taxonomic match within the search box, and press Enter.
+   You will get a list of available genomes:
+
+![](../img/ncbi-datasets-result.png){fig-align="center" width="95%" .no-border fig-alt="A screenshot of the NCBI datasets website" .lightbox}
+
+4. All else being equal (e.g. if it's the right subspecies), it is generally a good
+   idea to pick the "Reference" genome which is highlighted with a green checkmark,
+   i.e. `TS_CPP_V2` in the screenshot above.
+   Click on the name of the desired genome, and you will see a page like this:
+
+![](../img/ncbi-datasets-genome-page.png){fig-align="center" width="85%" .no-border fig-alt="A screenshot of the NCBI datasets website" .lightbox}
+
+5. There are multiple ways of downloading.
+   The FTP dir that you downloaded from in week 11
+   can be accessed by clicking the "FTP" button shown in the screenshot above.
+   But you can also use the genome's accession number (here, `GCF_016801865.2`)
+   to download its files with the `datasets` tool, as shown next.
+
+### Downloading genomes with `datasets`
+
+NCBI's [`datasets` command-line tool](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/command-line-tools/download-and-install/)
+downloads genomes (and other data) by accession number or taxon name,
+and is especially useful when you need multiple or many genomes.
+It is not available as a module at OSC,
+so we'll run it with a [container](../week06/w6b_software.qmd).
+Run the commands in this section from your `sandbox` dir,
+where the previous section left you:
+
+```bash
+DATASETS_CONTAINER=oras://community.wave.seqera.io/library/ncbi-datasets-cli:18.39.0--018edd56cfbf78e2
+apptainer exec "$DATASETS_CONTAINER" datasets --version
+```
+
+<!---- TODO: Run all commands in this section at OSC and add outputs ---->
+
+To download the _Culex pipiens_ genome sequence, annotation (GFF), and protein sequences:
+
+```bash
+apptainer exec "$DATASETS_CONTAINER" datasets download genome accession GCF_016801865.2 \
+    --include genome,gff3,protein --filename culex.zip
+```
+
+The download is a single ZIP file,
+which you can extract with `unzip`:
+
+```bash
+unzip culex.zip -d culex
+
+# List all files (but not dirs) inside the 'culex' dir:
+find culex -type f
+```
+
+The files are in `culex/ncbi_dataset/data/GCF_016801865.2/`,
+and unlike the files in the FTP dir, they are not gzipped.
+
+`datasets` really shines when you need many genomes ---
+for example, you can download all RefSeq reference genomes for a genus.
+Use `datasets summary` first to see how many genomes there are,
+since this can be a lot of data:
+
+```{.bash .norun}
+# [Example commands - no need to run these]
+# Print info about the reference genomes for the genus Culex (in JSON format):
+apptainer exec "$DATASETS_CONTAINER" datasets summary genome taxon culex --reference
+
+# Download their genome sequences:
+apptainer exec "$DATASETS_CONTAINER" datasets download genome taxon culex \
+    --reference --include genome --filename culex_all.zip
+```
+
+::: {.callout-tip collapse="true"}
+#### Downloading large numbers of genomes _(Click to expand)_
+
+For large downloads, use the `--dehydrated` option:
+`datasets download` will then only download a small ZIP file with metadata
+and the locations of the files.
+After unzipping it, `datasets rehydrate --directory <dir>` downloads the actual files,
+and you can rerun that command to resume if the download gets interrupted.
+:::
+
+### Downloading reads from the SRA
+
+There are several ways to download FASTQ files from the SRA:
+
+- [**SRA explorer**](https://sra-explorer.info) is a simple website
+  where you can enter an accession number (e.g. of a BioProject)
+  to get download links and `curl` commands for the FASTQ files.
+- The [**SRA Toolkit**](https://github.com/ncbi/sra-tools/wiki) is NCBI's official set of
+  command-line tools, which includes `prefetch` and `fasterq-dump`.
+
+Like `datasets`, the SRA Toolkit is not available as a module at OSC,
+so we'll again use a container.
+With the SRA Toolkit, downloading the full set of reads for sample S63 of the
+Garrigós et al. dataset (the files in `garrigos/fastq` only contain a subset)
+takes two steps:
+`prefetch` downloads the data in NCBI's own compressed format,
+and `fasterq-dump` converts that to FASTQ files:
+
+```{.bash .norun}
+# [Example commands - no need to run these]
+SRATOOLS_CONTAINER=oras://community.wave.seqera.io/library/sra-tools:3.4.1--c9eb93771eedd04e
+
+apptainer exec "$SRATOOLS_CONTAINER" prefetch ERR10802863
+apptainer exec "$SRATOOLS_CONTAINER" fasterq-dump \
+    --split-files --threads 4 --outdir fastq ERR10802863
+gzip fastq/*.fastq
+```
+
+- For paired-end data, `--split-files` produces separate files for forward and reverse reads:
+  `ERR10802863_1.fastq` and `ERR10802863_2.fastq`.
+- `fasterq-dump` writes uncompressed FASTQ files, which you'll want to gzip.
+
+::: {.callout-tip}
+#### Downloads in batch jobs
+Downloading reads for many samples can take a long time,
+so this is best done in a [Slurm batch job](../week10/w10a_slurm1.qmd).
+:::
+
+::: {.callout-note collapse="true"}
+#### Alternative: installing these tools with Conda _(Click to expand)_
+
+Instead of using containers,
+you can also install `datasets` and the SRA Toolkit in [Conda](conda.qmd) environments.
+This can be especially useful for `datasets`,
+since you may want to run several commands interactively,
+e.g. to explore which genomes are available before deciding what to download.
+After activating a Conda environment,
+you can simply type the commands without the `apptainer exec <container-URI>` prefix.
+
+```{.bash .norun}
+# [Example commands - no need to run these]
+# Create the environments (only needed once):
+module load miniconda3/25.11.1-py312
+conda create -y -n ncbi-datasets conda-forge::ncbi-datasets-cli
+conda create -y -n sra-tools bioconda::sra-tools
+
+# Activate an environment and run its commands:
+conda activate ncbi-datasets
+datasets summary genome taxon culex --reference
+```
 :::
 
 ## Checking file integrity with checksums
@@ -228,17 +492,19 @@ echo "bioinformatic is fun" | md5sum
 ### Checking a downloaded file
 
 The NCBI FTP dir with the _Culex pipiens_ genome files that you
-[downloaded from in week 11](../week11/w11b_data.qmd#wget)
+[downloaded from in week 11](../week11/w11c_data.qmd#wget)
 also contains a checksum file, `md5checksums.txt`.
 Download it into your `garrigos/ref` dir:
 
 ```bash
+# Move back from 'sandbox' to your personal dir
+cd ..
 wget -P garrigos/ref https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/md5checksums.txt
 ```
 
 The file has one line per file in the FTP dir,
 with the checksum in the first column and the file name in the second.
-Let's look up the line for the protein FASTA file that you downloaded in the w11b exercise[^protein]:
+Let's look up the line for the protein FASTA file that you downloaded in the w11c exercise[^protein]:
 
 [^protein]: If you didn't do that exercise, first run:
             `wget -P garrigos/ref https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_protein.faa.gz`
@@ -289,6 +555,12 @@ and you should download or transfer that file again:
 md5sum: WARNING: 1 computed checksum did NOT match
 ```
 
+When you're done, move back to your personal dir:
+
+```bash
+cd ../..
+```
+
 ::: {.callout-note}
 #### SHA checksums
 Instead of md5 checksums, you may also encounter SHA-256 checksums.
@@ -316,7 +588,419 @@ so you now have `GCF_016801865.2_TS_CPP_V2_genomic.fna` rather than `...fna.gz`.
 </details>
 :::
 
-## File compression
+## File permissions
+
+### Introduction to file permissions
+
+File "permissions" are what different categories of users are permitted to do
+with files and dirs.
+Being able to view and modify file permissions is useful when you:
+
+- Want to make your data read-only to prevent accidental modification or deletion
+- Need to share files with other users at OSC
+
+There are three different file permissions that can be independently controlled:
+
+1. **Read** (`r`) permissions allow you to read and copy files.
+2. **Write** (`w`) permissions allow you to modify or overwrite files.
+3. **Execute** (`x`) permissions allow you to directly execute a file (see the box below).
+
+For dirs, write permissions determine whether files can be added, removed, or renamed
+inside them.
+So, whether you can move or delete a file depends on the permissions of its _dir_,
+not of the file itself.
+
+While it is possible to set permissions for individual users,
+they are most easily and commonly set for three different user categories:
+
+- **Owner (or "user")** (`u`) ---
+  By default, this is the person who created the file or dir.
+  This includes cases where this person merely copied or downloaded files:
+  e.g., after you have copied someone else's FASTQ files,
+  you are the owner of these copies.
+- **Group** (`g`) ---
+  At OSC, the group category is at the OSC Project level.
+- **Other** (`o`) --- Any other user.
+
+You can also refer to all three of these categories at once with `a` (_all_).
+
+::: callout-note
+#### Executing a file?
+Executing a file means running it as a program/command.
+For example, when we run the FastQC program with the command `fastqc`,
+we are really executing a binary (executable) file somewhere on the system.
+Similarly, self-written shell scripts can be executed if they have execute permissions set.
+:::
+
+### Viewing file permissions
+
+To show file permissions,
+use **`ls`** with the **`-l`** (*long* format) option that we've seen before,
+which should show you something like this:
+
+```bash
+ls -lh garrigos
+```
+<pre class="bash-out"><code>total 2.5K
+drwxrwx---+ 2 jelmer PAS0471 4.0K Sep  9 13:46 <span class="ls-blue">fastq</span>
+drwxrwx---+ 2 jelmer PAS0471 4.0K Sep  9 13:46 <span class="ls-blue">meta</span>
+-rw-rw----+ 1 jelmer PAS0471 2.3K Sep  9 13:46 README.md
+drwxrwx---+ 2 jelmer PAS0471 4.0K Sep  9 13:46 <span class="ls-blue">ref</span>
+drwxrwx---+ 2 jelmer PAS0471 4.0K Sep 16 13:26 <span class="ls-blue">sandbox</span></code></pre>
+
+With annotations:
+
+![](../img/long-ls2.png){fig-align="center" width="80%" fig-alt="A screenshot of the long-format ls output that includes info about file permissions." .lightbox}
+
+::: {.callout-important}
+#### "Groups" at OSC
+
+When you create a file in the PAS3493 project dir,
+all members of the OSC project PAS3493 get the "**group**" permissions for it.
+That is true even if the group displayed in the `ls -l` output shown above
+is a different one, e.g. `PAS0471` for me (my personal default group at OSC).
+This works through so-called "access control lists" (ACLs),
+which is what the `+` at the end of the permission string indicates
+(to see the ACL of a file, run `getfacl <file>`).
+:::
+
+Here is an overview of the file permission notation in `ls -l` output:
+
+![](../img/permissions.svg){fig-align="center" width="40%" fig-alt="A diagram showing the different file permissions that can be set." .lightbox}
+
+For example:
+
+- `rwxrwxr-x` means: read, write, and execute permissions are set for the owner
+  (first `rwx`) and the group (second `rwx`),
+  and read and execute _but not_ write permissions for others (`r-x` at the end).
+
+- `rw-rw-r--` means: read and write _but not_ execute permissions are set
+  for both the owner (first `rw-`) and the group (second `rw-`),
+  and only read permissions for others (`r--` at the end).
+
+::: {.callout-warning}
+#### Default permissions at OSC
+
+Most commonly, files and dirs that you create at OSC will by default have:
+
+- Read permissions for owner (you) and group
+- Write permissions only for owner (you)
+
+However, this is not always the case,
+and I am personally sometimes vexed by file permissions at OSC.
+For instance, in our `PAS3493` project, the default permissions appear to include
+write permissions for the group.
+I'm not certain why, but it may be because this is an "Educational" project.
+
+More generally, by default:
+
+- OSC users that are not members of a specific project can't access that project's
+  files in `/fs/ess/` and `/fs/scratch` at all.
+- Other OSC users cannot access your personal Home dir files --
+  so it's never a good idea to keep files there that should be accessible to collaborators.
+:::
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Viewing file permissions
+
+1. Could your classmates (members of the PAS3493 group) edit the `README.md` file
+   in your `garrigos` dir? Check with `ls -l`.
+2. The `-d` option makes `ls` show info about a dir itself, rather than its contents.
+   Run `ls -ld ~` to see your Home dir's permissions:
+   what do these mean for your classmates' access to any of the files in your Home dir?
+
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+1. Most likely yes: if the permissions are `rw-rw----`, the group has write permissions.
+2. You'll most likely see `drwx------`: only you have any permissions,
+   so nobody else can even get into your Home dir,
+   no matter what the permissions of the files inside it are.
+
+</details>
+:::
+
+### Changing file permissions
+
+Let's create a file to play around with file permissions:
+
+```bash
+# Create a test file
+mkdir -p sandbox
+cd sandbox
+touch testfile.txt
+
+# Check the default permissions
+ls -l testfile.txt
+```
+```bash-out
+-rw-rw----+ 1 jelmer PAS0471 0 Mar  7 13:36 testfile.txt
+```
+
+To change a file's permissions, you can use the **`chmod` command**.
+There are two main ways to use this command, one of which uses symbols as follows:
+
+- `+` : add a permission
+- `-` : remove a permission
+- `=` : set permissions to exactly this
+
+These are used with both the kind of permission (`r` / `w` / `x`)
+and the user category (`a` / `u` / `g` / `o`).
+For example, `a+r` means that for `a`ll, you add (`+`) `r`ead permissions.
+Let's see some commands:
+
+- To add read (`r`) permissions for all (`a`):
+
+  ```bash
+  chmod a+r testfile.txt
+
+  ls -l testfile.txt
+  ```
+  ```bash-out
+  -rw-rw-r--+ 1 jelmer PAS0471 0 Mar  7 13:40 testfile.txt
+  ```
+
+- To set read + write + execute (`rwx`) permissions for all (`a`):
+
+  ```bash
+  chmod a=rwx testfile.txt
+
+  ls -l testfile.txt
+  ```
+  ```bash-out
+  -rwxrwxrwx+ 1 jelmer PAS0471 0 Mar  7 13:36 testfile.txt
+  ```
+
+  ::: {.callout-tip appearance="simple"}
+  Because the file is now "executable",
+  its name should display in **[green]{style="color:green"}** in your terminal.
+  :::
+
+- To remove write (`w`) permissions for others (`o`):
+
+  ```bash
+  # chmod <who>-<permission-to-remove>:
+  chmod o-w testfile.txt
+
+  ls -l testfile.txt
+  ```
+  ```bash-out
+  -rwxrwxr-x+ 1 jelmer PAS0471 0 Mar  7 13:36 testfile.txt
+  ```
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.callout-note collapse="true"}
+#### An alternative method: changing file permissions with numbers _(Click to expand)_
+
+`chmod` alternatively accepts a series of 3 numbers
+(for user, group, and others, respectively) to set permissions,
+where each permission is "worth" the following number of points:
+
+:::: columns
+::: {.column width="5%"}
+:::
+::: {.column width="40%"}
+| Nr | Permission     |
+|:----:|:-----------:|
+| 1  | x              |
+| 2  | w              |
+| 4  | r              |
+
+: {.striped .hover}
+:::
+::: {.column width="10%"}
+:::
+::: {.column width="40%"}
+| Nr | Permission |
+|:----:|:-----------:|
+| 5  | r + x          |
+| 6  | r + w          |
+| 7  | r + w + x      |
+
+: {.striped .hover}
+:::
+::: {.column width="5%"}
+:::
+::::
+
+For example, to set read + write + execute permissions for all:
+
+```bash
+chmod 777 testfile.txt
+```
+
+To set read + write + execute permissions for yourself, and only read permission
+for the group and others:
+
+```bash
+chmod 744 testfile.txt
+```
+:::
+
+::: {.callout-warning collapse="true"}
+#### Read/execute permissions for directories _(Click to expand)_
+
+`chmod` is not recursive by default:
+you need the `-R` option to change permissions throughout a dir hierarchy.
+For example:
+
+```{.bash .norun}
+chmod -R g+r my-dir
+```
+
+One tricky and confusing aspect of file permissions is that
+**to access anything inside a dir (e.g. `cd` into it or open its files),**
+**you need _execute_ permissions for the dir!**
+Read permissions for a dir only allow you to list the names of the files in it.
+This is something to take into account when you want to grant others
+access to your project e.g. at OSC.
+
+To set execute permissions for everyone throughout a dir hierarchy,
+but only for dirs (and files that were already executable),
+use an `X` (**uppercase x**):
+
+```{.bash .norun}
+chmod -R a+X my-dir
+```
+:::
+
+### Making your data read-only
+
+Now, let's see how you can make your data read-only.
+Here, we'll work with the files in the `garrigos/fastq/` dir,
+so let's check the initial permissions first:
+
+```bash
+cd ..
+ls -l garrigos/fastq/ | head -n 3
+```
+<pre class="bash-out"><code>total 963552
+-rw-rw----+ 1 jelmer PAS0471 21266097 Sep  9 13:46 <span class="ls-red">S63_R1.fastq.gz</span>
+-rw-rw----+ 1 jelmer PAS0471 22700521 Sep  9 13:46 <span class="ls-red">S63_R2.fastq.gz</span></code></pre>
+
+To make this data read-only, you can for example run:
+
+```bash
+# Remove write permissions for all users
+chmod a-w garrigos/fastq/*
+```
+
+After running this command, let's check the permissions:
+
+```sh
+ls -l garrigos/fastq/ | head -n 3
+```
+<pre class="bash-out"><code>total 963552
+-r--r-----+ 1 jelmer PAS0471 21266097 Sep  9 13:46 <span class="ls-red">S63_R1.fastq.gz</span>
+-r--r-----+ 1 jelmer PAS0471 22700521 Sep  9 13:46 <span class="ls-red">S63_R2.fastq.gz</span></code></pre>
+
+What happens when you try to remove a write-protected file?
+Let's test this on a copy of one of the files in `sandbox/`,
+rather than on your real data, so there's no risk of accidentally losing anything:
+
+```sh
+cp garrigos/fastq/S63_R1.fastq.gz sandbox/
+chmod a-w sandbox/S63_R1.fastq.gz
+
+rm sandbox/S63_R1.fastq.gz
+```
+```bash-out
+rm: remove write-protected regular file ‘sandbox/S63_R1.fastq.gz’?
+```
+
+You'll be prompted like this for every write-protected file you try to remove.
+**Answer `n` (no) to keep the file for now.**
+If you answer `y` (yes), the file is in fact removed:
+as mentioned above, removing a file is controlled by the permissions of its dir.
+So, read-only file permissions protect against accidentally _modifying_ a file,
+but only add a confirmation prompt when removing it.
+
+::: callout-tip
+#### Force-remove with `rm -f`
+
+Instead of interactively approving the removal of each write-protected file,
+you can also use the `-f` (force) option with `rm`.
+
+For example, Git makes the files in its `.git/objects` dir read-only.
+So, if you would try to remove a dir with a Git repo, like `garrigos`,
+you would have to confirm the removal of many write-protected files:
+
+```{.bash .norun}
+rm -r garrigos/
+```
+```bash-out
+rm: remove write-protected regular file 'garrigos/.git/objects/pack/pack-b1b2783f93b7c1f77f508f07e971dee5c0d39958.rev'? y
+rm: remove write-protected regular file 'garrigos/.git/objects/pack/pack-b1b2783f93b7c1f77f508f07e971dee5c0d39958.idx'? y
+rm: remove write-protected regular file 'garrigos/.git/objects/pack/pack-b1b2783f93b7c1f77f508f07e971dee5c0d39958.pack'?
+```
+
+Adding the `-f` flag will skip these prompts and remove the files directly:
+
+```{.bash .norun}
+rm -rf garrigos/
+```
+
+However, **you must be careful when using the `-f` option** to prevent accidental
+removal of files.
+:::
+
+To also protect your raw data against removal,
+remove write permissions for the dir itself:
+
+```bash
+chmod a-w garrigos/fastq
+```
+
+Now, `rm` (even `rm -f`) will fail with a "Permission denied" error
+for any file in `garrigos/fastq` ---
+unless you first add write permissions back.
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Changing file permissions
+
+For this exercise, you need a partner,
+such as a classmate who is also a member of the PAS3493 project.
+One person (the Owner) first creates a test file and manipulates its permissions,
+and the other (the Collaborator) tries to access and modify that file.
+After the first round, switch roles.
+
+In each round:
+
+1. The Owner creates a file in their `sandbox/` dir,
+   e.g. with `echo "Hello from <your-name>" > sandbox/shared.txt`,
+   and tells the Collaborator its full path.
+2. The Collaborator tries to read the file with `cat`,
+   and to add a line to it with `echo "Hi back" >> <path>`.
+3. The Owner removes write permissions for the group: `chmod g-w sandbox/shared.txt`.
+4. The Collaborator first **predicts** what will happen when repeating step 2,
+   and then tries it.
+5. The Collaborator predicts whether they can _remove_ the file with `rm`
+   (answer `y` if prompted), and then tries it.
+   Run `ls -ld` on the Owner's `sandbox` dir to explain the result.
+
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+- In step 2, both commands should work,
+  since files in our project dir are by default readable and writable for the group.
+- In step 4, `cat` still works, but adding a line fails with a "Permission denied" error.
+- In step 5, the removal works as long as the Owner's `sandbox` dir is group-writable
+  (`drwxrwx---`), because removing a file depends on the permissions of its dir,
+  not of the file itself.
+
+</details>
+:::
+
+## More about file compression
+
+This section builds on the
+[w11c section on file compression](../week11/w11c_data.qmd#file-compression),
+which covers the basics of `gzip` and `gunzip`.
+You'll use a FASTA file with human chromosome 22 ---
+download it into your `sandbox` dir from your personal dir:
+
+```bash
+wget -P sandbox https://hgdownload.soe.ucsc.edu/goldenPath/hg19/chromosomes/chr22.fa.gz
+```
 
 ::: {.callout-tip collapse="true"}
 #### Use the `du` command to see the total size of a dir _(Click to expand)_
@@ -353,66 +1037,20 @@ Use the `du` (**d**isk **u**sage) command -- for example:
   ```
 :::
 
-Let's start by downloading two human chromosome FASTA files to play around with,
-in your `sandbox` dir:
+Run the commands in the box above from your personal dir,
+and then move into your `sandbox` dir:
 
 ```bash
 cd sandbox
-wget https://hgdownload.soe.ucsc.edu/goldenPath/hg19/chromosomes/chr21.fa.gz
-wget https://hgdownload.soe.ucsc.edu/goldenPath/hg19/chromosomes/chr22.fa.gz
 ```
 
-### Decompress files
-
-When you download data,
-it is often compressed with `gzip` ("gzipped", `.gz` extension).
-
-Many programs can work with gzipped files directly,
-but sometimes you do need to unzip them, which can be done with `gunzip`:
-
-```bash
-# gunzip unzips in place - the original zipped file disappears:
-gunzip chr21.fa.gz
-ls chr21*
-```
-```{.bash-out}
-chr21.fa
-```
-```bash
-# To keep the original, output to stdout with "-c" and redirect:
-gunzip -c chr22.fa.gz > chr22.fa
-ls chr22*
-```
-```{.bash-out}
-chr22.fa  chr22.fa.gz
-```
-
-### Compress files
-
-Conversely, to zip files, use `gzip`:
-
-```bash
-gzip chr21.fa
-ls chr21*
-```
-```{.bash-out}
-chr21.fa.gz
-```
-
-```bash
-# As with unzipping, use -c and redirect to keep the original:
-gzip -c chr22.fa > chr22_copy.fa.gz
-ls chr22*
-```
-```{.bash-out}
-chr22_copy.fa.gz  chr22.fa  chr22.fa.gz
-```
+### Compressing program output
 
 Often, a program will *output unzipped data to standard out*,
 which we can immediately pipe to `gzip` so we only need to write the compressed
 file to disk (beneficial because reading/writing to files is time-consuming):
 
-```sh
+```{.bash .norun}
 trimmer in.fastq.gz | gzip > out.fastq.gz
 ```
 
@@ -451,7 +1089,7 @@ zgrep -i -n --color "AGATAGATATAT" chr22.fa.gz
 Concatenating files means you combine them into a single file,
 simply printing them back-to-back.
 When it is okay to concatenate files^[
-This does mean you'll lose information about the origin of the original files],
+This does mean you'll lose information about the origin of the original files.],
 this can be done very easily.
 
 To add a second FASTQ file to an existing gzipped file,
@@ -470,7 +1108,7 @@ gzip -c in2.fastq >> in.fastq.gz
 Even more conveniently, if we have two gzipped FASTQ files for the same sample
 but from different Illumina lanes:
 
-```bash
+```{.bash .norun}
 cat smpA_L001_R1.fastq.gz smpA_L002_R1.fastq.gz > smpA_R1.fastq.gz
 ```
 :::
@@ -484,7 +1122,7 @@ which were combined into a single file with the `tar` command and then gzip-comp
 Since `gzip` itself can only compress individual files,
 `tar` is also what you would use to pack up a dir, e.g. to share it or to back it up.
 
-```bash
+```{.bash .norun}
 # Create (-c) a gzip-compressed (-z) archive file (-f) from the dir 'results':
 tar -czvf results.tar.gz results/
 

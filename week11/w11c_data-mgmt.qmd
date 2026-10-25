@@ -1,0 +1,361 @@
+---
+title: "Data management"
+subtitle: "Week 11 -- Lecture C"
+pagetitle: "w11c: Data management (slides)"
+date: November 04, 2026
+date-format: MMMM DD, YYYY
+author: Jelmer Poelstra
+institute: "CFAES Bioinformatics Core, OSU"
+format:
+  revealjs:
+    theme: [default, ../theme_slides.scss]
+    css: ../slides.css
+    smaller: true
+    scrollable: false
+    progress: true
+    incremental: false
+    slide-number: true
+    slide-level: 2
+    highlight-style: atom-one
+    embed-resources: false # Can't be used with chalkboard
+    chalkboard:
+      theme: whiteboard
+    footer: "[~ PRACS-AU26 ~](/index.qmd){target='_blank'}"
+    logo: ../img/CFAES-Horiz-RGBHEX.svg
+    template-partials:
+      - ../title-slide.html
+    menu:
+      width: wide
+      numbers: true
+bibliography: ../references.bib
+---
+
+## Overview
+
+- [Why you should prefer relative paths](#why-you-should-prefer-relative-paths)
+- [Raw data management](#raw-data-management)
+- [Metadata in spreadsheets](#metadata-in-spreadsheets)
+- [Sharing data and other files](#sharing-data-and-other-files)
+- [Should I keep my OSC and local dirs synced?](#should-i-keep-my-osc-and-local-dirs-synced)
+
+## Why you should prefer relative paths
+
+::: {.callout-note .quiz}
+#### Absolute paths don't depend on your working dir -- so what could be a disadvantage of using them?
+
+<hr style="height:1pt; visibility:hidden;" />
+
+<!-----
+<details><summary> {{< fa square-check >}} &nbsp; &nbsp; _Click for the answer_</summary>
+
+Absolute paths:
+
+- Don't generally work across computers
+- Break when you move your entire project dir
+
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+------>
+:::
+
+## Absolute vs. relative paths
+
+![](../img/proj-dirs-2-2025.png){fig-align="center" width="80%" fig-alt="A diagram of two project dir hierarchies."}
+
+::: legend2
+Two project dir hierarchies, and the absolute and relative paths to a FASTQ file (FASTQ files contain HTS reads).\
+Following best practices, the relative path starts from the relevant project's top-level dir.\
+(Note that `~` is a way to refer to your Home folder.)
+:::
+
+## Moving project dirs
+
+![](../img/proj-dirs-3-2025.png){fig-align="center" width="70%" fig-alt="A diagram of two project dir hierarchies."}
+
+::: legend2
+Now, both projects were moved into `OneDrive`.
+The absolute path to the FASTQ file has changed,\
+but the relative path from the project's top-level dir remains the same.
+:::
+
+. . .
+
+::: {.callout-tip appearance="simple"}
+Relative paths keep working after moving project dirs --
+**as long as you consistently use the project's top-level dir as your working dir**.
+:::
+
+## Relative paths in practice
+
+::: {.callout-note .quiz}
+#### Would Monday's relative paths still work after moving dirs?
+
+On Monday, you referred to input files from `week11` with relative paths like
+`../garrigos/fastq/S63_R1.fastq.gz`.
+Would these still work:
+
+- After moving `week11` into a new dir?
+- After moving your entire personal dir?
+
+<hr style="height:1pt; visibility:hidden;" />
+
+<!-----
+<details><summary> {{< fa square-check >}} &nbsp; &nbsp; _Click for the answer_</summary>
+
+- Moving only `week11` breaks them:
+  `..` would now point to the new dir, which has no `garrigos` dir inside it.
+- Moving your entire personal dir keeps them working,
+  since `week11` and `garrigos` move together.
+
+This is why it's best to keep all files for a project, including its raw data,
+inside the project's top-level dir, so that relative paths never need to leave it.
+(When multiple projects use the same data,
+you can use symbolic links: see the [bonus material](../bonus/data.qmd#symbolic-links).)
+
+</details>
+
+<hr style="height:1pt; visibility:hidden;" />
+------>
+:::
+
+## Raw data management
+
+Any type of raw data from your research is extremely valuable:
+these are the results of your experiment,
+and they may have been labor-intensive and expensive to produce.
+With omics projects, your main raw data will usually be a set of FASTQ files,
+but similar principles apply to other types of data.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+. . .
+
+- **Never delete your raw data.**
+  Even after you "finished" your analyses or produced processed files
+  that you find more useful,
+  your ground truth will always be the raw data:
+  it allows you and others to reproduce your results,
+  and to re-analyze the data when e.g. new methods become available.
+
+. . .
+
+- **Keep multiple copies of your raw data,**
+  ideally in at least two different physical locations.
+  Even if your data mainly lives on OSC, also keep a copy elsewhere ---
+  and at OSC, never only store files in a scratch dir,
+  where files that haven't been used for a while are automatically deleted.
+
+. . .
+
+- **Share your raw data publicly after publication.**
+  Most journals and funding agencies nowadays require this,
+  and sequencing data has long been expected to be shared publicly.
+
+## Raw data management: other recommendations
+
+- Keep track of data provenance and metadata:
+  - When and from where was the data obtained/received?
+  - What metadata exists for each sample?
+
+<hr style="height:1pt; visibility:hidden;" />
+
+- Use standard and preferably plain-text file formats.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+- To avoid accidents,
+  consider making your data read-only with file permissions
+  _([bonus material](../bonus/data.qmd#making-your-data-read-only))_.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+- After downloading or when sharing key data,
+  consider using "checksums" to check that files were transferred entirely
+  _([bonus material](../bonus/data.qmd#checking-file-integrity-with-checksums))_.
+
+## Metadata in spreadsheets
+
+Sample metadata, such as which treatment and time point each sample belongs to,
+is often entered in a spreadsheet program like Excel.
+That is fine, as long as you organize the spreadsheet so that it can be read
+by code without manual cleanup.
+The Turing Way's
+[Data Organisation in Spreadsheets](https://book.the-turing-way.org/reproducible-research/rdm/rdm-spreadsheets){target="_blank"}
+page has detailed recommendations, including:
+
+<hr style="height:1pt; visibility:hidden;" />
+
+::: {.columns}
+::: {.column width="50%"}
+
+- Use one row per sample (or observation) and one column per variable,
+  with a single header row at the top.
+- Put only one value in each cell.
+- Don't use merged cells, colors, or other formatting to store information:
+  if you want to highlight some cells, add a column for this instead.
+- Use consistent sample names, category labels, and units throughout.
+- Avoid spaces and special characters in sample names and column names
+  (e.g. use `time_point` rather than `Time point (days)`).
+
+:::
+::: {.column width="50%"}
+
+- Write dates as `YYYY-MM-DD` (e.g. `2026-11-04`),
+  which is unambiguous and sorts correctly.
+- Choose a single way to indicate missing data (e.g. `NA`),
+  rather than leaving some cells empty.
+- Don't do calculations or analyses in the spreadsheet that holds your raw metadata.
+- Save (export) the final version as a plain-text CSV or TSV file,
+  which is what you'll read into your analysis code.
+
+:::
+:::
+
+## Metadata in spreadsheets (cont.)
+
+For an example, take a look at the `garrigos/meta/metadata.tsv` file you've seen before,
+with one row per sample and one column each for the sample ID, time point, and treatment.
+
+In week 13, you'll see that this kind of layout is called "tidy data",
+and that R works with it very well.
+
+<br>
+
+. . .
+
+::: {.callout-warning}
+#### Excel turns some gene names into dates
+
+Excel automatically converts text that _looks like_ a date or number.
+For example, the gene names _SEPT2_ and _MARCH1_ become `2-Sep` and `1-Mar`.
+This is so common that around 20% of published papers with gene lists in Excel files
+[contained such errors](https://doi.org/10.1186/s13059-016-1044-7){target="_blank"},
+and several human genes were renamed to avoid the problem
+(e.g. _SEPT2_ is now _SEPTIN2_).
+To prevent this, set such columns to the "Text" format before entering or pasting data.
+:::
+
+## Sharing data and other files
+
+This policy is now in effect:
+
+> By the end of 2025, all federally-funded research must make articles and data publicly available immediately upon journal publication with no waiting periods allowed.
+>
+> --- [Federal Research Policy Guide](https://research.osu.edu/federal-research-policy-guide-public-access-requirements){target="_blank"}
+> from OSU's [Enterprise for Research, Innovation and Knowledge](https://erik.osu.edu/){target="_blank"}
+
+<!--- TODO: https://research.osu.edu/transitioning-updated-data-management-and-sharing-dms-plan-format --->
+
+<hr style="height:1pt; visibility:hidden;" />
+
+. . .
+
+::: {.callout-note}
+#### Data Management Plans
+
+Data Management Plans (DMPs), which specify how you are planning to manage and share
+your data, are also required by major funding agencies
+(e.g., NSF has required them since 2011):
+
+>  A DMP is currently required for all competitive grant programs of the United States Department of Agriculture and the National Science Foundation.
+>
+> --- @grünwald2024
+
+Here are specific guidelines for [USDA NIFA](https://www.nifa.usda.gov/grants/lifecycle/pre-award/data-management-plans){target="_blank"}
+and [NSF](https://www.nsf.gov/funding/data-management-plan){target="_blank"} grants.
+:::
+
+## Platforms for sharing data
+
+- Raw sequences from high-throughput sequencing, such as FASTQ files,
+  are usually uploaded to NCBI's
+  [Sequence Read Archive (SRA)](https://www.ncbi.nlm.nih.gov/sra){target="_blank"}
+  (or its European counterpart, [ENA](https://www.ebi.ac.uk/ena/browser/home){target="_blank"}).
+- Some results should also be uploaded to NCBI,
+  such as genome assemblies and annotations, and gene expression count tables
+  (Gene Expression Omnibus, [GEO](https://www.ncbi.nlm.nih.gov/geo/){target="_blank"}).
+  For RNA-seq data, a GEO submission also takes care of uploading the reads to the SRA.
+- Other results and data can be shared via general data repositories
+  like [Dryad](https://datadryad.org/){target="_blank"} and [Zenodo](https://zenodo.org/){target="_blank"},
+  which journals increasingly require upon publication.
+- Code can be shared via GitHub (or similar platforms like GitLab and Bitbucket),
+  ideally with a permanent Digital Object Identifier (DOI) via Zenodo^[
+  Some journals require code to be shared via a general repository like Dryad as well,
+  where the code (and especially its documentation) may be subject to manual quality control.].
+
+<hr style="height:1pt; visibility:hidden;" />
+
+. . .
+
+::: {.callout-tip appearance="simple"}
+For more and OSU-specific information about data management and sharing,
+[OSU's Research Commons](https://library.osu.edu/researchcommons){target="_blank"} has
+[guides](https://guides.osu.edu/rdm-best-practice/how-to-share){target="_blank"} and
+[offers consultations](https://library.osu.edu/research-data){target="_blank"}.
+:::
+
+## Getting a DOI for your GitHub repository with Zenodo
+
+A GitHub repository can be changed or deleted at any time,
+which makes it a poor permanent reference in a paper.
+Zenodo, a general data repository run by CERN,
+can archive a snapshot of your repo and give it a citable DOI:
+
+1. Log in to [Zenodo](https://zenodo.org/){target="_blank"} with your GitHub account.
+2. In Zenodo, go to your account's GitHub settings,
+   and flip the switch next to the repository you want to archive
+   (the repository needs to be public).
+3. On GitHub, create a "release" of your repository
+   (on the repository's front page, click "Create a new release" in the right sidebar).
+
+<hr style="height:1pt; visibility:hidden;" />
+
+Zenodo will then automatically archive this release and assign it a DOI,
+which you can cite in your paper and add as a badge to your README.
+Each new release gets its own DOI,
+plus there is a "concept DOI" that always points to the latest version.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+See [GitHub's documentation](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content){target="_blank"}
+for more details.
+
+## Should I keep my OSC and local dirs synced?
+
+You can't keep files synced between OSC and your local computer
+in a fully automatic way like with OneDrive or Dropbox.
+And because the amount of data on OSC is typically very large,
+you may not want to either.
+Instead, here is a good strategy:
+
+- Keep the files you have under version control (code, etc.) synced via Git/GitHub.
+- Periodically sync all or a selection of other files with the data transfer
+  methods discussed next.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+. . .
+
+Data syncing is especially important when you do analyses both at OSC and on
+your local computer for a given project.
+To reduce this friction,
+I recommend that for projects for which you need OSC,
+you instead try to do _all_ your work there.
+
+When you do that,
+it even works to keep entirely separate sets of files at OSC and your local computer
+-- for example,
+you may keep only the manuscript and related files on your local computer
+(and/or OneDrive/Teams), and everything else at OSC.
+
+## References {.unlisted}
+
+::: {#refs}
+:::
+
+# Questions? {background-color="#A7B1B7" .unlisted}
+
+<br><br>
+
+[[_Click here to continue on the lecture page_](./w11c_data.qmd#overview-of-transfer-options)]{style="display:block; text-align:center"}
