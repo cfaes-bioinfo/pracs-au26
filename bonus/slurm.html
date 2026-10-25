@@ -4442,7 +4442,7 @@ font-size: 2.5em;
 <hr style="height:1pt; visibility:hidden;">
 <section id="introduction" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="introduction"><span class="header-section-number">1</span> Introduction</h2>
-<p>This page covers some additional Slurm topics that build on the <a href="../week10/w10a_slurm1.html">w10a</a> and <a href="../week10/w10b_slurm2.html">w10b</a> lectures: more <code>sbatch</code> options, Slurm environment variables, copying Slurm log files to output dirs, interactive shell jobs, checking how many resources your jobs used, job arrays, and ways to automate multi-step workflows with Bash and Slurm.</p>
+<p>This page covers some additional Slurm topics that build on the <a href="../week10/w10a_slurm1.html">w10a</a> and <a href="../week10/w10b_slurm2.html">w10b</a> lectures: more <code>sbatch</code> options, Slurm environment variables, copying Slurm log files to output dirs, interactive shell jobs, checking how many resources your jobs used, and ways to automate multi-step workflows with Bash and Slurm.</p>
 <p>To run the commands on this page yourself, start a VS Code session at <a href="https://ondemand.osc.edu" class="uri">https://ondemand.osc.edu</a> in <code>/fs/ess/PAS3493/people/$USER</code>, as per usual.</p>
 </section>
 <section id="more-sbatch-options" class="level2" data-number="2">
@@ -4450,7 +4450,7 @@ font-size: 2.5em;
 <section id="requesting-large-amounts-of-memory" class="level3" data-number="2.1">
 <h3 data-number="2.1" class="anchored" data-anchor-id="requesting-large-amounts-of-memory"><span class="header-section-number">2.1</span> Requesting large amounts of memory</h3>
 <p>The maximum amount of memory you can request on <strong>regular</strong> Pitzer compute nodes is 178 GB. If you need more than that, there are <strong>specialized</strong> <code>largemem</code> or <code>hugemem</code> nodes.</p>
-<p>Switching to such a node generally happens automatically based on your requested amount. Unfortunately, there are “<strong>gaps</strong>” between the maximum and minimum amounts of RAM on these node types, which means that certain amounts of memory cannot be requested on any node (See <a href="https://www.osc.edu/resources/technical_support/supercomputers/pitzer/batch_limit_rules">this OSC page</a> for details on Pitzer nodes).</p>
+<p>Switching to such a node generally happens automatically based on your requested amount. Unfortunately, there are “<strong>gaps</strong>” between the maximum and minimum amounts of RAM on these node types, which means that certain amounts of memory cannot be requested on any node (see <a href="https://www.osc.edu/resources/technical_support/supercomputers/pitzer/batch_limit_rules">this OSC page</a> for details on Pitzer nodes).</p>
 <p>To request that a batch job runs on a non-default node type, you should use the <code>--partition</code> option. For example:</p>
 <div class="code-with-filename">
 <div class="code-with-filename-file">
@@ -4625,7 +4625,7 @@ When log files show up in your working dir, you’ll notice them, and that is a 
 <section id="interactive-shell-jobs" class="level2" data-number="5">
 <h2 data-number="5" class="anchored" data-anchor-id="interactive-shell-jobs"><span class="header-section-number">5</span> Interactive shell jobs</h2>
 <p>Interactive shell jobs will grant you interactive shell access on a compute node. When you use the VS Code app in OnDemand, your terminal already runs in an interactive job on a compute node!</p>
-<p>However, that job only has 1 core and 4 GB of memory, and there is no way of changing this. If you want to interactively run commands that need more resources (for example, to try out a jobs that needs substanial resources, before putting it in a script), you can start an interactive shell job with Slurm’s <code>srun</code> command<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. Add <code>--pty /bin/bash</code> to get an interactive Bash shell. In the example below, we ask for 5 cores for 2 hours:</p>
+<p>However, that job only has 1 core and 4 GB of memory, and there is no way of changing this. If you want to interactively run commands that need more resources (for example, to try out a job that needs substantial resources, before putting it in a script), you can start an interactive shell job with Slurm’s <code>srun</code> command<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. Add <code>--pty /bin/bash</code> to get an interactive Bash shell. In the example below, we ask for 5 cores for 2 hours:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">srun</span> <span class="at">--account</span><span class="op">=</span>PAS3493 <span class="at">--cpus-per-task</span><span class="op">=</span>5 <span class="at">--time</span><span class="op">=</span>120 <span class="at">--pty</span> /bin/bash</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>srun: job 12431932 queued and waiting for resources
 srun: job 12431932 has been allocated resources
@@ -4687,7 +4687,7 @@ Memory Efficiency: 5.38% of 4.45 GB</code></pre>
 <ul>
 <li>By default, <code>sacct</code> shows your own jobs that started since midnight. To go back further, use <code>--starttime</code>, e.g. <code>--starttime=2026-10-26</code>.</li>
 <li><code>-X</code> (<code>--allocations</code>) shows one line per job. Without it, each job also gets lines for its “job steps”, like <code>.batch</code> and <code>.extern</code>.</li>
-<li><code>--format</code> sets which columns to show, and <code>%15</code> sets the width of a column (job names would otherwise be cut off after 9 characters, e.g. <code>fastqc_si+</code>).</li>
+<li><code>--format</code> sets which columns to show, and <code>%15</code> sets the width of a column (job names would otherwise be cut off after 9 characters, e.g. <code>ondemand/+</code>).</li>
 <li>For a single job, use <code>-j</code>, e.g. <code>sacct -j 37615720 -X --format=...</code>.</li>
 </ul>
 <p>These are the most common values in the <code>State</code> column:</p>
@@ -4749,10 +4749,10 @@ Memory Efficiency: 5.38% of 4.45 GB</code></pre>
 <section id="sstat-running-jobs" class="level3" data-number="6.3">
 <h3 data-number="6.3" class="anchored" data-anchor-id="sstat-running-jobs"><span class="header-section-number">6.3</span> <code>sstat</code>: running jobs</h3>
 <p><code>seff</code> and <code>sacct</code> only give complete information after a job has finished. To check the memory use of a job <em>while it is running</em> (e.g. if you’re worried that it may run out of memory), use <code>sstat</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sstat</span> <span class="at">-j</span> 37615718.batch <span class="at">--format</span><span class="op">=</span>JobID,MaxRSS,AveCPU</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sstat</span> <span class="at">-j</span> 37615800.batch <span class="at">--format</span><span class="op">=</span>JobID,MaxRSS,AveCPU</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>JobID            MaxRSS     AveCPU
 ------------ ---------- ----------
-37615705.ba+   2405304K   00:02:19</code></pre>
+37615800.ba+   2405304K   00:02:19</code></pre>
 <p>Here, <code>MaxRSS</code> is the peak memory use so far. Note the <code>.batch</code> after the job ID: <code>sstat</code> reports on job “steps”, and the main step of a batch job is called <code>batch</code>.</p>
 </section>
 <section id="aliases-for-long-job-monitoring-commands" class="level3" data-number="6.4">
