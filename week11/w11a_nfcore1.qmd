@@ -21,9 +21,6 @@ other-links:
   - text: "w11b: nf-core pipelines - part II"
     icon: book
     href: w11b_nfcore2.html
-  - text: "w11c: Data management (slides)"
-    icon: easel
-    href: w11c_data-mgmt.html
   - text: "w11c: Data management and transfer"
     icon: book
     href: w11c_data.html
@@ -56,8 +53,10 @@ Specifically, you will learn:
 - Why you may want to use pipelines like those made by the nf-core initiative
 - What the nf-core _rnaseq_ pipeline does, and when you would want to use it
 - How to do a test run of a pipeline
+- The difference between general Nextflow options and pipeline-specific options
+- How to change Nextflow settings with a configuration file
 - How to interpret the progress log and output files of a pipeline run,
-  and the Nextflow final output dir vs. "work dir"
+  including the distinction between a final output dir and a "work dir"
 - How to restart a Nextflow pipeline run using the `-resume` option
 
 ### Getting ready
@@ -98,7 +97,7 @@ Recall from week 10 that the ["nf-core" initiative](https://nf-co.re/) [@ewels20
 has many pipelines available for various omics data analysis types.
 Here are their most popular pipelines --- we will run _rnaseq_ here:
 
-![The 6 most popular nf-core pipelines as of October 2026](/img/nfcore-pipelines_2026-10-25.png){fig-align="center" width="95%" .lightbox}
+![The 6 most popular nf-core pipelines as of October 2026](/img/nfcore-pipelines_2026-10-25.png){fig-align="center" width="95%" .lightbox fig-alt="Screenshot of six pipeline cards from the nf-core website: rnaseq (1396 stars), sarek (614), scrnaseq (360), mag (325), ampliseq (264), and chipseq (245). Each card shows a short description, topic tags, and the latest release version."}
 
 ### The nf-core _rnaseq_ pipeline
 
@@ -168,7 +167,7 @@ Here are some key aspects of running the nf-core _rnaseq_ pipeline
 - We can run the pipeline with a single command, `nextflow run [...]`.
   For our real run, the resulting main Nextflow process will
   **submit _many_ Slurm batch jobs for us**,
-  and orchestrates these until the pipeline has finished or failed.
+  and orchestrate these until the pipeline has finished or failed.
   Because the pipeline can run for many hours,
   we will **submit the main process as a batch job** too.
 
@@ -187,7 +186,7 @@ We'll use Nextflow via an OSC module and not via a container.
 That's because Nextflow itself needs to submit Slurm jobs and run Apptainer containers,
 which is awkward from inside a container,
 where the `sbatch` and `apptainer` commands aren't available.
-(The alternative to to use a Conda environment for Nextflow,
+(The alternative is to use a Conda environment for Nextflow,
 but since a module is available at OSC, we will use that.)
 
 We'll start by finding and loading the Nextflow module.
@@ -263,15 +262,41 @@ mkdir testrun
 cd testrun
 ```
 
+### Create a configuration file
+
 The pipeline runs each tool in an Apptainer container that it downloads for us.
 To save time and storage space,
-we'll use a shared dir with containers that I already downloaded ---
-setting the `NXF_APPTAINER_CACHEDIR` environment variable will tell Nextflow to
-look there first for containers:
+we'll use a shared dir with containers that I already downloaded.
+We'll tell Nextflow about this dir in a
+[configuration (config) file](https://www.nextflow.io/docs/latest/config.html).
 
-```bash
-export NXF_APPTAINER_CACHEDIR=/fs/ess/PAS3493/share/nxf-containers
-```
+Config files contain settings for how Nextflow runs a pipeline,
+such as where to store containers and how to run jobs.
+Each pipeline comes with its own config file(s) with default settings,
+and you can add to or override those settings with your own config file.
+The simplest way to do so is to create a file called `nextflow.config`
+in the dir from which you run the `nextflow run` command:
+Nextflow will automatically detect and use such a file.
+
+- Create the config file:
+
+  ```bash
+  touch nextflow.config
+  ```
+
+- Open the newly created `nextflow.config` file in the VS Code editor
+  and paste the following into it:
+
+  ```{.groovy .file filename="nextflow.config"}
+  apptainer.cacheDir='/fs/ess/PAS3493/share/nxf-containers'
+  ```
+
+Settings in a config file have the form `<scope>.<setting>=<value>`,
+where a "scope" is a group of related settings.
+Here, we set the `cacheDir` setting in the `apptainer` scope,
+which tells Nextflow to look for containers in this dir,
+and to store any containers that it downloads there.
+In part II, we'll add a few more settings to make Nextflow submit Slurm batch jobs.
 
 ### Starting the test run
 
@@ -324,20 +349,19 @@ This is because `nextflow run` commands distinguish between two kinds of options
 ### The test run's progress log
 
 <!-- TODO: regenerate outputs with rnaseq 3.26.0 and the apptainer profile.
-Then check: (1) the `ls work` output shouldn't have a `singularity` dir (containers are in NXF_APPTAINER_CACHEDIR);
+Then check: (1) the `ls work` output shouldn't have a `singularity` dir (containers are in apptainer.cacheDir),
+and the log's `configFiles` line should now also list testrun/nextflow.config;
 (2) if the -resume run still shows `Succeeded: 1`, change the quiz answer's "doesn't rerun any jobs". -->
 
-Since we're ran the `nextflow run` command directly in the terminal,
+Since we ran the `nextflow run` command directly in the terminal,
 logging output (standard out and standard error) will be printed to the screen.
 And there's a lot of it!
 
 The box below has the first part of the expected output,
-until the pipeline starts running its first jobs.
+until the pipeline starts running its first jobs
+(as you can see, all the inputs from the test dataset will be downloaded from GitHub).
 
 <details><summary> {{< fa info-circle >}} Click here to see the initial log output</summary>
-
-Here is the first bit of expected output
-(as you can see, all the inputs from the test dataset will be downloaded from GitHub):
 
 ```bash-out-solo
 Nextflow 26.10.3 is available - Please consider updating your version to it
@@ -397,8 +421,8 @@ Core Nextflow options
   runName                                  : friendly_torricelli
   containerEngine                          : apptainer
   container..*PARABRICKS_STARGENOMEGENERATE: community.wave.seqera.io/library/htslib_samtools_star_gawk:4de2f983041d42e6
-  launchDir                                : /fs/ess/PAS3493/people/jelmer/week10/testrun
-  workDir                                  : /fs/ess/PAS3493/people/jelmer/week10/testrun/work
+  launchDir                                : /fs/ess/PAS3493/people/jelmer/week11/testrun
+  workDir                                  : /fs/ess/PAS3493/people/jelmer/week11/testrun/work
   projectDir                               : /users/PAS0471/jelmer/.nextflow/assets/nf-core/rnaseq
   userName                                 : jelmer
   profile                                  : test,apptainer
@@ -453,7 +477,7 @@ pipeline spawns, with one line for each "process" (i.e., step) in the pipeline:
     have a single job: `1 of 1`.
     The same goes for steps that combine all samples, like MultiQC.
 
-- The **hexadecimal string** at the start of each line (e.g., `[d2/97278b]`)
+- The **hexadecimal string** at the start of each line (e.g., `[a5/06472a]`)
   identifies one of that step's jobs,
   and also the dir in which that job ran --- we'll get back to this below.
 
@@ -488,11 +512,11 @@ Plus 12 more processes waiting for tasks…
   These will show up in the log once they do start
   (and making your terminal taller will show more of them).
 
-- If the containers hadn't already been downloaded to the dir in `NXF_APPTAINER_CACHEDIR`,
+- If the containers hadn't already been downloaded to the `apptainer.cacheDir` dir,
   you would also see lines about container downloads in the log.
 
 - If a process line says e.g. `retries: 1`,
-   a job failed but succeeded when Nextflow retried it.
+  a job failed but succeeded when Nextflow retried it.
 
 - `executor > local` means that jobs are run on the same node as the main Nextflow process.
   (That's fine for this small test run,
@@ -516,11 +540,11 @@ Succeeded   : 162
 ```
 
 ::: {.callout-note collapse="true"}
-### The output printed to your terminal should have colors not displayed above _(Click to expand)_
+#### The output printed to your terminal should have colors not displayed above _(Click to expand)_
 
 For example:
 
-![](/img/nfcore-rnaseq-output-color2.png){fig-align="center" width="90%"}
+![](/img/nfcore-rnaseq-output-color2.png){fig-align="center" width="90%" fig-alt="Screenshot of the terminal output at the start of an nf-core/rnaseq run, showing the Nextflow version, the nf-core ASCII logo with the pipeline version 3.26.0, and the input and outdir options."}
 :::
 
 ## The test run's output files
@@ -539,9 +563,11 @@ ls results/nfc-rnaseq
 The two most important outputs are:
 
 - The **MultiQC report** ---
-  this has lots of QC summaries of the data, both the raw data and the alignments,
-  and even a gene expression PCA plot.
-  Importantly, this file also lists the **versions** of each piece of software
+  this summarizes QC metrics from various steps, such as read trimming and alignment.
+  Because we used `--skip_qc`, this test-run report is fairly minimal,
+  but the report of our real run in part II will have lots more,
+  including a gene expression PCA plot.
+  Importantly, the report also lists the **versions** of each piece of software
   that was run by the pipeline.
 
   ```bash
@@ -550,6 +576,11 @@ The two most important outputs are:
   ```bash-out
   -rw-rw----+ 1 jelmer PAS0471 2.9M Oct 25 14:17 results/nfc-rnaseq/multiqc/star_salmon/multiqc_report.html
   ```
+
+  You'll take a closer look at this type of report in [part II](w11b_nfcore2.qmd),
+  but here's an example screenshot, showing the STAR mapping rate:
+
+  ![](/img/nfcore-rnaseq-testrun-mqc-star-mapping-rate.png){fig-align="center" width="90%" .no-border .lightbox fig-alt="Screenshot of the MultiQC report from the nf-core rnaseq test run, showing the STAR mapping rate for each sample."}
 
 - The **gene count table** ---
   this is used for downstream analysis such as differential expression analysis.
@@ -561,7 +592,9 @@ The two most important outputs are:
   -rw-rw----+ 1 jelmer PAS0471 9.7K Oct 25 14:16 results/nfc-rnaseq/star_salmon/salmon.merged.gene_counts_length_scaled.tsv
   ```
 
-  In the table, genes are in rows and samples in columns, and the values are the gene counts:
+  In the table, genes are in rows and samples in columns, and the values are the gene counts.
+  These aren't whole numbers, because Salmon _estimates_ counts:
+  for example, it splits a read that matches two genes equally well between them.
 
   ```bash
   less -S results/nfc-rnaseq/star_salmon/salmon.merged.gene_counts_length_scaled.tsv
@@ -570,16 +603,16 @@ The two most important outputs are:
   gene_id             gene_name           RAP1_IAA_30M_REP1  RAP1_UNINDUCED_REP1  RAP1_UNINDUCED_REP2  WT_REP1           WT_REP2
   Gfp_transgene_gene  Gfp_transgene_gene  0                  0                    0                    0                 0
   HRA1                HRA1                0                  0                    0                    0                 0
-  snR18               snR18               2.14802855661586   20.2855969463173     10.1375746973545     5.78423880944934  5. 80768605222367
+  snR18               snR18               2.14802855661586   20.2855969463173     10.1375746973545     5.78423880944934  5.80768605222367
   tA(UGC)A            TGA1                0                  0                    0                    0                 0
   tL(CAA)A            SUP56               0                  0                    0                    0                 0
   tP(UGG)A            TRN1                0                  0                    0                    1.01841736490118  0
   tS(AGA)A            tS(AGA)A            1.01850122747957   0                    0                    0                 0
-  YAL001C             TFC3                55.4778408610273   69.9211554832352     113.194248136096     60.4964254842457  30.  2692589944609
-  YAL002W             VPS8                36.3459924147924   32.4521250917071     80.5970831288856     63.580635210628   25.  2482004816186
-  YAL003W             EFB1                597.978458911117   888.742693215767     1857.82221206273     1049.55203167344  664. 701066367987
-  YAL004W             YAL004W             1.0197486986914    0                    0                    0                 1. 01797117238891
-  YAL005C             SSA1                6026.86373913046   6077.38491621524     12770.2053957157     7966.04370465683  4143.  94126807027
+  YAL001C             TFC3                55.4778408610273   69.9211554832352     113.194248136096     60.4964254842457  30.2692589944609
+  YAL002W             VPS8                36.3459924147924   32.4521250917071     80.5970831288856     63.580635210628   25.2482004816186
+  YAL003W             EFB1                597.978458911117   888.742693215767     1857.82221206273     1049.55203167344  664.701066367987
+  YAL004W             YAL004W             1.0197486986914    0                    0                    0                 1.01797117238891
+  YAL005C             SSA1                6026.86373913046   6077.38491621524     12770.2053957157     7966.04370465683  4143.94126807027
   ```
 
 <!--- TODO - put gene count illustration from earlier slides here? ---->
@@ -589,11 +622,11 @@ The two most important outputs are:
 The `work` dir contains sub-dirs in which all jobs ran,
 and where they produced their outputs before the pipeline copied a selection of
 them to the final output dir.
-It can contain many sub-dirs, and is often quite large:
-only a selection of the outputs are copied to the final output dir.
+Because it holds _all_ outputs, including intermediate files,
+it is usually much larger than the final output dir.
 
 For example, let's compare the sizes of the final output dir and the work dir
-with the du command (these sizes can get *much* larger for real data runs):
+with the `du` command (these sizes can get *much* larger for real data runs):
 
 ```bash
 du -sh results/nfc-rnaseq/ work
@@ -627,7 +660,7 @@ ls work
 <span class="ls-blue">06</span>  <span class="ls-blue">11</span>  <span class="ls-blue">1d</span>  <span class="ls-blue">22</span>  <span class="ls-blue">2e</span>  <span class="ls-blue">3a</span>  <span class="ls-blue">45</span>  <span class="ls-blue">4f</span>  <span class="ls-blue">59</span>  <span class="ls-blue">63</span>  <span class="ls-blue">6c</span>  <span class="ls-blue">73</span>  <span class="ls-blue">80</span>  <span class="ls-blue">87</span>  <span class="ls-blue">91</span>  <span class="ls-blue">9d</span>  <span class="ls-blue">a4</span>  <span class="ls-blue">a9</span>  <span class="ls-blue">af</span>  <span class="ls-blue">b4</span>  <span class="ls-blue">bf</span>  <span class="ls-blue">ce</span>  <span class="ls-blue">d7</span>            <span class="ls-blue">e3</span>  <span class="ls-blue">eb</span>  <span class="ls-blue">f3</span>  <span class="ls-blue">ff</span></code></pre>
 
 How do you find your way around that? 😳
-As mentioned above, the hexadecimals between square brackets (e.g. `[fb/68d030]`)
+As mentioned above, the hexadecimals between square brackets (e.g. `[2e/794b4b]`)
 that are printed before each job point to the subdir within this work dir that
 it ran in (every individual job runs in its own dir).
 
@@ -647,7 +680,7 @@ you'll take a look at the `work` subdir of the pipeline's final process: MultiQC
    (so use the one from your own log in the next steps):
 
    ```bash-out-solo
-   [fb/68d030] process > NFCORE_RNASEQ:RNASEQ:MULTIQC (1) [100%] 1 of 1 ✔
+   [2e/794b4b] NFCORE_RNASEQ:RNASEQ:MULTIQC_RNASEQ:MULTIQC (multiqc_report) [100%] 1 of 1 ✔
    ```
 
    </details>
@@ -663,7 +696,7 @@ you'll take a look at the `work` subdir of the pipeline's final process: MultiQC
    Use the `-a` option to `ls` so hidden files are also listed:
 
    ```bash
-   ls -a work/fb/68d030*
+   ls -a work/2e/794b4b*
    ```
    <pre class="bash-out"><code><span class="ls-blue">.</span>    .command.err    .exitcode             versions.yml
    <span class="ls-blue">..</span>   .command.log    multiqc_config.yml
@@ -690,7 +723,7 @@ you'll take a look at the `work` subdir of the pipeline's final process: MultiQC
    Show the contents of the `.command.sh` file:
 
    ```bash
-   cat work/fb/68d030*/.command.sh
+   cat work/2e/794b4b*/.command.sh
    ```
    ```bash-out
    #!/usr/bin/env bash -C -e -u -o pipefail
@@ -806,6 +839,19 @@ or because an input file's last-modified time changed.
 Downstream jobs that use the outputs of a rerun job are then rerun as well.
 A few cache misses like this are normal and nothing to worry about.
 :::
+
+<details class="details-quiz">
+<summary>What if you had instead rerun the pipeline with `-resume`, but without `--skip_qc`?</summary>
+
+_The answer will be added after class._
+
+<!--
+Most jobs would be cached, since their inputs, commands, and settings didn't change.
+But the QC steps that we skipped in the first run (e.g. Qualimap, RSeQC, and the DESeq2 PCA)
+would now be run for the first time,
+and MultiQC would be rerun, because the outputs of these new QC jobs are among its inputs.
+-->
+</details>
 
 <details class="details-quiz">
 <summary>What if you had instead removed the `work` dir, and kept `results`, before rerunning with `-resume`?</summary>

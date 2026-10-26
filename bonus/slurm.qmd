@@ -40,7 +40,7 @@ language:
 This page covers some additional Slurm topics that build on the
 [w10a](../week10/w10a_slurm1.qmd) and [w10b](../week10/w10b_slurm2.qmd) lectures:
 more `sbatch` options, Slurm environment variables, copying Slurm log files to output dirs,
-interactive shell jobs, checking how many resources your jobs used,
+interactive shell jobs, customizing `squeue` output, checking how many resources your jobs used,
 and ways to automate multi-step workflows with Bash and Slurm.
 
 To run the commands on this page yourself, start a VS Code session at
@@ -287,6 +287,72 @@ When you're done, type `exit` to end the job and go back to your original shell.
 Otherwise, the job will keep running (and using your project's compute hours)
 until it reaches its time limit.
 
+## Monitoring your jobs with `squeue`
+
+### Choosing which columns to show
+
+The default columns of `squeue -u $USER -l` are quite narrow:
+for example, job names are cut off after 8 characters.
+That is a problem when you have many jobs with long names,
+such as the jobs that a Nextflow pipeline submits.
+With the `--format` option, you can choose which columns to show, and how wide they are:
+
+```bash
+squeue -u $USER --format="%.9i %.9P %.100j %.8T %.10M %.10l %.4C %R %.16V"
+```
+```bash-out
+    JOBID PARTITION                                                                                                 NAME    STATE       TIME TIME_LIMIT CPUS NODELIST(REASON)      SUBMIT_TIME
+ 42175824       cpu                 nf-NFCORE_RNASEQ_RNASEQ_FASTQ_QC_TRIM_FILTER_SETSTRANDEDNESS_SORTMERNA_(S79)  RUNNING       0:53   16:00:00   17 p0111 2026-11-30T08:49
+ 42175780       cpu          nf-NFCORE_RNASEQ_PREPARE_GENOME_STAR_GENOMEGENERATE_(GCF_016801865.2_TS_CPP_V2_genomic.fna)  RUNNING       3:19   16:00:00   17 p0116 2026-11-30T08:46
+ 42175708       cpu                                                                                        nfc-rnaseq.sh  RUNNING       5:19   12:00:00    1 p0222 2026-11-30T08:44
+```
+
+Each `%` code in the `--format` string is one column,
+and the number before the letter sets the column's width:
+for example, `%.100j` shows the job name in a 100-character-wide column.
+(The `.` makes the text right-aligned.)
+These are the codes used above, plus a few other useful ones:
+
+| Code | Column                                                               |
+| ---- | -------------------------------------------------------------------- |
+| `%i` | Job ID                                                               |
+| `%P` | Partition                                                            |
+| `%j` | Job name                                                             |
+| `%T` | Job state (e.g. `PENDING` or `RUNNING`)                              |
+| `%M` | For how long the job has been running                                |
+| `%l` | Time limit                                                           |
+| `%C` | Number of reserved cores                                             |
+| `%R` | When running: the node(s) it runs on;<br>when pending: why it is pending |
+| `%V` | When the job was submitted                                           |
+| `%m` | Amount of reserved memory                                            |
+| `%S` | When the job started, or for pending jobs, when it is expected to start |
+
+: {.striped .hover}
+
+For a full list of codes, see the `--format` section in the manual (`man squeue`).
+
+### Other useful `squeue` options
+
+- To see when your pending jobs are **expected to start**, use `--start`
+  (Slurm's estimates are often rough, and may change as other jobs are submitted):
+
+  ```bash
+  squeue -u $USER --start
+  ```
+
+- To **count** your jobs, for example how many of them are still pending,
+  combine `-t` with `-h` (no header line) and `wc -l`:
+
+  ```bash
+  squeue -u $USER -t PENDING -h | wc -l
+  ```
+
+- To only show **specific jobs**, use `-j` with one or more job IDs, e.g.
+  `squeue -j 42175708,42175780`.
+
+To avoid having to type the long `--format` command,
+you can [make an alias](#aliases-for-long-job-monitoring-commands) for it.
+
 ## Checking your jobs' resource usage
 
 To choose sensible values for `--time`, `--mem`, and `--cpus-per-task`,
@@ -429,11 +495,16 @@ and even if you do, you don't want to type them out,
 this is a case where aliases are really handy. For instance:
 
 ```sh
+alias sq='squeue -u $USER --format="%.9i %.9P %.100j %.8T %.10M %.10l %.4C %R %.16V"'
 alias sact='sacct -X --format=JobID,JobName%15,State,ExitCode,Elapsed'
 alias sst='sstat --format=JobID,MaxRSS,AveCPU'
 ```
 
 You can then add other options when you use an alias, for example:
+
+```sh
+sq -t PENDING
+```
 
 ```sh
 sact -j 123456
