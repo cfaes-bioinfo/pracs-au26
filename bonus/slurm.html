@@ -4432,7 +4432,7 @@ font-size: 2.5em;
     <div>
     <div class="quarto-title-meta-heading">Page last modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">October 25, 2026</p>
+      <p class="date-modified">October 26, 2026</p>
     </div>
   </div>
     
@@ -4456,7 +4456,7 @@ font-size: 2.5em;
 <h3 data-number="2.1" class="anchored" data-anchor-id="requesting-large-amounts-of-memory"><span class="header-section-number">2.1</span> Requesting large amounts of memory</h3>
 <p>The maximum amount of memory you can request on <strong>regular</strong> Pitzer compute nodes is 178 GB. If you need more than that, there are <strong>specialized</strong> <code>largemem</code> or <code>hugemem</code> nodes.</p>
 <p>Switching to such a node generally happens automatically based on your requested amount. Unfortunately, there are “<strong>gaps</strong>” between the maximum and minimum amounts of RAM on these node types, which means that certain amounts of memory cannot be requested on any node (see <a href="https://www.osc.edu/resources/technical_support/supercomputers/pitzer/batch_limit_rules">this OSC page</a> for details on Pitzer nodes).</p>
-<p>To request that a batch job runs on a non-default node type, you should use the <code>--partition</code> option. For example:</p>
+<p>To make sure that a batch job runs on one of these node types, you can also request it explicitly with the <code>--partition</code> option. For example:</p>
 <div class="code-with-filename">
 <div class="code-with-filename-file">
 <pre><strong>myscript.sh (excerpt)</strong></pre>
@@ -4535,7 +4535,7 @@ font-size: 2.5em;
 <tr class="even">
 <td><code>$TMPDIR</code></td>
 <td>—</td>
-<td>Path to fast temporary storage on the compute node</td>
+<td>Path to fast temporary storage on the compute node<br>(set by OSC, not Slurm)</td>
 </tr>
 </tbody>
 </table>
@@ -4569,8 +4569,8 @@ font-size: 2.5em;
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>As noted in the table, some of these variables are only set if you used the corresponding option: for example, <code>$SLURM_CPUS_PER_TASK</code> doesn’t exist if you didn’t use <code>--cpus-per-task</code>. And none of them exist when you run a script with <code>bash</code> instead of <code>sbatch</code>. In both cases, <code>set -u</code> will make your script stop with an “unbound variable” error.</p>
-<p>To avoid this, provide a default value using <a href="../week07/w7b_scripts2.html#parameter-expansion">parameter expansion</a>:</p>
+<p>As noted in the table, some of these variables are only set if you used the corresponding option: for example, <code>$SLURM_CPUS_PER_TASK</code> doesn’t exist if you didn’t use <code>--cpus-per-task</code>. And when you run a script with <code>bash</code> instead of <code>sbatch</code>, they either don’t exist, or, in a VS Code terminal at OSC, contain the values of your VS Code job (which is a Slurm job too!). When a variable doesn’t exist, <code>set -u</code> will make your script stop with an “unbound variable” error.</p>
+<p>To avoid this, provide a default value using <a href="../bonus/shell-scripting.html#parameter-expansion-to-provide-default-values">parameter expansion</a>:</p>
 <div class="code-with-filename">
 <div class="code-with-filename-file">
 <pre><strong>star.sh (excerpt)</strong></pre>
@@ -4610,7 +4610,7 @@ When log files show up in your working dir, you’ll notice them, and that is a 
 <pre><strong>scripts/fastqc.sh (excerpt)</strong></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8" data-filename="scripts/fastqc.sh (excerpt)"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Copy the Slurm log file to the output dir (only when running as a batch job)</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">[[</span> <span class="ot">-n</span> <span class="st">&quot;</span><span class="va">${SLURM_JOB_ID</span><span class="op">:-</span><span class="va">}</span><span class="st">&quot;</span> <span class="kw">]];</span> <span class="cf">then</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">[[</span> <span class="st">&quot;</span><span class="va">$0</span><span class="st">&quot;</span> <span class="ot">==</span> <span class="pp">*</span>/slurm_script <span class="kw">]];</span> <span class="cf">then</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">log_file</span><span class="op">=</span><span class="va">$(</span><span class="ex">scontrol</span> show job <span class="st">&quot;</span><span class="va">$SLURM_JOB_ID</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;StdOut=&quot;</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d</span> <span class="st">&quot;=&quot;</span> <span class="at">-f</span> 2<span class="va">)</span></span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mkdir</span> <span class="at">-p</span> <span class="st">&quot;</span><span class="va">$outdir</span><span class="st">&quot;</span>/logs</span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cp</span> <span class="st">&quot;</span><span class="va">$log_file</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$outdir</span><span class="st">&quot;</span>/logs/</span>
@@ -4618,7 +4618,7 @@ When log files show up in your working dir, you’ll notice them, and that is a 
 </div>
 <p>How this works:</p>
 <ul>
-<li><code>[[ -n &quot;${SLURM_JOB_ID:-}&quot; ]]</code> checks whether the script runs as a batch job: <code>-n</code> tests whether a variable is non-empty, and the <code>:-</code> <a href="../week07/w7b_scripts2.html#parameter-expansion">parameter expansion</a> avoids an “unbound variable” error when you run the script with <code>bash</code> (see also <a href="../bonus/shell-scripting.html#conditionals">this section on <code>if</code> statements</a>).</li>
+<li><code>[[ &quot;$0&quot; == */slurm_script ]]</code> checks whether the script runs as a batch job. <code>$0</code> contains the path of the script that is running, and in a batch job, Slurm runs a copy of your script called <code>slurm_script</code> (which is why error messages in Slurm log files mention a path like <code>/var/spool/slurmd/job37615711/slurm_script</code>). (Checking whether <code>$SLURM_JOB_ID</code> exists wouldn’t work: it is also set in your VS Code terminal, because your VS Code session is a Slurm job.) See also <a href="../bonus/shell-scripting.html#conditionals">this section on <code>if</code> statements</a>.</li>
 <li><code>scontrol show job</code> prints information about a job, including a line <code>StdOut=&lt;path&gt;</code> with the path to its Slurm log file. <code>grep</code> selects that line, and <code>cut</code> extracts the part after the <code>=</code>. Because the path comes from Slurm, this works no matter how you named your log files with <code>--output</code>.</li>
 </ul>
 <p>Two things to note:</p>
@@ -4629,13 +4629,24 @@ When log files show up in your working dir, you’ll notice them, and that is a 
 </section>
 <section id="interactive-shell-jobs" class="level2" data-number="5">
 <h2 data-number="5" class="anchored" data-anchor-id="interactive-shell-jobs"><span class="header-section-number">5</span> Interactive shell jobs</h2>
-<p>Interactive shell jobs will grant you interactive shell access on a compute node. When you use the VS Code app in OnDemand, your terminal already runs in an interactive job on a compute node!</p>
-<p>However, that job only has 1 core and 4 GB of memory, and there is no way of changing this. If you want to interactively run commands that need more resources (for example, to try out a job that needs substantial resources, before putting it in a script), you can start an interactive shell job with Slurm’s <code>srun</code> command<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. Add <code>--pty /bin/bash</code> to get an interactive Bash shell. In the example below, we ask for 5 cores for 2 hours:</p>
+<p>Interactive shell jobs will grant you interactive shell access on a compute node. When you use the VS Code app in OnDemand, your terminal already runs in an interactive job on a compute node! And if you need more cores for that job, you can request them in the OnDemand form.</p>
+<p>But when you work in a plain shell on a login node instead, for example when you <a href="../bonus/ssh.html">connect to OSC with SSH</a> from your own computer, you need to start an interactive shell job yourself before you can run anything substantial. You can do so with Slurm’s <code>srun</code> command<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, to which you add <code>--pty /bin/bash</code> to get an interactive Bash shell.</p>
+<p>To try this, open a login-node shell in OnDemand via <code>Clusters</code> &gt; <code>Pitzer Shell Access</code>. Then, request an interactive shell job, e.g. with 5 cores for 2 hours:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">srun</span> <span class="at">--account</span><span class="op">=</span>PAS3493 <span class="at">--cpus-per-task</span><span class="op">=</span>5 <span class="at">--time</span><span class="op">=</span>120 <span class="at">--pty</span> /bin/bash</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>srun: job 12431932 queued and waiting for resources
-srun: job 12431932 has been allocated resources
-[jelmer@p0133 PAS3493]$</code></pre>
-<p>First, some Slurm scheduling info was printed to screen: initially, the job was queued, and then it was “allocated resources”. Then, you got a new prompt, which shows the name of the compute node your job runs on (here, <code>p0133</code>). Any commands you now type will run in this job, with its 5 cores.</p>
+<pre class="bash-out"><code>srun: job 56706630 queued and waiting for resources
+srun: job 56706630 has been allocated resources
+[jelmer@p0133 ~]$</code></pre>
+<p>First, some Slurm scheduling info was printed to screen: initially, the job was queued, and then it was “allocated resources”. Then, you got a new prompt, which shows the name of the compute node your job runs on (here, <code>p0133</code>, whereas before, the prompt showed a login node, like <code>pitzer-login01</code>). Any commands you now type will run in this job, with its 5 cores.</p>
+<div class="callout callout-style-simple callout-warning">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>Don’t run <code>srun</code> from a VS Code terminal at OSC. Your VS Code session is a Slurm job itself, so <code>srun</code> will try to run <em>inside</em> that job instead of starting a new one. If you ask for more cores than your VS Code job has, it will keep printing “<em>step creation temporarily disabled</em>” (press <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop it).</p>
+</div>
+</div>
+</div>
 <p>When you’re done, type <code>exit</code> to end the job and go back to your original shell. Otherwise, the job will keep running (and using your project’s compute hours) until it reaches its time limit.</p>
 </section>
 <section id="monitoring-your-jobs-with-squeue" class="level2" data-number="6">
