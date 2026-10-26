@@ -73,8 +73,8 @@ This week, we'll cover how you can submit your shell scripts as batch jobs.
    start a VS Code session in `/fs/ess/PAS3493/people/$USER`.
 2. Create a `week10` dir and **navigate there** in the terminal.
 3. Create a `scripts` dir within `week10`.
-4. You'll need two scripts we made in week 7.
-   But to make sure we all have the same, correct script, copy them from a shared dir:
+4. We'll re-use two scripts from week 7,
+   but to make sure we all have the same scripts, copy them from a shared dir:
 
    ```bash
    # You should be in week10/ now
@@ -222,6 +222,11 @@ Submitted batch job 56603792
   This behavior allows you to submit many jobs at the same time:
   you don't have to wait for other jobs to finish, or even to start!
 
+- Note the new option style in `--account=PAS3493`:
+  the option and its value are separated by an `=` rather than a space.
+  Many commands accept this style for long options (those starting with `--`),
+  and it's the usual style for `sbatch` options.
+
 #### `sbatch` options and script arguments
 
 As was implicit in the command above,
@@ -264,8 +269,6 @@ A.  The job is submitted and runs fine,
 B.  `sbatch` fails with the "_Must specify account for job_" error.
 C.  The job is submitted,
     but it prints "_First name: \-\-account=PAS3493, last name: Jane_".
-
-Then, test your prediction by running the command.
 
 <!----
 <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
@@ -340,8 +343,8 @@ cat slurm-56603792.out
 First name: Jane, last name: Doe
 ```
 
-This file contains the script's output that was printed to screen
-when we ran it with `bash` --- nothing more or less.
+This file contains **what the script printed to screen** when we ran it with
+`bash` --- nothing more or less.
 That includes any error messages:
 recall from week 4 that besides regular output ("_standard output_"),
 commands can also print error messages ("_standard error_") to the screen.
@@ -364,12 +367,13 @@ Slurm log files will (by default) be created in the dir you submitted the job fr
 #### Cleaning up the Slurm logs
 
 When submitting batch jobs,
-your working dir can easily become a confusing mess of anonymous-looking Slurm log files.
+your working dir can easily become a confusing mess of
+**anonymous-looking Slurm log files**.
 These two strategies help to prevent this:
 
-- Changing the Slurm log file name to include a one- or two-word description
+- Changing the Slurm log **file name** to include a one- or two-word description
   of the job/script (next lecture).
-- Cleaning up your Slurm log files, by:
+- **Cleaning up** your Slurm log files, by:
   - Removing them when no longer needed --- as is e.g. appropriate for our current Slurm log file.
   - Moving them to the same location as other outputs by that script.
     This is often appropriate after you've run a bioinformatics tool,
@@ -382,10 +386,7 @@ because it has no information that we need to keep:
 
 ```bash
 # Again, auto-complete the file name to include the correct job ID
-rm -v slurm-56603792.out
-```
-```bash-out
-removed slurm-56603792.out
+rm slurm-56603792.out
 ```
 
 ### Adding `sbatch` options in scripts
@@ -553,6 +554,32 @@ echo "I'm awake! Successfully finished script sleep.sh"
 
 ```
 
+First, run the script directly with `bash`,
+and notice that you won't get your prompt back until the script finishes,
+30 seconds later:
+
+```bash
+bash scripts/sleep.sh
+```
+```bash-out
+I'm awake! Successfully finished script sleep.sh
+```
+
+The other line of text was redirected to `sleep.txt`:
+
+```bash
+cat sleep.txt
+```
+```bash-out
+I will sleep for 30 seconds
+```
+
+Remove the output file before we try this as a batch job:
+
+```bash
+rm sleep.txt
+```
+
 <hr style="height:1pt; visibility:hidden;" />
 
 :::exercise
@@ -690,28 +717,9 @@ I'm awake! Successfully finished script sleep.sh
 </details>
 ---->
 
-Now, let's reason through a couple of variations on this, without actually
-running them:
+Now, let's reason through a variation on this, without actually running it:
 
-5. In terms of output files, what would be different if we instead ran the
-   original script above using `bash scripts/sleep.sh`?
-
-   a. Nothing: both `sleep.txt` and a Slurm log file would still be created.
-   b. `sleep.txt` would still be created, but there would be no Slurm log file.
-   c. No output files would be created at all.
-
-   <!----
-   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
-
-   **(b)** If we had run the script directly with `bash`, `sleep.txt` would have also
-   been created with the same content, but
-   "_I'm awake! Successfully finished script sleep.sh_" would have been printed
-   to screen instead of going into a Slurm log file.
-
-   </details>
-   ---->
-
-6. Suppose you change the script's `echo` line to
+5. Suppose you change the script's `echo` line to
    `echo "I will sleep for 30 seconds" > results/sleep.txt`,
    but the `results` dir doesn't exist yet.
    What would happen when you submit the script as a batch job?
@@ -813,6 +821,23 @@ scancel 56604061
 scancel -u $USER
 ```
 
+<details class="details-quiz">
+<summary>Say you've submitted a job, and while it's still pending, you notice and fix a mistake in the script. Will the job run the fixed script once it starts?</summary>
+
+_The answer will be added after class._
+
+<!----
+No: when you submit a job, Slurm stores a copy of the script,
+and that copy is what the job will run.
+So, after fixing a script, cancel any pending or running jobs that use it,
+and submit them again.
+
+(But input files are only read when the job runs,
+so changing those _does_ affect pending jobs.)
+---->
+
+</details>
+
 <hr style="height:1pt; visibility:hidden;" />
 
 :::exercise
@@ -906,6 +931,7 @@ Here are some additional job management commands and options:
   scontrol show job <job-id>
   ```
   ```bash-out
+  JobId=56604070 JobName=sleep.sh
   UserId=jelmer(33227) GroupId=PAS0471(3773) MCS_label=N/A
   Priority=200005206 Nice=0 Account=PAS3493 QOS=pitzer-default
   JobState=RUNNING Reason=None Dependency=(null)

@@ -62,8 +62,8 @@ which means that certain amounts of memory cannot be requested on any node
 (see [this OSC page](https://www.osc.edu/resources/technical_support/supercomputers/pitzer/batch_limit_rules)
 for details on Pitzer nodes).
 
-To request that a batch job runs on a non-default node type,
-you should use the `--partition` option. For example:
+To make sure that a batch job runs on one of these node types,
+you can also request it explicitly with the `--partition` option. For example:
 
 ```{.bash .file filename="myscript.sh (excerpt)"}
 #!/bin/bash
@@ -120,7 +120,7 @@ inside a shell script that you submit as a batch job, such as:
 | `$SLURM_CPUS_PER_TASK` | `--cpus-per-task`    | Number of reserved cores<br>(only set if you used `--cpus-per-task`) |
 | `$SLURM_MEM_PER_NODE`  | `--mem`              | Amount of reserved memory in MB<br>(only set if you used `--mem`)    |
 | `$SLURM_SUBMIT_DIR`    | ---                   | Path to the dir from which the job was submitted                  |
-| `$TMPDIR`              | ---                   | Path to fast temporary storage on the compute node |
+| `$TMPDIR`              | ---                   | Path to fast temporary storage on the compute node<br>(set by OSC, not Slurm) |
 
 : {.striped .hover tbl-colwidths="[24,22,54]"}
 
@@ -155,11 +155,13 @@ in one place.
 #### These variables don't always exist
 As noted in the table, some of these variables are only set if you used the corresponding option:
 for example, `$SLURM_CPUS_PER_TASK` doesn't exist if you didn't use `--cpus-per-task`.
-And none of them exist when you run a script with `bash` instead of `sbatch`.
-In both cases, `set -u` will make your script stop with an "unbound variable" error.
+And when you run a script with `bash` instead of `sbatch`, they either don't exist,
+or, in a VS Code terminal at OSC, contain the values of your VS Code job
+(which is a Slurm job too!).
+When a variable doesn't exist, `set -u` will make your script stop with an "unbound variable" error.
 
 To avoid this, provide a default value using
-[parameter expansion](../week07/w7b_scripts2.qmd#parameter-expansion):
+[parameter expansion](shell-scripting.qmd#parameter-expansion-to-provide-default-values):
 
 ```{.bash .file filename="star.sh (excerpt)"}
 #SBATCH --cpus-per-task=8
@@ -219,7 +221,7 @@ To do this, add the following lines to the very end of your script:
 
 ```{.bash .file filename="scripts/fastqc.sh (excerpt)"}
 # Copy the Slurm log file to the output dir (only when running as a batch job)
-if [[ -n "${SLURM_JOB_ID:-}" ]]; then
+if [[ "$0" == */slurm_script ]]; then
     log_file=$(scontrol show job "$SLURM_JOB_ID" | grep "StdOut=" | cut -d "=" -f 2)
     mkdir -p "$outdir"/logs
     cp "$log_file" "$outdir"/logs/
@@ -228,11 +230,14 @@ fi
 
 How this works:
 
-- `[[ -n "${SLURM_JOB_ID:-}" ]]` checks whether the script runs as a batch job:
-  `-n` tests whether a variable is non-empty,
-  and the `:-` [parameter expansion](../week07/w7b_scripts2.qmd#parameter-expansion)
-  avoids an "unbound variable" error when you run the script with `bash`
-  (see also [this section on `if` statements](shell-scripting.qmd#conditionals)).
+- `[[ "$0" == */slurm_script ]]` checks whether the script runs as a batch job.
+  `$0` contains the path of the script that is running,
+  and in a batch job, Slurm runs a copy of your script called `slurm_script`
+  (which is why error messages in Slurm log files mention a path like
+  `/var/spool/slurmd/job37615711/slurm_script`).
+  (Checking whether `$SLURM_JOB_ID` exists wouldn't work:
+  it is also set in your VS Code terminal, because your VS Code session is a Slurm job.)
+  See also [this section on `if` statements](shell-scripting.qmd#conditionals).
 - `scontrol show job` prints information about a job,
   including a line `StdOut=<path>` with the path to its Slurm log file.
   `grep` selects that line, and `cut` extracts the part after the `=`.
@@ -256,32 +261,44 @@ Two things to note:
 Interactive shell jobs will grant you interactive shell access on a compute node.
 When you use the VS Code app in OnDemand,
 your terminal already runs in an interactive job on a compute node!
+And if you need more cores for that job, you can request them in the OnDemand form.
 
-However, that job only has 1 core and 4 GB of memory,
-and there is no way of changing this.
-If you want to interactively run commands that need more resources
-(for example, to try out a job that needs substantial resources, before putting it in a script),
-you can start an interactive shell job with Slurm's `srun` command[^1].
-Add `--pty /bin/bash` to get an interactive Bash shell.
-In the example below, we ask for 5 cores for 2 hours:
+But when you work in a plain shell on a login node instead,
+for example when you [connect to OSC with SSH](ssh.qmd) from your own computer,
+you need to start an interactive shell job yourself
+before you can run anything substantial.
+You can do so with Slurm's `srun` command[^1],
+to which you add `--pty /bin/bash` to get an interactive Bash shell.
 
 [^1]: Other options: `salloc` works almost identically to `srun`,
       whereas `sinteractive` is an OSC convenience wrapper but with more limited options.
+
+To try this, open a login-node shell in OnDemand via
+`Clusters` > `Pitzer Shell Access`.
+Then, request an interactive shell job, e.g. with 5 cores for 2 hours:
 
 ```bash
 srun --account=PAS3493 --cpus-per-task=5 --time=120 --pty /bin/bash
 ```
 ```bash-out
-srun: job 12431932 queued and waiting for resources
-srun: job 12431932 has been allocated resources
-[jelmer@p0133 PAS3493]$
+srun: job 56706630 queued and waiting for resources
+srun: job 56706630 has been allocated resources
+[jelmer@p0133 ~]$
 ```
 
 First, some Slurm scheduling info was printed to screen:
 initially, the job was queued, and then it was "allocated resources".
 Then, you got a new prompt, which shows the name of the compute node your job runs on
-(here, `p0133`).
+(here, `p0133`, whereas before, the prompt showed a login node, like `pitzer-login01`).
 Any commands you now type will run in this job, with its 5 cores.
+
+::: {.callout-warning appearance="simple"}
+Don't run `srun` from a VS Code terminal at OSC.
+Your VS Code session is a Slurm job itself,
+so `srun` will try to run _inside_ that job instead of starting a new one.
+If you ask for more cores than your VS Code job has,
+it will keep printing "_step creation temporarily disabled_" (press <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop it).
+:::
 
 When you're done, type `exit` to end the job and go back to your original shell.
 Otherwise, the job will keep running (and using your project's compute hours)

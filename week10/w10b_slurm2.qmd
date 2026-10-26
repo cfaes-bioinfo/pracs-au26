@@ -70,84 +70,44 @@ using the slides below
 
 <iframe class="slides-embed" src="w10b_slurm-options.html" title="Common Slurm options (slides)"></iframe>
 
-After that, you'll submit a job that exceeds its time limit.
+After that, you'll think about what happens when a job exceeds its time limit.
 This section also has a reference table of these and some additional options,
 and a few more notes on cores, memory, and Slurm log files.
 
 ### Exceed the time limit
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 3: Exceed the time limit
+#### {{< fa user-edit >}} Exercise 2: Exceed the time limit
 
-1. Modify your `scripts/sleep.sh` script from the previous lecture:
-   - Reserve only 1 minute for the job
-   - Make the script run for longer than that,
-     by increasing the `sleep` time to at least 100 seconds
+Say you modify your `scripts/sleep.sh` script from the previous lecture
+so that it reserves only 1 minute (`#SBATCH --time=1`),
+but sleeps for 100 seconds, and then you submit it.
 
-   <!----
-   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+How will the outcome differ from the job you canceled in the
+[previous lecture's Exercise 3](w10a_slurm1.qmd#canceling-jobs)?
 
-   ```{.file .bash filename="scripts/sleep.sh"}
-   #!/bin/bash
-   #SBATCH --account=PAS3493
-   #SBATCH --time=1
-   set -euo pipefail
+<!----
+<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
-   echo "I will sleep for 100 seconds" > sleep.txt
+Hardly at all: like the canceled job, this job is killed during `sleep`,
+so `sleep.txt` is produced, but the "_I'm awake!_" line is not.
+The only differences are that Slurm kills the job after a little over a minute,
+and that its error message in the Slurm log file mentions the time limit:
 
-   sleep 100s
+```bash-out-solo
+slurmstepd: error: *** JOB 23641567 ON p0133
+CANCELLED AT 2026-10-28T14:06:24 DUE TO TIME LIMIT ***
+```
 
-   echo "I'm awake! Successfully finished script sleep.sh"
-   ```
+This is why a final "_Successfully finished_" line in your scripts is so useful:
+if it's missing from the Slurm log file, you know the script didn't finish,
+no matter what stopped it.
 
-   </details>
-   ---->
+</details>
+---->
 
-When you exceed the time limit, an error message will be printed.
-**Before submitting the script**, predict the following:
-
-2. Where will the error message be printed?
-
-   a. To the screen
-   b. In the Slurm log file
-   c. In `sleep.txt`
-
-   <!----
-   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
-
-   **(b)** In the Slurm log file, for example:
-
-   ```bash-out-solo
-   slurmstepd: error: *** JOB 23641567 ON p0133
-   CANCELLED AT 2026-10-28T14:06:24 DUE TO TIME LIMIT ***
-   ```
-
-   </details>
-   ---->
-
-3. Will `sleep.txt` and the "_I'm awake!_" line still be produced?
-
-   a. Both will be produced
-   b. `sleep.txt` will be produced, but the "_I'm awake!_" line will not
-   c. The "_I'm awake!_" line will be produced, but `sleep.txt` will not
-   d. Neither will be produced
-
-   <!----
-   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
-
-   **(b)** `sleep.txt` is created before the `sleep` command runs,
-   but the job is killed during `sleep`.
-   This is why a final "_Successfully finished_" line in your scripts is so useful:
-   if it's missing from the Slurm log file, you know the script didn't finish.
-
-   </details>
-   ---->
-
-4. Submit the script.
-   The job will be killed after a little over a minute.
-   Once the job is no longer in the `squeue` output,
-   check whether your predictions were correct.
-   Then, **remove** the generated files.
+If you want to see this for yourself, try it after class,
+and remove the generated files afterwards.
 :::
 
 ### `sbatch` options overview
@@ -161,7 +121,7 @@ Here are the main options from the slides:
 | Nr of cores                                      | `--cpus-per-task=1`                            | `-c`         |       1        |
 | Memory limit per node                            | `--mem=20G`                                    | &mdash;          |  4G per core   |
 | Log output file                                  | `--output=slurm-fastqc-%j.out`                 | `-o`         | `slurm-%j.out` |
-| Get email when job fails<br>/ ends or fails      | `--mail-type=FAIL` <br> `--mail-type=END,FAIL` | &mdash;           |                |
+| Get email when job fails<br>/ ends or fails      | `--mail-type=FAIL` <br> `--mail-type=END,FAIL` | &mdash;           |  *(none)*      |
 
 : {.striped .hover tbl-colwidths="[25,40,15,20]"}
 
@@ -211,6 +171,9 @@ and "Core Dumped", as well as actual "dumped cores" in your working dir
 
 If you see these or otherwise suspect that your job ran out of memory,
 resubmit it with an increased requested amount of memory.
+To check, you can also use `seff` to see a finished job's peak memory use,
+or `sacct`, which lists jobs that ran out of memory as `OUT_OF_MEMORY`
+(see the [optional self-study page](../bonus/slurm.qmd#checking-your-jobs-resource-usage)).
 :::
 
 ## Batch job examples with FastQC
@@ -243,7 +206,7 @@ of cores, but any auto-detection tends to be inappropriate at OSC^[
   rather than the number we reserved.].
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 4: Add Slurm options to the FastQC script
+#### {{< fa user-edit >}} Exercise 3: Add Slurm options to the FastQC script
 
 1. Add `#SBATCH` lines to the top of `scripts/fastqc.sh`, so that:
    - The OSC project `PAS3493` will be billed
@@ -349,7 +312,7 @@ don't forget to look at the output files to confirm this:
   (in the case of FastQC, an HTML and a Zip file).
   Therefore, always check the output dir for the presence of such output files.
 
-Check that the Slurm log file ends with the "marker" line that indicates a successful run:
+Check that the **Slurm log file** ends with the "marker" line that indicates a successful run:
 
 ```bash
 # (You can also Tab-complete your filename instead)
@@ -390,7 +353,7 @@ apptainer --quiet exec "$CONTAINER" fastqc --outdir "$outdir" "$fastq"
 
 :::
 
-Finally, check for the presence of the main FastQC output files:
+Finally, check for the presence of the main FastQC **output files**:
 
 ```bash
 ls -lh results/fastqc
@@ -401,7 +364,7 @@ total 1.1M
 -rw-rw----+ 1 jelmer PAS0471 364K Oct 28 14:31 S63_R1_fastqc.zip
 ```
 
-It can also be a good idea to pay attention to the sizes of output files,
+It can also be a good idea to pay attention to the **file sizes** of outputs,
 as shown by `ls -lh`.
 Especially if you're not going to open the output files right away,
 this can be yet another clue as to whether the program succeeded.
@@ -586,6 +549,20 @@ Here's what I would generally recommend:
    # [...output truncated...]
    ```
 
+   With 44 files, it's easy to miss a failed job when scrolling through this output.
+   Instead, you can use `grep -c`,
+   which prints a count for each file when you give it multiple files.
+   Any file with a count of `0` belongs to a job that didn't finish successfully:
+
+   ```bash
+   grep -c "Successfully finished" slurm-fastqc-*.out
+   ```
+   ```bash-out
+   slurm-fastqc-37615718.out:1
+   slurm-fastqc-37615719.out:1
+   # [...output truncated...]
+   ```
+
 3. Check for the presence of the FastQC output files:
 
    ```bash
@@ -605,35 +582,7 @@ Here's what I would generally recommend:
    # [...output truncated...]
    ```
 
-::: exercise
-#### {{< fa user-edit >}} Self-study exercise 2: Check all jobs at once
-
-Scrolling through the `tail` output of 44 files is tedious, and it's easy to miss a failed job.
-Using a command you learned in week 4, how could you check, in one go:
-
-1. Which Slurm log files have the "_Successfully finished_" line?
-
-   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
-
-   `grep -c` prints a count for each file when you give it multiple files,
-   so any file with a count of `0` belongs to a job that didn't finish:
-
-   ```bash
-   grep -c "Successfully finished" slurm-fastqc-*.out
-   ```
-   ```bash-out
-   slurm-fastqc-37615718.out:1
-   slurm-fastqc-37615719.out:1
-   # [...output truncated...]
-   ```
-
-   </details>
-
-2. Whether FastQC produced an HTML file for each of the 44 FASTQ files?
-
-   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
-
-   Count the HTML files, and check that this is 44:
+   And check that there is an HTML file for each of the 44 FASTQ files:
 
    ```bash
    ls results/fastqc/*html | wc -l
@@ -641,10 +590,6 @@ Using a command you learned in week 4, how could you check, in one go:
    ```bash-out
    44
    ```
-
-   </details>
-
-:::
 
 If everything looks good,
 and you are convinced that all jobs have finished successfully,
@@ -678,10 +623,10 @@ To recap, here is an overview of basic strategies to monitor your batch jobs:
   - For at least one of the jobs,
     carefully read the full Slurm log file, and check other output files.
   - Check that no jobs have failed: via email when using `--mail-type=FAIL`,
-    and/or by checking the `tail` of each log for messages like
-    "Successfully finished script".
-  - Check that you have the expected number of output files and that no files
-    have size zero (run `ls -lh`).
+    and/or by checking each log for messages like "Successfully finished script"
+    (run `grep -c` on all logs at once).
+  - Check that you have the expected number of output files (run `ls | wc -l`)
+    and that no files have size zero (run `ls -lh`).
 
 ::: {.callout-tip collapse="true"}
 #### Job monitoring tip: See output added to the Slurm log file in real time _(Click to expand)_
@@ -830,8 +775,8 @@ and is submitted as one or more batch jobs:
 
 ```bash
 fastq_dir=data/fastq
-ref_assembly=results/01_refseqs/assembly.fna
-ref_transcripts=results/01_refseqs/transcripts.fna
+ref_assembly=data/ref/assembly.fna
+ref_transcripts=data/ref/transcripts.fna
 ```
 
 ## Step 1: Read QC with FastQC
