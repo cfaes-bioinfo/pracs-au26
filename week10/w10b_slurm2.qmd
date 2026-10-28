@@ -70,45 +70,9 @@ using the slides below
 
 <iframe class="slides-embed" data-external="1" src="w10b_slurm-options.html" title="Common Slurm options (slides)"></iframe>
 
-After that, you'll think about what happens when a job exceeds its time limit.
+After that, there's a self-study exercise on what happens when a job exceeds its time limit.
 This section also has a reference table of these and some additional options,
 and a few more notes on cores, memory, and Slurm log files.
-
-### Exceed the time limit
-
-::: exercise
-#### {{< fa user-edit >}} Exercise 2: Exceed the time limit
-
-Say you modify your `scripts/sleep.sh` script from the previous lecture
-so that it reserves only 1 minute (`#SBATCH --time=1`),
-but sleeps for 100 seconds, and then you submit it.
-
-How will the outcome differ from the job you canceled in the
-[previous lecture's Exercise 3](w10a_slurm1.qmd#canceling-jobs)?
-
-<!----
-<details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
-
-Hardly at all: like the canceled job, this job is killed during `sleep`,
-so `sleep.txt` is produced, but the "_I'm awake!_" line is not.
-The only differences are that Slurm kills the job after a little over a minute,
-and that its error message in the Slurm log file mentions the time limit:
-
-```bash-out-solo
-slurmstepd: error: *** JOB 23641567 ON p0133
-CANCELLED AT 2026-10-28T14:06:24 DUE TO TIME LIMIT ***
-```
-
-This is why a final "_Successfully finished_" line in your scripts is so useful:
-if it's missing from the Slurm log file, you know the script didn't finish,
-no matter what stopped it.
-
-</details>
----->
-
-If you want to see this for yourself, try it after class,
-and remove the generated files afterwards.
-:::
 
 ### `sbatch` options overview
 
@@ -163,7 +127,7 @@ in practice, that also gives you `n` cores that a program can use.
 ::: {.callout-warning collapse="true"}
 #### It is not always clear what happened when your job ran out of memory _(Click to expand)_
 Whereas you get a very clear Slurm error message when you hit the time limit
-(as seen in Exercise 3), hitting the memory limit can result in a variety of errors.
+(as seen in the self-study exercise above), hitting the memory limit can result in a variety of errors.
 
 But look for keywords such as "Killed", "Out of Memory" / "OOM",
 and "Core Dumped", as well as actual "dumped cores" in your working dir
@@ -174,6 +138,86 @@ resubmit it with an increased requested amount of memory.
 To check, you can also use `seff` to see a finished job's peak memory use,
 or `sacct`, which lists jobs that ran out of memory as `OUT_OF_MEMORY`
 (see the [optional self-study page](../bonus/slurm.qmd#checking-your-jobs-resource-usage)).
+:::
+
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise: Exceed the time limit
+
+1. Modify your `scripts/sleep.sh` script from the previous lecture
+   so that it reserves only 1 minute (`#SBATCH --time=1`),
+   but sleeps for 100 seconds (`sleep 100s`).
+   Then, submit it, and once it no longer shows up in `squeue`,
+   check which output files were created and what is in them.
+
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
+   The modified script:
+
+   ```{.bash .file filename="scripts/sleep.sh"}
+   #!/bin/bash
+   #SBATCH --account=PAS3493
+   #SBATCH --time=1
+   set -euo pipefail
+
+   echo "I will sleep for 100 seconds" > sleep.txt
+
+   sleep 100s
+
+   echo "I'm awake! Successfully finished script sleep.sh"
+   ```
+
+   Submit it:
+
+   ```bash
+   sbatch scripts/sleep.sh
+   ```
+   ```bash-out
+   Submitted batch job 23641567
+   ```
+
+   After a little over a minute, the job is gone from the `squeue` output.
+   Both `sleep.txt` and a Slurm log file were created:
+
+   ```bash
+   cat sleep.txt
+   ```
+   ```bash-out
+   I will sleep for 100 seconds
+   ```
+
+   ```bash
+   cat slurm-23641567.out
+   ```
+   ```bash-out
+   slurmstepd: error: *** JOB 23641567 ON p0133 CANCELLED AT 2026-10-28T14:06:24 DUE TO TIME LIMIT ***
+   ```
+
+   The "_I'm awake!_" line is missing,
+   because Slurm killed the job during `sleep`.
+
+   </details>
+
+2. How does this outcome compare to that of the job you canceled in the
+   [previous lecture's Exercise 3](w10a_slurm1.qmd#canceling-jobs)?
+
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
+   Hardly at all: in both cases, the job was killed during `sleep`,
+   so `sleep.txt` was produced, but the "_I'm awake!_" line was not.
+   The only differences are that this time, Slurm killed the job instead of you,
+   and that the error message in the Slurm log file mentions the time limit.
+
+   This is why a final "_Successfully finished_" line in your scripts is so useful:
+   if it's missing from the Slurm log file, you know the script didn't finish,
+   no matter what stopped it.
+
+   </details>
+
+Finally, remove the generated files:
+
+```bash
+rm slurm* sleep.txt
+```
 :::
 
 ## Batch job examples with FastQC
@@ -206,7 +250,7 @@ of cores, but any auto-detection tends to be inappropriate at OSC^[
   rather than the number we reserved.].
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 3: Add Slurm options to the FastQC script
+#### {{< fa user-edit >}} Exercise 2: Add Slurm options to the FastQC script
 
 1. Add `#SBATCH` lines to the top of `scripts/fastqc.sh`, so that:
    - The OSC project `PAS3493` will be billed
@@ -381,36 +425,15 @@ rm -r results/fastqc slurm-fastqc*
 ```
 
 ::: exercise
-#### {{< fa user-edit >}} Self-study exercise 1: Trigger a job failure email
+#### {{< fa user-edit >}} Exercise 3: Trigger a job failure email
 
-1. Before trying it, predict what will happen if you submit `scripts/fastqc.sh`
-   as a batch job **without any arguments**:
-   - Will the `sbatch` command itself give you an error?
-   - What error message will end up in the Slurm log file?
-   - Will a `results/fastqc` dir be created?
+1. Submit `scripts/fastqc.sh` as a batch job without any arguments.
+   Look at the Slurm file to check that the script failed.
 
-   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+2. Check your email for a Slurm email about the job failure.
 
-   - No: `sbatch` doesn't look at your script's arguments, so it will simply print
-     `Submitted batch job <job-id>`.
-     The error only happens later, when the script runs inside the job.
-
-   - Because of `set -u`, the script will stop at the line `fastq="$1"`,
-     and the Slurm log file will contain an error like
-     `/var/spool/slurmd/job37615711/slurm_script: line 14: $1: unbound variable`.
-     (Slurm runs a copy of your script, which explains that odd path,
-     and the line number depends on how many `#SBATCH` lines your script has.)
-
-   - No: the script exits before it gets to the `mkdir -p` line.
-
-   </details>
-
-2. Submit the script without arguments, and check your predictions.
-   Then, wait for the failure email to arrive.
-   (If it doesn't arrive within a few minutes,
-   check the queue to make sure your job isn't still pending.)
-
-3. Optional: if you prefer, set a "Rule" in Outlook so the Slurm emails will not
+3. *Optional* (for later):
+   if you prefer, set a "Rule" in Outlook so the Slurm emails will not
    go to your Inbox but to a specific folder for such emails.
 
 :::

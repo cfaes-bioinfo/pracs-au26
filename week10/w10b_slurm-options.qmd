@@ -41,27 +41,30 @@ format:
 
 ## Common `sbatch` options
 
-We'll go through the most commonly used `sbatch` options\
-(except `--account`, which you saw in the previous lecture).
-
-<hr style="height:1pt; visibility:hidden;" />
-
-. . .
+We'll go through the most commonly used `sbatch` options
+(except `--account`; previous lecture).
 
 Recall that any `sbatch` option can be:
 
 - Passed on the command line: `sbatch --account=PAS3493 myscript.sh`
-- Added at the top of the script you're submitting: `#SBATCH --account=PAS3493`
+- Added at the top of the script you're submitting:
+
+  ```{.bash .file filename="myscript.sh (excerpt)" code-line-numbers="false"}
+  #!/bin/bash
+  #SBATCH --account=PAS3493
+  ```
 
 <hr style="height:1pt; visibility:hidden;" />
 
 . . .
 
-Also note that:
+::: callout-note
+#### Precedence and long vs. short format
 
 - If an option is specified in both places, the command-line option takes **precedence**.
 - Many options have a long (e.g. `--account=`) and a short format (e.g. `-A`).\
   For clarity, we'll stick to **long-format options** in this material.
+:::
 
 ## Time limits: introduction
 
@@ -82,7 +85,7 @@ Also note that:
 This is simply the amount of time that passes on the (wall) clock.
 In contrast, "**core hours**" are the wall time multiplied by the number of cores.
 
-For example, a job that runs for 2 hours on 8 cores has a wall time of 2 hours
+A job that runs for 2 hours on 8 cores has a wall time of 2 hours
 and uses 16 core hours.
 :::
 
@@ -100,8 +103,8 @@ and uses 16 core hours.
 - It's often not clear how long a job will take,
   so it's common to request (substantially) **more time** than your best guess.
 
-- While jobs that request more time are likely to **wait longer** before they start,
-  OSC tends to have short queueing times.
+- But keep in mind that jobs requesting more time are likely to **wait longer**
+  before they start (fortunately, OSC tends to have short queueing times).
 
 :::
 
@@ -256,11 +259,11 @@ Wed Oct 28 11:44:12 EDT 2026
 
 ## Exercise 1: Adjusting cores and memory
 
-Which `#SBATCH` lines will you use to run a bioinformatics program in these scenarios?
+Which `#SBATCH` lines should you use to run a bioinformatics program in these scenarios?
 
 ::: callout-quiz
 ::: callout-note
-#### 2. Run program with `--cores 12`, and it needs 60 GB of memory
+#### 2. Run a program with `--cores 12`, while it needs 60 GB of memory
 
 A) `--cpus-per-task=12`
 B) `--cpus-per-task=12` and `--mem=60G`
@@ -289,7 +292,7 @@ and tell the program to use 12 or all 15 of them.
 
 ::: callout-quiz
 ::: callout-note
-#### 3. Run program with `--threads 8`, and it needs 25 GB of memory
+#### 3. Run a program with `--threads 8`, while it needs 25 GB of memory
 
 A) `--cpus-per-task=8`
 B) `--cpus-per-task=8` and `--mem=25G`
@@ -313,28 +316,27 @@ but there is no point in "downgrading" the amount of memory.
 
 ## Slurm log file names with `--output`
 
-- By default, the Slurm log file is created in the dir from which you submitted the script,
+- By default, the Slurm log file is created in the dir from which you submitted the script,\
   and is called `slurm-<job-id>.out`, e.g. `slurm-12431942.out`.
 
 . . .
 
-- It can be useful to include the purpose of the script in the Slurm log file name,
+- It can be useful to include the purpose of the script in the Slurm log file name,\
   typically by including the **name of the program** that the script runs.
   For example:
 
-```{.bash .file filename="fastqc.sh (excerpt)" code-line-numbers="false"}
-#!/bin/bash
-#SBATCH --output=slurm-fastqc.out
-```
+  ```{.bash .file filename="fastqc.sh (excerpt)" code-line-numbers="false"}
+  #!/bin/bash
+  #SBATCH --output=slurm-fastqc.out
+  ```
 
-## Quiz: Slurm log file names
+. . .
 
 ::: callout-quiz
 ::: callout-note
-#### What's the problem with the Slurm log file name in this case?
+#### But what can be a problem with the above Slurm log file name?
 
-Your `fastqc.sh` script uses `#SBATCH --output=slurm-fastqc.out`,
-and you submit a batch job for each FASTQ file with a loop:
+You submit a batch job for each FASTQ file with a loop:
 
 ```{.bash code-line-numbers="false"}
 for fastq_file in ../garrigos/fastq/*fastq.gz; do
@@ -362,22 +364,32 @@ or a jumble of output from several jobs.
 ## Slurm log file names: include the job ID
 
 - You'll want to **keep the job ID** in the log file name,
-  so log files from different jobs don't overwrite each other.
-  Since you won't know the job ID in advance, use **`%j`**, which represents the job ID:
+  so log files from different jobs differ and don't overwrite each other.
 
-```{.bash .file filename="myscript.sh (excerpt)" code-line-numbers="false"}
-#!/bin/bash
-#SBATCH --output=slurm-fastqc-%j.out
-```
+- But how, since you won't know the job ID in advance?
+  The **`%j`** placeholder represents the job ID:
 
-<br>
+  ```{.bash .file filename="myscript.sh (excerpt)" code-line-numbers="false"}
+  #!/bin/bash
+  #SBATCH --output=slurm-fastqc-%j.out
+  ```
+
+- This produces files like `slurm-fastqc-56605102.out` and `slurm-fastqc-56605103.out`.
+
+<hr style="height:1pt; visibility:hidden;" />
 
 ::: {.callout-warning .fragment}
-#### I prefer not to include a dir in `--output`
-For one, that dir must already exist when you submit the job:
-otherwise, the job fails right away, **without even producing a log file**.
+#### Why not specify a directory for the log file?
+You could use `--output=results/fastqc/slurm-fastqc-%j.out` to put the log files in a subdir.\
+This may seem convenient, but I personally don't recommend it.
+
+For example, that dir must already exist when you submit the job,
+and it becomes easy to overlook the log files if you submit many jobs at once.
 See the [optional self-study page](../bonus/slurm.qmd#copying-the-slurm-log-file-to-the-output-dir)
-for additional considerations.
+for more considerations and options.
+:::
+
+::: footer
 :::
 
 ## Notification emails with `--mail-type`
