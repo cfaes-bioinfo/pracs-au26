@@ -4473,7 +4473,7 @@ font-family: inherit;
     <div>
     <div class="quarto-title-meta-heading">Page last modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">October 28, 2026</p>
+      <p class="date-modified">October 29, 2026</p>
     </div>
   </div>
     
@@ -4722,18 +4722,20 @@ font-family: inherit;
 <li>You’ll get an email only if the job fails</li>
 <li>The Slurm log file will be named <code>slurm-fastqc-&lt;job-id&gt;.out</code></li>
 </ul>
-<!----
-<details><summary> _Click for the solution_</summary>
-
-```{.file .bash filename="scripts/fastqc.sh (excerpt)"}
-#!/bin/bash
-#SBATCH --account=PAS3493
-#SBATCH --mail-type=FAIL
-#SBATCH --output=slurm-fastqc-%j.out
-```
-
-</details>
-----></li>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> <em>Click for the solution</em></p>
+</summary>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>scripts/fastqc.sh (excerpt)</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9" data-filename="scripts/fastqc.sh (excerpt)"><pre class="sourceCode default file bash code-with-copy"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>#!/bin/bash</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>#SBATCH --account=PAS3493</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>#SBATCH --mail-type=FAIL</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>#SBATCH --output=slurm-fastqc-%j.out</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</details></li>
 <li><p>Should you also reserve multiple cores for these FastQC batch jobs? Here is the description of FastQC’s option for multi-threading, from its help info:</p>
 <pre class="bash-out-solo"><code>-t --threads    Specifies the number of files which can be processed
                 simultaneously.  Each thread will be allocated 250MB of
@@ -4741,21 +4743,13 @@ font-family: inherit;
                 available memory will cope with, and not more than
                 6 threads on a 32 bit machine</code></pre>
 <p>Given that each of our batch jobs will process a single FASTQ file, would, say, 4 cores and <code>--threads 4</code> make each job faster?</p>
-<!----
-<details><summary> _Click for the solution_</summary>
-
-No: FastQC uses one thread per _file_,
-so with a single file per job, 3 of the 4 cores would sit idle ---
-while your project would still be billed for all 4.
-So, for this script, we'll stick to the default of 1 core.
-
-This is quite specific to FastQC:
-most programs, like TrimGalore (which you used in Graded Assignment 4),
-_can_ use multiple cores to process a single (pair of) file(s) faster.
-Always check what a program's "threads" or "cores" option actually does!
-
-</details>
-----></li>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> <em>Click for the solution</em></p>
+</summary>
+<p>No: FastQC uses one thread per <em>file</em>, so with a single file per job, 3 of the 4 cores would sit idle — while your project would still be billed for all 4. So, for this script, we’ll stick to the default of 1 core.</p>
+<p>This is quite specific to FastQC: most programs, like TrimGalore (which you used in Graded Assignment 4), <em>can</em> use multiple cores to process a single (pair of) file(s) faster. Always check what a program’s “threads” or “cores” option actually does!</p>
+</details></li>
 </ol>
 </section>
 </section>
@@ -4764,13 +4758,13 @@ Always check what a program's "threads" or "cores" option actually does!
 <section id="submit-the-batch-job" class="level4">
 <h4 class="anchored" data-anchor-id="submit-the-batch-job">Submit the batch job</h4>
 <p>Now, you’re ready to submit the script. Let’s test it for one sample first:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sbatch</span> scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sbatch</span> scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>Submitted batch job 37615710</code></pre>
 </section>
 <section id="monitor-the-batch-job" class="level4">
 <h4 class="anchored" data-anchor-id="monitor-the-batch-job">Monitor the batch job</h4>
 <p>Next, monitor your job by checking its status in the Slurm queue:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">squeue</span> <span class="at">-u</span> <span class="va">$USER</span> <span class="at">-l</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">squeue</span> <span class="at">-u</span> <span class="va">$USER</span> <span class="at">-l</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>Wed Oct 28 14:31:48 2026
              JOBID PARTITION     NAME     USER    STATE       TIME TIME_LIMI  NODES NODELIST(REASON)
           37615710   cpu-exp fastqc.s   jelmer  RUNNING       0:01   1:00:00      1 p0510</code></pre>
@@ -4788,8 +4782,8 @@ Always check what a program's "threads" or "cores" option actually does!
 <li><p><strong>The program’s main output files</strong>: As discussed, most bioinformatics tools don’t just print “logging” information that ends up in the Slurm log file, but will also have output files (in the case of FastQC, an HTML and a Zip file). Therefore, always check the output dir for the presence of such output files.</p></li>
 </ul>
 <p>Check that the <strong>Slurm log file</strong> ends with the “marker” line that indicates a successful run:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (You can also Tab-complete your filename instead)</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> slurm-fastqc<span class="pp">*</span>.out</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (You can also Tab-complete your filename instead)</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> slurm-fastqc<span class="pp">*</span>.out</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>Approx 90% complete for S63_R1.fastq.gz
 Approx 95% complete for S63_R1.fastq.gz
 Approx 100% complete for S63_R1.fastq.gz
@@ -4820,14 +4814,14 @@ Wed Oct 28 02:31:51 PM EDT 2026</code></pre>
 <div class="code-with-filename-file">
 <pre><strong>scripts/fastqc.sh (excerpt)</strong></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16" data-filename="scripts/fastqc.sh (excerpt)"><pre class="sourceCode default file bash code-with-copy"><code class="sourceCode default"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>apptainer --quiet exec &quot;$CONTAINER&quot; fastqc --outdir &quot;$outdir&quot; &quot;$fastq&quot;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17" data-filename="scripts/fastqc.sh (excerpt)"><pre class="sourceCode default file bash code-with-copy"><code class="sourceCode default"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>apptainer --quiet exec &quot;$CONTAINER&quot; fastqc --outdir &quot;$outdir&quot; &quot;$fastq&quot;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <hr style="height:1pt; visibility:hidden;">
 </div>
 </div>
 </div>
 <p>Finally, check for the presence of the main FastQC <strong>output files</strong>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-lh</span> results/fastqc</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-lh</span> results/fastqc</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>total 1.1M
 -rw-rw----+ 1 jelmer PAS0471 718K Oct 28 14:31 S63_R1_fastqc.html
 -rw-rw----+ 1 jelmer PAS0471 364K Oct 28 14:31 S63_R1_fastqc.zip</code></pre>
@@ -4836,7 +4830,7 @@ Wed Oct 28 02:31:51 PM EDT 2026</code></pre>
 <section id="clean-up" class="level4">
 <h4 class="anchored" data-anchor-id="clean-up">Clean up</h4>
 <p>Because this was a test-run, and you will now run a loop to analyze each sample, let’s remove the outputs:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-r</span> results/fastqc slurm-fastqc<span class="pp">*</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-r</span> results/fastqc slurm-fastqc<span class="pp">*</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-3-trigger-a-job-failure-email" class="level4 exercise">
 <h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-3-trigger-a-job-failure-email"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Exercise 3: Trigger a job failure email</h4>
@@ -4850,9 +4844,9 @@ Wed Oct 28 02:31:51 PM EDT 2026</code></pre>
 <section id="submit-a-job-for-each-file" class="level3" data-number="3.3">
 <h3 data-number="3.3" class="anchored" data-anchor-id="submit-a-job-for-each-file"><span class="header-section-number">3.3</span> Submit a job for each file</h3>
 <p>Next, we’ll loop over all FASTQ files to submit a job for each file. Though before you do so, let’s do a “mock-run”, just like you did in <a href="../GA/GA4.html">GA4</a> — if you preface the command with <code>echo</code>, the command will just be printed instead of executed. That can be really helpful with loops, e.g. to make sure you are looping over the files you want:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_file <span class="kw">in</span> ../garrigos/fastq/<span class="pp">*</span>fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> sbatch scripts/fastqc.sh <span class="st">&quot;</span><span class="va">$fastq_file</span><span class="st">&quot;</span> results/fastqc</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_file <span class="kw">in</span> ../garrigos/fastq/<span class="pp">*</span>fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> sbatch scripts/fastqc.sh <span class="st">&quot;</span><span class="va">$fastq_file</span><span class="st">&quot;</span> results/fastqc</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>sbatch scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc
 sbatch scripts/fastqc.sh ../garrigos/fastq/S63_R2.fastq.gz results/fastqc
 sbatch scripts/fastqc.sh ../garrigos/fastq/S64_R1.fastq.gz results/fastqc
@@ -4861,9 +4855,9 @@ sbatch scripts/fastqc.sh ../garrigos/fastq/S65_R1.fastq.gz results/fastqc
 sbatch scripts/fastqc.sh ../garrigos/fastq/S65_R2.fastq.gz results/fastqc
 # [...output truncated...]</code></pre>
 <p>That looked as expected, so now you can actually submit the batch jobs:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_file <span class="kw">in</span> ../garrigos/fastq/<span class="pp">*</span>fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/fastqc.sh <span class="st">&quot;</span><span class="va">$fastq_file</span><span class="st">&quot;</span> results/fastqc</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_file <span class="kw">in</span> ../garrigos/fastq/<span class="pp">*</span>fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/fastqc.sh <span class="st">&quot;</span><span class="va">$fastq_file</span><span class="st">&quot;</span> results/fastqc</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>Submitted batch job 37615718
 Submitted batch job 37615719
 Submitted batch job 37615720
@@ -4872,7 +4866,7 @@ Submitted batch job 37615722
 Submitted batch job 37615723
 # [...output truncated...]</code></pre>
 <p>All these jobs were submitted in very quick succession, and we got our prompt back. Check the queue:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="ex">squeue</span> <span class="at">-u</span> <span class="va">$USER</span> <span class="at">-l</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="ex">squeue</span> <span class="at">-u</span> <span class="va">$USER</span> <span class="at">-l</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>Wed Oct 28 14:42:01 2026
              JOBID PARTITION     NAME     USER    STATE       TIME TIME_LIMI  NODES NODELIST(REASON)
           37615718   cpu-exp fastqc.s   jelmer  RUNNING       0:03   1:00:00      1 p0840
@@ -4885,7 +4879,7 @@ Submitted batch job 37615723
           37615725   cpu-exp fastqc.s   jelmer  RUNNING       0:03   1:00:00      1 p0840
 # [...output truncated...]</code></pre>
 <p>Nice! At least in this case, all jobs started running simultaneously right away! Once all jobs have finished (are no longer listed in <code>squeue</code> output), you should have many Slurm log files:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code><span class="ls-blue">results</span>                    slurm-fastqc-37615724.out  slurm-fastqc-37615732.out  slurm-fastqc-37615740.out  slurm-fastqc-37615748.out  slurm-fastqc-37615756.out
 <span class="ls-blue">scripts</span>                    slurm-fastqc-37615725.out  slurm-fastqc-37615733.out  slurm-fastqc-37615741.out  slurm-fastqc-37615749.out  slurm-fastqc-37615757.out
 slurm-fastqc-37615718.out  slurm-fastqc-37615726.out  slurm-fastqc-37615734.out  slurm-fastqc-37615742.out  slurm-fastqc-37615750.out  slurm-fastqc-37615758.out
@@ -4897,8 +4891,8 @@ slurm-fastqc-37615723.out  slurm-fastqc-37615731.out  slurm-fastqc-37615739.out 
 <p>You now arguably have too many Slurm log files to go through, so what to do next? Here’s what I would generally recommend:</p>
 <ol type="1">
 <li><p>Take a close look at (at least) one Slurm log file:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">less</span> slurm-fastqc-<span class="pp">*</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="co"># [output not shown]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">less</span> slurm-fastqc-<span class="pp">*</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co"># [output not shown]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -4913,7 +4907,7 @@ slurm-fastqc-37615723.out  slurm-fastqc-37615731.out  slurm-fastqc-37615739.out 
 </div>
 </div></li>
 <li><p>Check the last few lines of all of them:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> slurm-fastqc-<span class="pp">*</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> slurm-fastqc-<span class="pp">*</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>==&gt; slurm-fastqc-37615718.out &lt;==
 Approx 85% complete for S63_R1.fastq.gz
 Approx 90% complete for S63_R1.fastq.gz
@@ -4944,12 +4938,12 @@ Wed Oct 28 02:42:13 PM EDT 2026
 
 # [...output truncated...]</code></pre>
 <p>With 44 files, it’s easy to miss a failed job when scrolling through this output. Instead, you can use <code>grep -c</code>, which prints a count for each file when you give it multiple files. Any file with a count of <code>0</code> belongs to a job that didn’t finish successfully:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-c</span> <span class="st">&quot;Successfully finished&quot;</span> slurm-fastqc-<span class="pp">*</span>.out</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-c</span> <span class="st">&quot;Successfully finished&quot;</span> slurm-fastqc-<span class="pp">*</span>.out</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>slurm-fastqc-37615718.out:1
 slurm-fastqc-37615719.out:1
 # [...output truncated...]</code></pre></li>
 <li><p>Check for the presence of the FastQC output files:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-lh</span> results/fastqc</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-lh</span> results/fastqc</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>total 48M
 -rw-rw----+ 1 jelmer PAS0471 718K Oct 28 14:42 S63_R1_fastqc.html
 -rw-rw----+ 1 jelmer PAS0471 364K Oct 28 14:42 S63_R1_fastqc.zip
@@ -4962,12 +4956,12 @@ slurm-fastqc-37615719.out:1
 -rw-rw----+ 1 jelmer PAS0471 713K Oct 28 14:42 S65_R1_fastqc.html
 # [...output truncated...]</code></pre>
 <p>And check that there is an HTML file for each of the 44 FASTQ files:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> results/fastqc/<span class="pp">*</span>html <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> results/fastqc/<span class="pp">*</span>html <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>44</code></pre></li>
 </ol>
 <p>If everything looks good, and you are convinced that all jobs have finished successfully, all that is left is to clean up the Slurm log files. In this case, it is useful to <strong>keep these files</strong> around somewhere, as they contain information about our runs (when, which files, what version, etc.). But we want to move them out of our working dir. It often makes sense to store them in a subdir of the program’s outdir, e.g.:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> results/fastqc/logs</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> slurm-fastqc-<span class="pp">*</span> results/fastqc/logs/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> results/fastqc/logs</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> slurm-fastqc-<span class="pp">*</span> results/fastqc/logs/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>To avoid moving log files by hand, you can also make your script put a copy of its Slurm log file in the output dir: see <a href="../bonus/slurm.html#copying-the-slurm-log-file-to-the-output-dir">this section</a> of the optional self-study page on Slurm.</p>
 </section>
 <section id="recap-making-sure-your-jobs-ran-successfully" class="level3" data-number="3.4">
@@ -4997,8 +4991,8 @@ slurm-fastqc-37615719.out:1
 <div class="callout-body-container callout-body">
 <p>Text will be added to the Slurm log file in real time as the running script (or the program run by the script) outputs it. However, the output printed by commands like <code>cat</code> and <code>less</code> is static and not updated in real-time.</p>
 <p>Therefore, if you find yourself opening/printing the contents of the Slurm log file again and again to keep track of the job’s progress, then instead <strong>use <code>tail -f</code></strong>, which will “follow” the file and <em>will</em> print new text as it’s added to the Slurm log file:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># See the last lines of the file, with new contents added in real time</span></span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-f</span> slurm-fastqc-37615717.out</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb38"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># See the last lines of the file, with new contents added in real time</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-f</span> slurm-fastqc-37615717.out</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><em>To exit the <code>tail -f</code> livestream, press <kbd>Ctrl</kbd>+<kbd>C</kbd>.</em></p>
 </div>
 </div>
@@ -5009,7 +5003,7 @@ slurm-fastqc-37615719.out:1
 <h2 data-number="4" class="anchored" data-anchor-id="update-your-claude.md"><span class="header-section-number">4</span> Update your <code>CLAUDE.md</code></h2>
 <p>GenAI can help with Slurm in many ways: writing <code>#SBATCH</code> lines, writing loops to submit many jobs, and especially figuring out why a job failed from its Slurm log file.</p>
 <p>The <code>CLAUDE.md</code> you made in week 9 tells Claude that you haven’t learned about batch jobs, and should therefore run programs with a single core. Copy it into your <code>week10</code> dir:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb38"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> ../week09/CLAUDE.md .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> ../week09/CLAUDE.md .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <details>
 <summary>
 <i class="fa-solid fa-info-circle" aria-label="info-circle"></i> Help! I don’t have the <code>CLAUDE.md</code> file
@@ -5019,52 +5013,52 @@ slurm-fastqc-37615719.out:1
 <div class="code-with-filename-file">
 <pre><strong>CLAUDE.md</strong></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39" data-filename="CLAUDE.md"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># Practice RNA-Seq project</span></span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>Practice project for the course PLNTPTH 5006, using RNA-Seq data from Garrigós et al.</span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>(2025) on Culex pipiens mosquitoes infected with two avian Plasmodium species.</span>
-<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a><span class="fu">## Data</span></span>
-<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>FASTQ files are in <span class="in">`../garrigos/fastq`</span>: paired-end, ~75-bp Illumina reads for</span>
-<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>  22 samples, subsampled to 500,000 reads per file</span>
-<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Sample metadata is in <span class="in">`../garrigos/meta/metadata.tsv`</span></span>
-<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Never modify, move, or delete anything in <span class="in">`../garrigos`</span></span>
-<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a><span class="fu">## Project structure</span></span>
-<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`scripts/`</span>: scripts</span>
-<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`results/`</span>: all output, in a separate subdir for each step (e.g. <span class="in">`results/fastqc`</span>)</span>
-<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a><span class="fu">## Computing infrastructure</span></span>
-<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>We work at the Ohio Supercomputer Center (OSC)</span>
-<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>I haven&#39;t yet learned how to submit batch jobs, so don&#39;t propose to use these</span>
-<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a>  (and therefore run programs with a single core/thread)</span>
-<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a><span class="fu">## Shell script conventions</span></span>
-<span id="cb39-25"><a href="#cb39-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-26"><a href="#cb39-26" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Start scripts with <span class="in">`#!/bin/bash`</span> and <span class="in">`set -euo pipefail`</span></span>
-<span id="cb39-27"><a href="#cb39-27" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Below that, add a comment block with the script&#39;s purpose and a usage line</span>
-<span id="cb39-28"><a href="#cb39-28" aria-hidden="true" tabindex="-1"></a>  (e.g. <span class="in">`# Usage: bash scripts/fastqc.sh &lt;FASTQ file&gt; &lt;output dir&gt;`</span>)</span>
-<span id="cb39-29"><a href="#cb39-29" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Copy arguments to descriptively named, lowercase variables (e.g. <span class="in">`fastq=&quot;$1&quot;`</span>);</span>
-<span id="cb39-30"><a href="#cb39-30" aria-hidden="true" tabindex="-1"></a>  use uppercase only for constants (e.g. <span class="in">`CONTAINER=...`</span>)</span>
-<span id="cb39-31"><a href="#cb39-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>At the start, report the script name, the date, and the inputs;</span>
-<span id="cb39-32"><a href="#cb39-32" aria-hidden="true" tabindex="-1"></a>  at the end, report the program version, a success message, and the date</span>
-<span id="cb39-33"><a href="#cb39-33" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Create output dirs with <span class="in">`mkdir -p`</span> before writing to them</span>
-<span id="cb39-34"><a href="#cb39-34" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Strike a balance between script functionality and robustness vs. simplicity and</span>
-<span id="cb39-35"><a href="#cb39-35" aria-hidden="true" tabindex="-1"></a>  readability: I am a shell beginner</span>
-<span id="cb39-36"><a href="#cb39-36" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>In script comments, briefly explain any non-obvious commands, options, and constructs</span>
-<span id="cb39-37"><a href="#cb39-37" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Programs that aren&#39;t available in the system path should be run with Apptainer</span>
-<span id="cb39-38"><a href="#cb39-38" aria-hidden="true" tabindex="-1"></a>  containers from Seqera Containers (<span class="in">`oras://`</span> URLs),</span>
-<span id="cb39-39"><a href="#cb39-39" aria-hidden="true" tabindex="-1"></a>  not with <span class="in">`module load`</span> or by installing them</span>
-<span id="cb39-40"><a href="#cb39-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-41"><a href="#cb39-41" aria-hidden="true" tabindex="-1"></a><span class="fu">## AI diary</span></span>
-<span id="cb39-42"><a href="#cb39-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-43"><a href="#cb39-43" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>After completing a task, add an entry at the bottom of <span class="in">`doc/ai/ai-diary.md`</span></span>
-<span id="cb39-44"><a href="#cb39-44" aria-hidden="true" tabindex="-1"></a>  with the date, what I asked for, which files you created or changed,</span>
-<span id="cb39-45"><a href="#cb39-45" aria-hidden="true" tabindex="-1"></a>  and any key findings and decisions (including alternatives that were rejected)</span>
-<span id="cb39-46"><a href="#cb39-46" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Keep entries short</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40" data-filename="CLAUDE.md"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># Practice RNA-Seq project</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>Practice project for the course PLNTPTH 5006, using RNA-Seq data from Garrigós et al.</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>(2025) on Culex pipiens mosquitoes infected with two avian Plasmodium species.</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a><span class="fu">## Data</span></span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>FASTQ files are in <span class="in">`../garrigos/fastq`</span>: paired-end, ~75-bp Illumina reads for</span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>  22 samples, subsampled to 500,000 reads per file</span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Sample metadata is in <span class="in">`../garrigos/meta/metadata.tsv`</span></span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Never modify, move, or delete anything in <span class="in">`../garrigos`</span></span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a><span class="fu">## Project structure</span></span>
+<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-15"><a href="#cb40-15" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`scripts/`</span>: scripts</span>
+<span id="cb40-16"><a href="#cb40-16" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`results/`</span>: all output, in a separate subdir for each step (e.g. <span class="in">`results/fastqc`</span>)</span>
+<span id="cb40-17"><a href="#cb40-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-18"><a href="#cb40-18" aria-hidden="true" tabindex="-1"></a><span class="fu">## Computing infrastructure</span></span>
+<span id="cb40-19"><a href="#cb40-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>We work at the Ohio Supercomputer Center (OSC)</span>
+<span id="cb40-21"><a href="#cb40-21" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>I haven&#39;t yet learned how to submit batch jobs, so don&#39;t propose to use these</span>
+<span id="cb40-22"><a href="#cb40-22" aria-hidden="true" tabindex="-1"></a>  (and therefore run programs with a single core/thread)</span>
+<span id="cb40-23"><a href="#cb40-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-24"><a href="#cb40-24" aria-hidden="true" tabindex="-1"></a><span class="fu">## Shell script conventions</span></span>
+<span id="cb40-25"><a href="#cb40-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-26"><a href="#cb40-26" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Start scripts with <span class="in">`#!/bin/bash`</span> and <span class="in">`set -euo pipefail`</span></span>
+<span id="cb40-27"><a href="#cb40-27" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Below that, add a comment block with the script&#39;s purpose and a usage line</span>
+<span id="cb40-28"><a href="#cb40-28" aria-hidden="true" tabindex="-1"></a>  (e.g. <span class="in">`# Usage: bash scripts/fastqc.sh &lt;FASTQ file&gt; &lt;output dir&gt;`</span>)</span>
+<span id="cb40-29"><a href="#cb40-29" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Copy arguments to descriptively named, lowercase variables (e.g. <span class="in">`fastq=&quot;$1&quot;`</span>);</span>
+<span id="cb40-30"><a href="#cb40-30" aria-hidden="true" tabindex="-1"></a>  use uppercase only for constants (e.g. <span class="in">`CONTAINER=...`</span>)</span>
+<span id="cb40-31"><a href="#cb40-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>At the start, report the script name, the date, and the inputs;</span>
+<span id="cb40-32"><a href="#cb40-32" aria-hidden="true" tabindex="-1"></a>  at the end, report the program version, a success message, and the date</span>
+<span id="cb40-33"><a href="#cb40-33" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Create output dirs with <span class="in">`mkdir -p`</span> before writing to them</span>
+<span id="cb40-34"><a href="#cb40-34" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Strike a balance between script functionality and robustness vs. simplicity and</span>
+<span id="cb40-35"><a href="#cb40-35" aria-hidden="true" tabindex="-1"></a>  readability: I am a shell beginner</span>
+<span id="cb40-36"><a href="#cb40-36" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>In script comments, briefly explain any non-obvious commands, options, and constructs</span>
+<span id="cb40-37"><a href="#cb40-37" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Programs that aren&#39;t available in the system path should be run with Apptainer</span>
+<span id="cb40-38"><a href="#cb40-38" aria-hidden="true" tabindex="-1"></a>  containers from Seqera Containers (<span class="in">`oras://`</span> URLs),</span>
+<span id="cb40-39"><a href="#cb40-39" aria-hidden="true" tabindex="-1"></a>  not with <span class="in">`module load`</span> or by installing them</span>
+<span id="cb40-40"><a href="#cb40-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-41"><a href="#cb40-41" aria-hidden="true" tabindex="-1"></a><span class="fu">## AI diary</span></span>
+<span id="cb40-42"><a href="#cb40-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-43"><a href="#cb40-43" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>After completing a task, add an entry at the bottom of <span class="in">`doc/ai/ai-diary.md`</span></span>
+<span id="cb40-44"><a href="#cb40-44" aria-hidden="true" tabindex="-1"></a>  with the date, what I asked for, which files you created or changed,</span>
+<span id="cb40-45"><a href="#cb40-45" aria-hidden="true" tabindex="-1"></a>  and any key findings and decisions (including alternatives that were rejected)</span>
+<span id="cb40-46"><a href="#cb40-46" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Keep entries short</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </details>
 <p>Then, adjust the “Computing infrastructure” section to make Claude write scripts that follow this week’s conventions, so it now reads:</p>
@@ -5072,16 +5066,16 @@ slurm-fastqc-37615719.out:1
 <div class="code-with-filename-file">
 <pre><strong>CLAUDE.md (excerpt)</strong></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40" data-filename="CLAUDE.md (excerpt)"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">## Computing infrastructure</span></span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>We work at the Ohio Supercomputer Center (OSC)</span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>We submit shell scripts as Slurm batch jobs with <span class="in">`sbatch`</span></span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Put <span class="in">`#SBATCH`</span> lines directly below the shebang line, with at least:</span>
-<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>  <span class="in">`--account=PAS3493`</span>, <span class="in">`--output=slurm-&lt;program&gt;-%j.out`</span>, and <span class="in">`--mail-type=FAIL`</span></span>
-<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>If a program can use multiple cores, request them with <span class="in">`--cpus-per-task`</span>,</span>
-<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>  and set the program&#39;s cores/threads option to the same number</span>
-<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>In the usage line of a script, use <span class="in">`sbatch`</span> instead of <span class="in">`bash`</span></span>
-<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Don&#39;t submit jobs yourself: show me the <span class="in">`sbatch`</span> command instead</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41" data-filename="CLAUDE.md (excerpt)"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">## Computing infrastructure</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>We work at the Ohio Supercomputer Center (OSC)</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>We submit shell scripts as Slurm batch jobs with <span class="in">`sbatch`</span></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Put <span class="in">`#SBATCH`</span> lines directly below the shebang line, with at least:</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>  <span class="in">`--account=PAS3493`</span>, <span class="in">`--output=slurm-&lt;program&gt;-%j.out`</span>, and <span class="in">`--mail-type=FAIL`</span></span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>If a program can use multiple cores, request them with <span class="in">`--cpus-per-task`</span>,</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>  and set the program&#39;s cores/threads option to the same number</span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>In the usage line of a script, use <span class="in">`sbatch`</span> instead of <span class="in">`bash`</span></span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Don&#39;t submit jobs yourself: show me the <span class="in">`sbatch`</span> command instead</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="zooming-out-workflows" class="level2" data-number="5">
@@ -5108,77 +5102,77 @@ slurm-fastqc-37615719.out:1
 <div class="code-with-filename-file">
 <pre><strong>protocol.md</strong></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41" data-filename="protocol.md"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># RNA-seq analysis of _Culex pipiens_</span></span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Author: Jane Doe</span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Date: 2026-10-28</span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>This was run at the Ohio Supercomputer Center (OSC)</span>
-<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a><span class="fu">## Set up: Set the input file paths</span></span>
-<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_dir</span><span class="op">=</span>data/fastq</span>
-<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a><span class="va">ref_assembly</span><span class="op">=</span>data/ref/assembly.fna</span>
-<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a><span class="va">ref_transcripts</span><span class="op">=</span>data/ref/transcripts.fna</span>
-<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 1: Read QC with FastQC</span></span>
-<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-17"><a href="#cb41-17" aria-hidden="true" tabindex="-1"></a><span class="in">`fastqc.sh`</span> runs FastQC on 1 FASTQ file,</span>
-<span id="cb41-18"><a href="#cb41-18" aria-hidden="true" tabindex="-1"></a>and takes 2 arguments: the FASTQ file and the output dir.</span>
-<span id="cb41-19"><a href="#cb41-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-20"><a href="#cb41-20" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb41-21"><a href="#cb41-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq <span class="kw">in</span> <span class="st">&quot;</span><span class="va">$fastq_dir</span><span class="st">&quot;</span>/<span class="pp">*</span>fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb41-22"><a href="#cb41-22" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/fastqc.sh <span class="st">&quot;</span><span class="va">$fastq</span><span class="st">&quot;</span> results/fastqc</span>
-<span id="cb41-23"><a href="#cb41-23" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
-<span id="cb41-24"><a href="#cb41-24" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb41-25"><a href="#cb41-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-26"><a href="#cb41-26" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 2: FastQC summary with MultiQC</span></span>
-<span id="cb41-27"><a href="#cb41-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-28"><a href="#cb41-28" aria-hidden="true" tabindex="-1"></a><span class="in">`multiqc.sh`</span> runs MultiQC once for all FastQC outputs,</span>
-<span id="cb41-29"><a href="#cb41-29" aria-hidden="true" tabindex="-1"></a>and takes 2 arguments: the input dir (the FastQC output dir) and the output dir.</span>
-<span id="cb41-30"><a href="#cb41-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-31"><a href="#cb41-31" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb41-32"><a href="#cb41-32" aria-hidden="true" tabindex="-1"></a><span class="ex">sbatch</span> scripts/multiqc.sh results/fastqc results/multiqc</span>
-<span id="cb41-33"><a href="#cb41-33" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb41-34"><a href="#cb41-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-35"><a href="#cb41-35" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 3: Read trimming with TrimGalore</span></span>
-<span id="cb41-36"><a href="#cb41-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-37"><a href="#cb41-37" aria-hidden="true" tabindex="-1"></a><span class="in">`trimgalore.sh`</span> runs TrimGalore on the paired-end FASTQ files of 1 sample,</span>
-<span id="cb41-38"><a href="#cb41-38" aria-hidden="true" tabindex="-1"></a>and gives the output files the same names as the input files.</span>
-<span id="cb41-39"><a href="#cb41-39" aria-hidden="true" tabindex="-1"></a>It takes 3 arguments: the R1 FASTQ file, the R2 FASTQ file, and the output dir.</span>
-<span id="cb41-40"><a href="#cb41-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-41"><a href="#cb41-41" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb41-42"><a href="#cb41-42" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_r1 <span class="kw">in</span> <span class="st">&quot;</span><span class="va">$fastq_dir</span><span class="st">&quot;</span>/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb41-43"><a href="#cb41-43" aria-hidden="true" tabindex="-1"></a>    <span class="va">fastq_r2</span><span class="op">=</span><span class="va">${fastq_r1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span></span>
-<span id="cb41-44"><a href="#cb41-44" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/trimgalore.sh <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span> results/trimgalore</span>
-<span id="cb41-45"><a href="#cb41-45" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
-<span id="cb41-46"><a href="#cb41-46" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb41-47"><a href="#cb41-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-48"><a href="#cb41-48" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 4: Alignment to a reference genome with STAR</span></span>
-<span id="cb41-49"><a href="#cb41-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-50"><a href="#cb41-50" aria-hidden="true" tabindex="-1"></a><span class="in">`star.sh`</span> aligns the trimmed reads of 1 sample to the reference genome,</span>
-<span id="cb41-51"><a href="#cb41-51" aria-hidden="true" tabindex="-1"></a>and takes 4 arguments: the trimmed R1 and R2 FASTQ files,</span>
-<span id="cb41-52"><a href="#cb41-52" aria-hidden="true" tabindex="-1"></a>the reference genome FASTA file, and the output dir.</span>
-<span id="cb41-53"><a href="#cb41-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-54"><a href="#cb41-54" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb41-55"><a href="#cb41-55" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_r1 <span class="kw">in</span> results/trimgalore/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb41-56"><a href="#cb41-56" aria-hidden="true" tabindex="-1"></a>    <span class="va">fastq_r2</span><span class="op">=</span><span class="va">${fastq_r1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span></span>
-<span id="cb41-57"><a href="#cb41-57" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/star.sh <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$ref_assembly</span><span class="st">&quot;</span> results/star</span>
-<span id="cb41-58"><a href="#cb41-58" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
-<span id="cb41-59"><a href="#cb41-59" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb41-60"><a href="#cb41-60" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-61"><a href="#cb41-61" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 5: Gene-level counting with Salmon</span></span>
-<span id="cb41-62"><a href="#cb41-62" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-63"><a href="#cb41-63" aria-hidden="true" tabindex="-1"></a><span class="in">`salmon.sh`</span> counts the reads per gene for 1 sample,</span>
-<span id="cb41-64"><a href="#cb41-64" aria-hidden="true" tabindex="-1"></a>and takes 3 arguments: the BAM file from STAR, the reference transcript FASTA file,</span>
-<span id="cb41-65"><a href="#cb41-65" aria-hidden="true" tabindex="-1"></a>and the output dir.</span>
-<span id="cb41-66"><a href="#cb41-66" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-67"><a href="#cb41-67" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb41-68"><a href="#cb41-68" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> bam <span class="kw">in</span> results/star/<span class="pp">*</span>bam<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb41-69"><a href="#cb41-69" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/salmon.sh <span class="st">&quot;</span><span class="va">$bam</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$ref_transcripts</span><span class="st">&quot;</span> results/salmon</span>
-<span id="cb41-70"><a href="#cb41-70" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
-<span id="cb41-71"><a href="#cb41-71" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42" data-filename="protocol.md"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># RNA-seq analysis of _Culex pipiens_</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Author: Jane Doe</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Date: 2026-10-28</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>This was run at the Ohio Supercomputer Center (OSC)</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a><span class="fu">## Set up: Set the input file paths</span></span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_dir</span><span class="op">=</span>data/fastq</span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a><span class="va">ref_assembly</span><span class="op">=</span>data/ref/assembly.fna</span>
+<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a><span class="va">ref_transcripts</span><span class="op">=</span>data/ref/transcripts.fna</span>
+<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-15"><a href="#cb42-15" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 1: Read QC with FastQC</span></span>
+<span id="cb42-16"><a href="#cb42-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-17"><a href="#cb42-17" aria-hidden="true" tabindex="-1"></a><span class="in">`fastqc.sh`</span> runs FastQC on 1 FASTQ file,</span>
+<span id="cb42-18"><a href="#cb42-18" aria-hidden="true" tabindex="-1"></a>and takes 2 arguments: the FASTQ file and the output dir.</span>
+<span id="cb42-19"><a href="#cb42-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-20"><a href="#cb42-20" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb42-21"><a href="#cb42-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq <span class="kw">in</span> <span class="st">&quot;</span><span class="va">$fastq_dir</span><span class="st">&quot;</span>/<span class="pp">*</span>fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb42-22"><a href="#cb42-22" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/fastqc.sh <span class="st">&quot;</span><span class="va">$fastq</span><span class="st">&quot;</span> results/fastqc</span>
+<span id="cb42-23"><a href="#cb42-23" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb42-24"><a href="#cb42-24" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb42-25"><a href="#cb42-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-26"><a href="#cb42-26" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 2: FastQC summary with MultiQC</span></span>
+<span id="cb42-27"><a href="#cb42-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-28"><a href="#cb42-28" aria-hidden="true" tabindex="-1"></a><span class="in">`multiqc.sh`</span> runs MultiQC once for all FastQC outputs,</span>
+<span id="cb42-29"><a href="#cb42-29" aria-hidden="true" tabindex="-1"></a>and takes 2 arguments: the input dir (the FastQC output dir) and the output dir.</span>
+<span id="cb42-30"><a href="#cb42-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-31"><a href="#cb42-31" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb42-32"><a href="#cb42-32" aria-hidden="true" tabindex="-1"></a><span class="ex">sbatch</span> scripts/multiqc.sh results/fastqc results/multiqc</span>
+<span id="cb42-33"><a href="#cb42-33" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb42-34"><a href="#cb42-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-35"><a href="#cb42-35" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 3: Read trimming with TrimGalore</span></span>
+<span id="cb42-36"><a href="#cb42-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-37"><a href="#cb42-37" aria-hidden="true" tabindex="-1"></a><span class="in">`trimgalore.sh`</span> runs TrimGalore on the paired-end FASTQ files of 1 sample,</span>
+<span id="cb42-38"><a href="#cb42-38" aria-hidden="true" tabindex="-1"></a>and gives the output files the same names as the input files.</span>
+<span id="cb42-39"><a href="#cb42-39" aria-hidden="true" tabindex="-1"></a>It takes 3 arguments: the R1 FASTQ file, the R2 FASTQ file, and the output dir.</span>
+<span id="cb42-40"><a href="#cb42-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-41"><a href="#cb42-41" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb42-42"><a href="#cb42-42" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_r1 <span class="kw">in</span> <span class="st">&quot;</span><span class="va">$fastq_dir</span><span class="st">&quot;</span>/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb42-43"><a href="#cb42-43" aria-hidden="true" tabindex="-1"></a>    <span class="va">fastq_r2</span><span class="op">=</span><span class="va">${fastq_r1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span></span>
+<span id="cb42-44"><a href="#cb42-44" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/trimgalore.sh <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span> results/trimgalore</span>
+<span id="cb42-45"><a href="#cb42-45" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb42-46"><a href="#cb42-46" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb42-47"><a href="#cb42-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-48"><a href="#cb42-48" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 4: Alignment to a reference genome with STAR</span></span>
+<span id="cb42-49"><a href="#cb42-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-50"><a href="#cb42-50" aria-hidden="true" tabindex="-1"></a><span class="in">`star.sh`</span> aligns the trimmed reads of 1 sample to the reference genome,</span>
+<span id="cb42-51"><a href="#cb42-51" aria-hidden="true" tabindex="-1"></a>and takes 4 arguments: the trimmed R1 and R2 FASTQ files,</span>
+<span id="cb42-52"><a href="#cb42-52" aria-hidden="true" tabindex="-1"></a>the reference genome FASTA file, and the output dir.</span>
+<span id="cb42-53"><a href="#cb42-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-54"><a href="#cb42-54" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb42-55"><a href="#cb42-55" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_r1 <span class="kw">in</span> results/trimgalore/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb42-56"><a href="#cb42-56" aria-hidden="true" tabindex="-1"></a>    <span class="va">fastq_r2</span><span class="op">=</span><span class="va">${fastq_r1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span></span>
+<span id="cb42-57"><a href="#cb42-57" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/star.sh <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$ref_assembly</span><span class="st">&quot;</span> results/star</span>
+<span id="cb42-58"><a href="#cb42-58" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb42-59"><a href="#cb42-59" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb42-60"><a href="#cb42-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-61"><a href="#cb42-61" aria-hidden="true" tabindex="-1"></a><span class="fu">## Step 5: Gene-level counting with Salmon</span></span>
+<span id="cb42-62"><a href="#cb42-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-63"><a href="#cb42-63" aria-hidden="true" tabindex="-1"></a><span class="in">`salmon.sh`</span> counts the reads per gene for 1 sample,</span>
+<span id="cb42-64"><a href="#cb42-64" aria-hidden="true" tabindex="-1"></a>and takes 3 arguments: the BAM file from STAR, the reference transcript FASTA file,</span>
+<span id="cb42-65"><a href="#cb42-65" aria-hidden="true" tabindex="-1"></a>and the output dir.</span>
+<span id="cb42-66"><a href="#cb42-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-67"><a href="#cb42-67" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb42-68"><a href="#cb42-68" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> bam <span class="kw">in</span> results/star/<span class="pp">*</span>bam<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb42-69"><a href="#cb42-69" aria-hidden="true" tabindex="-1"></a>    <span class="ex">sbatch</span> scripts/salmon.sh <span class="st">&quot;</span><span class="va">$bam</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$ref_transcripts</span><span class="st">&quot;</span> results/salmon</span>
+<span id="cb42-70"><a href="#cb42-70" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb42-71"><a href="#cb42-71" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Structuring your workflow like this makes it relatively straightforward to rerun everything (e.g. with different samples or settings), or to reuse it in another project. And the protocol documents all steps that were taken.</p>
 <p>However, you <strong>cannot</strong> run all of this code at once:</p>
@@ -5186,24 +5180,13 @@ slurm-fastqc-37615719.out:1
 <summary>
 Why can’t all the code be run at once?
 </summary>
-<p><em>The answer will be added after class.</em></p>
-<!----
-Most steps need files produced by an earlier step as their input.
-If you run all code at once, all batch jobs will be submitted at the same time,
-so later steps will start running before their input files are available,
-and will fail.
----->
+<p>Most steps need files produced by an earlier step as their input. If you run all code at once, all batch jobs will be submitted at the same time, so later steps will start running before their input files are available, and will fail.</p>
 </details>
 <details class="details-quiz">
 <summary>
 Which steps <em>can</em> be run simultaneously?
 </summary>
-<p><em>The answer will be added after class.</em></p>
-<!----
-Steps 1 (FastQC) and 3 (TrimGalore), because both use the _raw_ FASTQ files as input
-and therefore don't depend on each other.
-Every other step needs the output of a preceding step.
----->
+<p>Steps 1 (FastQC) and 3 (TrimGalore), because both use the <em>raw</em> FASTQ files as input and therefore don’t depend on each other. Every other step needs the output of a preceding step.</p>
 </details>
 </section>
 <section id="how-about-automation" class="level3" data-number="5.3">
