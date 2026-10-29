@@ -17,8 +17,6 @@ GA5 README template.
 
 ------------------------------------------------------------------------
 
-# Part I: A multi-step workflow
-
 ## Part A: Your project dir, Git repo, and protocol
 
 ### 1: Create subdirs, and copy the scripts
@@ -94,22 +92,7 @@ The output of the command was:
 
 ## Part C: Transcript quantification with Salmon
 
-### 9: A Salmon container
-
-*Answer*: The container link (URI) is:
-
-Code to print Salmon's version with the container:
-
-```bash
-# Your command:
-```
-
-The output of the command was:
-
-```
-```
-
-### 10: Create the Salmon index
+### 9: Create the Salmon index
 
 Code to check the size of the index dir:
 
@@ -126,17 +109,59 @@ The output of the command was:
 
 *Answer*: The size of the index dir:
 
-### 11: Run Salmon for all samples
+### 10: Run Salmon for all samples
 
 <!-- No command/output needed here -- we check `protocol.md` directly. -->
 
-### 12: Salmon's `quant.sf` output file
+### 11: Salmon's `quant.sf` output file
 
 *Answer*: What the `TPM` and `NumReads` columns contain:
 
 *Answer*: The extra information you'd need to get from transcript counts to gene counts:
 
-### 13: Mapping rates
+### 12: The transcripts with the most reads
+
+```bash
+# Your command:
+```
+
+The output of the command was:
+
+```
+```
+
+Code to look up the FASTA header of the top transcript:
+
+```bash
+# Your command:
+```
+
+The output of the command was:
+
+```
+```
+
+*Answer*: The gene that the top transcript belongs to:
+
+*Answer*: Whether the transcript with the most reads also has the highest TPM,
+and why the two can differ:
+
+### 13: Transcripts without reads
+
+```bash
+# Your command(s):
+```
+
+The output of the command(s) was:
+
+```
+```
+
+*Answer*: The number and percentage of transcripts without reads:
+
+*Answer*: A possible reason why so many transcripts have no reads:
+
+### 14: Mapping rates
 
 ```bash
 # Your command:
@@ -148,12 +173,6 @@ The output of the command was:
 ```
 
 *Answer*: The sample with the lowest mapping rate:
-
-### 14: Library type
-
-*Answer*: The library type that Salmon inferred, and the file in which you found it:
-
-*Answer*: What this library type means:
 
 ------------------------------------------------------------------------
 
@@ -171,50 +190,80 @@ and why it found this number:
 ### 17: Explore the MultiQC report
 
 *Answer*: The sample with the lowest Salmon mapping rate in the General Statistics table,
-and whether this matches your answer to question 13:
-
-*Answer*: A FastQC metric that differs between the raw and trimmed reads,
-and how it differs:
+and whether this matches your answer to question 14:
 
 *Answer*: How STAR's alignment rates in the nf-core report compare to your
 Salmon mapping rates, and what could explain the difference:
 
 ------------------------------------------------------------------------
 
-# Part II: Positron setup
+## Part E: An overview of your jobs and files
 
-## Part E: Install Positron and connect to OSC
+### 18: An overview of your jobs with `sacct`
 
-<!-- If you couldn't get Positron to work: describe what you tried and where you got stuck,
-     and do question 19 with RStudio Server instead. -->
+```bash
+# Your command:
+```
 
-### 18: Connect to OSC
-
-The output of `hostname` in the Positron terminal was:
+The output of the command was:
 
 ```
 ```
 
-*Answer*: Are you on a login node or on a compute node, and how can you tell?
+*Answer*: The total number of jobs, and whether any did not complete successfully:
 
-*Answer*: The version of Positron you installed:
+*Answer*: The step for which the jobs took the longest:
 
-### 19: Check that R works
+### 19: Which files to keep
 
-The output of `R.version.string` was:
+```bash
+# Your command:
+```
+
+The output of the command was:
 
 ```
 ```
 
-<!-- Make sure the screenshot file is in `doc/` and committed,
-     and change the file name below if needed. -->
+*Answer*: Which dirs you would keep long-term and back up,
+and which you could delete, and why:
 
-![My Positron window](doc/positron.png)
+*Answer*: What else you would need to regenerate the deleted dirs:
+
+------------------------------------------------------------------------
+
+## Part F: Bring in genAI
+
+<!-- For both questions, export the conversation to `doc/ai`, and commit it. -->
+
+### 20: AI review of your protocol
+
+*Answer*: What you asked, and a summary of Claude's points:
+
+*Answer*: What you changed in your protocol and/or scripts:
+
+*Answer*: At least one suggestion you didn't follow, and why:
+
+### 21: An AI-generated summary table
+
+*Answer*: What you asked, and the command or script you got
+(if it's a script, just give its file name in `scripts/`):
+
+The summary table:
+
+```
+```
+
+*Answer*: Which values you checked, against which source, and whether they matched:
 
 ------------------------------------------------------------------------
 
 # Submission
 
-### 20: Create a GitHub repository, push, and create an Issue
+### 22: Create a GitHub repository and push
 
 <!-- No command/output needed here -- we check your GitHub repo directly. -->
+
+### 23: Get a (test) DOI with Zenodo
+
+*Answer*: Your Zenodo Sandbox DOI:
