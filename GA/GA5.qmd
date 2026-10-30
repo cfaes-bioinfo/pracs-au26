@@ -1,12 +1,12 @@
 ---
 draft: true
-title: "Graded Assignment 5:<br>A multi-step workflow"
+title: "Graded Assignment 5: A multi-step workflow"
 pagetitle: "GA5"
 date: 2026-11-08
 date-modified: last-modified
 number-sections: false
 other-links:
-  - text: "w10b: Slurm batch jobs II (incl. a protocol example)"
+  - text: "w10b: Slurm batch jobs II"
     icon: book
     href: ../week10/w10b_slurm2.html
   - text: "w11a: Data management and transfer"
@@ -18,7 +18,7 @@ other-links:
   - text: "w11c: nf-core pipelines - part II"
     icon: book
     href: ../week11/w11c_nfcore2.html
-  - text: "Graded Assignment 3 (MultiQC)"
+  - text: "Graded Assignment 3"
     icon: pencil-square
     href: GA3.html
 language:
@@ -197,10 +197,10 @@ we recommend not to copy-paste code from that lecture page.
     - The reference transcriptome (FASTA file) of _Culex pipiens_ from NCBI
 
   - **Software**:
-    - The scripts run programs using OSC modules,
-      or Apptainer containers with links contained inside the scripts.
+    - The scripts run programs using Apptainer containers,
+      with links contained inside the scripts.
     - If running at OSC, no software installations are needed.
-    - If you're not at OSC, you need to have Apptainer, Slurm, and FastQC installed.
+    - If you're not at OSC, you need to have Apptainer and Slurm installed.
 
   - Run all code from the working dir listed above.
     You don't need to create the output dirs, because the scripts will do so.
@@ -264,7 +264,7 @@ we recommend not to copy-paste code from that lecture page.
 ### Part A: Your project dir, Git repo, and protocol
 
 01. Inside dir `GA5`, create subdirs `scripts`, `data/ref`, and `results`.
-    Then, copy the scripts that we prepared to run the individual steps
+    Then, copy the scripts that we've prepared for you to run the individual steps
     into your `scripts` dir:
 
     ```bash
@@ -290,16 +290,16 @@ we recommend not to copy-paste code from that lecture page.
 
     </details>
 
-02. Initialize a **Git repository**,
-    and create a `.gitignore` file that makes Git ignore the `data` and `results` dirs.
-    Then, commit your `README.md`, `protocol.md`, `.gitignore`, and scripts.
-
-03. Carefully read the protocol template in `protocol.md`.
+02. Carefully read the protocol template in `protocol.md`.
     It contains the general structure of your workflow,
     with parts marked as `<???>` that you'll fill in as you go.
     For now, fill in the blanks at the top of the file (Author, Date, etc.).
     For the GitHub repository,
     you can fill in the URL once you've created the repo in question 22.
+
+03. Initialize a **Git repository**,
+    and create a `.gitignore` file that makes Git ignore the `data` and `results` dirs.
+    Then, commit your `README.md`, `protocol.md`, `.gitignore`, and scripts.
 
 04. On the [NCBI FTP page](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/){target="_blank"}
     for the _Culex pipiens_ reference genome
@@ -333,12 +333,13 @@ we recommend not to copy-paste code from that lecture page.
     the FastQC output files still have names like `S63_R1_val_1_fastqc.html`.
     :::
 
-07. With 22 samples, you won't want to open every Slurm log file to check
-    whether its job succeeded.
+07. With many Slurm log files, it's easy to miss a count of `0` when scanning
+    the output of the `grep -c` command from
+    [w10b](../week10/w10b_slurm2.qmd#submit-a-job-for-each-file).
     Since the scripts print a line `# Successfully finished script <script-name>`
     at the very end,
-    write a command that **lists the TrimGalore Slurm log files that do _not_ contain
-    this line**.
+    extend that `grep -c` command so that it **only lists the TrimGalore Slurm log files
+    that do _not_ contain this line**.
     (If all jobs succeeded, this command should print nothing:
     to make sure your command works, you can test it on a file that you know
     doesn't contain the line.)
@@ -414,7 +415,8 @@ You'll first create this index, and then use it in the quantification step.
 11. Take a look at the main output file for sample `S63`,
     `quant.sf`, and use the [Salmon documentation on its output files](https://salmon.readthedocs.io/en/latest/file_formats.html){target="_blank"}
     to answer the following:
-    - What do the `TPM` and `NumReads` columns contain?
+    - Of the numeric columns, focus on `NumReads` only:
+      what does this column contain?
     - This file has counts for transcripts, not genes.
       But for most analyses, such as a differential expression analysis,
       you'll want counts per gene.
@@ -424,25 +426,8 @@ You'll first create this index, and then use it in the quantification step.
     Write a command that prints the 3 rows of its `quant.sf` file
     with the highest `NumReads` values
     (see the [self-study section on sorting by column](../bonus/shell-data-tools.qmd#sorting-by-column-numerically)).
-    Then:
-    - Look up the FASTA header of the top transcript in the reference transcriptome file,
-      and report which gene it belongs to.
-    - Is the transcript with the most reads also the one with the highest `TPM`?
-      Explain why the two can differ.
-
-13. Not all transcripts are expressed in every sample.
-    How many of the transcripts in `S63`'s `quant.sf` file got no reads at all,
-    and what percentage of all transcripts is that?
-    Give one possible reason why so many transcripts have no reads.
-
-    <details><summary>{{< fa lightbulb >}} Hint _(Click to expand)_</summary>
-
-    Salmon's read counts are estimates that can have decimals,
-    so compare the `NumReads` values numerically rather than as text,
-    for example with [`awk`](../bonus/shell-data-tools.qmd#awk-for-tabular-data-processing).
-    And don't count the header line!
-
-    </details>
+    Then, look up the FASTA header of the top transcript in the reference transcriptome file,
+    and report which gene it belongs to.
 
 14. Salmon reports the **mapping rate**,
     i.e. the percentage of reads that it could assign to a transcript,
@@ -482,30 +467,16 @@ If your GA3 script used an older version, update its container link.
     In the Slurm log, MultiQC reports the number of reports it found for each program.
     For each program, explain why it found this number of reports.
 
-17. Download the MultiQC report, open it in your browser, and answer the following:
-    - In the **General Statistics** table at the top,
-      which sample has the lowest Salmon mapping rate,
-      and does this match your answer to question 14?
-    - In week 11, you downloaded the MultiQC report of the nf-core _rnaseq_ run
-      on the same data
-      (`week11/results/nfc-rnaseq/multiqc/star_salmon/multiqc_report.html`).
-      In that report, find the percentage of reads that STAR aligned
-      to the genome for a few samples.
-      How does it compare to your Salmon mapping rates for those samples,
-      and what could explain the difference?
+17. Download the MultiQC report, and open it in your browser.
+    In the **General Statistics** table at the top,
+    which sample has the lowest Salmon mapping rate,
+    and does this match your answer to question 14?
+
+
 
 <hr style="height:1pt; visibility:hidden;" />
 
 ### Part E: An overview of your jobs and files
-
-18. Use `sacct` (see the [self-study Slurm page](../bonus/slurm.qmd#sacct-an-overview-of-many-jobs))
-    to list all batch jobs that you ran for this assignment,
-    with columns for the job ID, job name, state, and elapsed time.
-    (By default, `sacct` only shows jobs that started since midnight:
-    use its `--starttime` option to go back to the day you started this assignment.)
-    Then, answer the following:
-    - How many jobs did you run in total, and did any of them not complete successfully?
-    - For which step did the jobs take the longest?
 
 19. Like in the [week 11 lecture on data management](../week11/w11a_data.qmd#relative-paths-and-data-management),
     think about which of this project's files are worth keeping.
@@ -591,3 +562,23 @@ Finally, on the GitHub page for your repo, create a new **Issue**.
     asking them to take a look at your assignment.
 
 <hr style="height:1pt; visibility:hidden;" />
+
+## Bonus
+
+    _Optional_:
+    - In week 11, you downloaded the MultiQC report of the nf-core _rnaseq_ run
+      on the same data
+      (`week11/results/nfc-rnaseq/multiqc/star_salmon/multiqc_report.html`).
+      In that report, find the percentage of reads that STAR aligned
+      to the genome for a few samples.
+      How does it compare to your Salmon mapping rates for those samples,
+      and what could explain the difference?
+
+18. Use `sacct` (see the [self-study Slurm page](../bonus/slurm.qmd#sacct-an-overview-of-many-jobs))
+    to list all batch jobs that you ran for this assignment,
+    with columns for the job ID, job name, state, and elapsed time.
+    (By default, `sacct` only shows jobs that started since midnight:
+    use its `--starttime` option to go back to the day you started this assignment.)
+    Then, answer the following:
+    - How many jobs did you run in total, and did any of them not complete successfully?
+    - For which step did the jobs take the longest?
