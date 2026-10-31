@@ -1,5 +1,4 @@
 ---
-draft: true
 title: "Graded Assignment 5: A multi-step workflow"
 pagetitle: "GA5"
 date: 2026-11-08
@@ -35,20 +34,20 @@ bibliography: ../references.bib
 
 <!----
 TODO before publishing:
-- Put the following in /fs/ess/PAS3493/share/GA5/ (see GA5s.qmd for the script code):
-  - GA5_template.md (from GA/GA5_template.md)
-  - scripts/fastqc.sh and scripts/trimgalore.sh (same as in share/scripts/w10_ex)
+- Put the following in /fs/ess/PAS3493/share/GA5/ (all files are in assets/GA5/):
+  - GA5_template.md
+  - scripts/trimgalore.sh (same as in share/scripts/w10_ex)
   - scripts/salmon_index.sh and scripts/salmon_quant.sh,
     with a filled-in SALMON_CONTAINER link (students no longer add it themselves)
-  - multiqc.sh: a fallback batch-job version with MultiQC >= 1.35
-    (1.35 is the first version that recognizes TrimGalore v2's JSON reports)
+  - scripts/multiqc.sh: a GA3-like version without #SBATCH lines (students add them in Q12),
+    with MultiQC >= 1.35 (the first version that recognizes TrimGalore v2's JSON reports)
 - Test-run the full workflow, incl. the MultiQC run on the whole results dir.
 - Question 17 refers to the MultiQC report of the week 11 nf-core run (w11c),
   at week11/results/nfc-rnaseq/multiqc/star_salmon/multiqc_report.html: check this path.
-- There are 23 questions (11.5 points): delete 3, or change the points per question.
-  When deleting questions, renumber, and update the references to question numbers
+- There are 19 questions (9.5 points): add 1, or change the points per question.
+  When adding or deleting questions, renumber, and update the references to question numbers
   (in this file and in GA5_template.md) and the rubric's question count.
-- Q21: check that TrimGalore v2's output and MultiQC's General Statistics table
+- Q17: check that TrimGalore v2's output and MultiQC's General Statistics table
   include the number of read pairs before trimming and the percentage kept.
 ---->
 
@@ -76,7 +75,8 @@ and you'll summarize the results of all steps in a single MultiQC report.
 #### Oral examination
 As explained in [GA3](GA3.qmd#oral-exam),
 each of you will have **one** short oral examination, for one of GA3, GA4, or GA5.
-If you haven't had yours yet, it will be for this assignment.
+If you haven't had yours yet, it will be for this assignment,
+in which case you should also be able to explain any code that genAI wrote for you.
 :::
 
 ### Academic integrity
@@ -118,12 +118,15 @@ The general genAI guidelines from [GA4](GA4.qmd#academic-integrity) apply:
   You can use genAI to help you understand things,
   but then write your answers in your own words.
 
-Reusing your **own** work from earlier in this course is fine
-(e.g., question 15 asks you to reuse your GA3 MultiQC script).
+Unlike in GA4, you can use genAI throughout this assignment.
+Part E has specific instructions for documenting your genAI use.
+Elsewhere, how you document it is up to you,
+but keep in mind that in an oral exam,
+you'll need to be able to explain any code that genAI wrote for you.
 
 ### Rubric
 
-You can earn a maximum of **0.5 points** for each of the 23 numbered
+You can earn a maximum of **0.5 points** for each of the 19 numbered
 questions/items below
 (you'll get 0.25 points for partially correct answers,
 and 0 points for missing or incorrect answers).
@@ -149,9 +152,8 @@ and 0 points for missing or incorrect answers).
   3. When they are done, check the Slurm log files and the output files
   4. If you detect failures, try to figure out what went wrong, and rerun
   5. Move the Slurm log files of the successful run(s) into a `logs` dir within
-     the script's output dir^[
-     The scripts create these `logs` dirs for you.
-     This is a small addition that you haven't seen in scripts so far.]
+     the script's output dir (the scripts create these `logs` dirs for you;
+     this is a small addition that you haven't seen in scripts so far).
 
 - **Commit** your files to your Git repo as you go along,
   using informative commit messages: commit at least once per Part (A--F).
@@ -160,8 +162,7 @@ and 0 points for missing or incorrect answers).
 The workflow is similar to
 [the protocol example in w10b](../week10/w10b_slurm2.qmd#a-protocol-example),
 but not identical!
-To get some genuine practice,
-and to avoid copying the wrong things,
+To get some genuine practice, and to avoid copying the wrong things,
 we recommend not to copy-paste code from that lecture page.
 :::
 
@@ -178,92 +179,32 @@ we recommend not to copy-paste code from that lecture page.
   `/fs/ess/PAS3493/share/GA5/GA5_template.md`,
   into your working dir as `README.md`.
 
+  ::: {.callout-note collapse="true"}
+  #### The `README.md` template _(Click to expand)_
+  ```{.markdown .file filename="README.md" include="../assets/GA5/GA5_template.md"}
+  ```
+  :::
+
 - Create a file `protocol.md` in your working dir,
-  and copy the following protocol template into it:
+  and copy the following protocol template into it
+  (you can also [open the template as a separate file](../assets/GA5/protocol.md){target="_blank"}):
 
-  ````{.markdown .file filename="protocol.md"}
-  # RNA-seq analysis of _Culex pipiens_
-
-  - Author: <???>
-  - Date: <???>
-  - GitHub repository: <???>
-  - This was run at the <???> cluster of the Ohio Supercomputer Center (<www.osc.edu>)
-  - OSC working dir: <???>
-
-  ## Prerequisites
-
-  - **Input files**:
-    - Paired-end RNA-seq reads (FASTQ files) from Garrigós et al. (2025)
-    - The reference transcriptome (FASTA file) of _Culex pipiens_ from NCBI
-
-  - **Software**:
-    - The scripts run programs using Apptainer containers,
-      with links contained inside the scripts.
-    - If running at OSC, no software installations are needed.
-    - If you're not at OSC, you need to have Apptainer and Slurm installed.
-
-  - Run all code from the working dir listed above.
-    You don't need to create the output dirs, because the scripts will do so.
-
-  ## Set up: Get the input files
-
-  1. The FASTQ files were downloaded from a GitHub repo,
-     from the parent dir of the working dir, as follows:
-
-     ```bash
-     cd ..
-     git clone https://github.com/cfaes-bioinfo/garrigos
-     cd -
-     ```
-
-  2. Download the reference transcriptome FASTA file from NCBI:
-
-     ```bash
-     <???>
-     ```
-
-  ## Set up: Set file paths
-
-  ```bash
-  # Inputs:
-  fastq_dir=<???>
-  ref_transcripts=<???>
-
-  # Base output dir:
-  outdir=results
+  ```{.markdown .file filename="protocol.md" include="../assets/GA5/protocol.md"}
   ```
-
-  ## Step 1: Read QC with FastQC
-
-  The `fastqc.sh` script runs on 1 FASTQ file at a time and takes 2 arguments:
-  the input FASTQ file and the output dir.
-
-  ```bash
-  for fastq in "$fastq_dir"/*fastq.gz; do
-      sbatch scripts/fastqc.sh <???> "$outdir"/fastqc
-  done
-  ```
-
-  ## Step 2: Read trimming with TrimGalore
-
-  <???>
-
-  ## Step 3: Creating a transcriptome index with Salmon
-
-  <???>
-
-  ## Step 4: Pseudo-alignment and quantification with Salmon
-
-  <???>
-
-  ## Step 5: Summarizing the results of all steps with MultiQC
-
-  <???>
-  ````
 
 ### Part A: Your project dir, Git repo, and protocol
 
-01. Inside dir `GA5`, create subdirs `scripts`, `data/ref`, and `results`.
+01. Carefully read the protocol template in `protocol.md`.
+    It contains the general structure of your workflow,
+    with parts marked as `<???>` that you'll fill in as you go.
+    For now, **fill in the blanks** at the top of the file (Author, Date, etc.).
+    (Fill in the GitHub repo URL once you've created the repo in question 18.)
+
+02. Add to the `README.md` and `protocol.md` throughout this assignment,
+    and make sure these **Markdown files are formatted correctly**.
+
+03. Inside dir `GA5`, create subdirs `scripts`, `data/ref`, and `results`
+    with a single `mkdir` command.
     Then, copy the scripts that we've prepared for you to run the individual steps
     into your `scripts` dir:
 
@@ -271,85 +212,88 @@ we recommend not to copy-paste code from that lecture page.
     cp -v /fs/ess/PAS3493/share/GA5/scripts/* scripts/
     ```
     ```bash-out
-    '/fs/ess/PAS3493/share/GA5/scripts/fastqc.sh' -> 'scripts/fastqc.sh'
+    '/fs/ess/PAS3493/share/GA5/scripts/multiqc.sh' -> 'scripts/multiqc.sh'
     '/fs/ess/PAS3493/share/GA5/scripts/salmon_index.sh' -> 'scripts/salmon_index.sh'
     '/fs/ess/PAS3493/share/GA5/scripts/salmon_quant.sh' -> 'scripts/salmon_quant.sh'
     '/fs/ess/PAS3493/share/GA5/scripts/trimgalore.sh' -> 'scripts/trimgalore.sh'
     ```
 
-    Also copy your `multiqc.sh` script from GA3 into your `scripts` dir
-    (you'll update it in Part D).
+    You can also view the code of these scripts here:
 
-    <details><summary>{{< fa lightbulb >}} Help! I can't find my `multiqc.sh` script from GA3.</summary>
+    ::: {.callout-note collapse="true"}
+    #### The `trimgalore.sh` script _(Click to expand)_
 
-    You can copy a version of the script from the share dir like so:
-
-    ```bash
-    cp /fs/ess/PAS3493/share/GA5/multiqc.sh scripts/
+    ```{.bash .file filename="scripts/trimgalore.sh" include="../assets/GA5/trimgalore.sh"}
     ```
+    :::
 
-    </details>
+    ::: {.callout-note collapse="true"}
+    #### The `salmon_index.sh` script _(Click to expand)_
 
-02. Carefully read the protocol template in `protocol.md`.
-    It contains the general structure of your workflow,
-    with parts marked as `<???>` that you'll fill in as you go.
-    For now, fill in the blanks at the top of the file (Author, Date, etc.).
-    For the GitHub repository,
-    you can fill in the URL once you've created the repo in question 22.
+    ```{.bash .file filename="scripts/salmon_index.sh" include="../assets/GA5/salmon_index.sh"}
+    ```
+    :::
 
-03. Initialize a **Git repository**,
+    ::: {.callout-note collapse="true"}
+    #### The `salmon_quant.sh` script _(Click to expand)_
+
+    ```{.bash .file filename="scripts/salmon_quant.sh" include="../assets/GA5/salmon_quant.sh"}
+    ```
+    :::
+
+    ::: {.callout-note collapse="true"}
+    #### The `multiqc.sh` script _(Click to expand)_
+    This script is much like what your GA3 `multiqc.sh` script looked like,
+    and is meant to be run directly with `bash`
+    (you'll update it in Part D):
+
+    ```{.bash .file filename="scripts/multiqc.sh" include="../assets/GA5/multiqc.sh"}
+    ```
+    :::
+
+04. Initialize a **Git repository**,
     and create a `.gitignore` file that makes Git ignore the `data` and `results` dirs.
     Then, commit your `README.md`, `protocol.md`, `.gitignore`, and scripts.
 
-04. On the [NCBI FTP page](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/){target="_blank"}
+05. On the
+    [NCBI FTP page](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/){target="_blank"}
     for the _Culex pipiens_ reference genome
     (the one you also got the assembly FASTA file from in week 11),
-    find the FASTA file with all annotated **transcripts**: its name ends in `_rna.fna.gz`.
-    Then:
+    find the FASTA file with all annotated **transcripts**:
+    its name ends in `_rna.fna.gz`. Then:
 
     - Add a command to your protocol that downloads this file into `data/ref`,
       and run it.
     - Report how many transcripts are in the file.
     - Fill in the two input file paths in the "Set file paths" section of your protocol,
-      and run the code in that section.
+      and **run the code in that section**.
 
-### Part B: Read QC and trimming
-
-05. Using the code in your protocol, run the FastQC script for all FASTQ files.
-    (You'll have to fill in one blank in the loop.)
-    How many batch jobs did you submit, and did they all succeed?
+### Part B: Read trimming
 
 06. Take a look at the `trimgalore.sh` script,
-    which is similar to the one you worked on in GA4,
-    paying particular attention to the arguments it takes.
-    Add a loop to your protocol that runs the script once per sample, and run it.
+    which is similar to the one you worked on in GA4.
+    Add a loop to your protocol that runs the script once per sample, run it,
+    and monitor your jobs.
+    Did all batch jobs succeed, and how did you check that?
+
+    ::: callout-tip
+    #### What to do when jobs fail
+    - Try to figure out what went wrong (you can ask Claude for help if you want),
+      and rerun the failed jobs.
+    - Remove Slurm log files of failed runs once you've figure out the problem.
+    - Your protocol should only contain the code for the successful run(s).
+    - Your README should report any problems you encountered and how you solved them.
+    :::
 
     ::: {.callout-note collapse="true"}
     #### The TrimGalore output files _(Click to expand)_
     Unlike the TrimGalore script from GA4,
     this script renames the trimmed FASTQ files to the same names as the input files,
     like `S63_R1.fastq.gz`.
-    Since TrimGalore runs FastQC on the trimmed files _before_ this renaming,
-    the FastQC output files still have names like `S63_R1_val_1_fastqc.html`.
+
+    (But since TrimGalore runs FastQC on the trimmed files before this renaming,
+    the FastQC output files still have names like `S63_R1_val_1_fastqc.html`.)
     :::
-
-07. With many Slurm log files, it's easy to miss a count of `0` when scanning
-    the output of the `grep -c` command from
-    [w10b](../week10/w10b_slurm2.qmd#submit-a-job-for-each-file).
-    Since the scripts print a line `# Successfully finished script <script-name>`
-    at the very end,
-    extend that `grep -c` command so that it **only lists the TrimGalore Slurm log files
-    that do _not_ contain this line**.
-    (If all jobs succeeded, this command should print nothing:
-    to make sure your command works, you can test it on a file that you know
-    doesn't contain the line.)
-
-08. The TrimGalore script reserves 8 cores for each job. Use the `seff` command,
-    explained on the [self-study Slurm page](../bonus/slurm.qmd#seff-resource-usage-of-a-finished-job),
-    to check the resource usage of one of your TrimGalore jobs
-    (you can find the job ID in the Slurm log file name).
-    What were the CPU efficiency and the memory usage?
-    Based on this, would you change the number of cores for this script?
 
 ### Part C: Transcript quantification with Salmon
 
@@ -361,14 +305,9 @@ it can also directly map the reads to the reference **transcriptome**,
 i.e. to the sequences of all annotated transcripts,
 and estimate how many reads came from each transcript.
 
-::: callout-note
-#### More about Salmon's mapping approach
-This approach is often called **pseudo-alignment**^[
-Salmon's documentation calls its default mode "selective alignment",
-while "pseudo-alignment" is the term introduced by the similar program kallisto.
-In practice, "pseudo-alignment" is commonly used for both,
-including by the nf-core _rnaseq_ pipeline, which can run Salmon in this way
-with its `--pseudo_aligner salmon` option.],
+::: {.callout-note collapse="true"}
+#### More about Salmon's mapping approach _(Click to expand)_
+This approach is often called **pseudo-alignment** (or "selective alignment"),
 because it doesn't produce full read alignments.
 Compared to aligning to the genome, it has the following advantages and disadvantages:
 
@@ -377,8 +316,7 @@ Compared to aligning to the genome, it has the following advantages and disadvan
   since transcript sequences don't contain introns,
   reads from mature mRNAs match them without gaps.
 - But you **can only quantify known transcripts**,
-  i.e. those in the annotation,
-  and you don't get alignment (BAM) files,
+  i.e. those in the annotation, and you don't get alignment (BAM) files,
   which you would need for other purposes,
   like visualizing alignments or calling variants.
 :::
@@ -386,54 +324,65 @@ Compared to aligning to the genome, it has the following advantages and disadvan
 Like with most aligners, Salmon needs an **index** of the reference sequences.
 You'll first create this index, and then use it in the quantification step.
 
-09. Take a look at the `salmon_index.sh` script,
-    and figure out how you should run it.
-    Then, add the code to do so to your protocol, and run it.
+07. **Create the index**. Take a look at the `salmon_index.sh` script,
+    add the code to run it to your protocol, and run it.
     (Only a single index is needed, so you'll run this script just once.)
     When it's done, report how long it took to create the index,
     and how large the index dir is.
 
-10. Now, you can quantify the trimmed reads using the index.
-    The script `salmon_quant.sh` does this for _one sample_ at a time,
-    and takes 4 arguments:
+08. **Quantify the reads**. Now, add code to your protocol to run the `salmon_quant.sh` script,
+    for one sample at a time, to quantify the trimmed reads using the index
+    (note: the third argument is the dir of the index, not a file).
+    Then, run it.
 
-    1. An R1 FASTQ file
-    2. The matching R2 FASTQ file
-    3. The Salmon index **dir**
-    4. The output dir (the script will create a subdir for each sample in there)
-
-    Read the script, add code to your protocol to run it for all samples, and run it.
-
-    <details><summary>{{< fa lightbulb >}} Which FASTQ files should you use as input? _(Click to expand)_</summary>
-
-    You should use the _trimmed_ FASTQ files produced by TrimGalore,
-    not the raw FASTQ files.
-    Therefore, your loop should not loop over the files in `$fastq_dir`.
-
-    </details>
-
-11. Take a look at the main output file for sample `S63`,
-    `quant.sf`, and use the [Salmon documentation on its output files](https://salmon.readthedocs.io/en/latest/file_formats.html){target="_blank"}
-    to answer the following:
-    - Of the numeric columns, focus on `NumReads` only:
-      what does this column contain?
-    - This file has counts for transcripts, not genes.
-      But for most analyses, such as a differential expression analysis,
-      you'll want counts per gene.
-      What extra information would you need to get from transcript counts to gene counts?
-
-12. Which transcripts got the most reads in sample `S63`?
-    Write a command that prints the 3 rows of its `quant.sf` file
-    with the highest `NumReads` values
+09. Take a look at Salmon's main output file, `quant.sf`, for sample `S63`, and use the
+    [Salmon documentation on its output files](https://salmon.readthedocs.io/en/latest/file_formats.html){target="_blank"}
+    to understand what the columns in this file mean, especially `NumReads`.
+    Then, write a command that prints the 3 rows of its `quant.sf` file
+    with the **highest `NumReads` values**
     (see the [self-study section on sorting by column](../bonus/shell-data-tools.qmd#sorting-by-column-numerically)).
-    Then, look up the FASTA header of the top transcript in the reference transcriptome file,
+
+10. For the most abundant transcript you found in the previous question,
+    **find its FASTA header** in the reference transcriptome file,
     and report which gene it belongs to.
 
-14. Salmon reports the **mapping rate**,
+    ::: {.callout-note collapse="true"}
+    #### Transcript versus gene counts _(Click to expand)_
+    Salmon has quantified the number of reads that came from each transcript.
+    But for most analyses, such as a differential expression analysis,
+    you'll want counts per gene, not per transcript.
+    Using a mapping from transcripts to genes, which you can e.g. extract from a GTF file,
+    you can sum the transcript counts for each gene to get gene-level counts.
+    You would need a mapping from transcripts to genes, which is typically available in the gene annotation file (e.g., GTF or GFF).
+    :::
+
+11. Salmon reports the **mapping rate**,
     i.e. the percentage of reads that it could assign to a transcript,
     in the file `logs/salmon_quant.log` within each sample's output dir.
     Write a command that prints the mapping rate for all samples at once.
     Which sample has the lowest mapping rate?
+
+    <details><summary> {{< fa info-circle >}} _Click here for a hint_</summary>
+    You'll need a glob pattern to match the `salmon_quant.log` files in all sample dirs,
+    and can use `grep` to extract the mapping rate from each log file.
+
+    As for the globbing:
+    so far, you've used the `*` wildcard to match file names within a single dir.
+    But a `*` can also stand in for a dir name anywhere in a path.
+    For example, the following lists the contents of the `logs` dirs
+    of all your workflow steps so far:
+
+    ```bash
+    ls results/*/logs
+    ```
+
+    (For more on this, see the
+    [self-study section on globbing across dirs](../bonus/shell.qmd#globbing-across-dirs).)
+
+    As for `grep`: when you give `grep` multiple files,
+    it starts each output line with the name of the file that the line came from ---
+    which here tells you the sample ID.
+    </details>
 
 ### Part D: Summarizing all steps with MultiQC
 
@@ -445,140 +394,73 @@ like the report that you saw for the nf-core _rnaseq_ pipeline in week 11.
 So here, you'll run MultiQC once, at the end of the workflow,
 on your entire `results` dir.
 
-::: {.callout-warning appearance="simple"}
-MultiQC only recognizes the output of TrimGalore version 2 (which we're using)
-since MultiQC version **1.35**.
-If your GA3 script used an older version, update its container link.
-:::
-
-15. Your `multiqc.sh` script from GA3 was written to be run directly with `bash`.
-    Update it so that it is also suitable to be submitted as a batch job,
-    following the other scripts for this assignment.
-    That is, it should:
-    - Have `#SBATCH` lines with the OSC project,
-      a descriptive Slurm log file name, and email notification for failed jobs
-    - Print the logging statements that the other scripts print
-    - Create a `logs` dir in the output dir
-
+12. The `multiqc.sh` script is much like what you wrote in GA3,
+    and was written to be run directly with `bash`.
+    **Update it** so that it is also suitable to be submitted as a batch job:
+    add `#SBATCH` lines with the OSC project,
+    a descriptive Slurm log file name, and email notification for failed jobs.
     Then, commit the updated script.
 
-16. Add code to your protocol to run MultiQC with `results` as the input dir,
+13. Add code to your protocol to **run MultiQC** with `results` as the input dir,
     and `results/multiqc` as the output dir, and run it.
     In the Slurm log, MultiQC reports the number of reports it found for each program.
     For each program, explain why it found this number of reports.
 
-17. Download the MultiQC report, and open it in your browser.
+14. Download the MultiQC report, and open it in your browser.
+    Take a few minutes to explore the report.
     In the **General Statistics** table at the top,
     which sample has the lowest Salmon mapping rate,
-    and does this match your answer to question 14?
+    and does this match your answer to question 11?
 
+15. In the "Trim Galore" section of the report,
+    look at the "**Adapter Length Distribution**" plot.
+    What, approximately, are the most common adapter lengths trimmed from the reads?
+    Does this surprise you?
+    Regardless, why do you think these lengths are the most common?
 
+16. **Ask Claude** about one aspect of the MultiQC report that you don't (entirely)
+    understand; ask follow-up questions if needed.
+    In the README, summarize what you asked and learned from Claude's answer,
+    in your own words.
+    _Optional_: ask additional questions, if you have more points of confusion.
 
-<hr style="height:1pt; visibility:hidden;" />
+    (You can point to the file with the `@`-notation,
+    or simply open it in the editor in default (raw) mode so it's automatically
+    added as context. Even if you do neither, Claude will likely figure out
+    which file you're referring to.)
 
-### Part E: An overview of your jobs and files
+### Part E: Improving the workflow with genAI
 
-19. Like in the [week 11 lecture on data management](../week11/w11a_data.qmd#relative-paths-and-data-management),
-    think about which of this project's files are worth keeping.
-    First, write a command that reports the total size of each of the following dirs:
-    the input FASTQ dir, `data/ref`, and each subdir of `results`.
-    Then, answer the following:
-    - Which of these dirs would you keep long-term and back up,
-      and which could you delete once your analysis is done? Explain why.
-    - If you deleted some of these dirs,
-      what else would you need to be able to regenerate them later?
-
-### Part F: Bring in genAI
-
-For the last two questions, you'll use Claude Code,
-following the same guidelines as in [GA4](GA4.qmd#part-c-bring-in-genai):
-use the Manual permission mode and the default model,
-start a new conversation for each question,
-**export** each conversation to a dir `doc/ai` (e.g. as `q20_protocol-review.txt`),
-and record in your README what you asked, what you got,
-and what you concluded after checking it.
-As in GA4, you are graded on your evaluation of Claude's output,
-not on whether Claude happened to give a good answer.
-
-20. Your protocol should allow someone else (or a future you!) to rerun your
+17. Your protocol should allow someone else (or a future you!) to rerun your
     entire workflow.
-    Ask Claude to review **only** your `protocol.md` and the scripts in `scripts/`,
-    and to tell you whether someone else could rerun the workflow from these files alone,
-    and what is missing, unclear, or inconsistent.
-    Then:
-    - For each of Claude's points, decide whether you agree.
-    - Fix the issues that you agree with in your protocol and/or scripts, and commit.
-    - In your README, briefly describe what you changed,
-      and describe at least one suggestion that you didn't follow, and why.
+    **Ask Claude to review** your `protocol.md` and the scripts in `scripts/`,
+    and ask for suggestions to improve reproducibility,
+    what is missing, unclear, or inconsistent.
+    (If it gives an overwhelming number of suggestions,
+    you can for example ask it to focus on the most important ones in a follow-up
+    question or a separate conversation.)
 
-21. Ask Claude for a command or a short script that creates a single **summary table**
-    for all samples,
-    with columns for the sample ID, the number of read pairs before trimming,
-    the percentage of read pairs that was kept after trimming,
-    and the Salmon mapping rate.
-    If it writes a script, save it in `scripts/` and commit it.
-    Paste the table into your README.
-    Then, check at least 3 of its values against the MultiQC General Statistics table,
-    or against your answer to question 14.
-    Do the values match (allowing for rounding)?
-    If not, figure out which source is wrong, and why.
+    Discuss at least three of Claude's suggestions in your README,
+    explaining whether you agree or disagree with each one, and why.
 
-<hr style="height:1pt; visibility:hidden;" />
+18. For at least one suggestion you agree with,
+    address it in your protocol and/or scripts, and commit.
+    Describe what you changed in your README.
 
-## Submission: Publish your repo on GitHub
+### Part F: Publish your repo on GitHub
 
 Finally, you'll publish your Git repo on GitHub and submit your assignment
 by creating an Issue.
 
-22. Make sure you have committed your final `README.md` and `protocol.md`.
+19. Make sure you have committed your final `README.md` and `protocol.md`.
     Then, create a new, empty, public repository on **GitHub**
     (e.g., named "GA5" or "PLNTPTH5006-GA5"),
     connect it to your local repo, and push your local repo to GitHub.
     (Add the repo's URL to your protocol, commit, and push again.)
 
-23. Get a (test) DOI for your repo with Zenodo,
-    like we discussed in the [week 11 data management slides](../week11/w11a_data-mgmt.qmd#a-doi-for-your-github-repo-with-zenodo).
-    Real Zenodo DOIs are permanent,
-    so use the [Zenodo Sandbox](https://sandbox.zenodo.org/){target="_blank"},
-    a test copy of Zenodo whose DOIs aren't registered:
+20. Get a test DOI for your repo with Zenodo, following
+    [these step-by-step instructions](/week11/w11a_data.html#self-study-get-a-doi-for-a-github-repo),
+    but then for your current repo instead of the `evo` repo.
 
-    1. In the Sandbox, click "Log in" and choose "GitHub".
-    2. In your account menu (top right), go to "GitHub",
-       and flip the switch next to your GA5 repo.
-       (Don't see it? Click "Sync now".)
-    3. On GitHub, open your GA5 repo, click "Create a new release",
-       type `v1.0` as the tag ("Create new tag"),
-       and click "Publish release".
-    4. Back on the Sandbox GitHub page, refresh after a minute,
-       and click the DOI badge next to your repo.
-    5. Add the DOI to your `README.md` (under question 23), then commit and push.
-    6. Flip the switch off again,
-       so future releases don't get a DOI.
-
-Finally, on the GitHub page for your repo, create a new **Issue**.
-    Use whatever title you like, and in the text box (not the title),
-    tag the instructors: GitHub users `kstarr791` and `jelmerp`
-    (using the `@` notation like `@kstarr791`),
-    asking them to take a look at your assignment.
-
-<hr style="height:1pt; visibility:hidden;" />
-
-## Bonus
-
-    _Optional_:
-    - In week 11, you downloaded the MultiQC report of the nf-core _rnaseq_ run
-      on the same data
-      (`week11/results/nfc-rnaseq/multiqc/star_salmon/multiqc_report.html`).
-      In that report, find the percentage of reads that STAR aligned
-      to the genome for a few samples.
-      How does it compare to your Salmon mapping rates for those samples,
-      and what could explain the difference?
-
-18. Use `sacct` (see the [self-study Slurm page](../bonus/slurm.qmd#sacct-an-overview-of-many-jobs))
-    to list all batch jobs that you ran for this assignment,
-    with columns for the job ID, job name, state, and elapsed time.
-    (By default, `sacct` only shows jobs that started since midnight:
-    use its `--starttime` option to go back to the day you started this assignment.)
-    Then, answer the following:
-    - How many jobs did you run in total, and did any of them not complete successfully?
-    - For which step did the jobs take the longest?
+Finally, on the GitHub page for your repo, create a new **Issue**,
+and tag the instructors (`kstarr791` and `jelmerp`) like before to submit your assignment.

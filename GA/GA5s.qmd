@@ -1,12 +1,3 @@
-<!----
-TODO: Fill in the <???> placeholders with output from the test run of the workflow
-(questions 8, 9, 12, 13, 14, 16, 17, 18, 19, 21),
-and check the MultiQC report counts and module names in question 16.
-The code of the Salmon scripts at the bottom is up to date:
-copy it to /fs/ess/PAS3493/share/GA5/scripts/,
-after filling in SALMON_CONTAINER with a Seqera Containers link.
----->
-
 ## Solutions
 
 The commands below assume that your working dir is `/fs/ess/PAS3493/people/<user>/GA5`,
@@ -16,17 +7,7 @@ and file dates, job IDs, etc. will differ from yours.
 
 ### Part A: Your project dir, Git repo, and protocol
 
-<details><summary>**1.** Create subdirs, and copy the scripts</summary>
-
-```bash
-mkdir -p scripts data/ref results
-cp -v /fs/ess/PAS3493/share/GA5/scripts/* scripts/
-cp -v ../GA3/scripts/multiqc.sh scripts/
-```
-
-</details>
-
-<details><summary>**2.** Fill in the top of the protocol</summary>
+<details><summary>**1.** Fill in the top of the protocol</summary>
 
 For example:
 
@@ -34,15 +15,45 @@ For example:
 # RNA-seq analysis of _Culex pipiens_
 
 - Author: Jane Doe
-- Date: 2026-11-02
-- GitHub repository: https://github.com/janedoe/GA5
-- This was run at the Cardinal cluster of the Ohio Supercomputer Center (<www.osc.edu>)
-- OSC working dir: /fs/ess/PAS3493/people/jdoe/GA5
+- Date created: 2026-11-02
+- Date last modified: 2026-11-04
+- This was run at the Pitzer cluster of the Ohio Supercomputer Center (<https://www.osc.edu>)
+- OSC working dir: `/fs/ess/PAS3493/people/jdoe/GA5`
+- GitHub repository: <https://github.com/janedoe/GA5>
 ```
+
+- The GitHub repo URL can only be filled in at question 19.
 
 </details>
 
-<details><summary>**3.** Initialize a Git repo, and commit your first files</summary>
+<details><summary>**2.** Correctly formatted Markdown files</summary>
+
+There is no single answer here:
+we check whether your `README.md` and `protocol.md` render properly.
+Open each file's preview in VS Code to check, and look out for:
+
+- Code in code blocks (with triple backticks),
+  and file/dir names and commands in the text in `inline code`
+- Headings that start with `#`, followed by a space
+- Blank lines before and after code blocks and lists
+- Consistently indented lists
+- No leftover `<???>` placeholders in the protocol
+
+</details>
+
+<details><summary>**3.** Create subdirs, and copy the scripts</summary>
+
+```bash
+mkdir -p scripts data/ref results
+cp -v /fs/ess/PAS3493/share/GA5/scripts/* scripts/
+```
+
+- A single `mkdir -p` command creates all three dirs:
+  `-p` is needed to create `data/ref` when `data` doesn't exist yet.
+
+</details>
+
+<details><summary>**4.** Initialize a Git repo, and commit your first files</summary>
 
 ```bash
 git init
@@ -67,17 +78,20 @@ git commit -m "Add README, protocol, .gitignore, and scripts"
 
 </details>
 
-<details><summary>**4.** Download the reference transcriptome</summary>
+<details><summary>**5.** Download the reference transcriptome</summary>
 
 In the protocol, copy the link to the file, and add:
 
 ````{.markdown .file filename="protocol.md (excerpt)"}
-2. Download the reference transcriptome FASTA file from NCBI:
+## Set up: Download the reference transcriptome FASTA file from NCBI
 
-   ```bash
-   wget -P data/ref https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_rna.fna.gz
-   ```
+```bash
+# Downloaded on 2026-11-02
+wget -P data/ref https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_rna.fna.gz
+```
 ````
+
+Then run the `wget` command.
 
 Count the transcripts:
 each has a header line starting with `>`,
@@ -96,7 +110,8 @@ _Optional_:
 most of these (25,907) are mRNAs, whose IDs start with `XM_`,
 while the remaining 2,717, whose IDs start with `XR_`, are non-coding RNAs.
 
-The file paths in the protocol:
+The file paths in the protocol's "Set file paths" section
+(which you then run in your terminal):
 
 ```{.bash .file filename="protocol.md (excerpt)"}
 # Inputs:
@@ -114,50 +129,12 @@ outdir=results
 
 </details>
 
-### Part B: Read QC and trimming
-
-<details><summary>**5.** Run FastQC for all FASTQ files</summary>
-
-The blank in the loop is `"$fastq"`:
-
-```{.bash .file filename="protocol.md (excerpt)"}
-for fastq in "$fastq_dir"/*fastq.gz; do
-    sbatch scripts/fastqc.sh "$fastq" "$outdir"/fastqc
-done
-```
-
-- You submitted **44** batch jobs: one for each FASTQ file (22 samples × R1 and R2).
-- To check that they all succeeded, check your email for failure notifications,
-  and check the Slurm log files, for example with the command from question 7:
-
-  ```bash
-  grep -c "Successfully finished" slurm-fastqc*.out | grep ":0"
-  ```
-
-  This should print nothing.
-  Also check that there is an HTML file for each FASTQ file:
-
-  ```bash
-  ls results/fastqc/*html | wc -l
-  ```
-  ```bash-out
-  44
-  ```
-
-- Then, move the Slurm log files:
-
-  ```bash
-  mv -v slurm-fastqc*.out results/fastqc/logs/
-  ```
-
-  It's fine to add this line to your protocol too.
-
-</details>
+### Part B: Read trimming
 
 <details><summary>**6.** Run TrimGalore for all samples</summary>
 
 ````{.markdown .file filename="protocol.md (excerpt)"}
-## Step 2: Read trimming with TrimGalore
+## Step 1: Read trimming with TrimGalore
 
 The `trimgalore.sh` script runs TrimGalore on the paired-end FASTQ files of 1 sample at a time,
 and gives the output FASTQ files the same names as the input files.
@@ -175,81 +152,51 @@ done
   the loop goes over the R1 files only,
   so that the script runs once per sample rather than once per FASTQ file.
 - You can check the loop by first running it with `echo` in front of `sbatch`.
+- You submitted **22** batch jobs: one per sample.
+- You can monitor the jobs with `squeue --me`.
+- To check that they all succeeded, you can:
+  - Check your email for failure notifications.
+  - Check the Slurm log files,
+    for example by looking for the "Successfully finished" line
+    that the script prints at the end:
 
-</details>
+    ```bash
+    grep -c "Successfully finished" slurm-trimgalore*.out | grep ":0"
+    ```
 
-<details><summary>**7.** Find Slurm log files without the "Successfully finished" line</summary>
+    `grep -c` prints a count for each file, like `slurm-trimgalore-56656686.out:1`,
+    and the second `grep` only keeps the lines with a count of `0`.
+    If all jobs succeeded, this prints nothing.
+    (Using `grep -L "Successfully finished" slurm-trimgalore*.out`,
+    which lists files _without_ a match, works too.)
+  - Check that there is a trimmed FASTQ file for each input FASTQ file:
 
-```bash
-grep -c "Successfully finished" slurm-trimgalore*.out | grep ":0"
-```
+    ```bash
+    ls results/trimgalore/*fastq.gz | wc -l
+    ```
+    ```bash-out
+    44
+    ```
 
-- `grep -c` prints a count for each file, like `slurm-trimgalore-56656686.out:1`,
-  and the second `grep` only keeps the lines with a count of `0`.
-- `":0"` can't match the count of a successful job:
-  even a count of 10 would show up as `:10`.
-- If you had already moved the Slurm log files,
-  use `results/trimgalore/logs/slurm-trimgalore*.out` instead.
+- Then, move the Slurm log files:
 
-If all jobs succeeded, this prints nothing.
-To check that the command works,
-add a file that you know doesn't contain the line, like your protocol:
+  ```bash
+  mv -v slurm-trimgalore*.out results/trimgalore/logs/
+  ```
 
-```bash
-grep -c "Successfully finished" slurm-trimgalore*.out protocol.md | grep ":0"
-```
-```bash-out
-protocol.md:0
-```
-
-Using `grep -L` (which lists files _without_ a match) works too,
-as long as you can explain what it does:
-
-```bash
-grep -L "Successfully finished" slurm-trimgalore*.out
-```
-
-</details>
-
-<details><summary>**8.** Resource usage of a TrimGalore job</summary>
-
-Use the job ID from one of the Slurm log file names, e.g.:
-
-```bash
-seff 56656686
-```
-```bash-out
-<???>
-```
-
-- The **CPU efficiency** was <???>%, and the **memory usage** was <???> MB.
-- There is no single correct answer to whether you'd change the number of cores,
-  but we're looking for reasoning based on these numbers:
-  - A CPU efficiency of, say, 30% means that on average,
-    fewer than 3 of the 8 cores were busy.
-    With these small FASTQ files,
-    the job is so short that steps that don't use all cores,
-    like starting the container and running FastQC on the trimmed files,
-    take up a large part of the time.
-    So, for _these_ files, reserving fewer cores (e.g. 4) would be reasonable.
-  - On the other hand, recall from the week 10 exercises
-    that TrimGalore speeds up near-linearly up to 8 cores:
-    with full-size FASTQ files, 8 cores would be a good choice.
-- The memory usage is far below the memory available to the job,
-  but that is not a problem:
-  at OSC, you get a fixed amount of memory per reserved core.
+  It's fine to add this line to your protocol too.
 
 </details>
 
 ### Part C: Transcript quantification with Salmon
 
-<details><summary>**9.** Create the Salmon index</summary>
+<details><summary>**7.** Create the Salmon index</summary>
 
 The `salmon_index.sh` script takes 2 arguments:
 the transcriptome FASTA file, and the output dir for the index.
 
 ````{.markdown .file filename="protocol.md (excerpt)"}
-## Step 3: Creating a transcriptome index with Salmon
+## Step 2: Creating a transcriptome index with Salmon
 
 The `salmon_index.sh` script creates a Salmon index for the reference transcriptome,
 and takes 2 arguments: the transcriptome FASTA file and the output dir.
@@ -259,17 +206,17 @@ sbatch scripts/salmon_index.sh "$ref_transcripts" "$outdir"/salmon_index
 ```
 ````
 
-- **How long it took**: <???>.
+- **How long it took**: Less than a minute!
   You can find this by comparing the two `date` lines at the start and end
-  of the Slurm log file,
-  or with the `Job Wall-clock time` line of `seff <job-id>`.
-- **The size of the index dir**: <???>.
+  of the Slurm log file, or with the `Job Wall-clock time` line of `seff <job-id>`.
+
+- **The size of the index dir**: 1.1 GB.
 
   ```bash
   du -sh results/salmon_index
   ```
   ```bash-out
-  <???>
+  1.1G    results/salmon/index
   ```
 
 - Then, move the Slurm log file:
@@ -280,10 +227,10 @@ sbatch scripts/salmon_index.sh "$ref_transcripts" "$outdir"/salmon_index
 
 </details>
 
-<details><summary>**10.** Run Salmon for all samples</summary>
+<details><summary>**8.** Run Salmon for all samples</summary>
 
 ````{.markdown .file filename="protocol.md (excerpt)"}
-## Step 4: Pseudo-alignment and quantification with Salmon
+## Step 3: Pseudo-alignment and quantification with Salmon
 
 The `salmon_quant.sh` script runs Salmon on the trimmed, paired-end FASTQ files
 of 1 sample at a time.
@@ -303,8 +250,8 @@ done
   the glob `*_R1.fastq.gz` matches them,
   but not the trimming reports (`S63_R1.fastq.gz_trimming_report.txt`) in the same dir.
 - The third argument is the index _dir_, not the transcriptome FASTA file.
-- As always, check that all jobs succeeded,
-  e.g. with the command from question 7,
+- As always, check that all jobs succeeded
+  (e.g. with the `grep -c` command from question 6, but for `slurm-salmon_quant*.out`),
   and that there is an output dir with a `quant.sf` file for each of the 22 samples:
 
   ```bash
@@ -314,125 +261,189 @@ done
   22
   ```
 
+- Then, move the Slurm log files:
+
+  ```bash
+  mv -v slurm-salmon_quant*.out results/salmon/logs/
+  ```
+
 </details>
 
-<details><summary>**11.** Salmon's `quant.sf` output file</summary>
+<details><summary>**9.** The transcripts with the most reads</summary>
+
+First, take a look at the file:
 
 ```bash
 head -n 5 results/salmon/S63/quant.sf
 ```
 ```bash-out
-<???>
+Name    Length  EffectiveLength TPM     NumReads
+XM_039572723.2  2153    1902.086        16.064451       8.000
+XM_039572725.1  3358    3107.086        43.024993       35.000
+XM_039572726.2  452     211.637 54.142127       3.000
+XM_039572727.2  3185    2934.086        0.000000        0.000
 ```
 
-- **`NumReads`** is Salmon's estimate of the number of reads that came from each transcript.
+- **`NumReads`** (column 5) is Salmon's estimate
+  of the number of reads that came from each transcript.
   These are estimates, which is why they can have decimals:
   when a read matches multiple transcripts,
   for example multiple isoforms of the same gene,
   Salmon divides it among them.
-- To get from transcript counts to gene counts,
-  you need to know **which gene each transcript belongs to**,
-  i.e. a transcript-to-gene mapping.
-  You can get this from the genome annotation (GTF/GFF) file ---
-  and in this case, also from the FASTA headers,
-  which contain the gene ID (like `LOC120432648`) of each transcript.
-  The counts of all transcripts of a gene can then be summed.
 
-</details>
-
-<details><summary>**12.** The transcripts with the most reads</summary>
-
-Sort numerically and in reverse order (`-nr`) by the `NumReads` column (column 5):
+Then, sort numerically and in reverse order (`-nr`) by the `NumReads` column:
 
 ```bash
 sort -k5,5nr results/salmon/S63/quant.sf | head -n 3
 ```
 ```bash-out
-<???>
+XM_039591534.2  6566    6315.086        14518.656821    24004.889
+XM_039573735.1  6445    6194.086        5342.073324     8663.254
+XM_039573733.1  6591    6340.086        2876.480244     4774.749
 ```
 
 - The header line doesn't need to be removed first:
   it ends up at the bottom when sorting numerically in reverse order.
   But using `tail -n +2` to remove it is fine too.
 
-Look up the FASTA header of the top transcript:
+</details>
+
+<details><summary>**10.** The gene of the top transcript</summary>
+
+Look up the FASTA header of the top transcript from the previous question
+(its ID is in the first column of the `sort` output):
 
 ```bash
-zcat data/ref/GCF_016801865.2_TS_CPP_V2_rna.fna.gz | grep "<???>"
+zcat data/ref/GCF_016801865.2_TS_CPP_V2_rna.fna.gz | grep "XM_039591534.2"
 ```
 ```bash-out
-<???>
+>XM_039591534.2 PREDICTED: Culex pipiens pallens vitellogenin-A1-like (LOC120426760), mRNA
 ```
 
-The top transcript belongs to the gene <???>.
+The top transcript belongs to the gene LOC120426760.
+
+- The gene ID is in the FASTA header.
+- To get from transcript counts to gene counts,
+  you'd need a transcript-to-gene mapping
+  (e.g. from the GTF/GFF annotation, or from these FASTA headers),
+  and then sum the counts of all transcripts of each gene.
 
 </details>
 
-<details><summary>**13.** Transcripts without reads</summary>
-
-Remove the header line, and use `awk` to keep only lines with a `NumReads` value of 0:
+<details><summary>**11.** Mapping rates</summary>
 
 ```bash
-tail -n +2 results/salmon/S63/quant.sf | awk '$5 == 0' | wc -l
+grep "mapping rate" results/salmon/*/logs/salmon_quant.log
 ```
 ```bash-out
-<???>
-```
-
-- `awk` compares the values numerically,
-  so values like `0.000` would also count as 0.
-  Text-based approaches like `grep` can easily miss such values,
-  or match values like `10` or `0.5`.
-- `quant.sf` lists all 28,624 transcripts (question 4),
-  including the ones without reads.
-  So, the percentage is <???> / 28,624 × 100 = **<???>%**.
-- Possible reasons why so many transcripts have no reads include:
-  - The FASTQ files were subsampled to 500,000 reads,
-    about 5% of the original reads:
-    with so few reads, lowly expressed transcripts are likely to get no reads at all.
-  - Many genes are only expressed in certain tissues, life stages, or conditions.
-  - When a gene has multiple isoforms,
-    Salmon may assign all of its reads to one of them.
-
-</details>
-
-<details><summary>**14.** Mapping rates</summary>
-
-```bash
-grep "Mapping rate" results/salmon/*/logs/salmon_quant.log
-```
-```bash-out
-<???>
+results/salmon/quant/S63/logs/salmon_quant.log:mapping rate: 82.4560%
+results/salmon/quant/S64/logs/salmon_quant.log:mapping rate: 81.9152%
+results/salmon/quant/S65/logs/salmon_quant.log:mapping rate: 79.1055%
+results/salmon/quant/S66/logs/salmon_quant.log:mapping rate: 81.9350%
+results/salmon/quant/S67/logs/salmon_quant.log:mapping rate: 83.0459%
+results/salmon/quant/S68/logs/salmon_quant.log:mapping rate: 78.8070%
+results/salmon/quant/S69/logs/salmon_quant.log:mapping rate: 82.1824%
+results/salmon/quant/S70/logs/salmon_quant.log:mapping rate: 82.3060%
+results/salmon/quant/S71/logs/salmon_quant.log:mapping rate: 79.9047%
+results/salmon/quant/S74/logs/salmon_quant.log:mapping rate: 78.2753%
+results/salmon/quant/S75/logs/salmon_quant.log:mapping rate: 80.3915%
+results/salmon/quant/S76/logs/salmon_quant.log:mapping rate: 82.3396%
+results/salmon/quant/S77/logs/salmon_quant.log:mapping rate: 82.3281%
+results/salmon/quant/S78/logs/salmon_quant.log:mapping rate: 84.2490%
+results/salmon/quant/S79/logs/salmon_quant.log:mapping rate: 80.4061%
+results/salmon/quant/S80/logs/salmon_quant.log:mapping rate: 82.1721%
+results/salmon/quant/S81/logs/salmon_quant.log:mapping rate: 83.6795%
+results/salmon/quant/S82/logs/salmon_quant.log:mapping rate: 78.7291%
+results/salmon/quant/S83/logs/salmon_quant.log:mapping rate: 76.1504%
+results/salmon/quant/S84/logs/salmon_quant.log:mapping rate: 83.2207%
+results/salmon/quant/S85/logs/salmon_quant.log:mapping rate: 76.9540%
+results/salmon/quant/S86/logs/salmon_quant.log:mapping rate: 83.0532%
 ```
 
 Each output line starts with the file name, which contains the sample ID.
 
-The sample with the lowest mapping rate is <???> (<???>%).
+The sample with the lowest mapping rate is S83 (76.1504%).
+
+If you want to sort the mapping rates numerically, you can do:
+
+```bash
+grep "mapping rate" results/salmon/quant/*/logs/salmon_quant.log | sort -t: -k3,3 | head
+```
+```bash-out
+results/salmon/quant/S83/logs/salmon_quant.log:mapping rate: 76.1504%
+results/salmon/quant/S85/logs/salmon_quant.log:mapping rate: 76.9540%
+results/salmon/quant/S74/logs/salmon_quant.log:mapping rate: 78.2753%
+results/salmon/quant/S82/logs/salmon_quant.log:mapping rate: 78.7291%
+results/salmon/quant/S68/logs/salmon_quant.log:mapping rate: 78.8070%
+results/salmon/quant/S65/logs/salmon_quant.log:mapping rate: 79.1055%
+results/salmon/quant/S71/logs/salmon_quant.log:mapping rate: 79.9047%
+results/salmon/quant/S75/logs/salmon_quant.log:mapping rate: 80.3915%
+results/salmon/quant/S79/logs/salmon_quant.log:mapping rate: 80.4061%
+results/salmon/quant/S64/logs/salmon_quant.log:mapping rate: 81.9152%
+```
 
 </details>
 
 ### Part D: Summarizing all steps with MultiQC
 
-<details><summary>**15.** Update your MultiQC script</summary>
+<details><summary>**12.** Update your MultiQC script</summary>
 
-See the `multiqc.sh` script code [below](#the-code-of-the-shell-scripts).
-Compared to the GA3 version, the script now has:
+```{.bash .file filename="scripts/multiqc.sh"}
+#!/bin/bash
+#SBATCH --account=PAS3493
+#SBATCH --mail-type=FAIL
+#SBATCH --output=slurm-multiqc-%j.out
+set -euo pipefail
+
+# Run MultiQC to summarize the output of other programs (e.g. FastQC) in an input dir
+# Usage: sbatch scripts/multiqc.sh <input dir> <output dir>
+
+# Constants
+MULTIQC_CONTAINER=oras://community.wave.seqera.io/library/multiqc:1.35--562c547b518ebe20
+
+# Copy the placeholder variables
+indir="$1"
+outdir="$2"
+
+# Initial logging
+echo "# Starting script multiqc.sh"
+date
+echo "# Input dir:                      $indir"
+echo "# Output dir:                     $outdir"
+echo
+
+# Create the output dir (with a subdir for Slurm logs)
+mkdir -p "$outdir"/logs
+
+# Run MultiQC
+apptainer exec "$MULTIQC_CONTAINER" multiqc \
+    --outdir "$outdir" \
+    "$indir"
+
+# Final logging
+echo
+echo "# Used MultiQC version:"
+apptainer exec "$MULTIQC_CONTAINER" multiqc --version
+echo "# Successfully finished script multiqc.sh"
+date
+```
+
+Compared to the provided version
+(see [below](#the-code-of-the-shell-scripts)), the script now has:
 
 - `#SBATCH` lines for the OSC project, the Slurm log file name, and email notification
   (the default time limit of 1 hour is plenty)
-- The logging statements at the start and end, including the MultiQC version
-- A `mkdir -p "$outdir"/logs` line
-- (If needed) a container link for MultiQC version 1.35 or later
+- _Optionally_, `sbatch` instead of `bash` in the usage line
 
-Your Git history should contain both the GA3 version
+Your Git history should contain both the provided version
 and the updated version of the script.
 
 </details>
 
-<details><summary>**16.** Run MultiQC</summary>
+<details><summary>**13.** Run MultiQC</summary>
 
 ````{.markdown .file filename="protocol.md (excerpt)"}
-## Step 5: Summarizing the results of all steps with MultiQC
+## Step 4: Summarizing the results of all steps with MultiQC
 
 The `multiqc.sh` script runs MultiQC once for the outputs of all previous steps,
 and takes 2 arguments: the input dir and the output dir.
@@ -445,13 +456,16 @@ sbatch scripts/multiqc.sh "$outdir" "$outdir"/multiqc
 The relevant lines of the Slurm log file:
 
 ```bash-out
-<???>
+       file_search | Search path: /fs/ess/PAS3493/people/jelmer/GA5/results
+            salmon | Found 22 meta reports
+            salmon | Found 22 fragment length distributions
+            salmon | Found 22 library format counts reports
+       trim_galore | Found 44 reports
+            fastqc | Found 44 reports
 ```
 
-<!-- TODO: check these counts and module names against the test run -->
-- **FastQC: 88 reports** ---
-  44 from the FastQC step (one per raw FASTQ file),
-  plus 44 from the FastQC runs that TrimGalore did on the trimmed FASTQ files.
+- **FastQC: 44 reports** ---
+  from the FastQC runs that TrimGalore did on the 44 trimmed FASTQ files.
 - **TrimGalore: 44 reports** ---
   one trimming report for each of the 44 input FASTQ files.
 - **Salmon: 22 reports** ---
@@ -459,20 +473,38 @@ The relevant lines of the Slurm log file:
 
 </details>
 
-<details><summary>**17.** Explore the MultiQC report</summary>
+<details><summary>**14.** Explore the MultiQC report</summary>
 
 - In the General Statistics table, the sample with the lowest Salmon mapping rate
-  is <???>, which should match your answer to question 14.
-- In the nf-core report, STAR aligned about 80--86% of the reads uniquely,
-  and a few percent more to multiple locations.
-  Your Salmon mapping rates were <???>.
-- A likely explanation for lower Salmon mapping rates is that Salmon can only
-  map reads to the sequences of **annotated transcripts**,
-  whereas STAR aligns reads to the whole **genome**.
-  Reads from introns (e.g. from not yet spliced pre-mRNAs),
-  from intergenic regions,
-  or from genes that are missing from the annotation
-  can be aligned by STAR, but not mapped by Salmon.
+  is S83, which should match your answer to question 11.
+- That's because MultiQC takes this rate from the same Salmon log/output files
+  that you extracted it from in question 11.
+
+</details>
+
+<details><summary>**15.** Adapter length distribution</summary>
+
+- The most common adapter lengths trimmed from the reads are approximately 1-3 bp.
+- Many people expect mostly long, full-length adapters,
+  so short lengths can be surprising.
+- Why short lengths are generally the most common:
+  adapter sequence only ends up in a read when the DNA fragment is shorter than
+  the read length, and a fragment is typically only a little shorter,
+  so that just the first few bases of the adapter are sequenced.
+- Also, TrimGalore's default settings are very sensitive:
+  it trims even a match of a single adapter base at the end of a read,
+  and such short matches often occur by chance
+  (with a 1-in-4 chance for a single base).
+
+</details>
+
+<details><summary>**16.** Ask Claude about the MultiQC report</summary>
+
+There is no single correct answer here.
+We're looking for a specific question about an aspect of the report
+that the student didn't fully understand,
+and a summary in their own words of what they learned,
+rather than text copied from Claude.
 
 </details>
 
@@ -484,16 +516,16 @@ Your protocol should now look something like this:
 # RNA-seq analysis of _Culex pipiens_
 
 - Author: Jane Doe
-- Date: 2026-11-02
-- GitHub repository: https://github.com/janedoe/GA5
-- This was run at the Cardinal cluster of the Ohio Supercomputer Center (<www.osc.edu>)
-- OSC working dir: /fs/ess/PAS3493/people/jdoe/GA5
+- Date created: 2026-11-02
+- Date last modified: 2026-11-04
+- This was run at the Pitzer cluster of the Ohio Supercomputer Center (<https://www.osc.edu>)
+- OSC working dir: `/fs/ess/PAS3493/people/jdoe/GA5`
+- GitHub repository: <https://github.com/janedoe/GA5>
 
 ## Prerequisites
 
 - **Input files**:
-  - Paired-end RNA-seq reads (FASTQ files) from Garrigós et al. (2025)
-  - The reference transcriptome (FASTA file) of _Culex pipiens_ from NCBI
+  - Paired-end RNA-seq reads are in `../garrigos/fastq`
 
 - **Software**:
   - The scripts run programs using Apptainer containers,
@@ -504,22 +536,16 @@ Your protocol should now look something like this:
 - Run all code from the working dir listed above.
   You don't need to create the output dirs, because the scripts will do so.
 
-## Set up: Get the input files
+- Each script writes a Slurm log file (`slurm-<script>-<jobID>.out`) to the working dir.
+  After the jobs of a step have finished, check these logs for errors,
+  then move them into a `logs/` dir within that step's output dir.
 
-1. The FASTQ files were downloaded from a GitHub repo,
-   from the parent dir of the working dir, as follows:
+## Set up: Download the reference transcriptome FASTA file from NCBI
 
-   ```bash
-   cd ..
-   git clone https://github.com/cfaes-bioinfo/garrigos
-   cd -
-   ```
-
-2. Download the reference transcriptome FASTA file from NCBI:
-
-   ```bash
-   wget -P data/ref https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_rna.fna.gz
-   ```
+```bash
+# Downloaded on 2026-11-02
+wget -P data/ref https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_rna.fna.gz
+```
 
 ## Set up: Set file paths
 
@@ -532,18 +558,7 @@ ref_transcripts=data/ref/GCF_016801865.2_TS_CPP_V2_rna.fna.gz
 outdir=results
 ```
 
-## Step 1: Read QC with FastQC
-
-The `fastqc.sh` script runs on 1 FASTQ file at a time and takes 2 arguments:
-the input FASTQ file and the output dir.
-
-```bash
-for fastq in "$fastq_dir"/*fastq.gz; do
-    sbatch scripts/fastqc.sh "$fastq" "$outdir"/fastqc
-done
-```
-
-## Step 2: Read trimming with TrimGalore
+## Step 1: Read trimming with TrimGalore
 
 The `trimgalore.sh` script runs TrimGalore on the paired-end FASTQ files of 1 sample at a time,
 and gives the output FASTQ files the same names as the input files.
@@ -556,7 +571,7 @@ for fastq_r1 in "$fastq_dir"/*_R1.fastq.gz; do
 done
 ```
 
-## Step 3: Creating a transcriptome index with Salmon
+## Step 2: Creating a transcriptome index with Salmon
 
 The `salmon_index.sh` script creates a Salmon index for the reference transcriptome,
 and takes 2 arguments: the transcriptome FASTA file and the output dir.
@@ -565,7 +580,7 @@ and takes 2 arguments: the transcriptome FASTA file and the output dir.
 sbatch scripts/salmon_index.sh "$ref_transcripts" "$outdir"/salmon_index
 ```
 
-## Step 4: Pseudo-alignment and quantification with Salmon
+## Step 3: Pseudo-alignment and quantification with Salmon
 
 The `salmon_quant.sh` script runs Salmon on the trimmed, paired-end FASTQ files
 of 1 sample at a time.
@@ -579,7 +594,7 @@ for fastq_r1 in "$outdir"/trimgalore/*_R1.fastq.gz; do
 done
 ```
 
-## Step 5: Summarizing the results of all steps with MultiQC
+## Step 4: Summarizing the results of all steps with MultiQC
 
 The `multiqc.sh` script runs MultiQC once for the outputs of all previous steps,
 and takes 2 arguments: the input dir and the output dir.
@@ -590,84 +605,22 @@ sbatch scripts/multiqc.sh "$outdir" "$outdir"/multiqc
 ````
 
 - Each step can only be run once all jobs of the previous step have finished,
-  except for Steps 1 and 2, which both use the raw FASTQ files,
-  and Step 3, which only uses the reference transcriptome.
+  except for Step 2, which only uses the reference transcriptome,
+  and can therefore run at the same time as Step 1.
 - Lines to move the Slurm log files into the `logs` dirs are fine to include too.
 
 </details>
 
-### Part E: An overview of your jobs and files
-
-<details><summary>**18.** An overview of your jobs with `sacct`</summary>
-
-Use the date on which you started the assignment, e.g.:
-
-```bash
-sacct -X --starttime=2026-11-02 --format=JobID,JobName%15,State,Elapsed
-```
-```bash-out
-<???>
-```
-
-- If every job succeeded the first time, you ran **90 jobs** for the workflow:
-  44 (FastQC) + 22 (TrimGalore) + 1 (Salmon index) + 22 (Salmon quant) + 1 (MultiQC).
-  You may have run more, e.g. if you reran failed jobs,
-  and the list also includes the jobs for your VS Code sessions
-  (`ondemand/sys/...`).
-- Any jobs with a state other than `COMPLETED` (e.g. `FAILED`)
-  did not complete successfully.
-- The jobs of the <???> step took the longest (<???>).
-
-</details>
-
-<details><summary>**19.** Which files to keep</summary>
-
-```bash
-du -sh ../garrigos/fastq data/ref results/*
-```
-```bash-out
-<???>
-```
-
-There is no single correct answer, but here are some considerations:
-
-- **Keep and back up**:
-  - The **raw FASTQ files**: as discussed in week 11,
-    raw data should never be deleted.
-    (In this case, the files can also be downloaded again from GitHub,
-    but for your own research data, you'd be responsible for keeping copies.)
-  - The **Salmon quantification results**, which are the final output of the workflow,
-    and are needed for downstream analyses.
-    They're relatively small, and slow-ish to regenerate.
-  - **Small summary files and logs**: the MultiQC report, FastQC reports,
-    TrimGalore trimming reports, and Slurm log files.
-- **Could be deleted** once the analysis is done:
-  - The **trimmed FASTQ files** in `results/trimgalore`,
-    which are large and are only needed as input for Salmon.
-  - The **Salmon index** (`results/salmon_index`), which is large and is only needed
-    to run Salmon.
-  - The **reference transcriptome** (`data/ref`),
-    which can be downloaded again from NCBI.
-- To regenerate the deleted files, you'd need:
-  - The raw FASTQ files
-  - Your protocol and scripts (in your Git repo),
-    which contain the reference download link,
-    and the container links that specify the software versions
-  - The same reference transcriptome version,
-    which is part of the file name (`GCF_016801865.2`)
-
-</details>
-
-### Part F: Bring in genAI
+### Part E: Improving the workflow with genAI
 
 Your genAI answers will vary,
 so the notes below focus on what we're looking for.
 
-<details><summary>**20.** AI review of your protocol</summary>
+<details><summary>**17.** AI review of your protocol</summary>
 
 There is no single correct answer here.
-We're looking for a thoughtful evaluation of each of Claude's points,
-and commits with the changes you made.
+We're looking for a thoughtful evaluation of at least three of Claude's suggestions:
+whether the student agrees or disagrees with each one, and why.
 Some points that Claude may raise:
 
 - Reasonable points, such as that the protocol doesn't say
@@ -685,34 +638,18 @@ Some points that Claude may raise:
 
 </details>
 
-<details><summary>**21.** An AI-generated summary table</summary>
+<details><summary>**18.** Address a suggestion</summary>
 
-Claude's command or script will vary,
-but it will likely get the numbers from the TrimGalore trimming reports
-and the Salmon log files, e.g. with `grep` and a loop over the samples.
-
-- The number of read pairs before trimming should be **500,000** for every sample,
-  since the FASTQ files were subsampled to that number of reads.
-- The percentage of read pairs kept is 100% minus the percentage of pairs removed,
-  e.g. <???>% for `S63`.
-- The mapping rates should match your answer to question 14.
-
-Some common mistakes to look out for:
-
-- Using the wrong quantity, such as the percentage of reads with adapters,
-  or the percentage of _bases_ that was trimmed,
-  instead of the percentage of read pairs kept.
-- Counting reads per file instead of read pairs,
-  e.g. by adding up the R1 and R2 files.
-- Comparing the table's values to General Statistics columns
-  that look similar but measure something else:
-  check the column descriptions in the MultiQC report.
+We're looking for at least one change to the protocol and/or the scripts
+that follows from a suggestion the student agreed with,
+a commit containing that change,
+and a description of the change in the README.
 
 </details>
 
-### Submission
+### Part F: Publish your repo on GitHub
 
-<details><summary>**22.** Create a GitHub repo, and push</summary>
+<details><summary>**19.** Create a GitHub repo, and push</summary>
 
 After creating the repo on GitHub:
 
@@ -731,11 +668,11 @@ git push
 
 - Your GitHub repo should be public.
 - It should contain your final `README.md`, `protocol.md`, `.gitignore`,
-  `scripts`, and `doc/ai`, but not `data` or `results`.
+  and `scripts`, but not `data` or `results`.
 
 </details>
 
-<details><summary>**23.** Get a (test) DOI with Zenodo</summary>
+<details><summary>**20.** Get a (test) DOI with Zenodo</summary>
 
 - Your `README.md` should contain a Zenodo Sandbox DOI,
   like `10.5072/zenodo.123456`.
@@ -745,251 +682,30 @@ git push
 
 ## The code of the shell scripts
 
-<details><summary>Click to see the code of the `fastqc.sh` script</summary>
-```bash
-#!/bin/bash
-#SBATCH --account=PAS3493
-#SBATCH --mail-type=FAIL
-#SBATCH --output=slurm-fastqc-%j.out
-set -euo pipefail
-
-# Constants
-FASTQC_CONTAINER=oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960
-
-# Copy the placeholder variables
-fastq="$1"
-outdir="$2"
-
-# Initial logging
-echo "# Starting script fastqc.sh"
-date
-echo "# Input FASTQ file:   $fastq"
-echo "# Output dir:         $outdir"
-echo
-
-# Create the output dir (with a subdir for Slurm logs)
-mkdir -p "$outdir"/logs
-
-# Run FastQC
-apptainer exec "$FASTQC_CONTAINER" fastqc \
-    --outdir "$outdir" \
-    "$fastq"
-
-# Final logging
-echo
-echo "# Used FastQC version:"
-apptainer exec "$FASTQC_CONTAINER" fastqc --version
-echo
-echo "# Successfully finished script fastqc.sh"
-date
-```
-</details>
-
 <details><summary>Click to see the code of the `multiqc.sh` script</summary>
-```bash
-#!/bin/bash
-#SBATCH --account=PAS3493
-#SBATCH --mail-type=FAIL
-#SBATCH --output=slurm-multiqc-%j.out
-set -euo pipefail
 
-# Constants
-MULTIQC_CONTAINER=oras://community.wave.seqera.io/library/multiqc:1.35--562c547b518ebe20
-
-# Copy the placeholder variables
-indir="$1"
-outdir="$2"
-
-# Initial logging
-echo "# Starting script multiqc.sh"
-date
-echo "# Input dir:                      $indir"
-echo "# Output file:                    $outdir"
-echo
-
-# Create the output dir (with a subdir for Slurm logs)
-mkdir -p "$outdir"/logs
-
-# Run MultiQC
-apptainer exec "$MULTIQC_CONTAINER" multiqc \
-    --outdir "$outdir" \
-    "$indir"
-
-# Final logging
-echo
-echo "# Used MultiQC version:"
-apptainer exec "$MULTIQC_CONTAINER" multiqc --version
-echo "# Successfully finished script multiqc.sh"
-date
+```{.bash .file filename="scripts/multiqc.sh" include="../assets/GA5/multiqc.sh"}
 ```
+
 </details>
 
 <details><summary>Click to see the code of the `trimgalore.sh` script</summary>
-```bash
-#!/bin/bash
-#SBATCH --account=PAS3493
-#SBATCH --cpus-per-task=8
-#SBATCH --time=30
-#SBATCH --output=slurm-trimgalore-%j.out
-#SBATCH --mail-type=FAIL
-set -euo pipefail
 
-# Constants
-TRIMGALORE_CONTAINER=oras://community.wave.seqera.io/library/trim-galore:2.3.0--a56e49e832976df4
-
-# Copy the placeholder variables
-fastq_r1="$1"
-fastq_r2="$2"
-outdir="$3"
-
-# Initial logging
-echo "# Starting script trimgalore.sh"
-date
-echo "# Input R1 FASTQ file:      $fastq_r1"
-echo "# Input R2 FASTQ file:      $fastq_r2"
-echo "# Output dir:               $outdir"
-echo
-
-# Create the output dir (with a subdir for Slurm logs)
-mkdir -p "$outdir"/logs
-
-# Run TrimGalore
-apptainer exec "$TRIMGALORE_CONTAINER" trim_galore \
-    --cores 8 \
-    --paired \
-    --fastqc \
-    --output_dir "$outdir" \
-    "$fastq_r1" \
-    "$fastq_r2"
-
-# Build the output file names:
-sample_id=$(basename "$fastq_r1" _R1.fastq.gz)
-R1_out_init="$outdir"/"$sample_id"_R1_val_1.fq.gz
-R2_out_init="$outdir"/"$sample_id"_R2_val_2.fq.gz
-R1_out_final="$outdir"/"$sample_id"_R1.fastq.gz
-R2_out_final="$outdir"/"$sample_id"_R2.fastq.gz
-
-# Rename the output files:
-echo
-echo "# Renaming the output files:"
-mv -v "$R1_out_init" "$R1_out_final"
-mv -v "$R2_out_init" "$R2_out_final"
-
-# Final logging
-echo
-echo "# TrimGalore version:"
-apptainer exec "$TRIMGALORE_CONTAINER" trim_galore -v
-echo "# Successfully finished script trimgalore.sh"
-date
+```{.bash .file filename="scripts/trimgalore.sh" include="../assets/GA5/trimgalore.sh"}
 ```
+
 </details>
 
 <details><summary>Click to see the code of the `salmon_index.sh` script</summary>
-```bash
-#!/bin/bash
-#SBATCH --account=PAS3493
-#SBATCH --cpus-per-task=8
-#SBATCH --time=60
-#SBATCH --mail-type=FAIL
-#SBATCH --output=slurm-salmon_index-%j.out
-set -euo pipefail
 
-# Constants
-SALMON_CONTAINER=<???>
-
-# Copy the placeholder variables
-transcripts="$1"
-outdir="$2"
-
-# Initial logging
-echo "# Starting script salmon_index.sh"
-date
-echo "# Input transcriptome FASTA file: $transcripts"
-echo "# Output dir:                     $outdir"
-echo
-
-# Create the output dir (with a subdir for Slurm logs)
-mkdir -p "$outdir"/logs
-
-# Run Salmon
-apptainer exec "$SALMON_CONTAINER" salmon index \
-    --transcripts "$transcripts" \
-    --index "$outdir" \
-    --threads 8
-
-#? - Note: This command was kept as simple as possible - if using Salmon in your research,
-#?   look into a "decoy-aware" index, which adds the genome sequence as "decoys"
-#?   (see https://salmon.readthedocs.io/en/latest/salmon.html#preparing-transcriptome-indices-mapping-based-mode)
-#? - Explanation of some of the options used:
-#?   --transcripts  => The transcriptome FASTA file (can be gzipped)
-#?   --index        => The output dir for the index
-
-# Final logging
-echo
-echo "# Used Salmon version:"
-apptainer exec "$SALMON_CONTAINER" salmon --version
-echo "# Successfully finished script salmon_index.sh"
-date
+```{.bash .file filename="scripts/salmon_index.sh" include="../assets/GA5/salmon_index.sh"}
 ```
+
 </details>
 
 <details><summary>Click to see the code of the `salmon_quant.sh` script</summary>
-```bash
-#!/bin/bash
-#SBATCH --account=PAS3493
-#SBATCH --cpus-per-task=8
-#SBATCH --time=30
-#SBATCH --mail-type=FAIL
-#SBATCH --output=slurm-salmon_quant-%j.out
-set -euo pipefail
 
-# Constants
-SALMON_CONTAINER=<???>
-
-# Copy the placeholder variables
-R1="$1"
-R2="$2"
-index_dir="$3"
-outdir="$4"
-
-# Infer the "sample ID" - we need this for the output dir specification
-sample_id=$(basename "$R1" _R1.fastq.gz)
-
-# Initial logging
-echo "# Starting script salmon_quant.sh"
-date
-echo "# Input R1 FASTQ file:            $R1"
-echo "# Input R2 FASTQ file:            $R2"
-echo "# Input Salmon index:             $index_dir"
-echo "# Output dir:                     $outdir"
-echo "# Sample ID (inferred):           $sample_id"
-echo
-
-# Create the output dir (with a subdir for Slurm logs)
-mkdir -p "$outdir"/logs
-
-# Run Salmon
-apptainer exec "$SALMON_CONTAINER" salmon quant \
-    --index "$index_dir" \
-    --libType A \
-    --mates1 "$R1" \
-    --mates2 "$R2" \
-    --threads 8 \
-    --output "$outdir"/"$sample_id"
-
-#? - Note: keeping this command as simple as possible -
-#?   if using Salmon in your research, then look into, e.g., the --gcBias and
-#?   --seqBias options as well.
-#? - Explanation of some of the options used:
-#?   --libType A                     => Automatically infer the library type (e.g., strandedness)
-#?   --mates1 / --mates2             => The R1 and R2 FASTQ files of a paired-end sample
-#?   --output "$outdir"/"$sample_id" => Each sample gets its own output dir
-
-# Final logging
-echo
-echo "# Used Salmon version:"
-apptainer exec "$SALMON_CONTAINER" salmon --version
-echo "# Successfully finished script salmon_quant.sh"
-date
+```{.bash .file filename="scripts/salmon_quant.sh" include="../assets/GA5/salmon_quant.sh"}
 ```
+
 </details>

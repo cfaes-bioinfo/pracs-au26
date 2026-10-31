@@ -50,15 +50,14 @@ The output of the command was:
 
 ------------------------------------------------------------------------
 
-## Part B: Read QC and trimming
-
-### 5: Run FastQC
-
-*Answer*: The number of batch jobs you submitted, and whether they all succeeded:
+## Part B: Read trimming
 
 ### 6: Run TrimGalore
 
-<!-- No command/output needed here -- we check `protocol.md` directly. -->
+<!-- Put the code to run TrimGalore in `protocol.md`, not here. -->
+
+*Answer*: The number of batch jobs you submitted, whether they all succeeded,
+and how you checked that:
 
 ### 7: Find Slurm log files without the "Successfully finished" line
 

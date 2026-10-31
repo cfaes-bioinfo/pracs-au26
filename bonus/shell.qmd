@@ -1,6 +1,6 @@
 ---
 title: "More Unix shell:<br>wildcards, brace expansion, `find` & `xargs`"
-subtitle: "Optional self-study content"
+subtitle: "Optional self-study content for week 4"
 pagetitle: "Advanced shell"
 date: 2026-09-21
 date-modified: last-modified
@@ -41,6 +41,8 @@ and [w4c](../week04/w4c_shell-files2.qmd)):
 
 - [Other shell wildcards](#other-shell-wildcards)
 - [Brace expansion](#brace-expansion)
+- [Globbing across dirs](#globbing-across-dirs),
+  including the `globstar`, `nullglob`, and `failglob` shell options
 - [The `find` command to find files](#the-find-command-to-find-files)
 - [`xargs` to repeat commands](#xargs-to-repeat-commands)
 
@@ -307,6 +309,241 @@ treatment-Df_temp-med  treatment-Kr_temp-med  treatment-Tr_temp-med
    </details>
 :::
 
+## Globbing across dirs
+
+### Wildcards in dir names
+
+So far, you have used wildcards to match the names of files in a single dir,
+like `*.fastq` or `data/*.fastq`.
+But a wildcard can also stand in for a dir name,
+at any level of a path.
+
+To try this, create a dummy `results` dir with a subdir for each of three samples,
+like the output of a program that writes a separate subdir for each sample:
+
+```sh
+# (You should be in /fs/ess/PAS3493/people/$USER/week04/sandbox)
+mkdir -p results/S{1..3}/logs
+touch results/S{1..3}/counts.tsv results/S{1..3}/logs/run.log results/README.md
+```
+
+Now, you can use a `*` in place of the sample dir name
+to select the files of all samples at once:
+
+```bash
+ls results/*/counts.tsv
+```
+```bash-out
+results/S1/counts.tsv  results/S2/counts.tsv  results/S3/counts.tsv
+```
+
+You can also use wildcards at several levels of a path:
+
+```bash
+ls results/*/logs/*.log
+```
+```bash-out
+results/S1/logs/run.log  results/S2/logs/run.log  results/S3/logs/run.log
+```
+
+A pattern that ends in a `/` only matches dirs.
+To see this, use `echo`, which simply prints what the pattern expands to
+(with `ls`, you'd instead see the _contents_ of the matched dirs).
+First, a pattern without a trailing `/`, which matches the `README.md` file too:
+
+```bash
+echo results/*
+```
+```bash-out
+results/README.md results/S1 results/S2 results/S3
+```
+
+With a trailing `/`, only the dirs are matched:
+
+```bash
+echo results/*/
+```
+```bash-out
+results/S1/ results/S2/ results/S3/
+```
+
+### Recursive globbing with `**`
+
+A `*` never matches across levels of a path:
+the `*` in `results/*.log` only matches names of files and dirs directly in `results`,
+so this pattern doesn't match the log files in the sample dirs.
+
+When the files you want are at different or unknown depths,
+you can use **`**`**, which matches any number of dir levels, including none.
+This only works after you turn on the `globstar` option
+with the `shopt` ("**sh**ell **opt**ions") command:
+
+```bash
+# 'shopt -s' sets (turns on) an option:
+shopt -s globstar
+
+ls results/**/*.log
+```
+```bash-out
+results/S1/logs/run.log  results/S2/logs/run.log  results/S3/logs/run.log
+```
+
+The command `find results -name "*.log"` would give the same result.
+Globbing with `**` is shorter and works directly with any command,
+whereas the `find` command (see below) is more flexible:
+for example, it can also select files by type, size, or date.
+
+::: callout-warning
+#### Without `globstar`, `**` acts like a single `*`
+If the `globstar` option is off, you won't get an error message:
+`results/**/*.log` will silently be treated like `results/*/*.log`,
+which only matches files exactly one level down.
+:::
+
+### When nothing matches: `nullglob` and `failglob`
+
+Recall from [w7b](../week07/w7b_scripts2.qmd#combining-loops-and-globbing)
+that when a glob doesn't match any files, the shell leaves the pattern as is,
+so a loop will run once with the pattern itself as the "file name":
+
+```bash
+for file in results/*.bam; do
+    echo "Found file $file"
+done
+```
+```bash-out
+Found file results/*.bam
+```
+
+If you turn on the `nullglob` option,
+a glob that doesn't match anything instead expands to _nothing_,
+so the loop doesn't run at all:
+
+```bash
+shopt -s nullglob
+
+for file in results/*.bam; do
+    echo "Found file $file"
+done
+```
+```bash-out
+# (No output)
+```
+
+But `nullglob` can also change what other commands do.
+For example, when its only argument is an unmatched glob,
+`ls` now receives no arguments at all,
+and therefore lists the contents of your working dir:
+
+```bash
+ls results/*.bam
+```
+```bash-out
+# [Output: all files and dirs in your working dir]
+```
+
+Shell options stay in effect for the rest of your shell session,
+so turn `nullglob` off again with `shopt -u` (for "unset"):
+
+```bash
+shopt -u nullglob
+
+# Check whether an option is on or off:
+shopt nullglob
+```
+```bash-out
+nullglob        off
+```
+
+The related `failglob` option makes an unmatched glob an **error**:
+the shell prints a `no match` error and doesn't run the command.
+In a script, this also makes the script stop.
+
+Both options are mostly useful in shell scripts.
+Because a script runs in a new shell,
+options that you set in a script only apply to that script,
+and you would set them right below the `set -euo pipefail` line.
+Which option to use depends on what should happen if no files match:
+
+- **`failglob`** when no matching files means that something went wrong,
+  e.g. when looping over input files that should exist.
+  Then, the script stops instead of running a command on a non-existent "file".
+- **`nullglob`** when no matching files is a valid situation,
+  e.g. when looping over optional files that may or may not be present.
+
+::: {.callout-note collapse="true"}
+#### Hidden files _(Click to expand)_
+By default, wildcards don't match hidden files,
+i.e. files whose names start with a `.`, like `.gitignore`.
+To make them match hidden files too, turn on the `dotglob` option
+with `shopt -s dotglob`.
+:::
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 2: Globbing across dirs
+
+1. Turn the `globstar` option off with `shopt -u globstar`.
+   Predict the output of the following command, then run it to check:
+
+   ```bash
+   ls results/**/*.log
+   ```
+
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer_</summary>
+
+   ```bash-out
+   ls: cannot access 'results/**/*.log': No such file or directory
+   ```
+
+   Without `globstar`, the pattern is treated like `results/*/*.log`.
+   That doesn't match any files, since the log files are two levels down,
+   in `results/S1/logs` etc.
+   As usual, the shell then leaves the pattern as is,
+   and `ls` can't find a file with that literal name.
+   </details>
+
+2. Turn `globstar` back on.
+   Then, list all `.log` _and_ `.tsv` files in `results`, at any depth,
+   with a single `ls` command.
+   (Hint: combine the `**` wildcard with brace expansion.)
+
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer_</summary>
+
+   ```bash
+   shopt -s globstar
+   ls results/**/*.{log,tsv}
+   ```
+   ```bash-out
+   results/S1/counts.tsv    results/S2/counts.tsv    results/S3/counts.tsv
+   results/S1/logs/run.log  results/S2/logs/run.log  results/S3/logs/run.log
+   ```
+
+   Brace expansion happens first,
+   turning the pattern into two separate globs:
+   `results/**/*.log` and `results/**/*.tsv`.
+   </details>
+
+3. A script loops over `"$fastq_dir"/*.fastq.gz`,
+   and has `shopt -s nullglob` at the top.
+   You run it with a typo in the input dir name.
+   What happens, and why could this be a problem?
+   Which option would be a better choice here?
+
+   <details><summary> {{< fa check-circle >}} &nbsp; _Click to see the answer_</summary>
+
+   The glob doesn't match any files,
+   so with `nullglob`, it expands to nothing and the loop doesn't run at all.
+   The script will then finish without errors,
+   even though it didn't process a single file ---
+   so you may not notice the problem until later.
+
+   `failglob` would be a better choice here:
+   the input FASTQ files should exist,
+   so no matches means that something went wrong,
+   and the script will stop with a `no match` error.
+   </details>
+:::
+
 ## The `find` command to find files
 
 ### Two problems you may run into
@@ -544,7 +781,7 @@ find data/seqs -name "*-temp.fastq" -delete
 ```
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 2: `find`
+#### {{< fa user-edit >}} Exercise 3: `find`
 
 1. The practice dataset contains gzip-compressed (`.gz`) files of more than one type.
    Using a single `find` command,
@@ -688,7 +925,7 @@ removed './samples B.txt'
 ```
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 3: `xargs`
+#### {{< fa user-edit >}} Exercise 4: `xargs`
 
 1. Predict the output of each of these two commands, then run them to check:
 
