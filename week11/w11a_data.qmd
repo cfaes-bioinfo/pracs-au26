@@ -46,19 +46,27 @@ language:
 
 ### Learning goals
 
-- Why you should prefer relative paths over absolute paths
 - How you can manage your data and share it after publication
 - How to organize sample metadata in spreadsheets
+- Why you should prefer relative paths over absolute paths
 - How to transfer files between OSC and other computers like your own
 - How to download files at the command line
 - How to compress and decompress files
 
 ### Getting ready
 
-At <https://ondemand.osc.edu>,
-start a VS Code session in `/fs/ess/PAS3493/people/$USER`,
-with **4 cores** (you'll need these for the pipeline test run in
-[Lecture B](w11b_nfcore1.qmd)).
+1. At <https://ondemand.osc.edu>,
+   start a VS Code session in `/fs/ess/PAS3493/people/$USER`,
+   with **4 cores** (you'll need these for the pipeline test run in
+   [Lecture B](w11b_nfcore1.qmd)).
+
+2. In your VS Code terminal, create a working dir for this week
+   with a `sandbox` dir inside it, and move into the week dir:
+
+   ```bash
+   mkdir -p week11/sandbox
+   cd week11
+   ```
 
 ## Relative paths and data management
 
@@ -82,7 +90,7 @@ Here is a table with methods to transfer files between your computer and OSC:
 | **OnDemand Files menu**                                                                         | smaller (<1GB)        | GUI               | Easy          | Limited               |
 | **Remote transfer commands** (e.g. [`scp`, `rsync`](../bonus/ssh.qmd#remote-transfer-commands))  | any                   | CLI               | Moderate      | Extensive             |
 | **SFTP**                                                                                        | any                   | Either            | Moderate      | Extensive             |
-| **Globus**                                                                                      | larger (>1GB)         | GUI               | Moderate      | Extensive             |
+| **[Globus](../bonus/ssh.qmd#globus)**                                                           | larger (>1GB)         | GUI               | Moderate      | Extensive             |
 
 : {.striped .hover}
 
@@ -118,7 +126,8 @@ Let's give that a try!
    There is also an icon in the far top-left to access this menu.
    Additionally, there is a "Quickconnect" bar,
    but I've not managed to connect to OSC with that.].
-   In the Site Manager, enter/select the following:
+   In the Site Manager, click **New site**, name it e.g. `OSC`,
+   and then enter/select the following:
    - _Protocol_: "SFTP - SSH File Transfer Protocol"
    - _Host_: `sftp.osc.edu` (leave the Port box empty)
    - _Logon Type_: Make sure "Normal" is selected
@@ -138,7 +147,7 @@ Let's give that a try!
    You can change directories in either file explorer.
    At OSC, your default location is your Home dir,
    but you can type a partial path in the top bar (e.g. `/fs/ess/PAS3493`)
-   and then click your way on.
+   and then click your way to your personal dir.
 
 ![](../img/filezilla_proj-dir.png){fig-align="center" width="70%" fig-alt="A screenshot of FileZilla showing how to change the remote dir." .lightbox}
 
@@ -244,10 +253,12 @@ and download it again.
 On the same NCBI page, there is a FASTA file with the sequences of all predicted proteins
 (`GCF_016801865.2_TS_CPP_V2_protein.faa.gz`).
 
-1. Download it into `garrigos/ref` with a single command.
+1. Download it into your `sandbox` dir with a single command.
 2. How many proteins are in the file?
    (Hint: each sequence has a header line starting with `>`,
    and you don't need to unzip the file first.)
+3. The _Culex pipiens_ annotation contains fewer genes than there are proteins in this file.
+   Why might that be?
 :::
 
 <!----
@@ -256,14 +267,18 @@ On the same NCBI page, there is a FASTA file with the sequences of all predicted
 1. Copy the link to the file, and then run:
 
    ```bash
-   wget -P garrigos/ref https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_protein.faa.gz
+   wget -P sandbox https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_protein.faa.gz
    ```
 
 2. Use `zcat` to print the unzipped contents, and count the header lines with `grep -c`:
 
    ```bash
-   zcat garrigos/ref/GCF_016801865.2_TS_CPP_V2_protein.faa.gz | grep -c ">"
+   zcat sandbox/GCF_016801865.2_TS_CPP_V2_protein.faa.gz | grep -c ">"
    ```
+
+3. Many genes have multiple transcripts ("isoforms") due to alternative splicing,
+   and each of these can code for a different protein.
+   (Conversely, non-coding genes don't code for any protein.)
 
 </details>
 ---->
@@ -273,10 +288,13 @@ On the same NCBI page, there is a FASTA file with the sequences of all predicted
 ::: callout-note
 #### Another download command: `curl`
 
-Another commonly used downloading command is `curl`.
-Both have similar functionality, so you don't necessarily need to learn both,
+Another commonly used download command is `curl`.
+The two have similar functionality, so you don't necessarily need to learn both,
 but you're likely to see examples with `curl` elsewhere,
 and genAI tools may suggest it to you.
+One key difference is that by default, `curl` prints the downloaded contents to the screen
+instead of saving them to a file:
+use its `-O` option to save the file under its original name.
 :::
 
 ::: callout-tip
@@ -360,8 +378,8 @@ gzip -c sandbox/GCF_016801865.2_TS_CPP_V2_genomic.fna > sandbox/genome_copy.fna.
 ```
 :::
 
-::: {.callout-tip collapse="true"}
-#### Use the `du` command to see the total size of a dir _(Click to expand)_
+::: {.callout-tip}
+#### Use the `du` command to see the total size of a dir
 
 To find out which of your data takes up the most space,
 you'll want to know the sizes of dirs.
@@ -369,31 +387,30 @@ But as you saw in week 4, the sizes that `ls -l` shows for dirs
 don't correspond to the total size of the dir and its contents.
 Instead, use the `du` (**d**isk **u**sage) command -- for example:
 
-- Get the total size for a single dir:
+- Get the **total size for a single dir** with options `-h` (human-readable) and
+  `-s` (summarize, i.e. only show the total):
 
   ```bash
-  # -h: human-readable file sizes / -s: summarize, i.e. only show the total
-  du -hs garrigos/fastq
+  du -hs ../garrigos/fastq
   ```
   ```bash-out
-  941M    garrigos/fastq
+  941M    ../garrigos/fastq
   ```
 
-- Get the total size of each dir directly inside a dir, plus that of the dir itself:
+- Get the total size of **each dir** directly inside a dir, plus that of the dir itself,
+  with `-d 1` (depth of 1):
 
   ```bash
-  # -d 1: show sizes down to a depth of 1 (= the dirs directly inside 'garrigos')
-  du -h -d 1 garrigos
+  du -h -d 1 ../garrigos
   ```
   ```bash-out
-  1.0K    garrigos/meta
-  5.1M    garrigos/ref
-  941M    garrigos/fastq
-  946M    garrigos
+  1.0K    ../garrigos/meta
+  5.1M    ../garrigos/ref
+  941M    ../garrigos/fastq
+  946M    ../garrigos/.git
+  1.9G    ../garrigos
   ```
 
-  <!---- TODO: Check both `du` outputs at OSC
-  (`garrigos/ref` will be larger if you did the protein download exercise). ---->
 :::
 
 ## Recap
@@ -441,13 +458,14 @@ In [GA5](../GA/GA5.qmd), you'll get a (test) DOI for your GA5 repo,
 as discussed in the [slides](w11a_data-mgmt.qmd#a-doi-for-your-github-repo-with-zenodo).
 
 To practice beforehand, try it with your `evo` repo from week 5.
+(This needs to be a public repo:
+if yours is private, change this in its `Settings` on GitHub, at the bottom of the page.)
 Real Zenodo DOIs are permanent, so you'll use the Zenodo Sandbox,
 a test copy of Zenodo whose DOIs aren't registered.
 
 1. Go to [Zenodo Sandbox](https://sandbox.zenodo.org/){target="_blank"},
    click "Log in" (not "Create Account"), choose "Sign in with GitHub",
    and authorize the Sandbox to access your GitHub account.
-   click "Log in" (not "Create Account") and choose "Sign in with GitHub".
 
 ![](/img/zenodo-front-page.png){fig-align="center" width="95%" .no-border fig-alt="A screenshot of the Zenodo Sandbox front page" .lightbox}
 
@@ -474,7 +492,7 @@ a test copy of Zenodo whose DOIs aren't registered.
 
 4. You'll need to create a tag along with the release.
    Click "**Tag: Select tag**", then "Create new tag",
-    type `v1.0` and click "Create" (screenshots below).
+   type `v1.0` and click "Create" (screenshots below).
 
 ::: {.columns}
 ::: {.column}

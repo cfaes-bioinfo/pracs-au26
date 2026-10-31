@@ -61,15 +61,15 @@ Specifically, you will learn:
 
 ### Getting ready
 
-1. If you no longer have the VS Code session from [Lecture A](w11a_data.qmd) running:
-   at <https://ondemand.osc.edu>,
-   start a VS Code session in `/fs/ess/PAS3493/people/$USER`,
-   with **4 cores** (you'll need these for the pipeline's test run)
+If you no longer have the VS Code session from [Lecture A](w11a_data.qmd) running:
 
-2. In your VS Code terminal, create and enter a working dir for this week:
+1. At <https://ondemand.osc.edu>,
+   start a VS Code session in `/fs/ess/PAS3493/people/$USER`,
+   with **4 cores** (you'll need these for the pipeline's test run).
+
+2. In your VS Code terminal, go to your working dir for this week:
 
    ```bash
-   mkdir week11
    cd week11
    ```
 
@@ -85,7 +85,7 @@ have over DIY pipelines based on e.g. shell scripts.
 While you can use Nextflow to build your own workflows from scratch,
 we will here cover how to run an existing, community-developed Nextflow pipeline.
 
-This is well worth covering for a few reasons:
+This is well worth covering for two reasons:
 
 - Available pipelines cover many types of omics data,
   so you may well be able to use one for your own research.
@@ -96,14 +96,14 @@ This is well worth covering for a few reasons:
 
 Recall from week 10 that the ["nf-core" initiative](https://nf-co.re/) [@ewels2020]
 has many pipelines available for various omics data analysis types.
-Here are their most popular pipelines --- we will run _rnaseq_ here:
+Here are their most popular pipelines --- we will run _rnaseq_:
 
 ![The 6 most popular nf-core pipelines as of October 2026](/img/nfcore-pipelines_2026-10-25.png){fig-align="center" width="95%" .lightbox fig-alt="Screenshot of six pipeline cards from the nf-core website: rnaseq (1396 stars), sarek (614), scrnaseq (360), mag (325), ampliseq (264), and chipseq (245). Each card shows a short description, topic tags, and the latest release version."}
 
 ### The nf-core _rnaseq_ pipeline
 
 The [nf-core _rnaseq_ pipeline](https://nf-co.re/rnaseq)
-is meant for RNA-seq datasets like @garrigós2025's,
+is meant for RNA-seq datasets like the one from @garrigós2025,
 where reads are aligned to a reference genome to produce gene-level counts^[
 As opposed to transcript-level counts,
 which are harder to accurately obtain with short-read data.
@@ -309,10 +309,16 @@ Next, we'll run the test as follows:
   `nf-core/rnaseq`^[
   If we had wanted to run the _sarek_ pipeline, for example,
   we would use `nf-core/sarek` instead.].
+  We don't need to install the pipeline:
+  Nextflow will download its code from GitHub for us.
 - The `-r` option specifies the pipeline version to use
   (here, version `3.26.0`^[
   The most recent version, 3.27.0, requires a newer version of Nextflow
   than is available at OSC.]).
+  Always specify a version:
+  this makes your run reproducible, and you'll need to report it in your methods.
+  Without `-r`, which version is used depends on what Nextflow downloaded previously,
+  and isn't recorded in your code.
 - The `-profile` option specifies which "profile(s)" to use:
   - `test` tells the pipeline to use its built-in test dataset
   - `apptainer` tells the pipeline to run software via Apptainer containers
@@ -456,8 +462,10 @@ WARN: ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 </details>
 
-After that, the output will provide information about the **processes** the
-pipeline spawns, with one line for each "process" (i.e., step) in the pipeline:
+After that, the log shows one line for each **process** (i.e., step) in the pipeline,
+which runs one or more jobs^[
+Nextflow itself calls these "tasks", which you'll see in some of its messages.
+We'll call them jobs, because in our real run, each will be a Slurm batch job.]:
 
 - On the right (scroll right to see this), you can see each step's **progress**:
   - `1 of 1 ✔` and `5 of 5 ✔` mean that all of the step's jobs have finished.
@@ -479,7 +487,7 @@ pipeline spawns, with one line for each "process" (i.e., step) in the pipeline:
     The same goes for steps that combine all samples, like MultiQC.
 
 - The **hexadecimal string** at the start of each line (e.g., `[a5/06472a]`)
-  identifies one of that step's jobs,
+  identifies one of that step's jobs (the most recently submitted one),
   and also the dir in which that job ran --- we'll get back to this below.
 
 ```bash-out-solo
@@ -595,7 +603,11 @@ The two most important outputs are:
 
   In the table, genes are in rows and samples in columns, and the values are the gene counts.
   These aren't whole numbers, because Salmon _estimates_ counts:
-  for example, it splits a read that matches two genes equally well between them.
+  for example, it splits a read that matches two genes equally well between them^[
+  Additionally, as the file name indicates,
+  the counts in this file have been "length-scaled":
+  adjusted for differences between samples in the average length
+  of each gene's expressed transcripts.].
 
   ```bash
   less -S results/nfc-rnaseq/star_salmon/salmon.merged.gene_counts_length_scaled.tsv
@@ -615,6 +627,13 @@ The two most important outputs are:
   YAL004W             YAL004W             1.0197486986914    0                    0                    0                 1.01797117238891
   YAL005C             SSA1                6026.86373913046   6077.38491621524     12770.2053957157     7966.04370465683  4143.94126807027
   ```
+
+In addition, the **`pipeline_info`** dir is useful for documenting your run:
+among other things, it has a file with all parameter settings that were used,
+a file with the versions of all software,
+and an execution report with the run time and memory usage of each step.
+When you publish results from the pipeline, cite both the pipeline and the tools it ran:
+the start of the log shows where to find these citations.
 
 <!--- TODO - put gene count illustration from earlier slides here? ---->
 
@@ -642,12 +661,13 @@ du -sh results/nfc-rnaseq/ work
 In this case, `work` is in its default location,
 the dir from which you execute the `nextflow` command
 (i.e., the current working directory).
-For runs on real data, we will specify a different location for the `work` dir,
-often on `/fs/scratch`, which is faster and has more space than `/fs/ess`.
+For runs on real data, it's best to put the `work` dir elsewhere,
+typically in `/fs/scratch`, which is faster and has more space than `/fs/ess`
+(we'll do this in part II).
 :::
 
-You won't need to explore these outputs most of the time,
-but they can be useful for debugging or understanding the pipeline's behavior
+You won't need to explore the `work` dir most of the time,
+but it can be useful for debugging or understanding the pipeline's behavior
 and the exact commands that it ran.
 Let's list its contents:
 
@@ -661,9 +681,9 @@ ls work
 <span class="ls-blue">06</span>  <span class="ls-blue">11</span>  <span class="ls-blue">1d</span>  <span class="ls-blue">22</span>  <span class="ls-blue">2e</span>  <span class="ls-blue">3a</span>  <span class="ls-blue">45</span>  <span class="ls-blue">4f</span>  <span class="ls-blue">59</span>  <span class="ls-blue">63</span>  <span class="ls-blue">6c</span>  <span class="ls-blue">73</span>  <span class="ls-blue">80</span>  <span class="ls-blue">87</span>  <span class="ls-blue">91</span>  <span class="ls-blue">9d</span>  <span class="ls-blue">a4</span>  <span class="ls-blue">a9</span>  <span class="ls-blue">af</span>  <span class="ls-blue">b4</span>  <span class="ls-blue">bf</span>  <span class="ls-blue">ce</span>  <span class="ls-blue">d7</span>            <span class="ls-blue">e3</span>  <span class="ls-blue">eb</span>  <span class="ls-blue">f3</span>  <span class="ls-blue">ff</span></code></pre>
 
 How do you find your way around that? 😳
-As mentioned above, the hexadecimals between square brackets (e.g. `[2e/794b4b]`)
-that are printed before each job point to the subdir within this work dir that
-it ran in (every individual job runs in its own dir).
+As mentioned above, the hexadecimal code at the start of each line in the log
+(e.g., `[2e/794b4b]`) points to the subdir of the work dir in which that job ran
+(every individual job runs in its own dir).
 
 ::: exercise
 #### {{< fa user-edit >}} Self-study exercise: Explore the `work` dir of the MultiQC process
@@ -709,7 +729,9 @@ you'll take a look at the `work` subdir of the pipeline's final process: MultiQC
 
    The files in this `work` subdir include:
 
-   - Input files (as links/shortcuts, so the files don't have to be copied in full)
+   - Input files (as links/shortcuts, so the files don't have to be copied in full).
+     Because MultiQC's inputs come from many jobs and may have the same names,
+     Nextflow puts each input file in its own numbered dir (`1`, `10`, `100`, etc.).
    - Output files, such as `multiqc_report.html`
    - Several hidden files, including:
      - `.command.sh`: the exact command that was run by this process
@@ -803,7 +825,6 @@ indicates that the outputs were already present from before,
 and the job wasn't actually rerun:
 
 ```bash-out-solo
-[6b/1cecd9] NFCORE_RNASEQ:PREPARE_GENOME:GUNZIP_GTF (genes_with_empty_tid.gtf.gz)              [100%] 1 of 1, cached: 1 ✔
 [6b/1cecd9] NFCORE_RNASEQ:PREPARE_GENOME:GUNZIP_GTF (genes_with_empty_tid.gtf.gz)              [100%] 1 of 1, cached: 1 ✔
 [f7/9413a8] NFCORE_RNASEQ:PREPARE_GENOME:CUSTOM_GTFFILTER (genes_with_empty_tid.filtered)      [100%] 1 of 1, cached: 1 ✔
 [f1/6ca0de] NFCORE_RNASEQ:PREPARE_GENOME:GUNZIP_ADDITIONAL_FASTA (gfp.fa.gz)                   [100%] 1 of 1, cached: 1 ✔

@@ -1,10 +1,10 @@
 # RNA-seq analysis of _Culex pipiens_
 
-- Author: Jelmer Poelstra
-- Date created: 2026-10-30
-- Date last modified: 2026-10-31
-- This was run at the Pitzer cluster of the Ohio Supercomputer Center (<https://www.osc.edu>)
-- OSC working dir: `/fs/ess/PAS3493/people/jelmer/GA5`
+- Author: <???>
+- Date created: <???>
+- Date last modified: <???>
+- This was run at the <???> cluster of the Ohio Supercomputer Center (<https://www.osc.edu>)
+- OSC working dir: <???>
 - GitHub repository: <???>
 
 ## Prerequisites

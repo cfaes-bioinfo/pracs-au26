@@ -94,24 +94,24 @@ cd sandbox
 
 You can create a symlink with `ln -s`:
 
-- When you only provide the source file or or dir,
+- When you only provide the source file or dir,
   it creates a link of the same name in your working dir:
 
   ```bash
-  ln -s /fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz
+  ln -s /fs/ess/PAS3493/data/garrigos/fastq/S64_R1.fastq.gz
   ```
 
   ```bash
   ls -l
   ```
   ```bash-out
-  lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 S64_R1.fastq.gz -> /fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz
+  lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 S64_R1.fastq.gz -> /fs/ess/PAS3493/data/garrigos/fastq/S64_R1.fastq.gz
   ```
 
 - You can also give a path to the link, such as simply a different name:
 
   ```bash
-  ln -s /fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz shared.fastq.gz
+  ln -s /fs/ess/PAS3493/data/garrigos/fastq/S64_R1.fastq.gz shared.fastq.gz
   ```
 
   ```bash
@@ -119,8 +119,8 @@ You can create a symlink with `ln -s`:
   ls -l
   ```
   ```bash-out
-  lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 S64_R1.fastq.gz -> /fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz
-  lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 shared.fastq.gz -> /fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz
+  lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 S64_R1.fastq.gz -> /fs/ess/PAS3493/data/garrigos/fastq/S64_R1.fastq.gz
+  lrwxrwxrwx 1 jelmer PAS0471 57 Nov  5 10:12 shared.fastq.gz -> /fs/ess/PAS3493/data/garrigos/fastq/S64_R1.fastq.gz
   ```
 
 Above, you could see that in the long-format `ls` output,
@@ -133,7 +133,9 @@ For example:
 zcat shared.fastq.gz | head -n 4
 ```
 ```bash-out
-TODO
+@ERR10802864.1 1 length=71
+GATCAACCATGCAGCTGCCAGGTGGTGGCCACTTCCGGCTGCACCACACCGACCAGATTTGTTGCCCGGGC
++
 ```
 
 You can link to a **dir** in the same way,
@@ -165,7 +167,8 @@ ln -s garrigos/README.md sandbox/
 The easiest way to avoid this is to use absolute paths for the source,
 e.g. with the `$PWD` variable, which contains your working dir:
 
-```bash
+```{.bash .norun}
+# Also run from your personal dir:
 ln -s "$PWD"/garrigos/README.md sandbox/
 ```
 :::
@@ -184,10 +187,10 @@ unlink S64_R1.fastq.gz
 The original file is still there:
 
 ```bash
-ls /fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz
+ls /fs/ess/PAS3493/data/garrigos/fastq/S64_R1.fastq.gz
 ```
 ```bash-out
-/fs/ess/PAS3493/share/garrigos/data/fastq/S64_R1.fastq.gz
+/fs/ess/PAS3493/data/garrigos/fastq/S64_R1.fastq.gz
 ```
 
 A symlink to a dir is a **point of entry to the original dir**:
@@ -247,12 +250,12 @@ follows the link and removes the _contents_ of the original dir!
 
 <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-1. Without a link name, the link gets the name of the last part of the source path,
-   which is your username:
-
-   ```bash
+1. ```bash
    ln -s /fs/ess/PAS3493/people/$USER ~/pp5006
    ```
+
+   Without a link name, the link would have gotten the name of the last part of the source path,
+   which is your username.
 
 2. a. Only the link.
    b. Your _original_ `garrigos` dir in the project dir.
@@ -371,7 +374,7 @@ The files are in `culex/ncbi_dataset/data/GCF_016801865.2/`,
 and unlike the files in the FTP dir, they are not gzipped.
 
 `datasets` really shines when you need many genomes ---
-for example, you can download all RefSeq reference genomes for a genus.
+for example, you can download all reference genomes for a genus.
 Use `datasets summary` first to see how many genomes there are,
 since this can be a lot of data:
 
@@ -405,8 +408,8 @@ There are several ways to download FASTQ files from the SRA:
 - The [**SRA Toolkit**](https://github.com/ncbi/sra-tools/wiki) is NCBI's official set of
   command-line tools, which includes `prefetch` and `fasterq-dump`.
 
-Like `datasets`, the SRA Toolkit is not available as a module at OSC,
-so we'll again use a container.
+The SRA Toolkit is available as a module at OSC (`module spider sratoolkit`),
+but for consistency with `datasets`, we'll use a container here.
 With the SRA Toolkit, downloading the full set of reads for sample S63 of the
 Garrigós et al. dataset (the files in `garrigos/fastq` only contain a subset)
 takes two steps:
@@ -1048,7 +1051,7 @@ zgrep -i -n --color "AGATAGATATAT" chr22.fa.gz
 ```
 
 ::: {.callout-note collapse="true"}
-#### Concatenating compressed data
+#### Concatenating compressed data _(Click to expand)_
 
 Concatenating files means you combine them into a single file,
 simply printing them back-to-back.
@@ -1059,13 +1062,13 @@ this can be done very easily.
 To add a second FASTQ file to an existing gzipped file,
 we can simply use `>>`:
 
-```bash
+```{.bash .norun}
 ls
 ```
 ```{.bash-out}
 in.fastq.gz in2.fastq
 ```
-```bash
+```{.bash .norun}
 gzip -c in2.fastq >> in.fastq.gz
 ```
 

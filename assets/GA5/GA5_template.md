@@ -19,19 +19,25 @@ GA5 README template.
 
 ## Part A: Your project dir, Git repo, and protocol
 
-### 1: Create subdirs, and copy the scripts
+### 1: Fill in the top of the protocol
 
-<!-- No command/output needed. -->
+<!-- No answer needed here -- we check `protocol.md` directly. -->
 
-### 2: Initialize a Git repository, and commit your first files
+### 2: Markdown formatting
 
-<!-- No command/output needed here -- we check the repo directly. -->
+<!-- No answer needed here -- we check the formatting of both Markdown files. -->
 
-### 3: Fill in the top of the protocol
+### 3: Create subdirs, and copy the scripts
 
-<!-- No command/output needed here -- we check `protocol.md` directly. -->
+```bash
+# Your mkdir command:
+```
 
-### 4: Download the reference transcriptome
+### 4: Initialize a Git repository, and commit your first files
+
+<!-- No answer needed here -- we check the repo directly. -->
+
+### 5: Download the reference transcriptome
 
 <!-- Put the download command in `protocol.md`, not here. -->
 
@@ -56,42 +62,14 @@ The output of the command was:
 
 <!-- Put the code to run TrimGalore in `protocol.md`, not here. -->
 
-*Answer*: The number of batch jobs you submitted, whether they all succeeded,
-and how you checked that:
-
-### 7: Find Slurm log files without the "Successfully finished" line
-
-```bash
-# Your command:
-```
-
-The output of the command was:
-
-```
-```
-
-*Answer*: How you checked that your command works:
-
-### 8: Resource usage of a TrimGalore job
-
-```bash
-# Your command:
-```
-
-The output of the command was:
-
-```
-```
-
-*Answer*: The CPU efficiency and memory usage:
-
-*Answer*: Would you change the number of cores for this script, and why (not)?
+*Answer*: Whether all batch jobs succeeded, and how you checked that
+(and any problems you encountered, and how you solved them):
 
 ------------------------------------------------------------------------
 
 ## Part C: Transcript quantification with Salmon
 
-### 9: Create the Salmon index
+### 7: Create the Salmon index
 
 Code to check the size of the index dir:
 
@@ -108,17 +86,13 @@ The output of the command was:
 
 *Answer*: The size of the index dir:
 
-### 10: Run Salmon for all samples
+### 8: Run Salmon for all samples
 
-<!-- No command/output needed here -- we check `protocol.md` directly. -->
+<!-- No answer needed here -- we check `protocol.md` directly. -->
 
-### 11: Salmon's `quant.sf` output file
+### 9: The transcripts with the most reads
 
-*Answer*: What the `TPM` and `NumReads` columns contain:
-
-*Answer*: The extra information you'd need to get from transcript counts to gene counts:
-
-### 12: The transcripts with the most reads
+*Answer*: What the `NumReads` column contains:
 
 ```bash
 # Your command:
@@ -129,7 +103,7 @@ The output of the command was:
 ```
 ```
 
-Code to look up the FASTA header of the top transcript:
+### 10: The gene of the top transcript
 
 ```bash
 # Your command:
@@ -142,25 +116,7 @@ The output of the command was:
 
 *Answer*: The gene that the top transcript belongs to:
 
-*Answer*: Whether the transcript with the most reads also has the highest TPM,
-and why the two can differ:
-
-### 13: Transcripts without reads
-
-```bash
-# Your command(s):
-```
-
-The output of the command(s) was:
-
-```
-```
-
-*Answer*: The number and percentage of transcripts without reads:
-
-*Answer*: A possible reason why so many transcripts have no reads:
-
-### 14: Mapping rates
+### 11: Mapping rates
 
 ```bash
 # Your command:
@@ -177,92 +133,50 @@ The output of the command was:
 
 ## Part D: Summarizing all steps with MultiQC
 
-### 15: Update your MultiQC script
+### 12: Update your MultiQC script
 
 <!-- No need to paste the script: we'll look at scripts/multiqc.sh and its Git history directly. -->
 
-### 16: Run MultiQC
+### 13: Run MultiQC
 
 *Answer*: For each program, the number of reports that MultiQC found,
 and why it found this number:
 
-### 17: Explore the MultiQC report
+### 14: The General Statistics table
 
-*Answer*: The sample with the lowest Salmon mapping rate in the General Statistics table,
-and whether this matches your answer to question 14:
+*Answer*: The sample with the lowest Salmon mapping rate,
+and whether this matches your answer to question 11:
 
-*Answer*: How STAR's alignment rates in the nf-core report compare to your
-Salmon mapping rates, and what could explain the difference:
+### 15: Adapter lengths
 
-------------------------------------------------------------------------
+*Answer*: The most common adapter lengths, whether this surprised you,
+and why you think these lengths are the most common:
 
-## Part E: An overview of your jobs and files
+### 16: Ask Claude about the MultiQC report
 
-### 18: An overview of your jobs with `sacct`
-
-```bash
-# Your command:
-```
-
-The output of the command was:
-
-```
-```
-
-*Answer*: The total number of jobs, and whether any did not complete successfully:
-
-*Answer*: The step for which the jobs took the longest:
-
-### 19: Which files to keep
-
-```bash
-# Your command:
-```
-
-The output of the command was:
-
-```
-```
-
-*Answer*: Which dirs you would keep long-term and back up,
-and which you could delete, and why:
-
-*Answer*: What else you would need to regenerate the deleted dirs:
+*Answer*: What you asked, and what you learned from Claude's answer (in your own words):
 
 ------------------------------------------------------------------------
 
-## Part F: Bring in genAI
+## Part E: Improving the workflow with genAI
 
-<!-- For both questions, export the conversation to `doc/ai`, and commit it. -->
+### 17: Claude's review of your protocol and scripts
 
-### 20: AI review of your protocol
+*Answer*: At least three of Claude's suggestions,
+and whether you agree or disagree with each one, and why:
 
-*Answer*: What you asked, and a summary of Claude's points:
+### 18: Address a suggestion
 
-*Answer*: What you changed in your protocol and/or scripts:
-
-*Answer*: At least one suggestion you didn't follow, and why:
-
-### 21: An AI-generated summary table
-
-*Answer*: What you asked, and the command or script you got
-(if it's a script, just give its file name in `scripts/`):
-
-The summary table:
-
-```
-```
-
-*Answer*: Which values you checked, against which source, and whether they matched:
+*Answer*: Which suggestion(s) you addressed, and what you changed:
 
 ------------------------------------------------------------------------
 
-# Submission
+## Part F: Publish your repo on GitHub
 
-### 22: Create a GitHub repository and push
+### 19: Create a GitHub repository and push
 
-<!-- No command/output needed here -- we check your GitHub repo directly. -->
+<!-- No answer needed here -- we check your GitHub repo directly. -->
 
-### 23: Get a (test) DOI with Zenodo
+### 20: Get a (test) DOI with Zenodo
 
 *Answer*: Your Zenodo Sandbox DOI:
