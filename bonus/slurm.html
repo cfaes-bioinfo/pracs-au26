@@ -4148,7 +4148,10 @@ font-size: 2.5em;
     <a class="dropdown-item" href="../week10/w10_overview.html">
  <span class="dropdown-text">Week 10: Slurm batch jobs and workflows</span></a>
   </li>  
-        <li class="dropdown-header">Week 11: nf-core pipelines and data management</li>
+        <li>
+    <a class="dropdown-item" href="../week11/w11_overview.html">
+ <span class="dropdown-text">Week 11: nf-core pipelines and data management</span></a>
+  </li>  
         <li class="dropdown-header">Week 12: R – basics &amp; Quarto</li>
         <li class="dropdown-header">Week 13: R – data wrangling &amp; visualization</li>
         <li class="dropdown-header">Week 14: Quarto – beyond the basics</li>
@@ -4204,7 +4207,10 @@ font-size: 2.5em;
     <a class="dropdown-item" href="../GA/GA4.html">
  <span class="dropdown-text">GA4: Shell scripts and genAI (week 9)</span></a>
   </li>  
-        <li class="dropdown-header">GA5: A longer workflow (week 11)</li>
+        <li>
+    <a class="dropdown-item" href="../GA/GA5.html">
+ <span class="dropdown-text">GA5: A multi-step workflow (week 11)</span></a>
+  </li>  
         <li><hr class="dropdown-divider"></li>
         <li class="dropdown-header">Final project:</li>
         <li>
@@ -4288,8 +4294,14 @@ font-size: 2.5em;
     <a class="dropdown-item" href="../bonus/slurm.html">
  <span class="dropdown-text">Slurm batch jobs (week 10)</span></a>
   </li>  
-        <li class="dropdown-header">Project and data management (week 11)</li>
-        <li class="dropdown-header">SSH and file transfer (week 11)</li>
+        <li>
+    <a class="dropdown-item" href="../bonus/data.html">
+ <span class="dropdown-text">Project and data management (week 11)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/ssh.html">
+ <span class="dropdown-text">SSH and file transfer (week 11)</span></a>
+  </li>  
         <li class="dropdown-header">R (weeks 12-13)</li>
         <li class="dropdown-header">R for omics data (week 15)</li>
     </ul>
@@ -4432,7 +4444,7 @@ font-size: 2.5em;
     <div>
     <div class="quarto-title-meta-heading">Page last modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">October 26, 2026</p>
+      <p class="date-modified">October 31, 2026</p>
     </div>
   </div>
     
@@ -4774,20 +4786,19 @@ Memory Efficiency: 5.38% of 4.45 GB</code></pre>
 <section id="sacct-an-overview-of-many-jobs" class="level3" data-number="7.2">
 <h3 data-number="7.2" class="anchored" data-anchor-id="sacct-an-overview-of-many-jobs"><span class="header-section-number">7.2</span> <code>sacct</code>: an overview of many jobs</h3>
 <p>When you’ve submitted many jobs, <code>sacct</code> gives you a table with one row per job, including jobs that have already finished:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sacct</span> <span class="at">-X</span> <span class="at">--format</span><span class="op">=</span>JobID,JobName%15,State,ExitCode,Elapsed</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="bash-out"><code>       JobID         JobName      State ExitCode    Elapsed
------------- --------------- ---------- -------- ----------
-37615614     ondemand/sys/d+    RUNNING      0:0   00:21:32
-37615705            sleep.sh    TIMEOUT      0:0   00:01:11
-37615718           fastqc.sh  COMPLETED      0:0   00:00:10
-37615719           fastqc.sh  COMPLETED      0:0   00:00:11
-37615720           fastqc.sh     FAILED      1:0   00:00:02
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sacct</span> <span class="at">-X</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>JobID           JobName  Partition    Account  AllocCPUS      State ExitCode
+------------ ---------- ---------- ---------- ---------- ---------- --------
+37615614     ondemand/+        cpu    pas0471          1    RUNNING      0:0
+37615705       sleep.sh        cpu    pas0471          1    TIMEOUT      0:0
+37615718      fastqc.sh        cpu    pas0471          1  COMPLETED      0:0
+37615719      fastqc.sh        cpu    pas0471          1  COMPLETED      0:0
+37615720      fastqc.sh        cpu    pas0471          1     FAILED      1:0
 # [...output truncated...]</code></pre>
 <ul>
 <li>By default, <code>sacct</code> shows your own jobs that started since midnight. To go back further, use <code>--starttime</code>, e.g. <code>--starttime=2026-10-26</code>.</li>
 <li><code>-X</code> (<code>--allocations</code>) shows one line per job. Without it, each job also gets lines for its “job steps”, like <code>.batch</code> and <code>.extern</code>.</li>
-<li><code>--format</code> sets which columns to show, and <code>%15</code> sets the width of a column (job names would otherwise be cut off after 9 characters, e.g. <code>ondemand/+</code>).</li>
-<li>For a single job, use <code>-j</code>, e.g. <code>sacct -j 37615720 -X --format=...</code>.</li>
+<li>For a single job, use <code>-j</code>, e.g. <code>sacct -X -j 37615720</code>.</li>
 </ul>
 <p>These are the most common values in the <code>State</code> column:</p>
 <table class="table-striped table-hover caption-top table">
@@ -4837,18 +4848,31 @@ Memory Efficiency: 5.38% of 4.45 GB</code></pre>
 <p>A shell script’s exit status is that of the last command it ran. So, without <code>set -e</code>, a script in which a command fails halfway may still end with exit status 0, and Slurm would list the job as <code>COMPLETED</code>. With <code>set -euo pipefail</code>, the script stops at the failing command, and the job is correctly listed as <code>FAILED</code>.</p>
 </div>
 </div>
-<p>To list only the jobs that did <em>not</em> succeed, use <code>--state</code>. In that case, you always have to specify <code>--starttime</code> too — otherwise, <code>sacct</code> only lists jobs that are in one of these states right now:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sacct</span> <span class="at">-X</span> <span class="at">--starttime</span><span class="op">=</span>2026-10-26 <span class="dt">\</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">--state</span><span class="op">=</span>FAILED,TIMEOUT,OUT_OF_MEMORY,CANCELLED <span class="dt">\</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">--format</span><span class="op">=</span>JobID,JobName%15,State,ExitCode,Elapsed</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>To list only the jobs that did <strong>not succeed</strong>, use <code>--state</code>. In that case, you always have to specify <code>--starttime</code> too — otherwise, <code>sacct</code> only lists jobs that are in one of these states right now:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sacct</span> <span class="at">-X</span> <span class="at">--starttime</span><span class="op">=</span>2026-10-26 <span class="at">--state</span><span class="op">=</span>FAILED,TIMEOUT,OUT_OF_MEMORY,CANCELLED</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>JobID           JobName  Partition    Account  AllocCPUS      State ExitCode
+------------ ---------- ---------- ---------- ---------- ---------- --------
+37615705       sleep.sh        cpu    pas0471          1    TIMEOUT      0:0
+37615720      fastqc.sh        cpu    pas0471          1     FAILED      1:0</code></pre>
+<p>Finally, you can choose which columns to show with <code>--format</code>. For example, to add a column with each job’s run time (<code>Elapsed</code>), and to make the <code>JobName</code> column wider so that long job names are not cut off:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sacct</span> <span class="at">-X</span> <span class="at">--format</span><span class="op">=</span>JobID,JobName%15,State,ExitCode,Elapsed</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>JobID                JobName      State ExitCode    Elapsed
 ------------ --------------- ---------- -------- ----------
-37615705            sleep.sh    TIMEOUT      0:0   00:01:11</code></pre>
+37615614     ondemand/sys/d+    RUNNING      0:0   00:21:32
+37615705            sleep.sh    TIMEOUT      0:0   00:01:11
+37615718           fastqc.sh  COMPLETED      0:0   00:00:10
+37615719           fastqc.sh  COMPLETED      0:0   00:00:11
+37615720           fastqc.sh     FAILED      1:0   00:00:02
+# [...output truncated...]</code></pre>
+<ul>
+<li>Column names are separated by commas, without spaces.</li>
+<li><code>%15</code> after a column name sets that column’s width to 15 characters (by default, most columns are 10 characters wide, which is why the name of the OnDemand job was cut off to <code>ondemand/+</code> above).</li>
+</ul>
 </section>
 <section id="sstat-running-jobs" class="level3" data-number="7.3">
 <h3 data-number="7.3" class="anchored" data-anchor-id="sstat-running-jobs"><span class="header-section-number">7.3</span> <code>sstat</code>: running jobs</h3>
 <p><code>seff</code> and <code>sacct</code> only give complete information after a job has finished. To check the memory use of a job <em>while it is running</em> (e.g. if you’re worried that it may run out of memory), use <code>sstat</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sstat</span> <span class="at">-j</span> 37615800.batch <span class="at">--format</span><span class="op">=</span>JobID,MaxRSS,AveCPU</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sstat</span> <span class="at">-j</span> 37615800.batch <span class="at">--format</span><span class="op">=</span>JobID,MaxRSS,AveCPU</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <pre class="bash-out"><code>JobID            MaxRSS     AveCPU
 ------------ ---------- ----------
 37615800.ba+   2405304K   00:02:19</code></pre>
@@ -4857,13 +4881,13 @@ Memory Efficiency: 5.38% of 4.45 GB</code></pre>
 <section id="aliases-for-long-job-monitoring-commands" class="level3" data-number="7.4">
 <h3 data-number="7.4" class="anchored" data-anchor-id="aliases-for-long-job-monitoring-commands"><span class="header-section-number">7.4</span> Aliases for long job monitoring commands</h3>
 <p>Because you won’t remember all of these formatting options, and even if you do, you don’t want to type them out, this is a case where aliases are really handy. For instance:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="bu">alias</span> sq=<span class="st">&#39;squeue -u $USER --format=&quot;%.9i %.9P %.100j %.8T %.10M %.10l %.4C %R %.16V&quot;&#39;</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="bu">alias</span> sact=<span class="st">&#39;sacct -X --format=JobID,JobName%15,State,ExitCode,Elapsed&#39;</span></span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="bu">alias</span> sst=<span class="st">&#39;sstat --format=JobID,MaxRSS,AveCPU&#39;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="bu">alias</span> sq=<span class="st">&#39;squeue -u $USER --format=&quot;%.9i %.9P %.100j %.8T %.10M %.10l %.4C %R %.16V&quot;&#39;</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="bu">alias</span> sact=<span class="st">&#39;sacct -X --format=JobID,JobName%15,State,ExitCode,Elapsed&#39;</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="bu">alias</span> sst=<span class="st">&#39;sstat --format=JobID,MaxRSS,AveCPU&#39;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>You can then add other options when you use an alias, for example:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sq</span> <span class="at">-t</span> PENDING</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sact</span> <span class="at">-j</span> 123456</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sst</span> <span class="at">-j</span> 123456.batch</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sq</span> <span class="at">-t</span> PENDING</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sact</span> <span class="at">-j</span> 123456</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sst</span> <span class="at">-j</span> 123456.batch</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>An alias only lasts for the current shell session, so to make them always available in interactive sessions, add the lines to your Bash configuration file <code>~/.bashrc</code>. See the page on <a href="../bonus/shell-config.html">configuring your shell</a> for more on <a href="../bonus/shell-config.html#shell-configuration-files"><code>~/.bashrc</code></a> and <a href="../bonus/shell-config.html#aliases">aliases</a>.</p>
 <div class="callout callout-style-simple callout-warning">
 <div class="callout-body d-flex">
@@ -4883,12 +4907,12 @@ Memory Efficiency: 5.38% of 4.45 GB</code></pre>
 <div class="code-with-filename-file">
 <pre><strong>scripts/fastqc.sh (excerpt)</strong></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27" data-filename="scripts/fastqc.sh (excerpt)"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run FastQC, and store its run time and peak memory use in a file:</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="ex">/usr/bin/time</span> <span class="at">-f</span> <span class="st">&quot;%E %M&quot;</span> <span class="at">-o</span> <span class="st">&quot;</span><span class="va">$outdir</span><span class="st">&quot;</span>/time.txt <span class="dt">\</span></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    apptainer exec <span class="st">&quot;</span><span class="va">$CONTAINER</span><span class="st">&quot;</span> fastqc <span class="at">--outdir</span> <span class="st">&quot;</span><span class="va">$outdir</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq</span><span class="st">&quot;</span></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the run time, and the peak memory use converted from KB to GB:</span></span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="st">&#39;{printf &quot;Run time: %s    Peak memory: %.2f GB\n&quot;, $1, $2 / 1024 / 1024}&#39;</span> <span class="st">&quot;</span><span class="va">$outdir</span><span class="st">&quot;</span>/time.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29" data-filename="scripts/fastqc.sh (excerpt)"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run FastQC, and store its run time and peak memory use in a file:</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="ex">/usr/bin/time</span> <span class="at">-f</span> <span class="st">&quot;%E %M&quot;</span> <span class="at">-o</span> <span class="st">&quot;</span><span class="va">$outdir</span><span class="st">&quot;</span>/time.txt <span class="dt">\</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    apptainer exec <span class="st">&quot;</span><span class="va">$CONTAINER</span><span class="st">&quot;</span> fastqc <span class="at">--outdir</span> <span class="st">&quot;</span><span class="va">$outdir</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq</span><span class="st">&quot;</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the run time, and the peak memory use converted from KB to GB:</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="st">&#39;{printf &quot;Run time: %s    Peak memory: %.2f GB\n&quot;, $1, $2 / 1024 / 1024}&#39;</span> <span class="st">&quot;</span><span class="va">$outdir</span><span class="st">&quot;</span>/time.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>This will add a line like the following to your Slurm log file:</p>
 <pre class="bash-out-solo"><code>Run time: 0:09.85    Peak memory: 0.24 GB</code></pre>
@@ -4908,7 +4932,7 @@ Memory Efficiency: 5.38% of 4.45 GB</code></pre>
 <div class="code-with-filename-file">
 <pre><strong>scripts/fastqc.sh (excerpt)</strong></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29" data-filename="scripts/fastqc.sh (excerpt)"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;This script ran for </span><span class="va">$SECONDS</span><span class="st"> seconds&quot;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31" data-filename="scripts/fastqc.sh (excerpt)"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;This script ran for </span><span class="va">$SECONDS</span><span class="st"> seconds&quot;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 </section>
@@ -4926,28 +4950,28 @@ Memory Efficiency: 5.38% of 4.45 GB</code></pre>
 <div class="code-with-filename-file">
 <pre><strong>scripts/trim_and_map.sh (excerpt)</strong></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30" data-filename="scripts/trim_and_map.sh (excerpt)"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Copy the placeholder variables</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_r1</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span></span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_r2</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$2</span><span class="st">&quot;</span></span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="va">run_trim</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$3</span><span class="st">&quot;</span>   <span class="co"># true or false</span></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="va">run_map</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$4</span><span class="st">&quot;</span>    <span class="co"># true or false</span></span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: Read trimming</span></span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">[[</span> <span class="st">&quot;</span><span class="va">$run_trim</span><span class="st">&quot;</span> <span class="ot">==</span> true <span class="kw">]];</span> <span class="cf">then</span></span>
-<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bash</span> scripts/trim.sh <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span> results/trim</span>
-<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
-<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: Mapping the trimmed reads</span></span>
-<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">[[</span> <span class="st">&quot;</span><span class="va">$run_map</span><span class="st">&quot;</span> <span class="ot">==</span> true <span class="kw">]];</span> <span class="cf">then</span></span>
-<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>    <span class="va">trimmed_r1</span><span class="op">=</span>results/trim/<span class="va">$(</span><span class="fu">basename</span> <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span><span class="va">)</span></span>
-<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>    <span class="va">trimmed_r2</span><span class="op">=</span>results/trim/<span class="va">$(</span><span class="fu">basename</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span><span class="va">)</span></span>
-<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bash</span> scripts/map.sh <span class="st">&quot;</span><span class="va">$trimmed_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$trimmed_r2</span><span class="st">&quot;</span> results/map</span>
-<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32" data-filename="scripts/trim_and_map.sh (excerpt)"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Copy the placeholder variables</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_r1</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_r2</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$2</span><span class="st">&quot;</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="va">run_trim</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$3</span><span class="st">&quot;</span>   <span class="co"># true or false</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="va">run_map</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$4</span><span class="st">&quot;</span>    <span class="co"># true or false</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: Read trimming</span></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">[[</span> <span class="st">&quot;</span><span class="va">$run_trim</span><span class="st">&quot;</span> <span class="ot">==</span> true <span class="kw">]];</span> <span class="cf">then</span></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bash</span> scripts/trim.sh <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span> results/trim</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: Mapping the trimmed reads</span></span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">[[</span> <span class="st">&quot;</span><span class="va">$run_map</span><span class="st">&quot;</span> <span class="ot">==</span> true <span class="kw">]];</span> <span class="cf">then</span></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>    <span class="va">trimmed_r1</span><span class="op">=</span>results/trim/<span class="va">$(</span><span class="fu">basename</span> <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span><span class="va">)</span></span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>    <span class="va">trimmed_r2</span><span class="op">=</span>results/trim/<span class="va">$(</span><span class="fu">basename</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span><span class="va">)</span></span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bash</span> scripts/map.sh <span class="st">&quot;</span><span class="va">$trimmed_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$trimmed_r2</span><span class="st">&quot;</span> results/map</span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Then, to only rerun the mapping step for a sample:</p>
 <div class="norun-box">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode bash norun code-with-copy"><code class="sourceCode bash"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sbatch</span> scripts/trim_and_map.sh <span class="dt">\</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  data/fastq/S63_R1.fastq.gz data/fastq/S63_R2.fastq.gz false true</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode bash norun code-with-copy"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sbatch</span> scripts/trim_and_map.sh <span class="dt">\</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  data/fastq/S63_R1.fastq.gz data/fastq/S63_R2.fastq.gz false true</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>To learn more about <code>if</code> statements, see <a href="../bonus/shell-scripting.html#conditionals">this section</a> of the self-study page on shell scripting.</p>
 </section>
@@ -4955,8 +4979,8 @@ Memory Efficiency: 5.38% of 4.45 GB</code></pre>
 <h4 class="anchored" data-anchor-id="script-options">Script options</h4>
 <p>As you can see above, it quickly becomes hard to tell what each “positional” argument (like <code>$3</code> and <code>$4</code>) means, and it’s easy to mix them up. Instead, you can write your script such that it accepts options, e.g.:</p>
 <div class="norun-box">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode bash norun code-with-copy"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sbatch</span> scripts/trim_and_map.sh <span class="dt">\</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--skip_trim</span> data/fastq/S63_R1.fastq.gz data/fastq/S63_R2.fastq.gz</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode bash norun code-with-copy"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sbatch</span> scripts/trim_and_map.sh <span class="dt">\</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--skip_trim</span> data/fastq/S63_R1.fastq.gz data/fastq/S63_R2.fastq.gz</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>To learn how to do this, see <a href="../bonus/shell-scripting.html#shell-script-options">this section</a> of the self-study page on shell scripting.</p>
 </section>
@@ -4965,27 +4989,27 @@ Memory Efficiency: 5.38% of 4.45 GB</code></pre>
 <h3 data-number="8.2" class="anchored" data-anchor-id="slurm-job-dependencies"><span class="header-section-number">8.2</span> Slurm job dependencies</h3>
 <p>With the <code>--dependency</code> option, you can submit all jobs at once, but tell Slurm that a job should only start after the jobs whose outputs it needs have successfully finished. For that, you need the job IDs of those earlier jobs. The <code>--parsable</code> option makes <code>sbatch</code> print only the job ID (instead of <code>Submitted batch job &lt;job-id&gt;</code>), which you can store in a variable with <a href="../bonus/shell-scripting.html#command-substitution">command substitution</a>:</p>
 <div class="norun-box">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode bash norun code-with-copy"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="va">map_ids</span><span class="op">=</span><span class="st">&quot;&quot;</span></span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_r1 <span class="kw">in</span> data/fastq/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">fastq_r2</span><span class="op">=</span><span class="va">${fastq_r1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span></span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Submit the trimming job and store its job ID:</span></span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>    <span class="va">trim_id</span><span class="op">=</span><span class="va">$(</span><span class="ex">sbatch</span> <span class="at">--parsable</span> scripts/trim.sh <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span> results/trim<span class="va">)</span></span>
-<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Submit the mapping job, which will only start once the trimming job</span></span>
-<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># has successfully finished (`afterok`), and store its job ID too:</span></span>
-<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>    <span class="va">trimmed_r1</span><span class="op">=</span>results/trim/<span class="va">$(</span><span class="fu">basename</span> <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span><span class="va">)</span></span>
-<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>    <span class="va">trimmed_r2</span><span class="op">=</span>results/trim/<span class="va">$(</span><span class="fu">basename</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span><span class="va">)</span></span>
-<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>    <span class="va">map_id</span><span class="op">=</span><span class="va">$(</span><span class="ex">sbatch</span> <span class="at">--parsable</span> <span class="at">--dependency</span><span class="op">=</span>afterok:<span class="st">&quot;</span><span class="va">$trim_id</span><span class="st">&quot;</span> <span class="dt">\</span></span>
-<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>        scripts/map.sh <span class="st">&quot;</span><span class="va">$trimmed_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$trimmed_r2</span><span class="st">&quot;</span> results/map<span class="va">)</span></span>
-<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add the mapping job ID to a colon-separated list of all of them:</span></span>
-<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>    <span class="va">map_ids</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$map_ids</span><span class="st">:</span><span class="va">$map_id</span><span class="st">&quot;</span></span>
-<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
-<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a><span class="co"># The counting job will only start once ALL mapping jobs have successfully finished:</span></span>
-<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a><span class="ex">sbatch</span> <span class="at">--dependency</span><span class="op">=</span>afterok<span class="st">&quot;</span><span class="va">$map_ids</span><span class="st">&quot;</span> scripts/count.sh results/map results/count_table.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode bash norun code-with-copy"><code class="sourceCode bash"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="va">map_ids</span><span class="op">=</span><span class="st">&quot;&quot;</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_r1 <span class="kw">in</span> data/fastq/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">fastq_r2</span><span class="op">=</span><span class="va">${fastq_r1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Submit the trimming job and store its job ID:</span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    <span class="va">trim_id</span><span class="op">=</span><span class="va">$(</span><span class="ex">sbatch</span> <span class="at">--parsable</span> scripts/trim.sh <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span> results/trim<span class="va">)</span></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Submit the mapping job, which will only start once the trimming job</span></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># has successfully finished (`afterok`), and store its job ID too:</span></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>    <span class="va">trimmed_r1</span><span class="op">=</span>results/trim/<span class="va">$(</span><span class="fu">basename</span> <span class="st">&quot;</span><span class="va">$fastq_r1</span><span class="st">&quot;</span><span class="va">)</span></span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>    <span class="va">trimmed_r2</span><span class="op">=</span>results/trim/<span class="va">$(</span><span class="fu">basename</span> <span class="st">&quot;</span><span class="va">$fastq_r2</span><span class="st">&quot;</span><span class="va">)</span></span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>    <span class="va">map_id</span><span class="op">=</span><span class="va">$(</span><span class="ex">sbatch</span> <span class="at">--parsable</span> <span class="at">--dependency</span><span class="op">=</span>afterok:<span class="st">&quot;</span><span class="va">$trim_id</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>        scripts/map.sh <span class="st">&quot;</span><span class="va">$trimmed_r1</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$trimmed_r2</span><span class="st">&quot;</span> results/map<span class="va">)</span></span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add the mapping job ID to a colon-separated list of all of them:</span></span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>    <span class="va">map_ids</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$map_ids</span><span class="st">:</span><span class="va">$map_id</span><span class="st">&quot;</span></span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a><span class="co"># The counting job will only start once ALL mapping jobs have successfully finished:</span></span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a><span class="ex">sbatch</span> <span class="at">--dependency</span><span class="op">=</span>afterok<span class="st">&quot;</span><span class="va">$map_ids</span><span class="st">&quot;</span> scripts/count.sh results/map results/count_table.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>If a job fails, the jobs that depend on it will never start. They may remain in the queue as <code>PENDING</code>, with <code>DependencyNeverSatisfied</code> as the reason, until you cancel them with <code>scancel</code>.</p>
 
