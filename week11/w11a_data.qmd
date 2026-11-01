@@ -52,6 +52,7 @@ language:
 - How to transfer files between OSC and other computers like your own
 - How to download files at the command line
 - How to compress and decompress files
+- How to check how much disk space your dirs take up
 
 ### Getting ready
 
@@ -85,85 +86,153 @@ in the OnDemand Files menu.
 However, that method is only suitable for relatively small transfers.
 Here is a table with methods to transfer files between your computer and OSC:
 
-| Method                                                                                          | Transfer size         | CLI or GUI        | Ease of use   | Flexibility/options   |
-|-------------------------------------------------------------------------------------------------|-----------------------|-------------------|---------------|-----------------------|
-| **OnDemand Files menu**                                                                         | smaller (<1GB)        | GUI               | Easy          | Limited               |
-| **Remote transfer commands** (e.g. [`scp`, `rsync`](../bonus/ssh.qmd#remote-transfer-commands))  | any                   | CLI               | Moderate      | Extensive             |
-| **SFTP**                                                                                        | any                   | Either            | Moderate      | Extensive             |
-| **[Globus](../bonus/ssh.qmd#globus)**                                                           | larger (>1GB)         | GUI               | Moderate      | Extensive             |
+| Method                                                                                                   | Transfer size         | CLI or GUI        | Ease of use   | Flexibility/options   |
+|----------------------------------------------------------------------------------------------------------|-----------------------|-------------------|---------------|-----------------------|
+| **OnDemand Files menu**                                                                                  | smaller (<1GB)        | GUI               | Easy          | Limited               |
+| **Remote transfer commands** (e.g. [`scp`](#transfer-with-scp), [`rsync`](../bonus/ssh.qmd#rsync))       | any                   | CLI               | Moderate      | Extensive             |
+| **SFTP clients** (e.g. [FileZilla](../bonus/ssh.qmd#filezilla))                                          | any                   | GUI               | Easy          | Moderate              |
+| **[Globus](../bonus/ssh.qmd#globus)**                                                                    | larger (>1GB)         | GUI               | Moderate      | Extensive             |
 
 : {.striped .hover}
 
-### FileZilla: a GUI-based SFTP client
+Below, we'll practice with `scp`.
+The other options are covered on the [SSH and file transfer](../bonus/ssh.qmd) reference page,
+which also shows how to
+[avoid typing your OSC password](../bonus/ssh.qmd#avoid-typing-your-osc-password)
+for every transfer.
 
-Here, we'll go over what is probably overall the most convenient and versatile
-way to transfer files to and from OSC,
-since it works for transfers of any size, and is easy and quick:
-file transfer with a GUI-based SFTP client.
-There are several such programs, but I can recommend **FileZilla**^[
-E.g. because it works on all operating systems and has a more intuitive user
-interface than Cyberduck,
-another very commonly used program that works both on Mac and Windows.].
-Let's give that a try!
+### Transfer with `scp` {#transfer-with-scp}
 
-1. **Install FileZilla**\
-   - For *OSU-managed computers*:
-     Open the "Software Center" (Windows) or "Ohio State Application Self Service"
-     (Mac), search for "FileZilla", and click the install button.
+Here, we'll use the `scp` (**s**ecure **c**o**p**y) command,
+which works much like `cp`, but can copy files between computers.
+It works for transfers of any size,
+and because it's a command,
+you can keep a record of your transfers, e.g. in a README file.
 
-   - For *personal computers*:
-     Go to the
-     [FileZilla download page](https://filezilla-project.org/download.php?type=client)
-     --- it should automatically display a big green download button for your
-     operating system: click on that, then install the program, and open it.
-     On Windows, the installer may offer to install additional software:
-     decline these offers.
+::: callout-warning
+#### Use a terminal on your own computer
+So far in this course, you've always used a terminal in VS Code at OSC.
+To transfer files between your computer and OSC,
+you instead run `scp` in a terminal on _your own computer_ ---
+and that goes for both directions: downloads _and_ uploads.
+:::
 
-2. **Connect to OSC**\
-   Open FileZilla.
-   To connect it to OSC, find the **Site Manager**:
-   click `File` in the top menu bar and then `Site Manager`^[
-   There is also an icon in the far top-left to access this menu.
-   Additionally, there is a "Quickconnect" bar,
-   but I've not managed to connect to OSC with that.].
-   In the Site Manager, click **New site**, name it e.g. `OSC`,
-   and then enter/select the following:
-   - _Protocol_: "SFTP - SSH File Transfer Protocol"
-   - _Host_: `sftp.osc.edu` (leave the Port box empty)
-   - _Logon Type_: Make sure "Normal" is selected
-   - _User_: Type your OSC username
-   - _Password_: Enter your OSC password
-   - Click the "**Connect**" button at the bottom to connect to OSC
+1. **Open a terminal on your own computer**
+   - On a Mac, open the "**Terminal**" app
+     (e.g. search for it with <kbd>Cmd</kbd>+<kbd>Space</kbd>).
+   - On Windows, open the "**Windows Terminal**" app (the default on Windows 11)
+     or "**PowerShell**".
+     These run the PowerShell shell rather than Bash,
+     but the commands in this section work the same in it.
 
-![](../img/filezilla_connect.png){fig-align="center" width="60%" fig-alt="A screenshot of the connection setup dialog box on FileZilla" .lightbox}
+2. **Move to your Downloads dir**\
+   This dir is in the same place on Mac and Windows computers:
 
-3. **The connection interface**\
-   Once connected, your main screen is split with a local file explorer
-   on the left, and a remote file explorer on the right:
+   ```bash
+   cd ~/Downloads
+   ```
 
-![](../img/split_screen.png){fig-align="center" width="90%" fig-alt="A screenshot of the split screen view showing local and remote on FileZilla" .lightbox}
+3. **The `scp` syntax**\
+   To refer to a path at OSC, you start with your username, `@`,
+   and OSC's address for file transfers, `sftp.osc.edu`,
+   followed by `:` and then the path:
 
-4. **Changing directories**\
-   You can change directories in either file explorer.
-   At OSC, your default location is your Home dir,
-   but you can type a partial path in the top bar (e.g. `/fs/ess/PAS3493`)
-   and then click your way to your personal dir.
+   ```{.bash .norun .syntax}
+   # Download: copy from OSC to your computer
+   scp <user>@sftp.osc.edu:<remote-path> <local-path>
 
-![](../img/filezilla_proj-dir.png){fig-align="center" width="70%" fig-alt="A screenshot of FileZilla showing how to change the remote dir." .lightbox}
+   # Upload: copy from your computer to OSC
+   scp <local-path> <user>@sftp.osc.edu:<remote-path>
+   ```
 
-5. **Transferring files**\
-   Transferring dirs and files in either direction is as simple as
-   **dragging and dropping** them to the other side!
+   - `sftp.osc.edu` is OSC's dedicated file transfer server,
+     which gives you access to the same files as the clusters.
+   - For paths at OSC, use absolute paths:
+     `scp` doesn't know your working dir in VS Code at OSC,
+     so relative paths there are interpreted relative to your Home dir.
+   - Like with `cp`, use the `-r` option to copy dirs.
+
+4. **Download a file**\
+   Let's download the FastQC report for sample `S63` that you created in week 6
+   (replace both instances of `jelmer` with your username):
+
+   ```bash
+   scp jelmer@sftp.osc.edu:/fs/ess/PAS3493/people/jelmer/week06/results/fastqc/S63_R1_fastqc.html .
+   ```
+
+   - The `.` at the end refers to your current working dir on your computer,
+     so the file will be downloaded to your Downloads dir.
+   - The first time you connect, you'll get a message that
+     _"The authenticity of host 'sftp.osc.edu' can't be established"_,
+     and a question if you want to continue connecting:
+     type `yes` and press <kbd>Enter</kbd>.
+     (You will always get this message the first time you connect to a remote computer.)
+   - Next, you'll be prompted for your OSC password.
+     Note that when you type it, _no characters or even \*s will appear on the screen_!
+     You'll have to enter your password for every `scp` command.
+
+5. **Check the downloaded file**\
+   Find the file in your Downloads folder in Finder (Mac) or File Explorer (Windows),
+   and double-click it to open it in your browser.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: File transfer with FileZilla
+#### {{< fa user-edit >}} Exercise: File transfer with `scp`
 
-In FileZilla, go to `/fs/ess/PAS3493/people/<your-username>`. Then:
+1. **Download** your entire `week06/results/fastqc` dir from OSC into your Downloads dir
+   with a single command.
 
-1. **Download** an HTML file to your computer, and open it in your browser:
-   for example, a FastQC report from week 6 (in `week06/results/fastqc`).
-2. **Upload** any small file from your computer to the same dir at OSC,
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Use the `-r` option to copy a dir, and run the command in a terminal on your own computer
+   (replace both instances of `jelmer` with your username):
+
+   ```bash
+   scp -r jelmer@sftp.osc.edu:/fs/ess/PAS3493/people/jelmer/week06/results/fastqc .
+   ```
+
+   </details>
+---->
+
+2. **Upload** the `S63_R1_fastqc.html` file that you just downloaded
+   to your `week11/sandbox` dir at OSC,
    and check that it's there with `ls` in your VS Code terminal.
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   In a terminal on your own computer
+   (replace both instances of `jelmer` with your username):
+
+   ```bash
+   scp S63_R1_fastqc.html jelmer@sftp.osc.edu:/fs/ess/PAS3493/people/jelmer/week11/sandbox
+   ```
+
+   Then, in your VS Code terminal at OSC, where your working dir is `week11`:
+
+   ```bash
+   ls sandbox
+   ```
+
+   </details>
+---->
+
+3. A classmate tries to upload the same file with
+   `scp S63_R1_fastqc.html jelmer@sftp.osc.edu`,
+   forgetting the `:` at the end.
+   They don't get an error, and aren't even asked for their password.
+   What do you think happened?
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Without a `:`, `scp` doesn't see a remote computer,
+   so it treats `jelmer@sftp.osc.edu` as a local file name
+   and makes a regular local copy, just like `cp` would:
+   there is now a file called `jelmer@sftp.osc.edu` in their Downloads dir.
+
+   </details>
+---->
 
 :::
 
@@ -173,7 +242,7 @@ you can use the same approach for much larger files that you can't up/download
 via the OnDemand file browser, such as your raw FASTQ files.
 :::
 
-## Downloading files at the command line
+## Downloading files at the command line {#wget}
 
 When you need to get large files from public repositories like NCBI
 (e.g. reference genome files, raw reads from the SRA),
@@ -183,8 +252,6 @@ Not only is this quicker once you know how to,
 it is also much more reproducible:
 in your Markdown documentation files,
 you can store the exact commands used to obtain the data.
-
-### `wget`
 
 You can download files from a URL using the `wget` command.
 It has _many_ options, but basic usage is quite simple:
@@ -254,34 +321,49 @@ On the same NCBI page, there is a FASTA file with the sequences of all predicted
 (`GCF_016801865.2_TS_CPP_V2_protein.faa.gz`).
 
 1. Download it into your `sandbox` dir with a single command.
-2. How many proteins are in the file?
-   (Hint: each sequence has a header line starting with `>`,
-   and you don't need to unzip the file first.)
-3. The _Culex pipiens_ annotation contains fewer genes than there are proteins in this file.
-   Why might that be?
-:::
 
 <!----
-<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-1. Copy the link to the file, and then run:
+   Copy the link to the file, and then run:
 
    ```bash
    wget -P sandbox https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_protein.faa.gz
    ```
 
-2. Use `zcat` to print the unzipped contents, and count the header lines with `grep -c`:
+   </details>
+---->
+
+2. How many proteins are in the file?
+   (Hint: each sequence has a header line starting with `>`,
+   and you don't need to unzip the file first.)
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Use `zcat` to print the unzipped contents, and count the header lines with `grep -c`:
 
    ```bash
    zcat sandbox/GCF_016801865.2_TS_CPP_V2_protein.faa.gz | grep -c ">"
    ```
 
-3. Many genes have multiple transcripts ("isoforms") due to alternative splicing,
+   </details>
+---->
+
+3. The _Culex pipiens_ annotation contains fewer genes than there are proteins in this file.
+   Why might that be?
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Many genes have multiple transcripts ("isoforms") due to alternative splicing,
    and each of these can code for a different protein.
    (Conversely, non-coding genes don't code for any protein.)
 
-</details>
+   </details>
 ---->
+
+:::
 
 <hr style="height:1pt; visibility:hidden;" />
 
@@ -300,7 +382,7 @@ use its `-O` option to save the file under its original name.
 ::: callout-tip
 #### More about downloading genomics data from NCBI
 
-The [optional data management self-study page](../bonus/data.qmd#downloading-data-from-ncbi)
+The [reference page on NCBI data](../ref/ncbi.qmd)
 introduces NCBI's databases (like GenBank, RefSeq, and the SRA),
 and shows how to find a reference genome for any species,
 download genomes with NCBI's `datasets` tool,
@@ -349,9 +431,22 @@ ls -lh sandbox/GCF*
 ```
 <pre class="bash-out"><code>-rw-rw----+ 1 jelmer PAS0471 165M Dec 22  2022 <span class="ls-red">sandbox/GCF_016801865.2_TS_CPP_V2_genomic.fna.gz</span></code></pre>
 
-The compressed file is more than 3 times smaller than the uncompressed one.
+The compressed file is less than a third of the size of the uncompressed one.
 So, only decompress files when needed,
 and consider compressing large plain-text files that you don't use often.
+
+<details class="details-quiz">
+<summary>Say you need an uncompressed version of a gzipped file, but also want to keep the gzipped file. How could you do this with commands you already knew before this week?</summary>
+
+_The answer will be added after class._
+
+<!----
+Use `zcat` and redirect its output to a new file,
+e.g. `zcat sandbox/genome.fna.gz > sandbox/genome.fna`:
+`zcat` only reads the gzipped file, so that stays the same.
+---->
+
+</details>
 
 ::: {.callout-tip collapse="true"}
 #### Want to keep the original file? _(Click to expand)_
@@ -378,8 +473,7 @@ gzip -c sandbox/GCF_016801865.2_TS_CPP_V2_genomic.fna > sandbox/genome_copy.fna.
 ```
 :::
 
-::: {.callout-tip}
-#### Use the `du` command to see the total size of a dir
+## Checking dir sizes with `du`
 
 To find out which of your data takes up the most space,
 you'll want to know the sizes of dirs.
@@ -411,7 +505,25 @@ Instead, use the `du` (**d**isk **u**sage) command -- for example:
   1.9G    ../garrigos
   ```
 
-:::
+Note that unlike `ls`, `du` includes hidden dirs like `.git` by default.
+When you're looking for what takes up the most space,
+that's useful, because hidden dirs can be surprisingly large ---
+as you can see in the output above:
+
+<details class="details-quiz">
+<summary>Why is the `.git` dir about as large as the `fastq` dir?</summary>
+
+_The answer will be added after class._
+
+<!----
+The FASTQ files were committed to the `garrigos` repo,
+so Git stores its own copy of each of them in `.git`.
+And because FASTQ files are already compressed,
+Git can't make these copies any smaller.
+This is one reason not to commit large data files to a Git repo.
+---->
+
+</details>
 
 ## Recap
 
@@ -421,7 +533,7 @@ including why to prefer relative paths and how to organize metadata in spreadshe
 ([slides](./w11a_data-mgmt.qmd)),
 and the following practical applications:
 
-- File transfer to and from OSC with FileZilla (and what other options exist)
+- File transfer to and from OSC with `scp` (and what other options exist)
 - Downloading files at the command line with `wget`
 - Compressing and decompressing files with `gzip` and `gunzip`,
   and checking dir sizes with `du`
@@ -430,14 +542,10 @@ The [optional data management self-study page](../bonus/data.qmd) covers:
 
 - Sharing data and code across projects,
   and linking to files and dirs elsewhere with symbolic links (`ln -s`)
-- NCBI's databases, and downloading genomes (`datasets`) and reads from the SRA
 - Checking whether downloaded or transferred files are intact with checksums (`md5sum`)
 - Viewing and changing file permissions (`ls -l`, `chmod`),
   e.g. to make your raw data read-only
-- More about file compression:
-  compressing program output on the fly,
-  searching gzipped files with `zgrep`, concatenating gzipped files,
-  and packing up entire dirs with `tar`
+- More about file compression, including packing up entire dirs with `tar`
 
 <hr style="height:1pt; visibility:hidden;" />
 
