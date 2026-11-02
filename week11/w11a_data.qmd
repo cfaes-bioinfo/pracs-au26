@@ -57,12 +57,10 @@ language:
 ### Getting ready
 
 1. At <https://ondemand.osc.edu>,
-   start a VS Code session in `/fs/ess/PAS3493/people/$USER`,
-   with **4 cores** (you'll need these for the pipeline test run in
-   [Lecture B](w11b_nfcore1.qmd)).
+   start a VS Code session in `/fs/ess/PAS3493/people/$USER` as per usual.
 
-2. In your VS Code terminal, create a working dir for this week
-   with a `sandbox` dir inside it, and move into the week dir:
+2. In your terminal, create a working dir for this week
+   with a `sandbox` dir inside it, and navigate into the week dir:
 
    ```bash
    mkdir -p week11/sandbox
@@ -71,8 +69,8 @@ language:
 
 ## Relative paths and data management
 
-In class, we'll go through why you should prefer relative paths,
-and how to manage and share your data, using the slides below
+In class, we'll go through how to manage and share your data,
+and why you should prefer relative paths, using the slides below
 (**[open them in a separate tab](./w11a_data-mgmt.qmd){target="_blank"}** for a full-screen view).
 
 <iframe class="slides-embed" data-external="1" src="w11a_data-mgmt.html" title="Data management (slides)"></iframe>
@@ -82,18 +80,23 @@ and how to manage and share your data, using the slides below
 ### Overview of transfer options
 
 In week 2, you learned that you can upload and download files from OSC
-in the OnDemand Files menu.
-However, that method is only suitable for relatively small transfers.
-Here is a table with methods to transfer files between your computer and OSC:
+in the OnDemand Files menu^[
+  You've also seen that you can download files in VS Code
+  (and you can upload via drag-and-drop).].
+However, this method is only suitable for relatively **small transfers**.
+Here is a table with the main methods to transfer files between your computer and OSC,
+including ones that you can use for **larger transfers**:
 
 | Method                                                                                                   | Transfer size         | CLI or GUI        | Ease of use   | Flexibility/options   |
 |----------------------------------------------------------------------------------------------------------|-----------------------|-------------------|---------------|-----------------------|
-| **OnDemand Files menu**                                                                                  | smaller (<1GB)        | GUI               | Easy          | Limited               |
-| **Remote transfer commands** (e.g. [`scp`](#transfer-with-scp), [`rsync`](../bonus/ssh.qmd#rsync))       | any                   | CLI               | Moderate      | Extensive             |
-| **SFTP clients** (e.g. [FileZilla](../bonus/ssh.qmd#filezilla))                                          | any                   | GUI               | Easy          | Moderate              |
-| **[Globus](../bonus/ssh.qmd#globus)**                                                                    | larger (>1GB)         | GUI               | Moderate      | Extensive             |
+| OnDemand Files menu                                                                                  | smaller (<1GB)        | GUI               | Easy          | Limited               |
+| Remote transfer commands (e.g. [`scp`](#transfer-with-scp), [`rsync`](../bonus/ssh.qmd#rsync))       | any                   | CLI               | Moderate      | Extensive             |
+| SFTP clients (e.g. [FileZilla](../bonus/ssh.qmd#filezilla))                                          | any                   | GUI               | Easy          | Moderate              |
+| [Globus](../bonus/ssh.qmd#globus)                                                                    | larger (>1GB)         | GUI               | Moderate      | Extensive             |
 
 : {.striped .hover}
+
+<hr style="height:1pt; visibility:hidden;" />
 
 Below, we'll practice with `scp`.
 The other options are covered on the [SSH and file transfer](../bonus/ssh.qmd) reference page,
@@ -103,19 +106,57 @@ for every transfer.
 
 ### Transfer with `scp` {#transfer-with-scp}
 
-Here, we'll use the `scp` (**s**ecure **c**o**p**y) command,
+We'll try the `scp` (**s**ecure **c**o**p**y) command,
 which works much like `cp`, but can copy files between computers.
-It works for transfers of any size,
-and because it's a command,
+It works for transfers of any size, and because it's a command,
 you can keep a record of your transfers, e.g. in a README file.
 
-::: callout-warning
-#### Use a terminal on your own computer
 So far in this course, you've always used a terminal in VS Code at OSC.
 To transfer files between your computer and OSC,
-you instead run `scp` in a terminal on _your own computer_ ---
-and that goes for both directions: downloads _and_ uploads.
-:::
+you instead run `scp` in a terminal on **your own computer** ---
+and that goes for **both directions**: downloads and uploads.
+
+#### `scp` syntax
+
+`scp` has the same basic syntax as `cp`, but you need a prefix to refer to a remote path.
+To refer to a path at OSC, you start with your username, `@`,
+and OSC's address for file transfers, `sftp.osc.edu`,
+followed by `:` and then the path:
+
+-  **Download** --- copy from OSC to your computer:
+
+   ```{.bash .norun .syntax}
+   scp <user>@sftp.osc.edu:<remote-path> <local-path>
+   ```
+
+   For example, to download a file to your current working dir (`.`) on your computer:
+
+   ```{.bash .norun}
+   scp jelmer@sftp.osc.edu:/fs/ess/PAS3493/data.txt .
+   ```
+
+- **Upload** --- copy from your computer to OSC:
+
+  ```{.bash .norun .syntax}
+  scp <local-path> <user>@sftp.osc.edu:<remote-path>
+  ```
+
+  For example:
+
+  ```{.bash .norun}
+  scp data.txt jelmer@sftp.osc.edu:/fs/ess/PAS3493/
+  ```
+
+For paths at OSC, use absolute paths:
+`scp` doesn't know your working dir in VS Code at OSC,
+so relative paths there are interpreted relative to your Home dir.
+And like with `cp`, use the `-r` option to **copy dirs**.
+
+#### Trying `scp`
+
+We'll practice with small files, but keep in mind that you can use the same
+approach for much larger files that you can't up/download
+via the OnDemand file browser, such as your raw FASTQ files.
 
 1. **Open a terminal on your own computer**
    - On a Mac, open the "**Terminal**" app
@@ -125,55 +166,35 @@ and that goes for both directions: downloads _and_ uploads.
      These run the PowerShell shell rather than Bash,
      but the commands in this section work the same in it.
 
-2. **Move to your Downloads dir**\
+2. **Navigate to the Downloads dir on your own computer**\
    This dir is in the same place on Mac and Windows computers:
 
    ```bash
    cd ~/Downloads
    ```
 
-3. **The `scp` syntax**\
-   To refer to a path at OSC, you start with your username, `@`,
-   and OSC's address for file transfers, `sftp.osc.edu`,
-   followed by `:` and then the path:
-
-   ```{.bash .norun .syntax}
-   # Download: copy from OSC to your computer
-   scp <user>@sftp.osc.edu:<remote-path> <local-path>
-
-   # Upload: copy from your computer to OSC
-   scp <local-path> <user>@sftp.osc.edu:<remote-path>
-   ```
-
-   - `sftp.osc.edu` is OSC's dedicated file transfer server,
-     which gives you access to the same files as the clusters.
-   - For paths at OSC, use absolute paths:
-     `scp` doesn't know your working dir in VS Code at OSC,
-     so relative paths there are interpreted relative to your Home dir.
-   - Like with `cp`, use the `-r` option to copy dirs.
-
-4. **Download a file**\
-   Let's download the FastQC report for sample `S63` that you created in week 6
+3. **Download a file**\
+   Let's download a FastQC report you created in week 6
    (replace both instances of `jelmer` with your username):
 
    ```bash
    scp jelmer@sftp.osc.edu:/fs/ess/PAS3493/people/jelmer/week06/results/fastqc/S63_R1_fastqc.html .
    ```
 
-   - The `.` at the end refers to your current working dir on your computer,
-     so the file will be downloaded to your Downloads dir.
    - The first time you connect, you'll get a message that
      _"The authenticity of host 'sftp.osc.edu' can't be established"_,
      and a question if you want to continue connecting:
-     type `yes` and press <kbd>Enter</kbd>.
-     (You will always get this message the first time you connect to a remote computer.)
-   - Next, you'll be prompted for your OSC password.
+     type `yes` and press <kbd>Enter</kbd> ^[
+     You will always get this message the first time you connect to a remote computer.].
+   - Next, you'll be prompted for your **OSC password**.
      Note that when you type it, _no characters or even \*s will appear on the screen_!
-     You'll have to enter your password for every `scp` command.
+     You'll have to enter your password for every `scp` command,
+     until you do
+     [these steps to avoid typing your OSC password](../bonus/ssh.qmd#avoid-typing-your-osc-password).
 
-5. **Check the downloaded file**\
+4. **Check the downloaded file**\
    Find the file in your Downloads folder in Finder (Mac) or File Explorer (Windows),
-   and double-click it to open it in your browser.
+   and open it.
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise: File transfer with `scp`
@@ -236,12 +257,6 @@ and that goes for both directions: downloads _and_ uploads.
 
 :::
 
-::: {.callout-tip appearance=simple}
-While this practice involved small files,
-you can use the same approach for much larger files that you can't up/download
-via the OnDemand file browser, such as your raw FASTQ files.
-:::
-
 ## Downloading files at the command line {#wget}
 
 When you need to get large files from public repositories like NCBI
@@ -265,16 +280,18 @@ For the nf-core pipeline run in [Lecture C](w11c_nfcore2.qmd),
 you will need the reference genome FASTA file for _Culex pipiens_,
 the focal species of the @garrigós2025 RNA-seq dataset we've been working with.
 The files for that genome can be found at this
-[NCBI FTP webpage](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/):
+[NCBI FTP webpage {{< fa external-link >}}](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/){target="_blank"}:
 
-![](../img/ncbi-ftp-dir.png){fig-align="center" width="85%" .no-border fig-alt="A browser screenshot of the NCBI FTP dir for the Culex pipiens genome" .lightbox}
+<hr style="height:1pt; visibility:hidden;" />
+
+![](../img/ncbi-ftp-dir.png){fig-align="center" width="75%" .no-border fig-alt="A browser screenshot of the NCBI FTP dir for the Culex pipiens genome" .lightbox}
 
 You can right-click on any of the files there and then click "Copy Link Address"
 (or similar, depending on your browser).
-That's how I got the URL to the assembly FASTA (`.fna.gz`) file.
-Let's download that file into your `sandbox` dir,
-so we can practice with it below
-(in Lecture C, you'll download it again, into `garrigos/ref`):
+Do that to get the URL to the assembly FASTA (`.fna.gz`) file.
+
+Then, let's download that file into your `sandbox` dir,
+so we can practice with it below:
 
 ```bash
 URL=https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_genomic.fna.gz
@@ -294,14 +311,15 @@ GCF_016801865.2_TS_CPP_V2_genomic.fna.gz           100%[========================
 ```
 
 - `wget` downloads files to your working dir by default,
-  but we used its `-P` option to directly download into the `sandbox` dir.
+  but we used its `-P` option to download into the `sandbox` dir.
 - As you can see, `wget` is quite chatty
   and prints a bunch of logging and progress info to the screen.
 
 Let's check the downloaded file:
 
 ```bash
-ls -lh sandbox/GCF*
+# Make sure to use Tab-completion here!
+ls -lh sandbox/GCF_016801865.2_TS_CPP_V2_genomic.fna.gz
 ```
 <pre class="bash-out"><code>-rw-rw----+ 1 jelmer PAS0471 165M Dec 22  2022 <span class="ls-red">sandbox/GCF_016801865.2_TS_CPP_V2_genomic.fna.gz</span></code></pre>
 
@@ -415,11 +433,36 @@ ls -lh sandbox/GCF*
 -rw-rw----+ 1 jelmer PAS0471 547M Dec 22  2022 sandbox/GCF_016801865.2_TS_CPP_V2_genomic.fna
 ```
 
-- `gunzip` decompresses files **in place**:
-  the gzipped file is replaced by an uncompressed file with the same name minus the `.gz`.
-- You can decompress multiple files at once, e.g. with a wildcard:
-  `gunzip -v data/*.gz`
-  (the `-v` option makes `gunzip` report on each file).
+Files are decompressed **in place**,
+i.e. *replaced* by an uncompressed file with the same name minus the `.gz`.
+
+::: {.callout-tip collapse="true"}
+#### Decompressing multiple files at once _(Click to expand)_
+
+You can pass `gunzip` multiple files at once, for example with a wildcard.
+Say you have a dir `data` with three gzipped files:
+
+```bash
+ls data
+```
+```bash-out
+sampleA.fastq.gz  sampleB.fastq.gz  sampleC.fastq.gz
+```
+
+The following would decompress all three,
+with the `-v` (verbose) option making `gunzip` report on each file:
+
+```bash
+gunzip -v data/*.gz
+```
+```bash-out
+data/sampleA.fastq.gz:   74.1% -- replaced with data/sampleA.fastq
+data/sampleB.fastq.gz:   73.8% -- replaced with data/sampleB.fastq
+data/sampleC.fastq.gz:   74.3% -- replaced with data/sampleC.fastq
+```
+
+<hr style="height:1pt; visibility:hidden;" />
+:::
 
 ### Compressing files with `gzip`
 
@@ -436,15 +479,16 @@ So, only decompress files when needed,
 and consider compressing large plain-text files that you don't use often.
 
 <details class="details-quiz">
-<summary>Say you need an uncompressed version of a gzipped file, but also want to keep the gzipped file. How could you do this with commands you already knew before this week?</summary>
+<summary>Self-study question:
+Say you need an uncompressed version of a gzipped file, but also want to keep the gzipped file. How could you do this with commands you already knew before this week?</summary>
 
-_The answer will be added after class._
+Use `zcat` and redirect its output to a new file, e.g.:
 
-<!----
-Use `zcat` and redirect its output to a new file,
-e.g. `zcat sandbox/genome.fna.gz > sandbox/genome.fna`:
-`zcat` only reads the gzipped file, so that stays the same.
----->
+```{.bash .norun}
+zcat sandbox/genome.fna.gz > sandbox/genome.fna
+```
+
+`zcat` only reads the gzipped file, so that file won't be changed.
 
 </details>
 
@@ -475,17 +519,16 @@ gzip -c sandbox/GCF_016801865.2_TS_CPP_V2_genomic.fna > sandbox/genome_copy.fna.
 
 ## Checking dir sizes with `du`
 
-To find out which of your data takes up the most space,
-you'll want to know the sizes of dirs.
+It's often useful to know how much space your dirs take up.
 But as you saw in week 4, the sizes that `ls -l` shows for dirs
 don't correspond to the total size of the dir and its contents.
-Instead, use the `du` (**d**isk **u**sage) command -- for example:
+Instead, you can use the `du` (**d**isk **u**sage) command for this purpose.
 
-- Get the **total size for a single dir** with options `-h` (human-readable) and
-  `-s` (summarize, i.e. only show the total):
+- Get the **total size for a single dir** with options `-s`
+  (summarize, i.e. only show the total) and `-h` (human-readable):
 
   ```bash
-  du -hs ../garrigos/fastq
+  du -sh ../garrigos/fastq
   ```
   ```bash-out
   941M    ../garrigos/fastq
@@ -508,22 +551,23 @@ Instead, use the `du` (**d**isk **u**sage) command -- for example:
 Note that unlike `ls`, `du` includes hidden dirs like `.git` by default.
 When you're looking for what takes up the most space,
 that's useful, because hidden dirs can be surprisingly large ---
-as you can see in the output above:
+as you can see in the output above.
 
-<details class="details-quiz">
-<summary>Why is the `.git` dir about as large as the `fastq` dir?</summary>
+::: {.callout-tip collapse="true"}
+#### Why is the `.git` dir about as large as the `fastq` dir? _(Click to expand)_
 
-_The answer will be added after class._
-
-<!----
 The FASTQ files were committed to the `garrigos` repo,
 so Git stores its own copy of each of them in `.git`.
 And because FASTQ files are already compressed,
 Git can't make these copies any smaller.
 This is one reason not to commit large data files to a Git repo.
----->
 
-</details>
+I made an exception for the `garrigos` repo because it's a practice dataset:
+the FASTQ files were subset to keep them fairly small,
+they will never change (so Git won't accumulate multiple versions of them),
+and a single `git clone` was an easy way to give you all the files at once in week 4.
+
+:::
 
 ## Recap
 
@@ -572,20 +616,21 @@ Real Zenodo DOIs are permanent, so you'll use the Zenodo Sandbox,
 a test copy of Zenodo whose DOIs aren't registered.
 
 1. Go to [Zenodo Sandbox](https://sandbox.zenodo.org/){target="_blank"},
-   click "Log in" (not "Create Account"), choose "Sign in with GitHub",
+   click "**Log in**" (not "Create Account"), choose "Sign in with GitHub",
    and authorize the Sandbox to access your GitHub account.
 
-![](/img/zenodo-front-page.png){fig-align="center" width="95%" .no-border fig-alt="A screenshot of the Zenodo Sandbox front page" .lightbox}
+2. In the Sandbox account dropdown menu (far top right), go to "**GitHub**":
 
-2. In the Sandbox account dropdown menu (far top right), go to "GitHub",
-   find your `evo` repo in the list of your repos, and flip the switch next to it.
+![](/img/zenodo-front-page.png){fig-align="center" width="95%" .no-border fig-alt="A screenshot of the Zenodo Sandbox front page" .lightbox}
 
 ::: {.columns}
 ::: {.column width="35%"}
 
-3. Then, click the repo link, and on the next page,
-   click the green repo button (screenshot on the right):
-   you will be sent to the GitHub page to create a new release
+3. Find your `evo` repo in the list of your repos, and flip the switch next to it
+   to "ON". Then, click the repo link, and on the next page,
+   click the green repo button (screenshot on the right).
+
+   You will be sent to the GitHub page to create a new release
    for your repo (screenshot below).
 
 :::
@@ -663,7 +708,7 @@ On the right, the GitHub page when the release has been published.
 :::
 :::
 
-![](/img/zenodo-badge-copy-markdown.png){fig-align="center" width="95%" fig-alt="A screenshot of the Zenodo Sandbox page showing the Markdown code snippet for the DOI badge" .lightbox}
+![](/img/zenodo-badge-copy-markdown.png){fig-align="center" width="92%" fig-alt="A screenshot of the Zenodo Sandbox page showing the Markdown code snippet for the DOI badge" .lightbox}
 
 8. Then, edit the `README.md` file in your repo on GitHub,
    paste the snippet at the top, and commit the change^[
@@ -671,6 +716,6 @@ On the right, the GitHub page when the release has been published.
      you would normally do this in VS Code and push the change to GitHub.].
    You should now see the badge at the top of your README on GitHub:
 
-![](/img/github-release-zenodo-badge-added.png){fig-align="center" width="70%" .no-border fig-alt="A screenshot of the GitHub repo page showing the Zenodo DOI badge in the README.md file" .lightbox}
+![](/img/github-release-zenodo-badge-added.png){fig-align="center" width="60%" .no-border fig-alt="A screenshot of the GitHub repo page showing the Zenodo DOI badge in the README.md file" .lightbox}
 
 <hr style="height:1pt; visibility:hidden;" />
