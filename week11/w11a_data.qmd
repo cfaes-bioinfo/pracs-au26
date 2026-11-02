@@ -148,10 +148,11 @@ via the OnDemand file browser, such as your raw FASTQ files.
 1. **Open a terminal on your own computer**
    - On a Mac, open the "**Terminal**" app
      (e.g. search for it with <kbd>Cmd</kbd>+<kbd>Space</kbd>).
-   - On Windows, open the "**Windows Terminal**" app (the default on Windows 11)
-     or "**PowerShell**".
-     These run the PowerShell shell rather than Bash,
-     but the commands in this section work the same in it.
+   - On Windows, open the "**Terminal**" app
+     (search for "terminal" --- older versions call it "Windows Terminal").
+     Its tab will say "Windows PowerShell":
+     this is expected, because it runs the PowerShell shell rather than Bash.
+     The commands in this section work the same in PowerShell.
 
 2. **Navigate to the Downloads dir on your own computer**\
    This dir is in the same place on Mac and Windows computers:
@@ -167,28 +168,45 @@ via the OnDemand file browser, such as your raw FASTQ files.
    scp jelmer@sftp.osc.edu:/fs/ess/PAS3493/share/week07/results/fastqc/S63_R1_fastqc.html .
    ```
 
-   - The first time you connect, you'll get a message that
-     _"The authenticity of host 'sftp.osc.edu' can't be established"_,
-     and a question if you want to continue connecting:
-     type `yes` and press <kbd>Enter</kbd> ^[
-     You will always get this message the first time you connect to a remote computer.].
-   - Next, you'll be prompted for your **OSC password**.
-     Note that when you type it, _no characters or even \*s will appear on the screen_!
-     You'll have to enter your password for every `scp` command,
-     until you do
-     [these steps to avoid typing your OSC password](../bonus/ssh.qmd#avoid-typing-your-osc-password).
+   The first time you connect, you'll get a message that
+    _"The authenticity of host 'sftp.osc.edu' can't be established"_,
+    and a question if you want to continue connecting:
+    type `yes` and press <kbd>Enter</kbd> ^[
+      You will always get this message the first time you connect to a remote computer.].
+
+   Next, you'll be prompted for your **OSC password**.
+   When you type it, _no characters or \*s will appear on the screen_!
+   You'll have to enter your password for every `scp` command,
+   unless you do [these optional steps](../bonus/ssh.qmd#avoid-typing-your-osc-password).
+
+   ::: {.callout-important collapse="true"}
+   #### Are you on Windows and can't type "Yes"? _(Click to expand)_
+   This seems to happen in the standalone PowerShell window,
+   which has no tabs and usually a dark-blue background,
+   but not in the Terminal app, which has tabs and a `+` at the top.
+
+   If you can't get the Terminal app to work,
+   you can skip the question about host authenticity altogether
+   by adding `-o StrictHostKeyChecking=accept-new` to your first `scp` command:
+
+   ```bash
+   scp -o StrictHostKeyChecking=accept-new jelmer@sftp.osc.edu:/fs/ess/PAS3493/share/week07/results/fastqc/S63_R1_fastqc.html .
+   ```
+
+   This has the same effect as typing `yes`,
+   so you won't need this option in later commands.
+   :::
 
 4. **Check the downloaded file**\
    Find the file in your Downloads folder in Finder (Mac) or File Explorer (Windows),
    and open it.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: File transfer with `scp`
+#### {{< fa user-edit >}} Self-study exercise 1: File transfer with `scp`
 
 1. **Download** your entire `week07/results/fastqc` dir from OSC into your Downloads
    dir with a single command.
 
-<!----
    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
    Use the `-r` option to copy a dir, and run the command in a terminal on your own computer
@@ -199,13 +217,11 @@ via the OnDemand file browser, such as your raw FASTQ files.
    ```
 
    </details>
----->
 
 2. **Upload** the `S63_R1_fastqc.html` file that you just downloaded
    to your `week11/sandbox` dir at OSC,
    and check that it's there with `ls` in your VS Code terminal.
 
-<!----
    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
    In a terminal on your own computer
@@ -222,7 +238,6 @@ via the OnDemand file browser, such as your raw FASTQ files.
    ```
 
    </details>
----->
 
 3. A classmate tries to upload the same file with
    `scp S63_R1_fastqc.html jelmer@sftp.osc.edu`,
@@ -237,7 +252,6 @@ via the OnDemand file browser, such as your raw FASTQ files.
    C) Nothing happened,
       since `scp` silently skips transfers without a destination dir.
 
-<!----
    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
    The correct answer is B.
@@ -247,7 +261,6 @@ via the OnDemand file browser, such as your raw FASTQ files.
    there is now a file called `jelmer@sftp.osc.edu` in their Downloads dir.
 
    </details>
----->
 
 :::
 
@@ -342,30 +355,39 @@ and download it again.
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Download the protein sequences
+#### {{< fa user-edit >}} Self-study exercise 2: Download the protein sequences
 
 On the same NCBI page, there is a FASTA file with the sequences of all predicted proteins
 (`GCF_016801865.2_TS_CPP_V2_protein.faa.gz`).
 
 1. Download it into your `sandbox` dir with a single command.
 
-<!----
    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-   Copy the link to the file, and then run:
+   Copy the link to the file, and then paste it into a `wget` command like this:
 
    ```bash
    wget -P sandbox https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_protein.faa.gz
    ```
+   ```bash-out
+   --2026-11-04 14:09:45--  https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_protein.faa.gz
+   Resolving ftp.ncbi.nlm.nih.gov (ftp.ncbi.nlm.nih.gov)... 130.14.250.11, 130.14.250.12, 2607:f220:41e:250::10, ...
+   Connecting to ftp.ncbi.nlm.nih.gov (ftp.ncbi.nlm.nih.gov)|130.14.250.11|:443... connected.
+   HTTP request sent, awaiting response... 200 OK
+   Length: 6866680 (6.5M) [application/x-gzip]
+   Saving to: ‘sandbox/GCF_016801865.2_TS_CPP_V2_protein.faa.gz’
+
+   GCF_016801865.2_TS_CPP_V2_protein.faa.gz                            100%[================================================================================================================================================================>]   6.55M  --.-KB/s    in 0.1s
+
+   2026-11-04 14:09:46 (43.8 MB/s) - ‘sandbox/GCF_016801865.2_TS_CPP_V2_protein.faa.gz’ saved [6866680/6866680]
+   ```
 
    </details>
----->
 
-2. How many proteins are in the file?
+2. Use a command to count how many proteins are in the file.
    (Hint: each sequence has a header line starting with `>`,
    and you don't need to unzip the file first.)
 
-<!----
    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
    Use `zcat` to print the unzipped contents, and count the header lines with `grep -c`:
@@ -373,14 +395,17 @@ On the same NCBI page, there is a FASTA file with the sequences of all predicted
    ```bash
    zcat sandbox/GCF_016801865.2_TS_CPP_V2_protein.faa.gz | grep -c ">"
    ```
+   ```bash-out
+   25920
+   ```
+
+   There are 25,920 proteins in the file.
 
    </details>
----->
 
-3. The _Culex pipiens_ annotation contains fewer genes than there are proteins in this file.
-   Why might that be?
+3. The _Culex pipiens_ annotation contains fewer genes than there are proteins in
+   this file. Why might that be?
 
-<!----
    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
    Many genes have multiple transcripts ("isoforms") due to alternative splicing,
@@ -388,7 +413,6 @@ On the same NCBI page, there is a FASTA file with the sequences of all predicted
    (Conversely, non-coding genes don't code for any protein.)
 
    </details>
----->
 
 :::
 
