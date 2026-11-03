@@ -22,5 +22,46 @@
       }
     });
   });
+
+  // Text highlighting, e.g. for placeholders to replace:
+  //   ```{.file hl-text="<osc-username>"}
+  // Separate several strings with "|": hl-text="<user>|<project>".
+  // Each occurrence is wrapped in <span class="hl-text"> (styled in
+  // styles.css). Matches are found within single text nodes, so in
+  // syntax-highlighted code a string must not span several tokens.
+  // The copy button copies textContent, so it is unaffected.
+  document.querySelectorAll("div.sourceCode[data-hl-text]").forEach(function (div) {
+    var targets = div.dataset.hlText.split("|").filter(Boolean);
+    var code = div.querySelector("pre > code");
+    if (!code || !targets.length) return;
+    var walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (node) {
+      var text = node.nodeValue;
+      var frag = document.createDocumentFragment();
+      var pos = 0;
+      var found = false;
+      while (true) {
+        // Earliest match of any target from pos
+        var best = -1, len = 0;
+        targets.forEach(function (t) {
+          var i = text.indexOf(t, pos);
+          if (i !== -1 && (best === -1 || i < best)) { best = i; len = t.length; }
+        });
+        if (best === -1) break;
+        found = true;
+        frag.appendChild(document.createTextNode(text.slice(pos, best)));
+        var span = document.createElement("span");
+        span.className = "hl-text";
+        span.textContent = text.slice(best, best + len);
+        frag.appendChild(span);
+        pos = best + len;
+      }
+      if (!found) return;
+      frag.appendChild(document.createTextNode(text.slice(pos)));
+      node.parentNode.replaceChild(frag, node);
+    });
+  });
 })();
 </script>

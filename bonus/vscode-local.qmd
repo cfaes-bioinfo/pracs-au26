@@ -113,6 +113,12 @@ Connecting to a compute node takes more setup, but avoids running VS Code
 
 ### The SSH configuration file
 
+::: {.callout-tip appearance="simple"}
+You can skip this step if you already did it when
+[setting up Positron](../week12/w12a_positron-setup.qmd#the-ssh-configuration-file):
+VS Code uses the same SSH configuration file on your computer.
+:::
+
 1. Open the VS Code **Command Palette**
    (<kbd>F1</kbd> or <kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>)
    and start typing "_remote open_":
@@ -126,7 +132,7 @@ Connecting to a compute node takes more setup, but avoids running VS Code
    ::: {.panel-tabset}
    ### Mac
 
-   ```markdown
+   ```{.file filename="&#126;/.ssh/config" hl-text="<osc-username>"}
    Host osc-pitzer-login
        User <osc-username>
        HostName pitzer.osc.edu
@@ -147,7 +153,7 @@ Connecting to a compute node takes more setup, but avoids running VS Code
    (The only difference is the path to the `ssh` program in the last line.)
    :::
 
-   ```markdown
+   ```{.file filename="&#126;/.ssh/config" hl-text="<osc-username>"}
    Host osc-pitzer-login
        User <osc-username>
        HostName pitzer.osc.edu
@@ -180,6 +186,13 @@ It defines two remote "hosts" at OSC that you can connect to:
 :::
 
 ### Avoid being prompted for your OSC password
+
+::: {.callout-tip appearance="simple"}
+You can skip this step if you already set up an SSH key pair for OSC,
+e.g. when [setting up Positron](../week12/w12a_positron-setup.qmd#avoid-being-prompted-for-your-osc-password)
+or on the [SSH page](ssh.qmd#avoid-typing-your-osc-password).
+To check, run the command in step 3 below.
+:::
 
 Next, you'll set up an "SSH key pair",
 which lets OSC recognize your computer so you won't be prompted for your password.
@@ -223,6 +236,12 @@ and convenient for the login node connection and any other SSH connection to OSC
 
 ### The proxy script at OSC
 
+::: {.callout-tip appearance="simple"}
+You can skip this step if you already did it when
+[setting up Positron](../week12/w12a_positron-setup.qmd#the-proxy-script-at-osc):
+the script is in your Home dir at OSC, where VS Code will use it as well.
+:::
+
 The compute node connection runs a short "proxy script" in your Home dir at OSC.
 Copy it there by running the following command in your VS Code terminal:
 
@@ -232,7 +251,7 @@ ssh osc-pitzer-login 'cp /fs/ess/PAS3493/share/osc-compute-proxy.sh ~/ && chmod 
 
 This script contains the following:
 
-```bash
+```{.bash .file filename="&#126;/osc-compute-proxy.sh"}
 #!/bin/bash
 exec salloc --quiet -A PAS3493 -t 300 bash -c 'nc $SLURM_NODELIST 22'
 ```
@@ -254,24 +273,28 @@ Because it can take a little while to get a compute job,
 you also need to increase the time VS Code will wait for a connection:
 open the VS Code **Settings** ({{< fa cog >}} > `Settings`),
 search for `remote.SSH.connectTimeout`, and change its value from 15 to **300** (seconds).
+Do this even if you already did so in Positron,
+because VS Code has its own settings.
 
 ::: {.callout-note collapse="true"}
 #### Alternative: the proxy script on your own computer _(Click to expand)_
 
-If the above setup didn't work for you, try this:
+If the above setup didn't work for you, try this
+(if you already did this when setting up Positron, you're all set:
+both files below are on your computer, where VS Code uses them as well):
 
 1. In the SSH configuration file, change the `ProxyCommand` line for `osc-pitzer-compute` to:
 
    ::: {.panel-tabset}
    ### Mac
 
-   ```markdown
+   ```{.file filename="&#126;/.ssh/config (excerpt)" hl-text="<computer-username>"}
        ProxyCommand /Users/<computer-username>/.ssh/osc-compute-proxy.sh %h
    ```
 
    ### Windows
 
-   ```markdown
+   ```{.file filename="&#126;/.ssh/config (excerpt)" hl-text="<computer-username>"}
        ProxyCommand C:/Users/<computer-username>/.ssh/osc-compute-proxy.cmd %h
    ```
    :::
