@@ -77,10 +77,10 @@ and like with VS Code Server, your files, R, and your R code will all be at OSC.
 ### Windows
 
 1. Go to the [Positron download page {{< fa external-link >}}](https://positron.posit.co/download.html){target="_blank"}.
-   The "**Recommended for you**" box should have selected the correct download
+
+2. The "**Recommended for you**" box should have selected the correct download
    for your operating system^[
       If not, click the "All platforms" link below the download button to select the right one.].
-
    Make sure it is the **User install**
    (the System install requires admin rights).
    Most Windows computers need the x64 version,
@@ -95,10 +95,10 @@ and like with VS Code Server, your files, R, and your R code will all be at OSC.
 
 1. Go to the
    [Positron download page {{< fa external-link >}}](https://positron.posit.co/download.html){target="_blank"}.
-   The "**Recommended for you**" box should have selected the correct download
+
+2. The "**Recommended for you**" box should have selected the correct download
    for your operating system^[
       If not, click the "All platforms" link below the download button to select the right one.].
-
    However, you need either the **Apple Silicon** or the **Intel** version,
    and the page can't always tell which one you need.
    To check, click the Apple menu ({{< fa brands apple >}}) > `About This Mac`:
@@ -106,10 +106,10 @@ and like with VS Code Server, your files, R, and your R code will all be at OSC.
    you need Apple Silicon,
    and if it lists a "Processor" with "Intel" in the name, you need Intel.
 
-2. Click the download button,
+3. Click the download button,
    and then accept the license agreement to start the download.
 
-3. Open the `.dmg` file and drag Positron to:
+4. Open the `.dmg` file and drag Positron to:
    - If this is your **own computer**: Your Applications folder
    - If this is an **OSU-managed computer** without admin rights:
      your _personal_ Applications folder, `/Users/<username>/Applications`
@@ -121,7 +121,20 @@ and like with VS Code Server, your files, R, and your R code will all be at OSC.
 1. Go to the [Positron download page {{< fa external-link >}}](https://positron.posit.co/download.html){target="_blank"}
    and download the `.deb` or `.rpm` file, depending on your distribution.
 
-2. Use your package manager to install the downloaded file.
+2. Use your package manager to install the downloaded file,
+   e.g. from the folder with the downloaded file:
+
+   - For a `.deb` file (e.g. Ubuntu, Debian):
+
+     ```bash
+     sudo apt install ./Positron-*.deb
+     ```
+
+   - For an `.rpm` file (e.g. Fedora, RHEL):
+
+     ```bash
+     sudo dnf install ./Positron-*.rpm
+     ```
 
 :::
 
@@ -138,18 +151,19 @@ using the same SSH configuration^[
 
 ### The SSH configuration file
 
+_(You can skip this step if you already did it when connecting a_
+_[local VS Code installation to OSC](../bonus/vscode-local.qmd#the-ssh-configuration-file).)_
+
 We will define two remote "**hosts**" at OSC that you can connect to:
 
 - `osc-pitzer-login` connects to a **login node** of OSC's Pitzer cluster.
 
 - `osc-pitzer-compute` connects to a **compute node** of OSC's Pitzer cluster.
-  You can't connect directly to a compute node, so this connection first goes to
-  a login node, and there runs a script (`osc-compute-proxy.sh`, see below)
-  that requests a compute job and then passes on the connection to the compute node
+  Because you can't connect _directly_ to a compute node,
+  this connection first goes to a login node,
+  and there runs a script (`osc-compute-proxy.sh`, see below) that requests a
+  compute job and then passes on the connection to the compute node
   you've been assigned.
-
-_(You can skip this step if you already did it when connecting a_
-_[local VS Code installation to OSC](../bonus/vscode-local.qmd#the-ssh-configuration-file).)_
 
 1. Open the **Command Palette**
    (<kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> or `View` > `Command Palette`)
@@ -196,8 +210,8 @@ _[local VS Code installation to OSC](../bonus/vscode-local.qmd#the-ssh-configura
    ```
    :::
 
-3. Change **both** occurrences of `<osc-username>` to your **OSC username**,
-   e.g. to `User jane`. Then, save the file.
+3. Change **both** occurrences of [osc-username]{.hl-text} to your actual
+   **OSC username**. Then, save the file.
 
 ### Avoid being prompted for your OSC password
 
@@ -205,25 +219,28 @@ _(You can skip this step if you already set up an SSH key pair for OSC,_
 _e.g. when connecting a [local VS Code installation to OSC](../bonus/vscode-local.qmd#avoid-being-prompted-for-your-osc-password)_
 _or on the [SSH page](../bonus/ssh.qmd#avoid-typing-your-osc-password).)_
 
-Next, you'll set up an "SSH key pair", so you won't be prompted for your OSC password^[
+Next, we'll set up an "**SSH key pair**"^[
+  Does this sound familiar?
+  At OSC, we've previously set up an SSH key pair for GitHub authentication.],
+so you won't be prompted for your OSC password^[
   This is **required** for the compute node connection,
-  and convenient for the login node connection and any other SSH connection to OSC.].
+  and convenient for the login node connection and any other SSH connection to OSC.]:
 
-1. Open a terminal in Positron (`Terminal` > `New Terminal`),
-   which will run on your own computer since you're not connected to OSC yet.
-   Then, regardless of whether you're using Windows or Mac,
-   generate an SSH key pair using:
+1. Open a terminal in Positron (`Terminal` > `New Terminal`).
+   Then, generate an SSH key pair using^[
+    This terminal runs on your own computer, but this same commands workd
+    regardless of whether you're using Windows or Mac]:
 
     ``` {.bash}
     ssh-keygen -t ed25519
     ```
 
-    You'll get some output and will then be asked several questions:
+    You'll be asked several questions:
     in each case, just press <kbd>Enter</kbd> to select the default answer.
 
-2. Use the below command to transfer the public key to OSC,
-   **replacing `<user>` with your OSC username**
-   (you'll be prompted for your OSC password):
+2. Transfer the public key to OSC,
+   **replacing `<user>` with your OSC username** in the command below
+   (enter your OSC password when prompted):
 
    ::: {.panel-tabset}
    ### Mac
@@ -257,21 +274,23 @@ Copy it there by running the following command in your Positron terminal:
 ssh osc-pitzer-login 'cp /fs/ess/PAS3493/share/osc-compute-proxy.sh ~/ && chmod +x ~/osc-compute-proxy.sh'
 ```
 
+::: callout-note
+#### More about the proxy script
+
 This script contains the following:
 
 ```{.bash .file filename="&#126;/osc-compute-proxy.sh"}
 #!/bin/bash
-exec salloc --quiet -A PAS3493 -t 300 bash -c 'nc $SLURM_NODELIST 22'
+exec salloc --quiet -A PAS3493 -c 2 -t 300 bash -c 'nc $SLURM_NODELIST 22'
 ```
 
-That is, it requests a compute job (`salloc`) for 300 minutes
+That is, it requests a compute job (`salloc`) with 2 cores for 300 minutes
 with the course's OSC Project `PAS3493`,
 and then connects to the compute node you were assigned (`nc ... 22`).
 
-::: {.callout-warning}
-#### After the course: change the OSC Project
-Once the course is over, you should no longer use the course's OSC Project.
-To change the Project,  open `~/osc-compute-proxy.sh` at OSC and edit `PAS3493`.
+You can adjust these values if you want more time or cores (and memory).
+**Once the course is over**, you should no longer use the course's OSC Project.
+To change the Project, open `~/osc-compute-proxy.sh` at OSC and edit `PAS3493`.
 :::
 
 ::: {.callout-note collapse="true"}
@@ -309,7 +328,7 @@ both files below are on your computer, where Positron uses them as well):
    cat > ~/.ssh/osc-compute-proxy.sh << 'EOF'
    #!/bin/bash
    exec ssh -o LogLevel=QUIET -o BatchMode=yes osc-pitzer-login \
-     "/usr/bin/salloc -A PAS3493 -t 300 /bin/bash -c 'nc \$SLURM_NODELIST 22'" 2>/dev/null
+     "/usr/bin/salloc -A PAS3493 -c 2 -t 300 /bin/bash -c 'nc \$SLURM_NODELIST 22'" 2>/dev/null
    EOF
 
    chmod +x ~/.ssh/osc-compute-proxy.sh
@@ -326,7 +345,7 @@ both files below are on your computer, where Positron uses them as well):
    ```powershell
    @'
    @echo off
-   ssh -o LogLevel=QUIET -o BatchMode=yes osc-pitzer-login "/usr/bin/salloc -A PAS3493 -t 300 /bin/bash -lc 'nc $SLURM_NODELIST 22'"
+   ssh -o LogLevel=QUIET -o BatchMode=yes osc-pitzer-login "/usr/bin/salloc -A PAS3493 -c 2 -t 300 /bin/bash -lc 'nc $SLURM_NODELIST 22'"
    '@ | Out-File -Encoding ascii "$env:USERPROFILE\.ssh\osc-compute-proxy.cmd"
    ```
    :::
@@ -392,7 +411,7 @@ is by adding the R module to your Bash settings file, `~/.bashrc`
    add a `module load` command for R to your `~/.bashrc` file:
 
    ```bash
-   echo 'module load gcc/12.3.0 R/4.5.2' >> ~/.bashrc
+   echo 'module load gcc/12.3.0 R/4.6.1' >> ~/.bashrc
    ```
 
 2. Reload Positron: open the **Command Palette**,
@@ -400,11 +419,11 @@ is by adding the R module to your Bash settings file, `~/.bashrc`
 
 ::: callout-warning
 #### This isn't a permanent solution to load R at OSC
-Adding this `module load` command to your `~/.bashrc` is not a permanent solution,
-because over time, the R versions available at OSC will change,
+Adding this `module load` command to your `~/.bashrc` is not a permanent solution:
+over time, the R versions available at OSC will change,
 as may the version that you personally want to use.
-On the plus side, this command currently works on all three OSC clusters,
-since they have the same R modules.
+(On the plus side, this command currently works on all three OSC clusters,
+since they have the same R modules.)
 :::
 
 ### Open your personal folder
@@ -413,7 +432,8 @@ Positron really wants you to **open a folder**,
 even more so than VS Code (you'll learn why that is a good idea).
 Open your personal dir, `/fs/ess/PAS3493/people/<user>`
 by clicking the "Open Folder" button in the Explorer^[
-   Or you can use `File` > `Open Folder` like you're used to in VS Code.]:
+   Or you can use `File` > `Open Folder` like you're used to in VS Code.]
+shown here:
 
 ![](../img/positron-open-folder.png){fig-align="center" width="50%" .lightbox fig-alt="Screenshot of the Positron Explorer view showing the Open Folder button."}
 
@@ -421,10 +441,11 @@ If you're asked whether you trust the authors of the files in this folder,
 click "Yes, I trust the authors".
 
 ::: {.callout-tip}
-#### Reconnecting from now on is _very_ simple!
+#### Reconnecting from now on will be _very_ simple!
 Like in VS Code, after connecting once,
-the folder will appear in Positron's "Recent" list on the Welcome tab,
-so you can reconnect to OSC _and_ open this folder with a single click!
+the folder will appear in Positron's "Recent" list on the Welcome tab.
+Therefore, you can reconnect to OSC _and_ open this folder with a single click,
+from now on!
 :::
 
 ### Check that R works
@@ -434,10 +455,12 @@ which should have started an R session.
 The R version is also shown at the top right of the Positron window,
 in the so-called interpreter picker:
 
+<!--- TODO replace screenshot with R 4.6.1 ---->
+
 ![](../img/positron-interpreter.png){fig-align="center" width="35%" fig-alt="Screenshot of the Positron interpreter picker"}
 
 ::: legend2
-The interpreter picker. You should see R 4.5.2 instead of the version shown here.
+The interpreter picker. You should see R 4.6.1 instead of the version shown here.
 :::
 
 Click in the Console, type the following, and press <kbd>Enter</kbd>:
@@ -445,9 +468,11 @@ Click in the Console, type the following, and press <kbd>Enter</kbd>:
 ```r
 R.version.string
 ```
+```r-out
+TODO
+```
 
-This should print `"R version 4.5.2 (...)"`.
-If so, you're all set! 🎉
+If you get the output shown above, you're all set! 🎉
 
 ::: {.callout-warning collapse="true"}
 #### If you're seeing a Python console, or no console at all _(Click to expand)_
@@ -463,7 +488,7 @@ If so, you're all set! 🎉
 
   ![](../img/positron-new-console-session.png){fig-align="center" width="70%" .lightbox fig-alt="Screenshot of the interpreter picker menu with the New Console Session option."}
 
-- Select R 4.5.2:
+- Select R 4.6.1:
 
   ![](../img/positron-switch-to-r-console.png){fig-align="center" width="70%" .lightbox fig-alt="Screenshot of the list of R and Python interpreters to choose from."}
 
@@ -472,7 +497,7 @@ If so, you're all set! 🎉
 
   ![](../img/positron-switched-to-r-console.png){fig-align="center" width="40%" .lightbox fig-alt="Screenshot of the interpreter picker showing an R interpreter."}
 
-If R 4.5.2 isn't listed at all,
+If R 4.6.1 isn't listed at all,
 check that you completed the [Load R at OSC](#load-r-at-osc) step,
 including the window reload.
 :::
@@ -487,17 +512,17 @@ like a code editor, an R console, and panes for your environment, plots, and hel
 but they are laid out differently and you'll have to find your own way at times.
 
 1. Log in to OSC's OnDemand portal at <https://ondemand.osc.edu>.
-2. In the blue top bar, select **`Interactive Apps`** and then near the bottom,
-   click **`RStudio Server`**.
+2. In the blue top bar, select `Interactive Apps` and then near the bottom,
+   click `RStudio Server`.
 3. Fill out the form as follows:
-   - Cluster: **`pitzer`**
-   - R version: **`4.5.2`**
-   - Project: **`PAS3493`**
-   - Number of hours: **`2`**
-   - Node type: **`any`**
-   - Number of cores: **`1`**
-4. Click **`Launch`**.
-5. Click the **`Connect to RStudio Server`** button once it appears.
+   - Cluster: `pitzer`
+   - R version: `4.6.1`
+   - Project: `PAS3493`
+   - Number of hours: `2`
+   - Node type: `any`
+   - Number of cores: `2`
+4. Click `Launch`.
+5. Click the `Connect to RStudio Server` button once it appears.
 
 Instead of opening a folder like in Positron,
 use an "RStudio Project" for your personal dir:

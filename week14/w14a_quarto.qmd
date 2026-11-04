@@ -46,9 +46,9 @@ In this session, you will learn:
 
 -   What happens when Quarto renders a document
 -   More about **YAML** syntax and useful options in the YAML header
--   More **chunk options**, and how to set them for a whole document
+-   How to use **chunk options**, and how to set them for a whole document
 -   How to label chunks and include R output in your Markdown text
--   How to use RStudio's visual editor for Quarto documents
+-   How to use the visual editor for Quarto documents
 -   How to render a document to Markdown that displays well on GitHub
 
 ## Setting up
@@ -72,13 +72,6 @@ and that Quarto isn't limited to R:
 it can also run code in other languages like Python.
 Quarto is the next-generation version of R Markdown, in case you have heard of that.
 
-::: {.callout-tip appearance="simple"}
-The gear icon next to the Render button lets you choose where to view the output
-(in the Viewer pane or in a separate window).
-There is also a "Render on Save" checkbox, which re-renders every time you save:
-handy for small documents, but not for documents with slow code.
-:::
-
 ## Components of Quarto documents
 
 As you saw in week 12, a Quarto document has three main components:
@@ -90,8 +83,7 @@ We'll take a closer look at each of these now.
 The YAML header contains settings for the document:
 metadata like the title and author,
 and options for the output format.
-Recall from week 12 that each line contains a `key: value` pair (with a space after the colon),
-and that keys can be nested by indenting them with two spaces.
+Recall from week 12 that each line contains a `key: value` pair (with a space after the colon).
 Here is an example with a few more options:
 
 ```yaml
@@ -108,6 +100,12 @@ format:
 ---
 ```
 
+- Keys can be nested by indenting them with two spaces:
+  above, `html` is nested under `format`,
+  and `embed-resources`, `toc`, and `theme` are options for the `html` output format.
+- `embed-resources: true` makes Quarto put everything,
+  including any figures, into a single HTML file,
+  so you can download that one file from OSC and open or share it.
 - `toc: true` adds a table of contents.
 - `theme` picks one of Quarto's
   [25 built-in themes](https://quarto.org/docs/output-formats/html-themes.html),
@@ -146,84 +144,102 @@ To be safe, you can always quote strings.
 As in R and the shell, a `#` starts a comment.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: YAML header
+#### {{< fa user-edit >}} Exercise 1: YAML header
 
 1. Change the YAML header of your `week14a.qmd` to include a title, a subtitle,
    two authors (you and a classmate) in block syntax, today's date,
    a table of contents, and the `darkly` theme. Render the document.
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   For example:
+
+   ```yaml
+   ---
+   title: "Week 14: Quarto"
+   subtitle: "Beyond the basics"
+   author:
+     - Jane Doe
+     - John Smith
+   date: 2026-11-23
+   format:
+     html:
+       embed-resources: true
+       toc: true
+       theme: darkly
+   ---
+   ```
+
+   </details>
+---->
 
 2. **Predict** what will happen in each of the following cases,
    then try them one by one (and undo each change afterwards):
    - You remove the space after the colon in `toc: true`.
    - You remove the quotes around a title that contains a colon.
 
-<details>
-
-<summary>Click for the solution</summary>
-
-1. For example:
-
-```yaml
----
-title: "Week 14: Quarto"
-subtitle: "Beyond the basics"
-author:
-  - Jane Doe
-  - John Smith
-date: 2026-11-23
-format:
-  html:
-    embed-resources: true
-    toc: true
-    theme: darkly
----
-```
-
-</details>
-
 <!----
-2. In both cases, the document won't render,
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   In both cases, the document won't render,
    and Quarto shows an error message about the YAML header,
    with the line number where the problem is.
+
+   </details>
 ---->
 :::
 
 ### Code chunks
 
-::: {.callout-tip appearance="minimal"}
-Besides the keyboard shortcut you learned in week 12,
-you can also insert a code chunk by clicking the insert button in the toolbar and selecting R:
+::: {.callout-note collapse="true"}
+#### Showing the output below each chunk _(Click to expand)_
+Positron can optionally show the output of each chunk right below it in the editor,
+as RStudio does by default.
+To turn this on, open the Settings and enable `quarto.inlineOutput.enabled`.
 
-![](../img/insert_code_chunk.png){width="50%" fig-align="center"}
+With this setting turned on,
+Positron runs the code of each Quarto document in a separate R session,
+whose working directory is the document's folder,
+and whose Console is not shown by default
+(to show it, enable `console.showNotebookConsoles`).
+Because you use `here()` for file paths
+([week 13](../week13/w13a_data-wrangling.qmd#file-paths-in-quarto-documents)),
+your code works the same either way.
 :::
 
 #### Chunk options
 
-Several options can be added to your code chunk to customize the output
-of code. Chunk options can be either written directly inside the
-curly braces (e.g. ```` ```{r, echo=FALSE} ````), or, preferably, with `#|` lines
-at the top of the chunk (inside it), where each `#|` line sets one option. Some of the commonly used chunk
-options, several of which you've already seen in week 12, are:
+You can change how a chunk behaves with **chunk options**:
+lines at the top of a chunk that start with `#|`,
+where each `#|` line sets one option.
+For example, this chunk would be shown in the rendered document, but not run:
 
--   `echo: false` runs your code chunk, displays output, but does not
-    display code in your final doc (this is useful if you want to show a
-    figure but not the code used to create it)
+```{r}
+#| echo: fenced
+#| eval: false
+install.packages("tidyverse")
+```
 
--   `eval: false` does not run your code, but does display it in your
-    final doc
+A few useful chunk options:
 
--   `include: false` runs your code but does not display the code or its
-    output in your final doc
+- `#| eval: false` --- Show the code but don't run it.
+- `#| echo: false` --- Run the code and show its output, but hide the code itself.
+  This is useful if you want to show a figure but not the code used to create it.
+- `#| include: false` --- Run the code, but show neither the code nor its output.
+- `#| warning: false` and `#| message: false` --- Hide warnings and messages,
+  such as the ones printed when loading some packages.
+- `#| fig-cap: "Your figure caption"` --- Add a figure caption.
+- `#| fig-show: hide` --- Hide figures.
 
-**Additional chunk options are shown below:**
+::: {.callout-tip appearance="simple"}
+Install packages in the console rather than in a chunk.
+Otherwise, they will be installed again every time you render the document.
+:::
 
--   `warning: false` prevents warnings from showing up in your final doc
-
--   `fig-cap: "Your figure caption"` will allow you to set a figure
-    caption
-
--   `fig-show: hide` to hide the figures
-
+Chunk options can also be written inside the curly braces,
+as in ```` ```{r, echo=FALSE} ````,
+but the `#|` syntax is preferred.
 More chunk options can be found
 [here](https://quarto.org/docs/computations/execution-options.html).
 
@@ -267,7 +283,7 @@ Note that `execute:` is a top-level key, not nested under `format:`.
 
 You can give a chunk a **label** with `#| label: <label-name>`.
 Labels must be unique within a document and cannot contain spaces.
-They show up in RStudio's document outline and in messages during rendering,
+They show up in messages during rendering,
 which makes it easier to find the chunk that caused a problem:
 
 ```{r}
@@ -278,58 +294,83 @@ which makes it easier to find the chunk that caused a problem:
 
 #### Running all chunks above
 
-Besides the green "play" button that runs the current chunk,
-each chunk has a triangle-with-a-line button,
+Besides `Run Cell`, which runs the current chunk,
+the line above each chunk has a `Run Above` button,
 which runs all code chunks _above_ the current chunk.
 This is useful when you've restarted R or opened a document in a new session,
-and want to get back to where you were:
+and want to get back to where you were.
 
-![](../img/quarto_triangle_option.png){width="25%" fig-align="center"}
+<!---- TODO: Add a Positron screenshot of the Run Cell / Run Above buttons above a chunk ---->
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Chunk options and self-contained documents
+#### {{< fa user-edit >}} Exercise 2: Chunk options and self-contained documents
 
 Add code chunks to your document to do the following:
 
 1. Load the _tidyverse_, using a chunk option to hide its messages.
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ````{.markdown}
+   ```{{r}}
+   #| message: false
+   library(tidyverse)
+   ```
+   ````
+
+   </details>
+---->
+
 2. Check the number of rows and columns of the `diamonds` data set
    (which comes with _ggplot2_).
    Then, select its first 5 columns, keep only rows with a carat greater than 0.23,
    and rename the `color` variable to `colors`.
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```r
+   dim(diamonds)
+
+   diamonds |>
+     select(1:5) |>
+     filter(carat > 0.23) |>
+     rename(colors = color)
+   ```
+
+   </details>
+---->
+
 3. Create a scatter plot with `carat` on the x-axis and `depth` on the y-axis.
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```r
+   diamonds |>
+     ggplot(aes(carat, depth)) +
+     geom_point()
+   ```
+
+   </details>
+---->
+
 4. Temporarily **remove** `embed-resources: true` from your YAML header and render.
-   In the Files pane, what was created besides the HTML file?
+   In the Explorer, what was created besides the HTML file?
    Download only the HTML file and open it on your computer: what's missing, and why?
    Then put `embed-resources: true` back.
 
-<details>
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-<summary>Click for the solution</summary>
+   Without `embed-resources: true`, rendering also creates a folder `week14a_files`,
+   which contains, among other things, the figure.
+   The downloaded HTML file on its own therefore doesn't show the figure,
+   because it refers to an image file in that folder.
 
-```{r}
-#| message: false
-library(tidyverse)
-```
-
-```{r}
-dim(diamonds)
-
-diamonds |>
-  select(1:5) |>
-  filter(carat > 0.23) |>
-  rename(colors = color)
-
-diamonds |>
-  ggplot(aes(carat, depth)) +
-  geom_point()
-```
-
-Without `embed-resources: true`, rendering also creates a folder `week14a_files`,
-which contains, among other things, the figure.
-The downloaded HTML file on its own therefore doesn't show the figure,
-because it refers to an image file in that folder.
-
-</details>
+   </details>
+---->
 :::
 
 ### Markdown text
@@ -358,45 +399,48 @@ This way, numbers in your text are computed when you render the document,
 so they always match your data and code --- no more copy-pasting numbers.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Inline code
+#### {{< fa user-edit >}} Self-study exercise: Inline code
 
 1. Add a sentence to your document that reports the number of rows of the `diamonds`
    data set with inline code, and render.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   For example: The diamonds data set has `r "\x60r nrow(diamonds)\x60"` rows.
+
+   </details>
+
 2. **Predict**: what will the rendered document show if you leave out the `r` and the space,
    i.e. `` `nrow(diamonds)` ``? Render to check.
 
-<!----
-<details><summary>Click for the solution</summary>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-1. For example: The diamonds data set has `r "\x60r nrow(diamonds)\x60"` rows.
-
-2. Without the `r`, it is regular Markdown inline code formatting:
+   Without the `r`, it is regular Markdown inline code formatting:
    the text `nrow(diamonds)` is shown in a code font, and the code is not run.
 
-</details>
----->
+   </details>
 :::
 
 ## Source editor vs. Visual editor
 
-**Source editor**: The source editor in RStudio is the default text
-editor for editing Quarto documents (.qmd files). You type everything
-yourself - the text, the code chunks, and the YAML settings. It gives
-you full control but requires knowing some Markdown and Quarto syntax.
-It’s good for users who like to see and control the exact code behind
-the document.
+So far, you've edited Quarto documents in the default **source editor**,
+where you type everything yourself:
+the text, the code chunks, and the YAML header.
+This gives you full control, but requires knowing some Markdown and Quarto syntax.
 
-**Visual editor**: The Quarto visual editor within RStudio provides a
-What You See Is What You Mean (WYSIWYM) interface for authoring Quarto
-documents (.qmd files). The visual editor is easier to use for the users
-with Microsoft Word or Google Docs background. You can format text, add
-images, and see how your document will look as you write. It’s great for
-beginners or anyone who prefers a simple, visual writing style.
+Positron also has a **visual editor** for Quarto documents,
+which is the same one you may have used for Markdown files in VS Code in
+[week 7](../week07/w7b_scripts2.qmd#markdown-setup),
+since both use the Quarto extension.
+In the visual editor, you can format text and add elements like tables and images
+with toolbar buttons, and see roughly how your document will look as you write,
+much like in Word or Google Docs.
 
-You can switch between the visual editor and source editor by clicking
-on the `Visual` and `Source` buttons at the top right corner of the
-RStudio window.
+To switch between the two editors,
+click the `...` button in the top-right of the editor,
+and select "**Edit in Visual Mode**" or "**Edit in Source Mode**".
 
+<!---- TODO: Add a Positron screenshot of a Quarto document in the visual editor ---->
 
 
 ## Output for GitHub
@@ -412,8 +456,10 @@ format:
   gfm: default
 ```
 
-With two formats, the Render button renders the first one by default;
-use the small dropdown arrow next to it to pick `gfm`.
+With two formats, the `Preview` button only renders the first one.
+To render both formats,
+use `quarto render` in the terminal
+([Rendering from the terminal](../week12/w12b_r-basics.qmd#rendering)).
 This creates a `.md` file, plus a `_files` folder with the figures:
 commit both to your repository.
 

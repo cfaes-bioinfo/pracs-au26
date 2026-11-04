@@ -81,9 +81,8 @@ see the [optional self-study page on Bioconductor](../bonus/r-omics.qmd).
 
 ### Setting up
 
-1. At <https://ondemand.osc.edu>,
-   start an RStudio session
-   ([Starting an RStudio Server session at OSC](../week12/w12b_r-basics.qmd#starting-an-rstudio-server-session-at-osc)) and open your RStudio Project.
+1. Open Positron and connect to OSC with your personal dir open
+   ([Setup: starting Positron and connecting to OSC](../week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc)).
 2. Create a `week15` folder, and in it, create a new Quarto document `week15a.qmd`
    with a YAML header
    ([Creating a Quarto document](../week12/w12b_r-basics.qmd#creating-a-quarto-document)).
@@ -133,7 +132,7 @@ For the differential expression analysis, we have the following input files:
 ```{r, eval=FALSE}
 # We'll save the paths to our input files for later use
 count_table_file <- "/fs/ess/PAS3493/share/week15/salmon.merged.gene_counts_length_scaled.tsv"
-metadata_file <- "../garrigos/meta/metadata.tsv"
+metadata_file <- here("garrigos/meta/metadata.tsv")
 ```
 
 ```{r, echo=FALSE}
@@ -264,10 +263,10 @@ all(row.names(meta) == colnames(count_mat))
 We will create the DESeq2 object using the function `DESeqDataSetFromMatrix()`, which we
 will provide with three arguments corresponding to the components discussed above:
 
-- The metadata with argument **`colData`**
-- The count data with argument **`countData`**
-- The statistical design for the DE analysis with argument **`design`**. For now, we
-  will specify **`~1`**, which effectively means "no design" --- we will change this
+- The metadata with argument `colData`
+- The count data with argument `countData`
+- The statistical design for the DE analysis with argument `design`. For now, we
+  will specify `~1`, which effectively means "no design" --- we will change this
   before the actual DE analysis.
 
 ```{r}
@@ -315,7 +314,7 @@ nrow(count_mat[rowSums(count_mat) > 0, ])
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: gene counts
+#### {{< fa user-edit >}} Self-study exercise 1: Gene counts
 
 - How many genes have total counts of at least 10?
 
@@ -378,7 +377,7 @@ using ntop=500 top features by variance
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: PCA
+#### {{< fa user-edit >}} Exercise 1: PCA
 
 - Based on your PCA plot,
   try to answer the three questions asked at the beginning of this PCA section.
@@ -386,11 +385,13 @@ using ntop=500 top features by variance
 - How does our plot compare to the PCA plot in the paper (Figure 1),
   in terms of the conclusions you just drew?
 
+<!----
 <details><summary>*Click to see the paper's Figure 1*</summary>
 
 ![](../img/garrigo_PCA.jpeg)
 
 </details>
+---->
 :::
 
 ## Differential Expression (DE) analysis
@@ -516,14 +517,14 @@ head(res_rc24)
 
 What do the columns in this table contain?
 
-- **`baseMean`**: Mean expression level across all samples
-- **`log2FoldChange`**: The "log2-fold change" of gene counts between the compared
+- `baseMean`: Mean expression level across all samples
+- `log2FoldChange`: The "log2-fold change" of gene counts between the compared
   levels
-- **`lfcSE`**: The uncertainty in terms of the standard error (SE) of the log2-fold
+- `lfcSE`: The uncertainty in terms of the standard error (SE) of the log2-fold
   change estimate
-- **`stat`**: The value for the Wald test's test statistic
-- **`pvalue`**: The *uncorrected* p-value from the Wald test
-- **`padj`**: The multiple-testing corrected p-value (i.e., adjusted p-value)
+- `stat`: The value for the Wald test's test statistic
+- `pvalue`: The *uncorrected* p-value from the Wald test
+- `padj`: The multiple-testing corrected p-value (i.e., adjusted p-value)
 
 ::: {.callout-note collapse="true"}
 ### `NA` values in the DESeq2 results table _(Click to expand)_
@@ -586,20 +587,20 @@ log2(mean of A / mean of B)
 
 Due to the log-transformation, the LFC increases more slowly than a raw fold-change:
 
-- An LFC of **`1`** indicates a 2-fold difference
-- An LFC of **`2`** indicates a 4-fold difference
-- An LFC of **`3`** indicates an 8-fold difference
+- An LFC of `1` indicates a 2-fold difference
+- An LFC of `2` indicates a 4-fold difference
+- An LFC of `3` indicates an 8-fold difference
 
 A nice property of LFC is that decreases and increases in expression are expressed
 symmetrically:
 
-- An LFC of **`1`** means that group A has a **two-fold higher** expression than group B
-- An LFC of **`-1`** means that group A has a **two-fold lower** expression than group B
+- An LFC of `1` means that group A has a **two-fold higher** expression than group B
+- An LFC of `-1` means that group A has a **two-fold lower** expression than group B
 
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Log-fold changes
+#### {{< fa user-edit >}} Exercise 2: Log-fold changes
 
 Based on the above, or your knowledge of log-transformations,
 what do you expect the following to return:
@@ -610,6 +611,7 @@ log2(8 / 2)
 log2(2 / 8)
 ```
 
+<!----
 <details><summary>*Click to see the solution*</summary>
 
 - A fold-change of 4 (8/2) is a LFC of 2:
@@ -625,6 +627,7 @@ log2(2 / 8)
 ```
 
 </details>
+---->
 :::
 
 ### Numbers of Differentially Expressed Genes (DEGs)
@@ -643,7 +646,7 @@ So, we have `r sum(res_rc24$padj < 0.05, na.rm = TRUE)` Differentially Expressed
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: DEGs
+#### {{< fa user-edit >}} Exercise 3: DEGs
 
 The paper's Table 1 (which we saw above) reports the number of DEGs for a variety of
 comparisons.
@@ -654,30 +657,32 @@ comparisons.
 - The table also reports numbers of **up- and downregulated genes separately**. Can you
   find this out for our DEGs?
 
-<details><summary>*Click to see the solution*</summary>
+<!----
+  <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-- **Solution using tidyverse/dplyr:**
+  - **Solution using tidyverse/dplyr:**
 
-```{r}
-# First we need to convert the results table into a regular data frame
-as.data.frame(res_rc24) |>
-  # Then we only select the rows/genes that are significant
-  filter(padj < 0.05) |>
-  # If we run count() on a logical test, we get the nrs. that are FALSE v. TRUE
-  dplyr::count(log2FoldChange > 0)
-```
+    ```{r}
+    # First we need to convert the results table into a regular data frame
+    as.data.frame(res_rc24) |>
+      # Then we only select the rows/genes that are significant
+      filter(padj < 0.05) |>
+      # If we run count() on a logical test, we get the nrs. that are FALSE v. TRUE
+      dplyr::count(log2FoldChange > 0)
+    ```
 
-- **Solution using base R:**
+  - **Solution using base R:**
 
-```{r}
-# Down-regulated (relictum < control):
-sum(res_rc24$log2FoldChange < 0 & res_rc24$padj < 0.05, na.rm = TRUE)
+    ```{r}
+    # Down-regulated (relictum < control):
+    sum(res_rc24$log2FoldChange < 0 & res_rc24$padj < 0.05, na.rm = TRUE)
 
-# Up-regulated (relictum > control):
-sum(res_rc24$log2FoldChange > 0 & res_rc24$padj < 0.05, na.rm = TRUE)
-```
+    # Up-regulated (relictum > control):
+    sum(res_rc24$log2FoldChange > 0 & res_rc24$padj < 0.05, na.rm = TRUE)
+    ```
 
-</details>
+  </details>
+---->
 :::
 
 ## Visualizing the DE results
@@ -762,7 +767,7 @@ focal_gene_counts |>
 ```
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Single-gene plots
+#### {{< fa user-edit >}} Self-study exercise 2: Single-gene plots
 
 - Plot one or a few more of the top-DE genes.
   Do they have similar expression patterns across treatment and time points as the first one?
@@ -833,13 +838,13 @@ You could open the resulting file in Excel for further exploration.
 
 ```{r, eval=FALSE}
 # Create the output directory, if necessary:
-dir.create("results/DE", recursive = TRUE, showWarnings = FALSE)
+dir.create(here("week15/results/DE"), recursive = TRUE, showWarnings = FALSE)
 
 # Write the results table to a TSV file
-write_tsv(as.data.frame(res_rc24), "results/DE/res_rc24.tsv")
+write_tsv(as.data.frame(res_rc24), here("week15/results/DE/res_rc24.tsv"))
 
 # You can also save the whole DESeq2 object, so you can reload it later with readRDS()
-saveRDS(dds, "results/DE/dds.rds")
+saveRDS(dds, here("week15/results/DE/dds.rds"))
 ```
 
 ## In Closing

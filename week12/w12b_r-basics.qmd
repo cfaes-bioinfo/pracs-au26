@@ -1,5 +1,5 @@
 ---
-title: "Introduction to R, Positron, and Quarto"
+title: "Introduction to R, Quarto, and Positron"
 subtitle: "Week 12 -- Lecture A"
 pagetitle: "w12a: R Intro"
 date: 2026-11-09
@@ -20,9 +20,6 @@ other-links:
   - text: "w12a: Positron setup"
     icon: gear
     href: w12a_positron-setup.html
-  - text: "Self-study: Vectors and data types"
-    icon: book
-    href: "#self-study-vectors-and-data-types"
   - text: "Optional self-study: R"
     icon: book
     href: ../bonus/r.html
@@ -51,9 +48,9 @@ metabolomics and many other types of data.
 Specifically, you will learn:
 
 - The basics of R, and how to write R code in Quarto documents (**this lecture**)
-- How data is stored in R, using e.g. vectors and different data types
-  (**the self-study section at the end of this page**)
-- How to work with tabular data and visualize data with the ggplot2 package (week 13)
+- How data is stored in R, using e.g. vectors and different data types,
+  and how to work with tabular data (week 13)
+- How to visualize data with the ggplot2 package (week 13)
 - How to use Quarto to produce beautiful, reproducible documents (week 14)
 - Examples of omics data analysis in R: RNA-seq count data and metabolomics data (week 15)
 
@@ -68,13 +65,15 @@ In this lecture, you will learn:
 - Installing and loading R packages
 - Getting help in R
 - Writing, running, and rendering R code in a Quarto document
-- _Self-study_: Vectors, R's main data types, and comparisons
 
-## Starting Positron and connecting to OSC
+### Setup: starting Positron and connecting to OSC
 
-You can use R with a "console" that can simply be run inside the terminal.
-However, we'll use R in the IDE called [Positron](https://positron.posit.co),
+While you can use R with a "console" that can simply be run inside the terminal,
+we'll use an IDE called
+[Positron {{< fa external-link >}}](https://positron.posit.co){target="_blank"},
 which makes working with it much more pleasant!
+You installed Positron and set up a connection to OSC in the
+[previous lecture](./w12a_positron-setup.qmd).
 
 1. Open Positron on your computer.
 2. On the Welcome tab, under "Recent", click on your
@@ -87,31 +86,26 @@ which makes working with it much more pleasant!
 
 <!---- TODO: Add screenshot of the Welcome tab with the Recent folder ---->
 
-::: {.callout-tip collapse="true"}
-#### Number of cores and memory _(Click to expand)_
-The compute job you get when you connect to `osc-pitzer-compute` has a single core,
-and therefore 4 GB of memory (RAM).
-To get more cores and memory --- recall that each core is associated with 4 GB of memory ---
-you can add `-c <n-cores>` to the `salloc` command in the proxy script at OSC,
-`~/osc-compute-proxy.sh`.
-For example, `salloc -c 4 ...` will get you 4 cores and 16 GB of memory.
-:::
-
-## Orienting to Positron (basic layout)
+## Orienting to Positron
 
 Because Positron is built on VS Code, much of it should look familiar,
-but it adds some important components for data science.
-The Positron window has five main regions:
+but it adds some important components for what we may call **interactive data science**
+work: running code line by line in a live R session,
+and seeing the resulting objects, plots, and documentation right away.
 
-![Image from <https://positron.posit.co/layout.html>](../img/positron-layout.jpeg){.no-border fig-align="center" width="98%" fig-alt="Diagram of the Positron interface, with the five regions labeled: Editor, Panel, Activity Bar, Primary Side Bar, Secondary Side Bar."}
+The Positron window has the same five main regions as VS Code:
+
+![Image from <https://positron.posit.co/layout.html>](../img/positron-layout.jpeg){.no-border fig-align="center" width="100%" fig-alt="Diagram of the Positron interface, with the five regions labeled: Editor, Panel, Activity Bar, Primary Side Bar, Secondary Side Bar."}
+
+But some of these regions have additional panes, highlighted in **bold** in the table below:
 
 | Region                 | Where           | What's in it                                                   |
 | ---------------------- | --------------- | -------------------------------------------------------------- |
-| **Editor**             | Center (top)    | Open scripts and other documents, in tabs                      |
-| **Panel**              | Center (bottom) | R **Console** and Terminal                                     |
-| **Activity Bar**       | Far left        | Icons that _switch_ what the Primary Side Bar shows            |
-| **Primary Side Bar**   | Left            | Explorer (files), Search, Source Control, Extensions, Packages |
-| **Secondary Side Bar** | Right           | **Variables**, **Plots**, **Help**, Viewer, History            |
+| Editor             | Center (top)    | Open scripts and other documents, in tabs                      |
+| Panel              | Center (bottom) | **R Console** and Terminal                                     |
+| Activity Bar       | Far left        | Icons that switch what the Primary Side Bar shows            |
+| Primary Side Bar   | Left            | Explorer (files), Search, Source Control, Extensions, **Packages** |
+| Secondary Side Bar | Right           | **Variables**, **Plots**, **Help**, **Viewer**, **History**            |
 
 : {.striped tbl-colwidths="[20, 18, 62]"}
 
@@ -121,50 +115,51 @@ Compared to VS Code, the most important additions are:
 
 - The **Console**, where you can type and execute R code.
   It's a tab next to the Terminal, in the bottom panel.
-
-- The **Variables** pane, which shows you all the objects that are active in your
-  R environment (more about objects below).
-
-- The **Plots** and **Help** panes, which show the plots you make and R's
-  documentation, respectively.
-
-- The **interpreter picker** at the top right, which shows the version of R
-  your Console is using.
+- The **Variables** pane,
+  which shows you all the objects that are active in your R environment.
+- The **Plots** and **Help** panes,
+  which show the plots you make and R's documentation, respectively.
+- The **interpreter picker** at the top right,
+  which shows the version of R that your Console is using.
 
 Like in VS Code, you can resize all panes, and drag them to other locations.
-If you make a mess of things,
+(If you make a mess of things,
 you can get back to the default layout with the _View: Reset View Locations_
-command in the Command Palette.
+command in the Command Palette.)
 
 <!---- TODO: Add a screenshot of Positron connected to OSC, with the regions in use ---->
 
-## R basics
-There are many things we can do in R: data manipulation, data visualization,
-statistical analysis, machine learning and many more.
+## The basics of interacting with R
+
+You can do many things in R:
+data manipulation, data visualization, statistical analysis, machine learning and more.
 Here, to get some familiarity with working in R, we will start by simply using R as a calculator.
 
 ### R as calculator
 
-To get used to typing and executing R code,
-we will simply use R as a calculator --
-type `5 + 5` in the console and press <kbd>Enter</kbd>:
+Type `5 + 5` in the console and press <kbd>Enter</kbd>:
 
 ```{r}
 5 + 5
 ```
 
 R will print the result of the calculation, `10`.
-The result is prefaced by `[1]`, which is simply an index/count of output,
-which can be helpful when multiple numbers and elements are printed.
+The `[1]` before the result is the **position (index)** of the first value on that line.
+This is helpful when R prints many values that span multiple lines.
 
-Some additional calculation examples:
+Two more examples, using multiplication and division, respectively:
 
-- Multiplication and division:
+```{r}
+6 * 8
+40 / 5
+```
 
-  ```{r}
-  6 * 8
-  40 / 5
-  ```
+This code will work with (as shown above) or without (`5+5`) spaces around
+operators like `+`, but it is **good practice to leave spaces** to improve the
+readability of your code.
+
+::: {.callout-note collapse="true"}
+#### Additional examples and order of operations _(Click to expand)_
 
 - Exponents:
 
@@ -183,38 +178,29 @@ Some additional calculation examples:
   5 + 3 * 2
   ```
 
-This code will work with (as shown above) or without spaces between numbers
-and around operators like `+`.
-However, in general, it is good practice to leave spaces around operators to
-improve the readability of your code.
-
-::: {.callout-tip collapse="true"}
-#### Order of operations is as you learned in school _(Click to expand)_
 When using R as a calculator,
 the order of operations is the same as you would have learned back in school.
 From highest to lowest precedence:
 
--   Parentheses: `(`, `)`
--   Exponents: `^` or `**`
--   Multiplication and division: `*`, `/`
--   Addition and subtraction: `+`, `-`
+- Parentheses: `(`, `)`
+- Exponents: `^` or `**`
+- Multiplication and division: `*`, `/`
+- Addition and subtraction: `+`, `-`
 
 Operators with the same precedence are evaluated from left to right.
 :::
 
-
 ### The R prompt
 
-The `>` sign in your console is the R prompt, indicating that R is ready
-for you to type something.
-In other words, this is equivalent to the `$` Bash prompt that you are used to.
+The `>` sign in your console is the R prompt,
+indicating that R is ready for you to type something
+(this is equivalent to the `$` Bash prompt that you are used to).
 
-Also just like in Unix shell, when you are not seeing the `>` prompt,
+Also just like in Unix shell, when you are **not seeing** the `>` prompt,
 R is either **busy** (because you asked it to do a longer-running computation)
 or **waiting** for you to complete an incomplete command.
 
-If you notice that your prompt turned into a `+`,
-you typed an incomplete command -- for example:
+If your prompt turned into a `+`, you typed an incomplete command. For example:
 
 ```{r, eval=FALSE}
 10 /
@@ -228,164 +214,188 @@ you can either try to finish the command or abort it.
 In Positron's console, you can abort with <kbd>Esc</kbd>
 (or with <kbd>Ctrl</kbd>+<kbd>C</kbd>) --- let's practice that here.
 
-<!---- TODO: Verify Esc / Ctrl+C behavior in the Positron console ---->
+### Adding comments to your code
 
-::: {.callout-tip appearance="simple"}
-Unlike in the Unix shell,
-pressing <kbd>Enter</kbd> on an incomplete command in Positron's console
-may simply add a new line to your input, with a `+` in front of it.
-:::
-
-::: callout-note
-#### Adding comments to your code
-
-Comments in R are just like in the Unix shell:
-you can use `#` signs to comment your code, both inline and on separate lines:
+Comments are also just like in the Unix shell ---
+use `#` signs to comment your code, both inline and on separate lines:
 
 ```{r}
 # This line is entirely ignored by R
 10 / 5 # This line contains code but everything after the '#' is ignored
 ```
-:::
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: R as a calculator
-
-**Predict** the output of each of the following lines, then run them one by one to check:
-
-```r
-8 / 2 * 4
--2 ^ 2
-10 / 0
-(5 + 3 * 2
-```
-
-<details><summary>*Click to see the solution*</summary>
-
-```{r}
-8 / 2 * 4
-```
-
-Multiplication and division have the same precedence, and are evaluated from left to right:
-first `8 / 2`, then `* 4`.
-
-```{r}
--2^2
-```
-
-Exponents come before the minus sign, so this is `-(2 ^ 2)`.
-To square negative two, use `(-2) ^ 2`.
-
-```{r}
-10 / 0
-```
-
-Instead of an error, R returns `Inf` (infinity).
-
-```{r, eval=FALSE}
-(5 + 3 * 2
-```
-```r-out
-+
-```
-
-The parenthesis isn't closed, so R waits for you to complete the command (`+` prompt).
-Type `)` and press <kbd>Enter</kbd> to finish it (result: `11`), or press <kbd>Esc</kbd> to cancel.
-
-</details>
-:::
-
 
 ## Functions in R
 
 ### Basics of functions
 
-To do almost anything in R, you will use "**functions**",
-which are the equivalent of shell commands.
-You can recognize function calls by the parentheses.
-For example:
+To do almost anything in R, you'll use **functions**,
+which are the equivalent of shell _commands_.
+R has over 3,000 functions that serve many different purposes,
+with tens of thousands of additional functions available in packages (add-ons).
 
-- The equivalent to the Shell's `pwd` is `getwd()`:
+You can recognize function calls by the **parentheses** `()`.
+For example, the equivalent to the Shell's `pwd` command is the `getwd()` function:
 
-  ```r
-  getwd()
-  ```
-  ```r-out
-  [1] "/fs/ess/PAS3493/people"
-  ```
+::: {.columns}
+::: {.column width="48%"}
 
-- Inside those parentheses, you can provide **arguments** to a function.
-  For example, using `setwd()`, the equivalent to the Shell's `cd`:
+```r
+# In R
+getwd()
+```
+```r-out
+[1] "/fs/ess/PAS3493/people"
+```
 
-  ```r
-  setwd("/fs/ess/PAS3493/people")
-  ```
+:::
+::: {.column width="4%"}
 
-  Note that unlike in the Shell, we need to quote the path!
-  This is because in R, as you'll see in more detail in a bit,
-  anything that is not quoted is supposed to be an "object" like a variable.
+:::
+::: {.column width="48%"}
 
-- One of the equivalents to the Shell's `echo` is `print()`:
+```bash
+# In the Unix shell
+pwd
+```
+```bash-out
+/fs/ess/PAS3493/people
+```
 
-  ```{r}
-  print("Hello world")
-  ```
+:::
+:::
 
-- The equivalent to the Shell's `mkdir` is `dir.create()`:
+Other than the slight difference in the name of the function/command,
+the key difference is that in R, you **always** need to include the parentheses.
 
-  ```r
-  dir.create("week12")
-  ```
+Inside those parentheses, you can provide **arguments** to a function,
+but just like with shell commands, whether you need to provide arguments,
+and what they are, depends on the function.
+For example, with `setwd()`, the equivalent to the Shell's `cd`,
+the required argument is the path to the directory you want to switch to:
 
-- The equivalent to the Shell's `head` is `head()`,
-  although it will by default show 6 lines/rows instead of 10:
+::: {.columns}
+::: {.column width="48%"}
 
-  ```{r}
-  head(iris)
-  ```
+```r
+setwd("/fs/ess/PAS3493/people")
+```
 
-  ::: callout-tip
-  #### Where did `iris` come from?
-  R comes shipped with several built-in datasets, like `iris`.
-  We didn't need to (and shouldn't) quote this, because it is a so-called object in R.
-  :::
+:::
+::: {.column width="4%"}
+
+:::
+::: {.column width="48%"}
+
+```bash
+cd /fs/ess/PAS3493/people
+```
+
+:::
+:::
+
+Two differences to note between the Shell and R:
+
+1. The argument goes **inside the parentheses** in R,
+   instead of after the command in the Shell.
+
+2. Unlike in the Shell, we need to **quote the path** in R!
+   This is because in R, as you'll see in more detail in a bit,
+    anything that is not quoted is supposed to be an "object" like a variable.
+
+A final side-by-side example ---
+one of the equivalents to the Shell's `echo` is `print()`:
+
+::: {.columns}
+::: {.column width="48%"}
+
+```{r}
+print("Hello world")
+```
+
+:::
+::: {.column width="4%"}
+
+:::
+::: {.column width="48%"}
+
+```bash
+echo "Hello world"
+```
+```bash-out
+Hello world
+```
+
+:::
+:::
 
 ### Function arguments
 
-Consider the example below, where we pass the argument `6.53` to the function `round()`:
+In the example below,
+we pass the argument `6.53` to the number-rounding function `round()`:
 
 ```{r}
 round(6.53)
 ```
 
 In most functions, including `round()`, arguments have **names** that can be used.
-For example, the argument to round() representing the number to be rounded has
-the name `x`, so you can also use:
+For example,
+the argument to `round()` that represents the number to be rounded has the name `x`,
+so you can also use:
 
 ```{r}
 round(x = 6.53)
 ```
 
-Naming arguments is helpful in particular to avoid confusion when you pass
-multiple arguments to a function.
-For example, `round()` accepts a second argument,
+*Naming arguments*, like in the example above,
+is especially helpful to avoid confusion when you pass multiple arguments to a function.
+For example, `round()` accepts another argument,
 which is the number of digits to round to:
 
 ```{r}
 round(x = 6.53, digits = 1)
 ```
 
-You could choose not to name these arguments, but that is not as easy to understand:
+You _could_ choose not to name these arguments, but that isn't as easy to understand:
 
 ```{r}
 round(6.53, 1)
 ```
 
-Moreover, when you name arguments, you can give them in any order you want:
+Moreover, when you name arguments, you can give them in **any order** you want:
 
 ```{r}
 round(digits = 1, x = 6.53)
 ```
+
+Named arguments in R are similar to options in the Shell.
+For example, the equivalent to the Shell's `head` is `head()`,
+and the equivalent to `head`'s `-n` option is `head()`'s `n` argument:
+
+::: {.columns}
+::: {.column width="58%"}
+
+```{r}
+head(iris, n = 5)
+```
+
+:::
+::: {.column width="4%"}
+
+:::
+::: {.column width="38%"}
+
+```bash
+head -n 5 metadata.tsv
+```
+
+:::
+:::
+
+::: callout-tip
+#### Where did `iris` come from?
+R comes shipped with several built-in datasets, like `iris`.
+We didn't need to quote this, because it is a so-called object in R.
+:::
 
 You can usually see which arguments a function takes by pausing after you
 type the function and its opening parenthesis, e.g. `round(`:
@@ -394,128 +404,185 @@ Positron will show a pop-up with the function's arguments and a short descriptio
 <!---- TODO: Add a Positron screenshot of the signature help pop-up for round() ---->
 <!---- ![](../img/round_1.png){width="75%" fig-align="center"} ---->
 
+### More help information on functions
 
-Below, we'll also see more extensive options to find out how a function works and
+In the last example above, we saw how you can get quick "inline" help for a function.
+But you may want to see more extensive information on how a function works and
 what arguments it takes.
 
-### Functions for everything
-
-R has over 3,000 functions that serve many different purposes,
-and tens of thousands of additional functions are available in packages (add-ons).
-Below are a couple of examples continuing along the theme of using R as a calculator:
-
-| **Function** | **Description** |
-|-----------------|---------------------------------------|
-| `abs(x)` | Absolute value: e.g. `abs(-5)` returns 5 |
-| `sqrt(x)` | Square root |
-| `log(x)` | Natural logarithm |
-| `log10(x)` | Common logarithm |
-| `round(x, digits = n)` | Round: e.g `round(3.475, digits = 2)` returns 3.48 |
-
-: {.striped .hover}
-
-## R Help: `help()` and `?`
-
 The `help()` function and `?` help operator in R offer access to documentation pages
-for R functions, data sets, and other objects.
-They provide access to both packages in the standard R distribution and contributed packages.
-
+for R functions (as well as datasets and some other objects).
 For example:
 
 ```r
-?list.files
+?setwd
 ```
 
 The output should appear in the **Help** pane in the Secondary Side Bar (right).
 
-<!---- TODO: Add a Positron screenshot of the Help pane for list.files ---->
-<!---- ![](../img/help_list_files.png){width="75%" fig-align="center"} ---->
+<!---- TODO: Add a Positron screenshot of the Help pane for setwd ---->
+<!---- ![](../img/help_setwd.png){width="75%" fig-align="center"} ---->
 
-::: {.callout-tip appearance="simple"}
-You can also put your cursor on a function name in the editor or console
-and press <kbd>F1</kbd> to open its help page.
+::: {.callout-note collapse="true"}
+#### Reading a more complicated help page: `?round` _(Click to expand)_
+The help page for `setwd()` is about as simple as they get.
+Most help pages are more complicated,
+as you can see with `round()`:
+
+```r
+?round
+```
+
+A few things you'll run into:
+
+- **Default values** ---
+  `digits = 0` in the Usage section means that `digits` has a default value of `0`,
+  which is used when you don't provide this argument.
+  That's why `round(6.53)` rounded to a whole number.
+
+- **Multiple functions on one page** ---
+  Related functions often share a help page.
+  The page for `round()` also covers `ceiling()`, `floor()`, `trunc()`, and `signif()`,
+  so look for the line with your function in the Usage section.
+
+- **The `...` argument** ---
+  This is described as "arguments to be passed to methods",
+  which you can ignore for now.
+
+- **Technical language** ---
+  Help pages are written to be precise rather than beginner-friendly.
+  Don't worry about understanding everything:
+  it's often most useful to look at the *Arguments* section,
+  and the *Examples* section at the bottom of the page.
 :::
 
 ## R objects
 
 ### Assigning stuff to objects
 
-You can assign one or more values to a so-called "object"
-with the **assignment operator** `<-`.
-A few examples:
+You can assign a value to a variable with the **assignment operator** `<-`.
+For example:
+
+::: {.columns}
+::: {.column width="48%"}
 
 ```{r}
-# Assign the value 250 to the object 'length_cm'
+# In R
 length_cm <- 250
-length_cm
-# Assign the value 2.54 to the object 'conversion'
-conversion <- 2.54
-conversion
 ```
 
-In the shell, we've been calling these _variables_,
-and that terminology is also used for R objects like the above ones.
-However, R objects can take on many forms (we will talk about _data structures_ in a bit),
+:::
+::: {.column width="4%"}
+
+:::
+::: {.column width="48%"}
+
+```bash
+# In the shell
+length_cm=250
+```
+
+:::
+:::
+
+Just like in the shell, `length_cm` can be called a **_variable_**.
+In R, though, you'll more often hear the general term **_object_**,
+because R objects can take on many forms,
 including more complicated things like tables.
-That's why the general term object is used here.
 
-Take a look at the **Variables** pane on the right:
-`length_cm` and `conversion` should now be listed there, along with their values.
+To see the contents of an object, you can also use the `print()` function,
+as the equivalent of `echo` in the Unix shell:
 
-To see the contents of an object, you can use the `print()` function as the
-equivalent of `echo` in the Unix shell:
+::: {.columns}
+::: {.column width="48%"}
 
 ```{r}
 print(length_cm)
 ```
 
-However, in R you can also omit `print()` and simply type an object's name:
+:::
+::: {.column width="4%"}
+
+:::
+::: {.column width="48%"}
+
+```bash
+echo "$length_cm"
+```
+```bash-out
+250
+```
+
+:::
+:::
+
+However, in R you can **omit** `print()` and simply type an object's name:
+
+::: {.columns}
+::: {.column width="48%"}
 
 ```{r}
 length_cm
 ```
 
+:::
+::: {.column width="4%"}
+
+:::
+::: {.column width="48%"}
+
+:::
+:::
+
 Importantly, you can use objects as if you had typed their values directly:
 
-```{r}
-length_cm / conversion
-```
+::: {.columns}
+::: {.column width="48%"}
 
 ```{r}
-length_in <- length_cm / conversion
-length_in
+length_cm / 2.54
 ```
+
+:::
+::: {.column width="4%"}
+
+:::
+::: {.column width="48%"}
+
+:::
+:::
+
+Take a look at the **Variables** pane on the right:
+`length_cm` should now be listed there, along with its contents (values).
+
+<!--- TODO add screenshot --->
 
 ### Object names
 
-Some pointers on object names:
+The rules for object names in R are much like those for shell variable names:
 
-- Because R is case sensitive, `length_inch` is different from `Length_Inch`!
+- Names are case sensitive: `length_inch` is different from `Length_Inch`.
+- Names can contain numbers but can't start with one: `x2` is valid but `2x` is not.
+- Names can't contain spaces.
+  To separate words, use underscores (`length_inch`, "snake case")
+  or capitalization (`lengthInch`, "camel case").
+  Unlike in the shell, periods are also allowed (`length.inch`).
 
-- An object name cannot contain spaces — so for readability, you should separate words using:
-
-  - Underscores: `length_inch` (this is called “snake case”)
-  - Periods: `wingspan.inch`
-  - Capitalization: `wingspanInch` or `WingspanInch` (“camel case”)
-
-- You will make things easier for yourself by naming objects in a consistent way,
-  for instance, by always sticking to your favorite case style like “snake case.”
-
-- Object names can contain but cannot start with a number: `x2` is valid but `2x` is not.
-
-- Make object names descriptive yet not too long — this is not always easy!
+As in the shell, aim for names that are descriptive but not too long,
+and stick to one style, such as snake case.
 
 ::: exercise
-#### Exercise: Assigning objects in R
+#### {{< fa user-edit >}} Exercise 1: Assigning objects in R
 
 1. Run `num_1 <- 20` and `num_2 <- 15`.
-   Now **predict** what each of the following three lines will print,
+   Now predict what each of the following three lines will print,
    then run them one by one to check:
 
    - `num_1 - num_2`
    - `difference <- num_1 - num_2`
    - `Num_1 + num_2`
 
+<!----
    <details><summary>*Click to see a solution*</summary>
 
    ```{r}
@@ -535,10 +602,12 @@ Some pointers on object names:
    Num_1 + num_2
    ```
   </details>
+---->
 
 2. One of the three lines above produced no output, and one produced an error.
    Explain both.
 
+<!----
    <details><summary>*Click to see a solution*</summary>
 
    - `difference <- num_1 - num_2` produces no output, because **assignment
@@ -551,14 +620,16 @@ Some pointers on object names:
      `Num_1`, so R doesn't know what `Num_1` refers to.
 
   </details>
+---->
 
-3. Which of the following is a valid object name in R?
+3. Which of the following are valid object names in R?
 
-   a) 2nd_value
-   b) value_2
-   c) total value
-   d) TotalValue
+   a) `2nd_value`
+   b) `value_2`
+   c) `total value`
+   d) `TotalValue`
 
+<!----
    <details><summary>*Click to see a solution*</summary>
 
    The valid object names are:
@@ -570,6 +641,7 @@ Some pointers on object names:
    Object names cannot start with a number and cannot contain spaces (so a and c options are invalid).
 
   </details>
+---->
 :::
 
 ## R packages
@@ -583,61 +655,45 @@ R packages are basically add-ons or extensions to the functionality of the R lan
   Every time you want to use a package in R, you need to load it,
   just like every time you want to use MS Word on your computer, you need to open it.
 
-For example:
+For example, for the _pheatmap_ package to create heatmaps,
+which you will use in week 15:
 
 ```{r eval=FALSE}
-install.packages("palmerpenguins")
+install.packages("pheatmap")
+```
+```r-out
+TODO - add some output
 ```
 
 ```{r}
-library(palmerpenguins)
+library(pheatmap)
 ```
-
-::: callout-important
-#### Before week 13: install the tidyverse
-Next week, you'll use the _tidyverse_, a collection of packages for data science.
-Because installing it can take a while, please do so before next week,
-by running the following in the R console:
-
-```{r eval=FALSE}
-install.packages("tidyverse")
-```
-
-Then, check that it loads without errors with `library(tidyverse)`.
-:::
 
 At OSC,
-packages will by default be installed into a standard location in your Home directory,
+packages will by default be installed into a standard location in your **Home directory**,
 so they can be accessed through time and regardless of what your working directory is,
 or what OSC project you are using^[And this works equivalently on your own computer.].
 
-However, package installation is done separately for:
+However, package installation is done **separately** for:
 
-- Different major versions of R
-  (e.g. 4.4 versus 4.5, but not R 4.5.0 versus 4.5.2).
+- Different **major versions** of R
+  (e.g. 4.4 versus 4.5, but not R 4.5.0 versus 4.5.2)^[
   Therefore, when you switch to a different R version, you will start over with
-  package installation^[This too, works the same with R on your own computer.].
-
-- Each OSC cluster, like Pitzer versus Cardinal.
-
-::: {.callout-tip appearance="simple"}
-Positron's **Packages** pane (cube icon in the Activity Bar)
-lists all your installed packages,
-and has buttons to install, update, and remove packages.
-:::
+  package installation. This too, works the same with R on your own computer.].
+- Each **OSC cluster**, like Pitzer versus Cardinal.
 
 ## Working directory and opening a folder
 
-As shown earlier, you can figure out what your working directory is with `getwd()`,
-and change it with `setwd()`.
-
-However, there is a better way of dealing with working directories,
-which is to avoid using `setwd()` altogether, and instead
-**open a folder** in Positron, like you've been doing in VS Code.
+Instead of changing your working directory with `setwd()`,
+it is better to **open a folder** in Positron, like you've been doing in VS Code,
+and like you did with your personal dir in the previous lecture.
 When you open a folder,
 Positron makes it R's working directory, and starts a fresh R session.
 
-Run `getwd()` to check that your working directory is your personal dir:
+Earlier, you changed your working directory with `setwd()`.
+To get back to the folder you opened,
+restart R by clicking the restart button (circular arrow) at the top of the Console.
+Then, run `getwd()` to check that your working directory is your personal dir again:
 
 ```r
 getwd()
@@ -646,28 +702,21 @@ getwd()
 [1] "/fs/ess/PAS3493/people/jelmer"
 ```
 
-Working this way is useful for several reasons:
+Working this way builds on earlier course material, and has several advantages:
 
-- **Automatically manage your working directory**: no need to manually set it.
-
-- **Keep your work organized**: organize your project inside self-contained folders,
-  which helps to manage, share and reproduce results.
-
-- **Ensure clean R sessions**: switching folders will restart R,
+- **One folder per project**
+  ([week 2](../week02/w2a_project-org.qmd)):
+  opening a project's folder automatically makes it your working directory.
+- **Relative paths**
+  ([week 11](../week11/w11a_data-mgmt.qmd)):
+  relative paths can start from your project's top-level folder,
+  so they keep working when you move or share the project.
+- **Clean R sessions**: switching folders, or restarting R, starts a new R session,
   which removes all objects and unloads all packages.
   This helps to avoid irreproducible carry-over effects.
 
-- **Easy to collaborate**: use paths relative to the folder,
-  so your code will work without modification for others and on other computers.
-
-::: {.callout-tip appearance="simple"}
-You'll use this one folder, your personal dir,
-for all of the course's R material:
-each week, you'll create a new folder (`week12`, `week13`, etc.) inside it.
-:::
-
 ::: {.callout-note collapse="true"}
-#### RStudio Projects _(Click to expand)_
+#### Have you used RStudio before? Compare "Open Folder" with RStudio Projects _(Click to expand)_
 In RStudio, the equivalent of opening a folder is using an "RStudio Project",
 which creates a `.Rproj` file in the project's folder.
 If you open a folder with an `.Rproj` file in Positron,
@@ -678,19 +727,14 @@ so a folder can work both as an RStudio Project and in Positron.
 ## Quarto documents
 
 So far, you've typed code directly in the R console.
-That is fine for quick checks,
+Like in the shell, that is fine for quick checks,
 but it's a good idea to write and save most of your code in a file.
-This helps you ***keep track of what you've been doing***,
+This helps you **keep track** of what you've been doing,
 and to rerun your code after changing your input data or some of the code.
 
-You've done this before with shell code:
-you've been writing notes and code in Markdown files since week 2,
-and in [week 7](../week07/w7b_scripts2.qmd),
-some of you used the Quarto extension in VS Code
-to send code from `{bash}` code blocks to the terminal.
-Positron comes with that same Quarto extension built in.
-For R, we'll use a very similar kind of file: a **Quarto document** (`.qmd`).
-A Quarto document is a Markdown file with two additions:
+In the shell, we'be been combining notes and code in Markdown files.
+For R, we'll use a very similar kind of file: a **Quarto** document (`.qmd`).
+A Quarto document is **a Markdown file with two additions**:
 
 - A **YAML header** with settings for the document
 - **Code chunks** that are actually _executed_,
@@ -703,48 +747,19 @@ a fully reproducible record of your analysis.
 
 ### Creating a Quarto document
 
-1. In the Explorer (Primary Side Bar), click the `New Folder` button
-   and create a folder `week12`.
+We'll create a new folder and document in Positron's terminal:
 
-2. Click on your new `week12` folder, then click the `New File` button,
-   and create a file `week12a.qmd`.
+1. Switch to the **terminal tab** in the bottom panel.
 
-The file opens in the Editor.
-_From now on, you'll write your code there instead of directly in the console._
+2. In the terminal, create a folder and a new Quarto document in it:
 
-::: {.callout-tip appearance="simple"}
-You can also create a new Quarto document with `File` \> `New File...`
-and then selecting `Quarto Document`.
-You'll then have to save it (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>S</kbd>)
-as `week12a.qmd` inside your `week12` folder.
-:::
+   ```bash
+   mkdir week12
+   touch week12/week12a.qmd
+   ```
 
-<!----
-TODO: Decide how to handle the working directory mismatch below. Options:
-- Have students enable inline output (setting `quarto.inlineOutput.enabled`):
-  then interactive code also runs in the document's folder, matching rendering,
-  and week 13's `../garrigos/...` paths keep working.
-  But this is a newer feature that runs a separate R session per document,
-  without a Console by default (see `console.showNotebookConsoles`).
-- Keep the default, and have later weeks use paths that work in both cases,
-  e.g. with the `here` package, or with `execute-dir: project` in a `_quarto.yml`.
----->
-
-::: callout-important
-#### The working directory of a Quarto document
-In Positron, the working directory for your code depends on how you run it:
-
-- When you **run code interactively** (see below),
-  it is executed in the Console,
-  whose working directory is the folder you opened (your personal dir).
-- When you **render** the document (see further below),
-  the working directory is the folder that contains the document (here, `week12`).
-
-Therefore, relative paths to files may work in one case but not the other.
-For example, to refer to the `garrigos` folder in your personal dir,
-you would use `garrigos` when running code interactively,
-but `../garrigos` when rendering.
-:::
+3. Open the file using the Explorer, or with the terminal
+   <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>-click method you know from VS Code.
 
 ### The YAML header
 
@@ -755,48 +770,67 @@ Type the following at the very top of your `week12a.qmd`:
 title: "Week 12: R basics"
 author: "<your name>"
 date: 2026-11-09
-format:
-  html:
-    embed-resources: true
 ---
 ```
 
 The **YAML header** contains settings for the document,
 and is enclosed by two lines with three dashes (`---`):
+each line contains a `key: value` pair
+(note that there should be a space after the colon).
+There are many more YAML options,
+some of which you'll learn about in [week 14](../week14/w14a_quarto.qmd#yaml-header).
 
-- Each line contains a `key: value` pair
-  (note that there should be a space after the colon).
-- Keys can be nested by indenting them with two spaces:
-  above, `embed-resources` is an option for the `html` output format.
-- `embed-resources: true` will make Quarto put everything,
-  including any figures, into a single HTML file,
-  so you can download that one file from OSC and open or share it.
+### Markdown text
 
-::: {.callout-tip appearance="simple"}
-Two other useful options are `toc: true` to add a table of contents,
-and `theme: <theme-name>` to pick one of
-[Quarto's built-in themes](https://quarto.org/docs/output-formats/html-themes.html)
-(e.g. `theme: cosmo`).
-Like `embed-resources`, these go below `html:`, indented by 4 spaces.
-You'll learn more YAML options in [week 14](../week14/w14a_quarto.qmd).
-:::
+Everything outside of the YAML header and the code chunks is regular Markdown,
+just like in the Markdown files you've been writing in this course.
+Use headers to structure your document,
+and use text to describe what your code does and why ---
+this is where Quarto documents are much more informative than code alone.
+
+Add a header and a sentence below your YAML header,
+so that your document looks like this:
+
+```{.markdown .file filename="week12a.qmd"}
+---
+title: "Week 12: R basics"
+author: "<your name>"
+date: 2026-11-09
+---
+
+## R as a calculator
+
+R can be used as a calculator, for example to add numbers:
+```
 
 ### Code chunks
 
 In Markdown, you've been making code blocks that start with ```` ```bash ````.
-In Quarto, you make an executable **code chunk** by adding curly braces
-around the language name, as in ```` ```{r} ````:
-
-```{r}
-#| echo: fenced
-5 + 5
-```
+In Quarto, you make an **executable code chunk** by adding curly braces
+around the language name, as in ```` ```{r} ````.
 
 You can insert a new chunk with
 <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd>,
 or simply type the opening and closing lines.
+Add a chunk to your document:
 
-To **run code** from a chunk:
+````{.markdown .file filename="week12a.qmd"}
+---
+title: "Week 12: R basics"
+author: "<your name>"
+date: 2026-11-09
+---
+
+## R as a calculator
+
+R can be used as a calculator, for example to add numbers:
+
+```{{r}}
+5 + 5
+```
+````
+
+To **run code** from a chunk, either:
 
 - Press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd>
   to run the line your cursor is on (or the selected lines).
@@ -805,59 +839,14 @@ To **run code** from a chunk:
   to run the entire chunk.
 
 The code is sent to the Console and executed there,
-so that is where you'll see its output.
-Plots will be shown in the Plots pane.
+and its output is shown in the Console too.
 
 <!---- TODO: Add screenshot of a chunk with the Run Cell button and output in the Console ---->
 
-::: {.callout-tip collapse="true"}
-#### Showing the output below each chunk _(Click to expand)_
-Positron can optionally show the output of each chunk right below it in the editor,
-as RStudio does by default.
-To turn this on, open the Settings and enable `quarto.inlineOutput.enabled`.
-
-Note that with this setting turned on,
-Positron starts a separate R session for each Quarto document,
-whose working directory is the document's folder.
-:::
-
-#### Chunk options
-
-You can change how a chunk behaves with **chunk options**:
-lines at the top of a chunk that start with `#|`.
-For example, this chunk would be shown in the rendered document, but not run:
-
-```{r}
-#| echo: fenced
-#| eval: false
-install.packages("tidyverse")
-```
-
-A few useful chunk options:
-
-- `#| eval: false` --- Show the code but don't run it.
-- `#| echo: false` --- Run the code and show its output, but hide the code itself.
-- `#| warning: false` and `#| message: false` --- Hide warnings and messages,
-  such as the ones printed when loading some packages.
-
-::: {.callout-tip appearance="simple"}
-Install packages in the console rather than in a chunk.
-Otherwise, they will be installed again every time you render the document.
-:::
-
-### Markdown text
-
-Everything outside of the YAML header and the code chunks is regular Markdown,
-just like in the files you've been writing since
-[week 2](../week02/w2d_markdown.qmd).
-Use headers to structure your document,
-and use text to describe what your code does and why ---
-this is where Quarto documents are much more informative than code alone.
-
 ### Rendering
 
-To render your document to HTML, click the **`Preview`** button
-at the top right of the editor,
+To render your **entire document** to HTML,
+click the `Preview` button at the top right of the editor,
 or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.
 
 <!---- TODO: Add a Positron screenshot of the Preview button ---->
@@ -866,95 +855,46 @@ This will create a file `week12a.html` next to `week12a.qmd`,
 and show a preview of it in the **Viewer** pane.
 Every time you save the document, the preview will update.
 
-::: {.callout-tip appearance="simple"}
-You can also render a Quarto document in the terminal with
-`quarto render week12/week12a.qmd`.
-:::
-
-<!---- TODO: Check whether the `quarto` command is available in the terminal when
-connected to OSC (there is no Quarto module at OSC) ---->
-
-
-::: callout-important
-#### Rendering runs all code in a fresh R session
 When you render, Quarto runs all code chunks from top to bottom
 in a **new, empty R session**.
 This means that:
 
-- Your document only renders if it is self-contained:
-  any objects you created only in the console,
-  or packages you loaded only in the console, won't exist during rendering.
-- If any code produces an error, the document will not render.
+- If any code produces an **error**, the document will not render.
   The error message will be shown in a Terminal tab named "Quarto Preview",
   in the bottom panel.
+- Your document only renders if it is **self-contained**:
+  any objects you created only in the console,
+  or packages you loaded only in the console, won't exist during rendering.
 
 This may seem annoying at times,
 but it's exactly what makes Quarto documents reproducible.
-:::
 
-::: exercise
-#### Exercise: Your first Quarto document
+::: {.callout-tip collapse="true"}
+#### Rendering from the terminal with `quarto render` _(Click to expand)_
 
-1. Make sure your `week12a.qmd` has the YAML header shown above.
-2. Add a header `## R basics` and below it, a code chunk with a few lines of code
-   from earlier in this lecture,
-   and a sentence of Markdown text that explains what the code does.
-3. Add a chunk that assigns a value to an object,
-   and another chunk below it that uses that object.
-4. Render the document and take a look at the HTML output.
-5. In the console (_not_ in your document), run `my_number <- 7`.
-   Then, add a chunk with `my_number * 2` to your document and render it again.
-   What happens, and why?
+You can also render a Quarto document from the terminal,
+using the `quarto render` command:
 
-<!----
-   <details><summary>*Click to see a solution*</summary>
+```bash
+quarto render week12/week12a.qmd
+```
 
-   - Steps 1-4: Your document should look something like this:
+This does a **one-time render**:
+just like `Preview`, it runs all code in a new R session
+and creates `week12a.html` next to `week12a.qmd`.
+But unlike `Preview`, it does not show the result in the Viewer pane,
+and does not re-render when you save the document.
+To look at the output, open the HTML file yourself.
 
-   ````{.markdown filename="week12a.qmd"}
-   ---
-   title: "Week 12: R basics"
-   author: "Jane Doe"
-   date: 2026-11-09
-   format:
-     html:
-       embed-resources: true
-   ---
+So, `Preview` is handy while you are writing and editing a document,
+whereas `quarto render` is handy to simply produce the final output file.
 
-   ## R basics
-
-   R can be used as a calculator:
-
-   ```{{r}}
-   5 + 5
-   log(20)
-   ```
-
-   Assign the value 250 to the object `length_cm`:
-
-   ```{{r}}
-   length_cm <- 250
-   ```
-
-   Convert this length to inches:
-
-   ```{{r}}
-   length_cm / 2.54
-   ```
-   ````
-
-   - Step 5: The document will not render,
-     and the error message will say that the object `my_number` was not found.
-     This is because rendering happens in a new R session,
-     where only objects created in the document itself exist.
-     To fix this, assign `my_number` in a chunk in your document.
-
-  </details>
----->
+<!---- TODO: Check whether the `quarto` command is available in the terminal when
+connected to OSC (there is no Quarto module at OSC) ---->
 :::
 
 ::: {.callout-note collapse="true"}
-#### R scripts _(Click to expand)_
+#### You can also use R _scripts_ (`.R`) in certain contexts _(Click to expand)_
 
 Instead of Quarto documents, you can also write R code in **R scripts** (`.R` files),
 which contain only code and comments,
@@ -971,6 +911,83 @@ including in a Slurm batch job.
 For your final project, both R scripts and Quarto documents are fine.
 :::
 
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise: Your first Quarto document
+
+Continue working in your `week12a.qmd`:
+
+1. Add another line of calculator code from earlier in this lecture
+   to the existing chunk, and run the chunk.
+
+   <details><summary>*Click to see a solution*</summary>
+
+   For example, your chunk could now look like this:
+
+   ````{.markdown .file filename="week12a.qmd"}
+   ```{{r}}
+   5 + 5
+   6 * 8
+   ```
+   ````
+
+   When you run the chunk, the output of both lines is shown in the console.
+
+   </details>
+
+2. Add a header `## Objects`.
+   Below it, add a chunk that assigns a value to an object,
+   and another chunk that uses that object.
+   Above each chunk, add a sentence that explains what the code does.
+
+   <details><summary>*Click to see a solution*</summary>
+
+   For example, you could add the following below your first chunk:
+
+   ````{.markdown .file filename="week12a.qmd"}
+   ## Objects
+
+   Assign the value 250 to the object `length_cm`:
+
+   ```{{r}}
+   length_cm <- 250
+   ```
+
+   Convert this length to inches:
+
+   ```{{r}}
+   length_cm / 2.54
+   ```
+   ````
+
+   </details>
+
+3. Save the document and take a look at the updated preview.
+
+   <details><summary>*Click to see a solution*</summary>
+
+   The preview should now show your new `Objects` section,
+   with each chunk's code followed by its output.
+   The chunk that assigns `length_cm` has no output,
+   because assignment doesn't print.
+
+   </details>
+
+4. In the console (_not_ in your document), run `my_number <- 7`.
+   Then, add a chunk with `my_number * 2` to your document and save it again.
+   What happens, and why?
+
+   <details><summary>*Click to see a solution*</summary>
+
+   The document will not render,
+   and the error message will say that the object `my_number` was not found.
+   This is because rendering happens in a new R session,
+   where only objects created in the document itself exist.
+   To fix this, assign `my_number` in a chunk in your document.
+
+   </details>
+
+:::
+
 ## Recap and looking forward
 
 In this lecture, you've learned the basics of working with R and Positron,
@@ -984,347 +1001,5 @@ including:
 - How opening a folder in Positron keeps your work organized and reproducible
 - How to write, run, and render R code in Quarto documents
 
-In the self-study section below, you'll learn about vectors and R's main data types.
+Next week, you'll learn about vectors, R's main data types, and tabular data.
 For that and all later R lectures, you'll write your code in Quarto documents.
-
-## Self-study: Vectors and data types
-
-::: callout-important
-#### Self-study
-Because there is no class on Wednesday of week 12 (Veteran's Day),
-please work through this section, including its exercises, on your own
-before the week 13 classes, which build on this material.
-Add a header `## Vectors and data types` to your `week12a.qmd`,
-and write the code from this section in code chunks below it.
-:::
-
-In this section, you'll learn about two of R's nuts and bolts:
-
-- **Data structures** are the kinds of objects that R can store data in.
-  Here, you'll learn about the simplest one, the **vector**.
-  Next week, you'll learn about the data structure for tabular data, the _data frame_.
-- **Data types** are how R distinguishes between different kinds of data,
-  like numbers versus character strings.
-
-### Vectors
-
-A vector in R is a collection of one or more items,
-which we'll call **elements**.
-Vectors can consist of just a single element,
-so each of the two lines of code below creates a vector:
-
-```{r}
-vector1 <- 8
-vector2 <- "panda"
-```
-
-In the `"panda"` example, which is a **character string** (_string_ for short):
-
-- `"panda"` constitutes _one element_, not 5 (its number of letters).
-- Unlike numbers, strings have to be quoted^[
-  Either double quotes (`"..."`) or single quotes (`'...'`) work,
-  but the former are more commonly used.].
-
-Recall that anything that is not quoted is interpreted as an object,
-like `iris` earlier.
-Therefore, the code below doesn't work, because there is no _object_ called `panda`:
-
-```{r, error=TRUE}
-vector_fail <- panda
-```
-
-A common way to make vectors with **multiple elements** is with the `c()` (combine) function:
-
-```{r}
-birds <- c("cardinal", "chickadee", "bald eagle")
-birds
-```
-
-To make a vector with a **series of whole numbers**, you can use the `:` operator:
-
-```{r}
-1:10
-```
-
-### Vectorization
-
-Consider the output of this command:
-
-```{r}
-numbers <- c(6, 7.5, 9, 10.2)
-numbers * 2
-```
-
-Above, **every individual element in `numbers` was multiplied by 2**.
-This behavior is called "vectorization", and is a key feature of the R language.
-(You may have expected this code to _repeat_ `numbers` twice instead,
-but that did not happen!)
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: Vectorization
-
-What do you think the result of the following operation will be?
-We didn't cover this kind of scenario, but go ahead and test your intuition!
-After you've decided on your expectation, run the code and check if you were correct.
-
-```{r, eval=FALSE}
-1:5 * 1:5
-```
-
-<details><summary>*Click to see the solution*</summary>
-
-```{r}
-1:5 * 1:5
-```
-
-Both vectors are of length 5, which leads to "element-wise matching":
-the first element of the first vector is multiplied with the first element of the second vector,
-the second element with the second element, and so on.
-
-</details>
-:::
-
-### Extracting elements from vectors
-
-Extracting elements from objects like vectors is often called **"indexing"**.
-In R, you can do this using square brackets `[ ]` --- for example:
-
-- Get the second element with `[2]`^[
-  R starts counting at 1 like humans do, so index 2 is simply the second element.
-  Python and several other languages instead start counting at 0.]:
-
-  ```{r}
-  numbers[2]
-  ```
-
-- Get the second through the fourth elements with `[2:4]`:
-
-  ```{r}
-  numbers[2:4]
-  ```
-
-- Get the first and third elements with `[c(1, 3)]`:
-
-  ```{r}
-  numbers[c(1, 3)]
-  ```
-
-In other words, you extract elements from a vector by using _another vector_,
-whose values are the positions of the elements in the original vector.
-
-To _change_ an element, put the brackets on the left side of the assignment arrow:
-
-```{r}
-numbers[1] <- 30
-numbers
-```
-
-::: {.callout-tip appearance="simple"}
-R has many functions to get information about vectors,
-like `length()` to get the number of elements,
-and `mean()` to compute the mean of numbers.
-For more, see the [optional R self-study page](../bonus/r.qmd#exploring-vectors).
-:::
-
-### Data types
-
-R distinguishes between different kinds of data, such as character strings and numbers,
-using several pre-defined "data types".
-R's behavior depends heavily on the data type --- for example, the below fails:
-
-```{r, error=TRUE}
-"panda" * 5
-```
-
-You can ask what type of data something is with the `typeof()` function:
-
-```{r}
-typeof("panda")
-```
-
-R set the data type of `"panda"` to `character`, i.e. a (character) string.
-The earlier command failed because R can't perform mathematical operations
-("_binary operator_") on vectors of type `character` ("_non-numeric argument_").
-
-Anything that is placed between quotes is a `character` --- even plain numbers:
-
-```{r}
-typeof("5")
-```
-
-Besides `character`, the three other **common data types** are:
-
-- `double` / `numeric` --- numbers that can have decimal points:
-
-  ```{r}
-  typeof(3.14)
-  ```
-
-- `integer` --- whole numbers only:
-
-  ```{r}
-  typeof(1:3)
-  ```
-
-- `logical` --- either `TRUE` or `FALSE` (unquoted!):
-
-  ```{r}
-  typeof(TRUE)
-  ```
-
-Here is an overview in table format,
-including the abbreviations you'll often see in R output:
-
-| Data type            | Abbreviation  | Explanation                          |
-|----------------------|---------------|--------------------------------------|
-| `double` / `numeric` | `dbl` / `num` | Numbers that can have decimal points |
-| `integer`            | `int`         | Whole numbers                        |
-| `character`          | `chr`         | Character strings                    |
-| `logical`            | `lgl`         | `TRUE` or `FALSE`                    |
-
-: {.striped .hover}
-
-### Comparing things
-
-You'll often get `logical`s by **comparing** things.
-For example:
-
-- Greater than and less than:
-
-  ```{r}
-  8 > 3
-  2 < 1
-  ```
-
-- Equal to or not equal to ---
-  don't forget to use **two** equals signs `==` for the former:
-
-  ```{r}
-  7 == 7
-  # The exclamation mark in general is a "negator"
-  10 != 5
-  ```
-
-Comparisons are vectorized too,
-and logicals can be used as if they were numbers,
-where `TRUE` represents 1 and `FALSE` represents 0.
-Together, this provides an easy way to _count_ how many elements meet a condition:
-
-```{r}
-numbers
-numbers > 9
-sum(numbers > 9)
-```
-
-Here are the most common comparison operators in R:
-
-| **Operator** | **Description**          | **Example**              |
-|--------------|--------------------------|--------------------------|
-| `>`          | Greater than             | 5 \> 6 returns `FALSE`   |
-| `<`          | Less than                | 5 \< 6 returns `TRUE`    |
-| `==`         | Equal to                 | 10 == 10 returns `TRUE`  |
-| `!=`         | Not equal to             | 10 != 10 returns `FALSE` |
-| `>=`         | Greater than or equal to | 5 \>= 6 returns `FALSE`  |
-| `<=`         | Less than or equal to    | 6 \<= 6 returns `TRUE`   |
-
-: {.striped .hover}
-
-### A vector can only contain one data type
-
-A vector can only be composed of **a single data type**.
-As you saw above, R silently picks the "best-fitting" data type when you create a vector.
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: Data types
-
-In each line below, what do you think the data type (if any) will be?
-Try it out and see if you were right.
-
-```{r, eval=FALSE}
-typeof("TRUE")
-typeof(banana)
-typeof(c(2, 6, "3"))
-```
-
-<details><summary>*Click to see the solutions*</summary>
-
-1. `"TRUE"` is `character` (and not `logical`) because of the quotes around it:
-
-   ```{r}
-   typeof("TRUE")
-   ```
-
-2. This returns an error because the object `banana` does not exist.
-   Any unquoted string (that is not a special keyword like `TRUE` and `FALSE`)
-   is interpreted as a reference to an object.
-
-   ```{r, error=TRUE}
-   typeof(banana)
-   ```
-
-3. This produces a `character` vector, and we'll talk about why next:
-
-   ```{r}
-   typeof(c(2, 6, "3"))
-   ```
-
-</details>
-:::
-
-R's behavior of returning a character vector for `c(2, 6, "3")` is called **type coercion**:
-when you combine a mix of data types (here, numbers and strings) into a single vector,
-R forces them all to be the same type,
-because a vector can only contain a single data type.
-Type coercion can be the source of many surprises,
-and is one reason you need to be aware of R's data types.
-
-You can also convert vectors yourself using the `as.` group of functions:
-
-```{r}
-as.integer(c("0", "2"))
-as.character(c(0, 2))
-```
-
-But not all conversions are possible ---
-for example, R can't turn `"kiwi"` into a number,
-so it returns a **missing value** (`NA`) instead, with a warning:
-
-```{r}
-as.double(c("4", "kiwi"))
-```
-
-### Missing values (`NA`)
-
-That `NA` brings us to R's concept of **missing data**,
-which is important in statistical computing,
-as not all measurements are always available for each sample.
-`NA` is not a character string, so like `TRUE` and `FALSE`, it is not quoted:
-
-```{r}
-vector_NA <- c(1, 3, NA, 7)
-vector_NA
-```
-
-Many functions that operate on vectors will return `NA` if **any** element is `NA`:
-
-```{r}
-sum(vector_NA)
-```
-
-You can get around this by setting `na.rm = TRUE` ("remove `NA`s") in such functions:
-
-```{r}
-sum(vector_NA, na.rm = TRUE)
-```
-
-### Self-study recap
-
-- A vector is a collection of elements of the same data type,
-  which you can create with e.g. `c()` or `:`.
-- Operations on vectors are vectorized: they happen for each element.
-- You can extract and change elements of vectors with `[ ]`.
-- R's four main data types are `character`, `double`, `integer`, and `logical`.
-  Mixing types in a vector causes automatic coercion.
-- Missing values are coded as `NA`;
-  use `na.rm = TRUE` to ignore them in functions like `sum()` and `mean()`.
-

@@ -72,30 +72,25 @@ and add a YAML header.
 
 ### Loading packages
 
-For this lecture, we will use two packages:
-the _tidyverse_, which includes _ggplot2_,
-and _palmerpenguins_, which contains a data set with penguin measurements.
-You installed both in week 12, so you only need to load them:
+For this lecture, we will use the _tidyverse_, which includes _ggplot2_,
+and _here_ for file paths
+([File paths in Quarto documents](w13a_data-wrangling.qmd#file-paths-in-quarto-documents)):
 
 ```{r}
+#| message: false
 library(tidyverse)
-library(palmerpenguins)
+library(here)
 ```
 
-Let's take a look at the `penguins` data set and its structure:
+We'll work with the `penguins` data set, which comes with R
+(since version 4.5),
+like the `iris` data set from week 12.
+Let's take a look at it and its structure:
 
 ```{r eval=FALSE}
 View(penguins)
 str(penguins)
 ```
-
-::: callout-warning
-#### Two `penguins` data sets
-Since version 4.5, R itself also comes with a `penguins` data set,
-but with shorter column names (e.g. `bill_len` instead of `bill_length_mm`).
-Make sure to load the _palmerpenguins_ package as above,
-so that `penguins` refers to that package's version, which we use in this lecture.
-:::
 
 ::: {.callout-note}
 #### The penguins data set
@@ -107,16 +102,12 @@ It has 344 observations (rows) and 8 variables (columns):
 -   species (factor): Species of penguin (Adelie, Chinstrap, Gentoo)
 -   island (factor): Island where the penguin was found (Biscoe, Dream,
     Torgersen)
--   bill_length_mm (num): Length of the penguin's bill in millimeters
--   bill_depth_mm (num): Depth of the penguin's bill in millimeters
--   flipper_length_mm (int): Length of the penguin's flipper in
-    millimeters
--   body_mass_g (int): Body mass of the penguin in grams
+-   bill_len (num): Length of the penguin's bill in millimeters
+-   bill_dep (num): Depth of the penguin's bill in millimeters
+-   flipper_len (int): Length of the penguin's flipper in millimeters
+-   body_mass (int): Body mass of the penguin in grams
 -   sex (factor): Sex of penguins
 -   year (int): Year of data collection
-
-To see which data sets are available in a specific R package,
-use e.g. `data(package = "palmerpenguins")`.
 
 :::
 
@@ -164,11 +155,11 @@ properties of the plot.
 The `x` and `y` arguments of the `aes()` function define the variables
 to be plotted on the x-axis and y-axis, respectively.
 Let's say we want to create a scatter plot with
-`bill_length_mm` on the x-axis and `bill_depth_mm` on the y-axis:
+`bill_len` on the x-axis and `bill_dep` on the y-axis:
 
 ```{r}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm))
+  ggplot(aes(x = bill_len, y = bill_dep))
 ```
 
 Now the axes are there, but there are still no data points,
@@ -184,7 +175,7 @@ we'll add a `geom_point()` layer using the `+` operator.
 
 ```{r}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  ggplot(aes(x = bill_len, y = bill_dep)) +
   geom_point()
 ```
 
@@ -197,14 +188,14 @@ and adds a legend that shows which color corresponds to which category:
 
 ```{r}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  ggplot(aes(x = bill_len, y = bill_dep, color = species)) +
   geom_point()
 ```
 
 Now, each point is colored by the species of the penguin.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise-1:
+#### {{< fa user-edit >}} Exercise 1: Mapping versus setting colors
 - What do you think will happen if you keep `color = species` outside of `aes()`?
   There are actually three different ways to do this -- try each one and see what happens:
 
@@ -212,6 +203,7 @@ Now, each point is colored by the species of the penguin.
   b. `geom_point(color = species)` -- inside `geom_point()`, outside `aes()`
   c. `geom_point(color = "red")` -- inside `geom_point()`, outside `aes()`, but with a fixed value instead of a variable
 
+<!----
 <details>
 
 <summary>Click for the solution</summary>
@@ -221,7 +213,7 @@ a. Inside `ggplot()` but outside `aes()`, `color = species` is silently ignored,
 
 ```{r}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm), color = species) +
+  ggplot(aes(x = bill_len, y = bill_dep), color = species) +
   geom_point()
 ```
 
@@ -230,12 +222,12 @@ b. Inside `geom_point()`, outside `aes()`, the same `color = species` instead
 
 ```{r, eval=FALSE}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  ggplot(aes(x = bill_len, y = bill_dep)) +
   geom_point(color = species)
 ```
 ```{r, echo=FALSE, error=TRUE}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  ggplot(aes(x = bill_len, y = bill_dep)) +
   geom_point(color = species)
 ```
 
@@ -244,7 +236,7 @@ c. But with a fixed value instead of a variable name, it works fine
 
 ```{r}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  ggplot(aes(x = bill_len, y = bill_dep)) +
   geom_point(color = "red")
 ```
 
@@ -259,10 +251,12 @@ because it's outside `aes()` and not a recognized argument of `ggplot()`
 itself, so `color = species` has no effect at all.
 
 </details>
+---->
 
-- Create a scatter plot with `bill_length_mm` on the x-axis and `bill_depth_mm` on the y-axis.
+- Create a scatter plot with `bill_len` on the x-axis and `bill_dep` on the y-axis.
   Color the points by `species`, and map `island` to the shape of the points.
 
+<!----
 <details>
 
 <summary>Click for the solution</summary>
@@ -270,8 +264,8 @@ itself, so `color = species` has no effect at all.
 ```{r}
 penguins |>
   ggplot(aes(
-    x = bill_length_mm,
-    y = bill_depth_mm,
+    x = bill_len,
+    y = bill_dep,
     color = species,
     shape = island
   )) +
@@ -282,6 +276,7 @@ See the [_ggplot2_ documentation](https://ggplot2.tidyverse.org/articles/ggplot2
 for other aesthetics that you can map variables to.
 
 </details>
+---->
 
 :::
 
@@ -293,24 +288,25 @@ to **set** an aesthetic to a fixed value, put it outside `aes()`,
 like with `geom_point(color = "red")` in the previous exercise.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise-2:
+#### {{< fa user-edit >}} Exercise 2: A fixed value inside `aes()`
 
 What do you think will happen if you put `color = "red"` _inside_ `aes()`?
 Predict first, then run the code to check:
 
 ```{r, eval=FALSE}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  ggplot(aes(x = bill_len, y = bill_dep)) +
   geom_point(aes(color = "red"))
 ```
 
+<!----
 <details>
 
 <summary>Click for the solution</summary>
 
 ```{r}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  ggplot(aes(x = bill_len, y = bill_dep)) +
   geom_point(aes(color = "red"))
 ```
 
@@ -321,6 +317,7 @@ a variable with the value "red" for every point,
 which is mapped to the first color of ggplot's default color palette.
 
 </details>
+---->
 :::
 
 ### Global and local mappings
@@ -332,7 +329,7 @@ To see the difference, let's add a second geom, `geom_smooth()`, which adds a tr
 
 ```{r}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  ggplot(aes(x = bill_len, y = bill_dep, color = species)) +
   geom_point() +
   geom_smooth(method = "lm")
 ```
@@ -344,7 +341,7 @@ and `geom_smooth()` fits a separate line for each species.
 
 ```{r}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  ggplot(aes(x = bill_len, y = bill_dep)) +
   geom_point(aes(color = species)) +
   geom_smooth(method = "lm")
 ```
@@ -360,7 +357,7 @@ To pick the colors yourself, use the `scale_color_manual()` function:
 
 ```{r}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  ggplot(aes(x = bill_len, y = bill_dep)) +
   geom_point(aes(color = species)) +
   scale_color_manual(values = c("grey55", "orange", "skyblue")) +
   geom_smooth(method = "lm")
@@ -381,7 +378,7 @@ with arguments `title`, `x`, and `y`:
 
 ```{r}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  ggplot(aes(x = bill_len, y = bill_dep)) +
   geom_point(aes(color = species)) +
   geom_smooth(method = "lm") +
   labs(
@@ -400,7 +397,7 @@ Let's apply `theme_bw()` to our previous plot:
 
 ```{r}
 penguins |>
-  ggplot(aes(x = bill_length_mm, y = bill_depth_mm)) +
+  ggplot(aes(x = bill_len, y = bill_dep)) +
   geom_point(aes(color = species)) +
   geom_smooth(method = "lm") +
   labs(
@@ -433,7 +430,7 @@ which you learned about on Monday:
 ## Before plotting, compute the mean
 island_means <- penguins |>
   group_by(island) |>
-  summarize(mean_body_mass = mean(body_mass_g, na.rm = TRUE)) # remove missing values
+  summarize(mean_body_mass = mean(body_mass, na.rm = TRUE)) # remove missing values
 ```
 
 Then, we use `geom_col()` to plot these means:
@@ -459,20 +456,20 @@ penguins |>
 ### Box plots
 
 Box plots show the distribution of a numeric variable for each category of a categorical variable.
-Let's create a box plot of the distribution of `body_mass_g` on each `island`.
+Let's create a box plot of the distribution of `body_mass` on each `island`.
 This time, we'll save the plot as an object, `box_plot_body_mass_and_island`,
 so we can reuse it later:
 
 ```{r}
 box_plot_body_mass_and_island <- penguins |>
-  ggplot(aes(x = island, y = body_mass_g)) +
+  ggplot(aes(x = island, y = body_mass)) +
   geom_boxplot()
 
 box_plot_body_mass_and_island
 ```
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise-3:
+#### {{< fa user-edit >}} Self-study exercise: Adding data points to a box plot
 
 1. Add the individual data points to the box plot above,
    using the `geom_jitter()` function.
@@ -483,7 +480,7 @@ box_plot_body_mass_and_island
 
 ```{r}
 penguins |>
-  ggplot(aes(x = island, y = body_mass_g)) +
+  ggplot(aes(x = island, y = body_mass)) +
   geom_boxplot(outlier.shape = NA) +
   geom_jitter()
 ```
@@ -501,7 +498,7 @@ by `geom_boxplot()` _and_ by `geom_jitter()`.
 
 ```{r}
 penguins |>
-  ggplot(aes(x = island, y = body_mass_g)) +
+  ggplot(aes(x = island, y = body_mass)) +
   geom_boxplot(outlier.shape = NA) +
   geom_jitter(aes(color = species))
 ```
@@ -528,7 +525,7 @@ For example, to facet the box plot from above by species:
 
 ```{r}
 penguins |>
-  ggplot(aes(x = island, y = body_mass_g)) +
+  ggplot(aes(x = island, y = body_mass)) +
   geom_boxplot() +
   facet_wrap(vars(species))
 ```
@@ -537,7 +534,7 @@ And to facet by both species (columns) and sex (rows):
 
 ```{r}
 penguins |>
-  ggplot(aes(x = island, y = body_mass_g)) +
+  ggplot(aes(x = island, y = body_mass)) +
   geom_boxplot() +
   facet_grid(rows = vars(sex), cols = vars(species))
 ```
@@ -546,7 +543,9 @@ penguins |>
 
 When you render a Quarto document, any plots made in code chunks will be included in the
 output document.
-You can control how they are shown with chunk options that start with `fig-`.
+You can control how they are shown with **chunk options**:
+lines at the top of a chunk that start with `#|`,
+where each line sets one option.
 For example:
 
 ```{r}
@@ -556,13 +555,18 @@ For example:
 #| fig-height: 4
 #| fig-align: center
 penguins |>
-  ggplot(aes(x = island, y = body_mass_g)) +
+  ggplot(aes(x = island, y = body_mass)) +
   geom_boxplot()
 ```
 
 - `fig-cap` --- Add a figure caption below the plot
 - `fig-width` and `fig-height` --- Set the size of the plot (in inches)
 - `fig-align` --- Align the plot to the `left`, `right`, or `center`
+
+Another useful chunk option is `echo: false`,
+which runs the code and shows its output (here, the plot),
+but hides the code itself.
+You'll learn more chunk options in [week 14](../week14/w14a_quarto.qmd#chunk-options).
 
 ## Exporting plots
 
@@ -571,7 +575,7 @@ use the [`ggsave()`](https://ggplot2.tidyverse.org/reference/ggsave.html) functi
 
 ```{r eval=FALSE}
 ggsave(
-  filename = "results/boxplot.png", # file path and name (the 'results' dir must exist)
+  filename = here("week13/results/boxplot.png"), # file path and name (the 'results' dir must exist)
   plot = box_plot_body_mass_and_island, # what to save
   width = 18,
   height = 12,
@@ -582,7 +586,7 @@ ggsave(
 
 ::: {.callout-tip appearance="simple"}
 For plots that you made in the console,
-you can also click the `Export` button in RStudio's Plots tab (bottom right),
+you can also click the save button in Positron's Plots pane,
 but `ggsave()` gives you more control and is reproducible.
 :::
 

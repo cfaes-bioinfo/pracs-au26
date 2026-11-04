@@ -17,12 +17,9 @@ other-links:
   - text: "Week 13 overview"
     icon: check2-all
     href: w13_overview.html
-  - text: "w12a: Intro to R, RStudio, and Quarto"
+  - text: "w12b: Intro to R, Quarto, and Positron"
     icon: book
     href: ../week12/w12b_r-basics.html
-  - text: "w12a self-study: Vectors and data types"
-    icon: book
-    href: ../week12/w12b_r-basics.html#self-study-vectors-and-data-types
   - text: "Week 13 exercises"
     icon: pencil
     href: w13_exercises.html
@@ -57,20 +54,355 @@ In R, tabular data is stored in a data structure called "**data frame**".
 
 In this lecture, you will learn:
 
+- The vector data structure, R's main data types, and comparisons
 - Data frames and different functions to reorganize and modify data frames
 - Briefly about the similar matrix data structure
 
 ### Setting up
 
-1. At <https://ondemand.osc.edu>,
-   start an RStudio session like in the previous lecture
-   ([Starting an RStudio Server session at OSC](../week12/w12b_r-basics.html#starting-an-rstudio-server-session-at-osc)).
-2. Make sure your RStudio Project from week 12 is open
-   ([Working directory and RStudio Projects](../week12/w12b_r-basics.qmd#working-directory-and-rstudio-projects)),
-   and create a new folder `week13` inside it.
-3. Create a new Quarto document and save it as `week13a.qmd` in your `week13` folder
+1. Open Positron and connect to OSC with your personal dir open,
+   like in the previous lecture
+   ([Setup: starting Positron and connecting to OSC](../week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc)).
+2. Later in this lecture, you'll use the _tidyverse_, a collection of packages for data science.
+   Because installing it can take a while,
+   start the installation now by running the following in the R console:
+
+   ```{r eval=FALSE}
+   install.packages("tidyverse")
+   ```
+
+   While the installation is running, this console is busy.
+   So, start a second R console to work in:
+   click the interpreter picker in the top-right corner,
+   select **New Console Session**, and then select R 4.5.2
+   (like in [this callout in week 12](../week12/w12a_positron-setup.qmd#check-that-r-works)).
+3. Create a new folder `week13` in your personal dir.
+4. Create a new Quarto document and save it as `week13a.qmd` in your `week13` folder
    ([Quarto documents](../week12/w12b_r-basics.qmd#creating-a-quarto-document)),
    and add a YAML header.
+
+## Vectors and data types
+
+Before turning to tabular data, you'll learn about two of R's nuts and bolts:
+
+- **Data structures** are the kinds of objects that R can store data in.
+  Here, you'll learn about the simplest one, the **vector**.
+  Later in this lecture, you'll learn about the data structure for tabular data, the _data frame_.
+- **Data types** are how R distinguishes between different kinds of data,
+  like numbers versus character strings.
+
+### Vectors
+
+A vector in R is a collection of one or more items,
+which we'll call **elements**.
+Vectors can consist of just a single element,
+so each of the two lines of code below creates a vector:
+
+```{r}
+vector1 <- 8
+vector2 <- "panda"
+```
+
+In the `"panda"` example, which is a **character string** (_string_ for short):
+
+- `"panda"` constitutes _one element_, not 5 (its number of letters).
+- Unlike numbers, strings have to be quoted^[
+  Either double quotes (`"..."`) or single quotes (`'...'`) work,
+  but the former are more commonly used.].
+
+Recall that anything that is not quoted is interpreted as an object,
+like `iris` in the previous lecture.
+Therefore, the code below doesn't work, because there is no _object_ called `panda`:
+
+```{r, error=TRUE}
+vector_fail <- panda
+```
+
+A common way to make vectors with **multiple elements** is with the `c()` (combine) function:
+
+```{r}
+birds <- c("cardinal", "chickadee", "bald eagle")
+birds
+```
+
+To make a vector with a **series of whole numbers**, you can use the `:` operator:
+
+```{r}
+1:10
+```
+
+### Vectorization
+
+Consider the output of this command:
+
+```{r}
+numbers <- c(6, 7.5, 9, 10.2)
+numbers * 2
+```
+
+Above, **every individual element in `numbers` was multiplied by 2**.
+This behavior is called "vectorization", and is a key feature of the R language.
+(You may have expected this code to _repeat_ `numbers` twice instead,
+but that did not happen!)
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 1: Vectorization
+
+What do you think the result of the following operation will be?
+We didn't cover this kind of scenario, but go ahead and test your intuition!
+After you've decided on your expectation, run the code and check if you were correct.
+
+```{r, eval=FALSE}
+1:5 * 1:5
+```
+
+<!----
+<details><summary>*Click to see the solution*</summary>
+
+```{r}
+1:5 * 1:5
+```
+
+Both vectors are of length 5, which leads to "element-wise matching":
+the first element of the first vector is multiplied with the first element of the second vector,
+the second element with the second element, and so on.
+
+</details>
+---->
+:::
+
+### Extracting elements from vectors
+
+Extracting elements from objects like vectors is often called **"indexing"**.
+In R, you can do this using square brackets `[ ]` --- for example:
+
+- Get the second element with `[2]`^[
+  R starts counting at 1 like humans do, so index 2 is simply the second element.
+  Python and several other languages instead start counting at 0.]:
+
+  ```{r}
+  numbers[2]
+  ```
+
+- Get the second through the fourth elements with `[2:4]`:
+
+  ```{r}
+  numbers[2:4]
+  ```
+
+- Get the first and third elements with `[c(1, 3)]`:
+
+  ```{r}
+  numbers[c(1, 3)]
+  ```
+
+In other words, you extract elements from a vector by using _another vector_,
+whose values are the positions of the elements in the original vector.
+
+To _change_ an element, put the brackets on the left side of the assignment arrow:
+
+```{r}
+numbers[1] <- 30
+numbers
+```
+
+::: {.callout-tip appearance="simple"}
+R has many functions to get information about vectors,
+like `length()` to get the number of elements,
+and `mean()` to compute the mean of numbers.
+For more, see the [optional R self-study page](../bonus/r.qmd#exploring-vectors).
+:::
+
+### Data types
+
+R distinguishes between different kinds of data, such as character strings and numbers,
+using several pre-defined "data types".
+R's behavior depends heavily on the data type --- for example, the below fails:
+
+```{r, error=TRUE}
+"panda" * 5
+```
+
+You can ask what type of data something is with the `typeof()` function:
+
+```{r}
+typeof("panda")
+```
+
+R set the data type of `"panda"` to `character`, i.e. a (character) string.
+The earlier command failed because R can't perform mathematical operations
+("_binary operator_") on vectors of type `character` ("_non-numeric argument_").
+
+Anything that is placed between quotes is a `character` --- even plain numbers:
+
+```{r}
+typeof("5")
+```
+
+Besides `character`, the three other **common data types** are:
+
+- `double` / `numeric` --- numbers that can have decimal points:
+
+  ```{r}
+  typeof(3.14)
+  ```
+
+- `integer` --- whole numbers only:
+
+  ```{r}
+  typeof(1:3)
+  ```
+
+- `logical` --- either `TRUE` or `FALSE` (unquoted!):
+
+  ```{r}
+  typeof(TRUE)
+  ```
+
+Here is an overview in table format,
+including the abbreviations you'll often see in R output:
+
+| Data type            | Abbreviation  | Explanation                          |
+|----------------------|---------------|--------------------------------------|
+| `double` / `numeric` | `dbl` / `num` | Numbers that can have decimal points |
+| `integer`            | `int`         | Whole numbers                        |
+| `character`          | `chr`         | Character strings                    |
+| `logical`            | `lgl`         | `TRUE` or `FALSE`                    |
+
+: {.striped .hover}
+
+### Comparing things
+
+You'll often get `logical`s by **comparing** things.
+For example:
+
+- Greater than and less than:
+
+  ```{r}
+  8 > 3
+  2 < 1
+  ```
+
+- Equal to or not equal to ---
+  don't forget to use **two** equals signs `==` for the former:
+
+  ```{r}
+  7 == 7
+  # The exclamation mark in general is a "negator"
+  10 != 5
+  ```
+
+Comparisons are vectorized too,
+and logicals can be used as if they were numbers,
+where `TRUE` represents 1 and `FALSE` represents 0.
+Together, this provides an easy way to _count_ how many elements meet a condition:
+
+```{r}
+numbers
+numbers > 9
+sum(numbers > 9)
+```
+
+Here are the most common comparison operators in R:
+
+| **Operator** | **Description**          | **Example**              |
+|--------------|--------------------------|--------------------------|
+| `>`          | Greater than             | 5 \> 6 returns `FALSE`   |
+| `<`          | Less than                | 5 \< 6 returns `TRUE`    |
+| `==`         | Equal to                 | 10 == 10 returns `TRUE`  |
+| `!=`         | Not equal to             | 10 != 10 returns `FALSE` |
+| `>=`         | Greater than or equal to | 5 \>= 6 returns `FALSE`  |
+| `<=`         | Less than or equal to    | 6 \<= 6 returns `TRUE`   |
+
+: {.striped .hover}
+
+### A vector can only contain one data type
+
+A vector can only be composed of **a single data type**.
+As you saw above, R silently picks the "best-fitting" data type when you create a vector.
+
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise: Data types
+
+In each line below, what do you think the data type (if any) will be?
+Try it out and see if you were right.
+
+```{r, eval=FALSE}
+typeof("TRUE")
+typeof(banana)
+typeof(c(2, 6, "3"))
+```
+
+<details><summary>*Click to see the solutions*</summary>
+
+1. `"TRUE"` is `character` (and not `logical`) because of the quotes around it:
+
+   ```{r}
+   typeof("TRUE")
+   ```
+
+2. This returns an error because the object `banana` does not exist.
+   Any unquoted string (that is not a special keyword like `TRUE` and `FALSE`)
+   is interpreted as a reference to an object.
+
+   ```{r, error=TRUE}
+   typeof(banana)
+   ```
+
+3. This produces a `character` vector, and we'll talk about why next:
+
+   ```{r}
+   typeof(c(2, 6, "3"))
+   ```
+
+</details>
+:::
+
+R's behavior of returning a character vector for `c(2, 6, "3")` is called **type coercion**:
+when you combine a mix of data types (here, numbers and strings) into a single vector,
+R forces them all to be the same type,
+because a vector can only contain a single data type.
+Type coercion can be the source of many surprises,
+and is one reason you need to be aware of R's data types.
+
+You can also convert vectors yourself using the `as.` group of functions:
+
+```{r}
+as.integer(c("0", "2"))
+as.character(c(0, 2))
+```
+
+But not all conversions are possible ---
+for example, R can't turn `"kiwi"` into a number,
+so it returns a **missing value** (`NA`) instead, with a warning:
+
+```{r}
+as.double(c("4", "kiwi"))
+```
+
+### Missing values (`NA`)
+
+That `NA` brings us to R's concept of **missing data**,
+which is important in statistical computing,
+as not all measurements are always available for each sample.
+`NA` is not a character string, so like `TRUE` and `FALSE`, it is not quoted:
+
+```{r}
+vector_NA <- c(1, 3, NA, 7)
+vector_NA
+```
+
+Many functions that operate on vectors will return `NA` if **any** element is `NA`:
+
+```{r}
+sum(vector_NA)
+```
+
+You can get around this by setting `na.rm = TRUE` ("remove `NA`s") in such functions:
+
+```{r}
+sum(vector_NA, na.rm = TRUE)
+```
 
 ## The tidyverse
 
@@ -80,9 +412,10 @@ Dataframe-centric refers to doing most if not all data analysis while keeping
 the data in R's data frame data structure.
 
 All core tidyverse packages can be installed and loaded with a single command.
-Since you should already have _installed_ the tidyverse^[
-If not: run `install.packages("tidyverse")` now.
-], you only need to _load_  it, which you do as follows:
+You installed the tidyverse at the start of this lecture^[
+If the installation is still running, wait for it to finish:
+you'll see the `>` prompt again in that first console session.
+], so you only need to _load_ it, which you do as follows:
 
 ```{r}
 library(tidyverse)
@@ -158,6 +491,72 @@ The metadata file that we'll read next is an example of tidy data.
 
 ## Reading data
 
+### File paths in Quarto documents
+
+Before we read a file, we need to think about file paths.
+In Positron, the working directory for your code depends on how you run it:
+
+- When you **run code interactively**,
+  it is executed in the Console,
+  whose working directory is the folder you opened (your personal dir).
+- When you **render** the document,
+  the working directory is the folder that contains the document (here, `week13`).
+
+Therefore, relative paths to files may work in one case but not the other.
+For example, to refer to the `garrigos` folder in your personal dir,
+you would use `garrigos` when running code interactively,
+but `../garrigos` when rendering.
+
+The _here_ package solves this problem:
+its `here()` function creates file paths that start at your project's top-level folder,
+no matter what your working directory is.
+To set it up:
+
+1. Install the package in the console:
+
+   ```{r eval=FALSE}
+   install.packages("here")
+   ```
+
+2. Mark your personal dir as the top-level folder,
+   by creating an empty file called `.here` in it.
+   In the terminal, which should be in your personal dir, run:
+
+   ```bash
+   touch .here
+   ```
+
+   When _here_ is loaded, it looks for this file
+   in the working directory and, if needed, in the folders above it.
+
+3. Load the package in your document:
+
+   ```{r eval=FALSE}
+   library(here)
+   ```
+   ```r-out
+   here() starts at /fs/ess/PAS3493/people/jelmer
+   ```
+
+Now, you can give `here()` a path relative to your personal dir,
+and it will return the full path:
+
+```{r eval=FALSE}
+here("garrigos/meta/metadata.tsv")
+```
+```r-out
+[1] "/fs/ess/PAS3493/people/jelmer/garrigos/meta/metadata.tsv"
+```
+
+This path works both when you run code interactively and when you render.
+Your code is also still portable,
+because the full path is only created when the code is run:
+if you move or share your project folder (with its `.here` file),
+`here()` will find its new location.
+We'll use `here()` for all file paths from now on.
+
+### Reading a TSV file
+
 _readr_  is one of the packages that is loaded as part of the core tidyverse,
 and has functions for reading and writing tabular data to and from plain-text
 files like CSV and TSV files.
@@ -165,8 +564,7 @@ files like CSV and TSV files.
 The `read_tsv()` function will read TSV (tab-delimited files) -- for example:
 
 ```{r eval= FALSE}
-# (Recall that the working dir of your Quarto document is its folder, 'week13')
-meta <- read_tsv(file = "../garrigos/meta/metadata.tsv")
+meta <- read_tsv(file = here("garrigos/meta/metadata.tsv"))
 ```
 
 ```{r echo= FALSE}
@@ -305,7 +703,7 @@ select(.data = meta, time, sample_id)
 Above, the first argument was the data frame,
 whereas the other arguments were the (unquoted!) names of columns to be included
 in the output data frame^[
-Based on what you learned in the previous session,
+Based on what you learned about quoting earlier,
 it may seem strange that the column names should not be quoted.
 One way to make sense of this is that the columns can be thought of as (vector)
 objects, whose names are the column names.].
@@ -389,27 +787,18 @@ successive assignments.
 
 For code readability,
 it is good practice to always start a new line after a pipe `|>`,
-and to keep the subsequent line(s) _indented_ as RStudio will automatically do.
+and to keep the subsequent line(s) _indented_ as Positron will automatically do.
 :::
 
 ::: callout-note
 ### Using the pipe keyboard shortcut
 
-The following RStudio keyboard shortcut will insert a pipe symbol:
+In Positron, you can insert a pipe with the keyboard shortcut
 <kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>M</kbd>.
 
-However, by default this (still) inserts an older pipe symbol, `%>%`.
-As long as you've loaded the tidyverse^[
-This symbol only works when you have one of the tidyverse packages loaded.
-], it would not really be a problem to just use `%>%` instead of `|>`.
-But it would be preferred to make RStudio insert the `|>` pipe symbol:
-
-1. Click `Tools` > `Global Options` > `Code` tab on the right.
-2. Check the box "Use native pipe operator" as shown below.
-3. Click `OK` at the bottom of the options dialog box to apply the change and
-   close the box.
-
-![](../img/pipe-shortcut.png){fig-align="center"}
+In code online, you will also often see an older pipe symbol, `%>%`,
+which works the same in most cases,
+but only when you have one of the tidyverse packages loaded.
 :::
 
 ## `filter()` to pick rows (observations)
@@ -489,12 +878,13 @@ meta |>
 ```
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Pipes
+#### {{< fa user-edit >}} Exercise 2: Pipes
 
 1. Use a "pipeline" like above to output a data frame with two
    columns (`sample_id` and `treatment`) only for the _cathemerium_ treatment.
    How many rows does your output data frame have?
 
+<!----
    <details><summary>Click for the solution</summary>
 
    ```{r}
@@ -506,6 +896,7 @@ meta |>
    The output data frame has 7 rows and 2 columns.
 
    </details>
+---->
 
 2. The two pipelines below differ only in the order of `filter()` and `select()`.
    **Predict** whether each of them will work, and why. Then run them to check.
@@ -515,6 +906,7 @@ meta |>
    meta |> select(sample_id, treatment) |> filter(time == "10dpi")
    ```
 
+<!----
    <details><summary>Click for the solution</summary>
 
    The first works, but the second fails with an error that the `time` column/object can't be found:
@@ -522,6 +914,7 @@ meta |>
    and `select()` already removed the `time` column before `filter()` got the data.
 
    </details>
+---->
 
 :::
 
@@ -630,7 +1023,7 @@ meta |>
 ```
 
 :::exercise
-#### {{< fa user-edit >}} Exercise: `mutate()`
+#### {{< fa user-edit >}} Self-study exercise: `mutate()`
 
 Another very useful function is `substr()`, short for _substring_,
 which can extract parts of a character vector by position:
@@ -696,38 +1089,45 @@ After that, operations like in `summarize()` will happen separately for each gro
 which is how we ended up with per-treatment counts.
 
 :::exercise
-#### {{< fa user-edit >}} Exercise: `summarize()`
+#### {{< fa user-edit >}} Exercise 3: `summarize()`
 
 1. Count the number of samples in `meta_time` for each _combination_ of treatment and time point
    (hint: `group_by()` accepts multiple columns).
    Before running your code, **predict** how many rows the output will have.
 
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   The output has 6 rows: one for each of the 3 treatments × 2 time points.
+
+   ```{r}
+   meta_time |>
+     group_by(treatment, time) |>
+     summarize(n_samples = n())
+   ```
+
+   </details>
+---->
+
 2. Using the `iris` data set, compute the mean petal length and width for each species.
 
-<details><summary>*Click to see a solution*</summary>
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-1. The output has 6 rows: one for each of the 3 treatments × 2 time points.
+   The mean petal length and width for each iris species:
 
-```{r}
-meta_time |>
-  group_by(treatment, time) |>
-  summarize(n_samples = n())
-```
+   ```{r}
+   iris_summary <- iris |>
+     group_by(Species) |>
+     summarize(
+       avg_petal_length = mean(Petal.Length),
+       avg_petal_width = mean(Petal.Width)
+     )
+   iris_summary
+   ```
 
-2. The mean petal length and width for each iris species:
-
-```{r}
-iris_summary <- iris |>
-  group_by(Species) |>
-  summarize(
-    avg_petal_length = mean(Petal.Length),
-    avg_petal_width = mean(Petal.Width)
-  )
-iris_summary
-```
-
-</details>
-
+   </details>
+---->
 :::
 
 
@@ -738,27 +1138,34 @@ you can use the `write_tsv()` function,
 with argument `x` for the R object and argument `file` for the file path:
 
 ```{r eval=FALSE}
-# You can save in the present working directory
-write_tsv(x = meta_time, file = "metadata_ed.tsv")
+# Save the file in your week13 folder
+write_tsv(x = meta_time, file = here("week13/metadata_ed.tsv"))
 
-# To save it in a different dir, include it in the path (the dir has to exist):
-dir.create("results")
-write_tsv(x = meta_time, file = "results/metadata_ed.tsv")
+# To save it in a subfolder, include it in the path (the folder has to exist):
+dir.create(here("week13/results"))
+write_tsv(x = meta_time, file = here("week13/results/metadata_ed.tsv"))
 ```
 
-Because we simply provided a file name, the file will have been written in your
-R working directory, which in a Quarto document is the folder that contains the document^[
-See the box "The working directory of a Quarto document" in [week 12](../week12/w12b_r-basics.qmd#creating-a-quarto-document).
-].
+As with reading files, using `here()` means that the file is written to the same place,
+whether you run the code interactively or render the document
+([File paths in Quarto documents](#file-paths-in-quarto-documents)).
 
 If you want to take a look at the file you just created,
-you can find it in RStudio's **Files** tab and click on it,
-which will open it in the editor panel.
+you can find it in the **Explorer** and click on it,
+which will open it in the editor.
 Of course, you could also find it in your computer's file browser and open it
 in different ways.
 
 ## Recap and looking forward
 
+- A vector is a collection of elements of the same data type,
+  which you can create with e.g. `c()` or `:`.
+- Operations on vectors are vectorized: they happen for each element.
+- You can extract and change elements of vectors with `[ ]`.
+- R's four main data types are `character`, `double`, `integer`, and `logical`.
+  Mixing types in a vector causes automatic coercion.
+- Missing values are coded as `NA`;
+  use `na.rm = TRUE` to ignore them in functions like `sum()` and `mean()`.
 - Different columns of a data frame can contain different types of data, but in a matrix all
   the elements are of the same data type.
 - Functions of the _dplyr_ package such as `filter()`, `select()`, `arrange()` and `mutate()`
