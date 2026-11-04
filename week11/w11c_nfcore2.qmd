@@ -547,6 +547,8 @@ nextflow run nf-core/rnaseq \
 echo
 echo "Successfully finished script nfc-rnaseq.sh"
 date
+
+
 ```
 
 <details class="details-quiz">
@@ -561,16 +563,38 @@ which the pipeline sets for each step
 </details>
 
 ::: {.callout-tip collapse="true"}
-#### Setting the container dir in your own pipeline runs _(Click to expand)_
+#### Settings to change when running your own nf-core pipelines _(Click to expand)_
 
-When you run Nextflow pipelines for your own research,
-it's a good idea to also use a single dir for all Apptainer containers,
-because they take up several GBs and can be reused across runs and pipelines.
-Set `apptainer.cacheDir` in your `nextflow.config` file to a dir in your own project, e.g.:
+If you run Nextflow/nf-core pipelines for your final project or your own research,
+don't simply copy all the settings we used here:
 
-```{.groovy .file filename="nextflow.config (excerpt)"}
-apptainer.cacheDir='/fs/ess/<your-project>/containers'
-```
+- **The container dir.**
+  You can't write to the shared container dir `/fs/ess/PAS3493/share/nxf-containers`,
+  and it only contains the containers for the pipeline version we use in class.
+  If you run a different pipeline or pipeline version with this setting,
+  Nextflow can't download the containers it needs, and your run will fail.
+  Instead, set `apptainer.cacheDir` to a dir you can write to, e.g.:
+
+  ```{.groovy .file filename="nextflow.config (excerpt)"}
+  apptainer.cacheDir='/fs/ess/<your-project>/containers'
+  ```
+
+  (If you remove the `apptainer.cacheDir` line altogether,
+  Nextflow will store the containers inside the work dir.
+  That works too, but using a single dedicated dir is better,
+  because containers take up several GBs and can be reused across runs and pipelines.)
+
+- **The OSC project.**
+  When running pipelines for your own research,
+  replace `PAS3493` with your own OSC project, both in `process.clusterOptions`
+  in your `nextflow.config` file and in the `#SBATCH --account` line of your script.
+  Also update the `/fs/ess/PAS3493` and `/fs/scratch/PAS3493` paths,
+  such as for the work dir.
+
+- **The Nextflow and pipeline versions.**
+  Consider using the
+  [newer Nextflow module](w11b_nfcore1.qmd#load-the-nextflow-module)
+  and the latest version of the pipeline.
 
 <hr style="height:1pt; visibility:hidden;" />
 :::
@@ -685,6 +709,8 @@ workdir=/fs/scratch/PAS3493/$USER/week11/nfc-rnaseq-work
 ```bash
 sbatch scripts/nfc-rnaseq.sh "$samplesheet" "$fasta" "$gtf" "$outdir" "$workdir"
 ```
+
+
 ````
 </details>
 
