@@ -58,7 +58,9 @@ Specifically, you will learn:
 ### Getting ready
 
 1. At <https://ondemand.osc.edu>,
-   start a VS Code session in `/fs/ess/PAS3493/people/$USER`.
+   start a VS Code session in `/fs/ess/PAS3493/people/$USER`
+   (you won't need 4 cores this time, since the pipeline will submit jobs to Slurm itself,
+   but if you still have a 4-core session open from part I, that's fine).
 
 2. In your VS Code terminal, go to your working dir for this week:
 
@@ -75,17 +77,13 @@ For the pipeline run with the @garrigós2025 data, we need to start with some pr
 3. Create a small "**config file**" so Nextflow knows how to submit Slurm batch
    jobs at OSC.
 
-First, we need to get set up. Make sure you are in your `week11` dir
-(if you're still in the `testrun` dir from part I, move up with `cd ..`),
-and then:
-
-Create a README file and open it:
+We will also create a README file to document the run:
 
 ```bash
 touch README.md
 ```
 
-Paste the following into it (with your own name and username),
+Open the README and paste the following into it (change the name and username),
 and then run the `mkdir` command to create dirs for scripts and metadata:
 
 ````{.markdown .file filename="README.md (excerpt)"}
@@ -108,10 +106,9 @@ mkdir scripts metadata
 ### Download the reference genome assembly
 
 The `garrigos` repo contains the reference genome annotation (GTF) file,
-but not the assembly (FASTA) file, which was too large to include.
+but not the assembly (FASTA) file.
 Download the assembly from NCBI with the `wget` command,
-like you did in [Lecture A](w11a_data.qmd#wget)
-(this time into `garrigos/ref`):
+like in [Lecture A](w11a_data.qmd#wget), but this time into `garrigos/ref`:
 
 ````{.markdown .file filename="README.md (excerpt)"}
 - Download the reference genome assembly:
@@ -124,7 +121,7 @@ wget -P ../garrigos/ref "$URL"
 
 Run the `wget` code:
 
-```bash-out
+```bash-out-solo
 --2026-11-02 14:34:01--  https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_genomic.fna.gz
 Resolving ftp.ncbi.nlm.nih.gov (ftp.ncbi.nlm.nih.gov)... 130.14.250.31, 130.14.250.7, 2607:f220:41e:250::10, ...
 Connecting to ftp.ncbi.nlm.nih.gov (ftp.ncbi.nlm.nih.gov)|130.14.250.31|:443... connected.
@@ -147,7 +144,7 @@ total 170M
 -rw-rw----+ 1 jelmer PAS0471 165M Dec 22  2022 GCF_016801865.2_TS_CPP_V2_genomic.fna.gz
 ```
 
-Both files are gzipped (`.gz`), but there is no need to decompress them:
+Both files are gzipped (`.gz`), but there is **no need to decompress** them:
 the pipeline will do that for us.
 
 ### Create a sample sheet
@@ -173,7 +170,7 @@ in which case the strandedness is automatically determined at the start of the p
 by pseudo-mapping a small proportion of the data with Salmon.
 :::
 
-The sample sheet should be a plain-text comma-separated values (CSV) file.
+The sample sheet should be a CSV file.
 Here is the example file from the
 [pipeline's documentation](https://nf-co.re/rnaseq/3.26.0/docs/usage#samplesheet-input):
 
@@ -187,8 +184,8 @@ CONTROL_REP1,AEG588A1_S1_L004_R1_001.fastq.gz,AEG588A1_S1_L004_R2_001.fastq.gz,a
 So, we need a header row with column names, and then one row per pair of FASTQ files^[
 In the example above, sample `CONTROL_REP1` was sequenced on three lanes,
 so it has three rows, which the pipeline will merge.
-We have one pair of FASTQ files per sample, so we'll have one row per sample.].
-The file should have the following columns:
+We have one pair of FASTQ files per sample, so we'll have one row per sample.],
+with columns:
 
 - `sample`: Sample ID (we will simply use the part of the file name shared by R1 and R2)
 - `fastq_1`: R1 FASTQ file path (including the dir, unless these files are in your working dir)
@@ -201,9 +198,9 @@ The file should have the following columns:
   If you really don't know, use `auto` to let the pipeline figure it out.].
 
 You could create this file manually in a text editor,
-but that would be tedious and error-prone with many samples.
-Instead, we will create it with a `for` loop that is very similar
-to the loops we used last week to submit a batch job for each sample:
+but that would be tedious and error-prone.
+Instead, we'll use a `for` loop that is similar to the loops we used last
+week to submit a batch job for each sample:
 
 ````{.markdown .file filename="README.md (excerpt)"}
 - Create a samplesheet:
@@ -226,10 +223,10 @@ done
   and infer the name of the corresponding R2 file by replacing `_R1` with `_R2`
   with parameter expansion: the `${var/find/replace}` syntax
   (see [week 7](../week07/w7b_scripts2.qmd#parameter-expansion)).
-- `basename` removes both the dir name and the `_R1.fastq.gz` suffix
-  from the R1 file path, leaving the sample ID (e.g., `S63`).
+- `basename` removes the dir name and the `_R1.fastq.gz` suffix from the R1 file path,
+  leaving the sample ID.
   We store its output in a variable with command substitution, `$()`
-  (both are covered on the optional
+  (see the optional
   [shell scripting self-study page](../bonus/shell-scripting.qmd#commands-to-extract-parts-of-paths)).
 - We _append_ (`>>`) each row to the sample sheet
   so that we keep the header line and the rows for previous samples.
@@ -254,7 +251,7 @@ or (worse) process these rows as extra, bogus samples.
 Run the code above and check the contents of your newly created sample sheet file:
 
 ```bash
-# [Run this directly in the terminal]
+# [Run this directly in the terminal, doesn't need to be in the README]
 head -n 5 metadata/nfc-samplesheet.csv
 ```
 ```bash-out
@@ -283,7 +280,7 @@ Because Nextflow only automatically reads a `nextflow.config` file in the dir fr
 the file in your `testrun` dir won't be used,
 and we need to create a new one in your `week11` dir.
 
-- Create the config file:
+- Create the config file, then open it:
 
   ```bash
   touch nextflow.config
@@ -291,20 +288,14 @@ and we need to create a new one in your `week11` dir.
 
 - Since the pipeline has many good default settings for batch jobs,
   we can keep this config file very simple.
-  Besides the container dir setting from the test run,
-  we only need to specify our "executor" program (Slurm)
-  and the OSC project to be used for Slurm job submissions.
-  Open the newly created `nextflow.config` file in the VS Code editor
-  and paste the following into it:
+  We'll add our "**executor**" program (Slurm)
+  and the **OSC project **to be used for Slurm job submissions:
 
   ```{.groovy .file filename="nextflow.config"}
   apptainer.cacheDir='/fs/ess/PAS3493/share/nxf-containers'
   process.executor='slurm'
   process.clusterOptions='--account=PAS3493'
   ```
-
-  The two new settings are in the `process` scope,
-  which contains settings for the jobs that Nextflow runs for each step of the pipeline.
 
 ## Write a shell script to run the pipeline
 
@@ -318,7 +309,7 @@ and the jobs that this process submits for each step and sample:
 
 ```{mermaid}
 flowchart LR
-  A["You:<br>sbatch scripts/nfc-rnaseq.sh"] --> B["Main Nextflow job<br>(1 core, runs for the whole pipeline)"]
+  A["You:<br>sbatch scripts/nfc-rnaseq.sh"] --> B["Main Nextflow job<br>(for the whole pipeline)"]
   B -->|sbatch| C["TrimGalore job (S63)"]
   B -->|sbatch| D["STAR job (S63)"]
   B -->|sbatch| E["... (hundreds more)"]
@@ -366,20 +357,16 @@ nextflow run nf-core/rnaseq \
 - Like in the [test run](w11b_nfcore1.qmd#test-run-the-rnaseq-pipeline),
   our command starts with `nextflow run` followed by the pipeline name and version.
 - The `-profile` will now simply be `apptainer` (i.e. omitting `test`).
-- It's a good idea to always include the `-resume` option:
-  it doesn't do anything when we run the pipeline for the first time^[
-  Nextflow will even give a warning along these lines, but this is not a problem.],
+- It's a good idea to always include the `-resume` option^[
+  It doesn't do anything when we run the pipeline for the first time,
+  (and Nextflow will even give a warning along these lines, but this is not a problem),
   but if the run fails or we change a setting,
-  we can simply resubmit the same script and the pipeline will pick up where it left off.
-- We set the `-work-dir` to a dir within our project's Scratch dir (`/fs/scratch`),
+  we can simply resubmit the same script and the pipeline will pick up where it left off.].
+- We set the `-work-dir` to a dir within our project's **Scratch** dir (`/fs/scratch`),
   which is well suited for the many large intermediate files in the work dir
   due to its fast I/O and ample storage space.
-  Recall that files in Scratch are automatically deleted after 60 days unused.
-  That's fine for the work dir, which you only need until you're done with the run
-  (e.g., to `-resume` it after a failure or after changing a setting).
-  (Our final output dir, on the other hand, will be in our Project dir in `/fs/ess`.)
-- The `-ansi-log false` option changes the logging format from what we
-  saw in the test run to a more basic format that works much better with Slurm log files^[
+- The `-ansi-log false` option changes the logging format to a basic format
+  that works better in Slurm log files^[
   In this format, there is a separate line for each job rather than grouping jobs
   by process.].
 
@@ -393,17 +380,27 @@ which represent the inputs and outputs discussed above --- the paths to:
 - `--gtf`: the reference genome annotation GTF file
 - `--outdir`: the output dir
 
-This pipeline has different options for e.g. alignment and quantification.
-We will stick close to the defaults,
-which include read alignment with `STAR` and gene-level quantification with `Salmon`,
-with two exceptions.
-First, we want to remove reads that originate from ribosomal RNA
-(this removal step is skipped by default).
-Second, we need to change one setting to make the pipeline work with our GTF file
-(more about this below).
+```{.bash .file filename="scripts/nfc-rnaseq.sh (excerpt)"}
+nextflow run nf-core/rnaseq \
+    -r 3.26.0 \
+    -profile apptainer \
+    -resume \
+    -work-dir "$workdir" \
+    -ansi-log false \
+    --input "$samplesheet" \
+    --fasta "$fasta" \
+    --gtf "$gtf" \
+    --outdir "$outdir"
+```
+
+Finally, we will change two pipeline-specific options from their defaults.
+First, we need to change one setting to make the pipeline work with our GTF file
+(`--featurecounts_group_type transcript_biotype`).
+Second, we want to remove reads that originate from **ribosomal RNA**,
+and you'll find the right option for that in the exercise below.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise: Find the right pipeline option
+#### {{< fa user-edit >}} Exercise 1: Find the right pipeline option
 Take a look at the
 ["Parameters" tab on the pipeline's documentation website](https://nf-co.re/rnaseq/3.26.0/parameters):
 
@@ -421,8 +418,10 @@ The option to remove rRNA is `--remove_ribo_rna`.
 ---->
 :::
 
-As for the GTF setting:
-one of the pipeline's QC steps summarizes from which types of genes ("biotypes")
+::: {.callout-note collapse="true"}
+#### More about the GTF setting _(Click to expand)_
+
+One of the pipeline's QC steps summarizes from which types of genes ("biotypes")
 the reads originate, such as protein-coding genes, long non-coding RNAs, and rRNA genes.
 By default, the pipeline looks for this information in a `gene_biotype` field
 on the exon lines of the GTF file.
@@ -431,21 +430,21 @@ and calls it `transcript_biotype` on its exon lines ---
 so with the default setting, the pipeline would stop with an error.
 To make it use the `transcript_biotype` field instead,
 we will add `--featurecounts_group_type transcript_biotype`.
+:::
 
-<details class="details-quiz">
-<summary>What do you think would happen if you made a typo in a pipeline-specific option, e.g. `--remove_ribo_rnaa`?</summary>
+::: {.callout-tip collapse="true"}
+#### What would happen if you made a typo in a pipeline-specific option?
 
-_The answer will be added after class._
+For example,
+what would happen if you used `--remove_ribo_rnaa` instead of `--remove_ribo_rna`?
 
-<!--
 The pipeline would run anyway, but without removing rRNA!
 nf-core pipelines only print a warning about unrecognized parameters
 near the top of the log, and then ignore them.
 (A typo in a general Nextflow option, like `-resum`, is different:
 Nextflow will refuse to start and report an unknown option.)
 So, always check the warnings and the parameter summary at the top of the log.
--->
-</details>
+:::
 
 ### The final script
 
@@ -549,13 +548,14 @@ Set `apptainer.cacheDir` in your `nextflow.config` file to a dir in your own pro
 ```{.groovy .file filename="nextflow.config (excerpt)"}
 apptainer.cacheDir='/fs/ess/<your-project>/containers'
 ```
+
+<hr style="height:1pt; visibility:hidden;" />
 :::
 
 ## Run the pipeline
 
 Now that the shell script is ready,
-you can run the pipeline on the @garrigós2025 data!
-You will add the code to do so to the `README.md` file we created above.
+you can finally run the pipeline on the @garrigós2025 data!
 
 ### Define variables to pass to the shell script
 
@@ -603,21 +603,6 @@ sbatch scripts/nfc-rnaseq.sh "$samplesheet" "$fasta" "$gtf" "$outdir" "$workdir"
 ```bash-out-solo
 Submitted batch job 42175708
 ```
-
-<details class="details-quiz">
-<summary>Say you had changed all paths to absolute paths, and submitted this same `sbatch` command from a different dir. What do you think would happen?</summary>
-
-_The answer will be added after class._
-
-<!--
-Nextflow only automatically reads a `nextflow.config` file in the dir from which you run it,
-so it wouldn't find our config file and wouldn't know that it should submit Slurm jobs.
-Instead, it would run all jobs "locally", inside the main Nextflow job.
-That job only has 1 core, while steps like STAR request many more,
-so the pipeline would quickly fail with an error like
-`Process requirement exceeds available CPUs`.
--->
-</details>
 
 <details><summary> {{<fa info-circle>}} Click to see the full `README.md` as intended</summary>
 
@@ -696,7 +681,6 @@ Mon Nov  2 14:45:15 2026
 
 In the example output above, the only running job is the one we directly submitted,
 i.e. the main Nextflow process.
-
 If you try `squeue` again later, you should see Nextflow-submitted jobs ---
 below, all the jobs with (partial) name `nf-NFCOR` are jobs submitted by Nextflow:
 
@@ -746,7 +730,7 @@ and for how to make an alias for it so you don't have to type it out.
 :::
 
 You can also keep an eye on the pipeline's progress, and see if there are any errors,
-by checking the Slurm log file --- the top of the file should look like this:
+by checking the Slurm log file:
 
 ```bash
 # (We need the -R option to 'less' to display colors properly)
@@ -813,18 +797,20 @@ should not affect the results:
 ```bash-out-solo
 WARN: The operator `first` is useless when applied to a value channel which returns a single value by definition
 ```
+
+<hr style="height:1pt; visibility:hidden;" />
 :::
 
-If any errors occur, they are reported in this file.
+If any **errors** occur, they are reported in this file.
 When a job fails because it ran out of memory or time,
 the pipeline will by default retry it once, with increased resource requests.
 Other errors, e.g. due to a problem with your input files,
 will make the pipeline stop, and you will have to investigate the problem.
 
 Your pipeline run may finish in as little as 15--30 minutes with our small dataset,
-but this can vary substantially due to variation in Slurm queue times.
+but this can vary substantially due to variation in **Slurm queue times**.
 When the pipeline has finished,
-make sure to pay attention to the message that is printed at the end of the log file ---
+pay attention to the message printed at the end of the log file ---
 in the example below, the pipeline finished successfully:
 
 ```bash-out-solo

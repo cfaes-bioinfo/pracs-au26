@@ -2,7 +2,7 @@
 title: "Running an nf-core Nextflow pipeline -- part I"
 subtitle: "Week 11 -- Lecture B"
 pagetitle: "w11b: nf-core I"
-date: 2026-11-02
+date: 2026-11-04
 date-modified: last-modified
 author:
   - name: Jelmer Poelstra
@@ -55,8 +55,7 @@ Specifically, you will learn:
 - How to do a test run of a pipeline
 - The difference between general Nextflow options and pipeline-specific options
 - How to change Nextflow settings with a configuration file
-- How to interpret the progress log and output files of a pipeline run,
-  including the distinction between a final output dir and a "work dir"
+- How to interpret the progress log and output files of a pipeline run
 - How to restart a Nextflow pipeline run using the `-resume` option
 
 ### Getting ready
@@ -80,39 +79,38 @@ If you no longer have the VS Code session from [Lecture A](w11a_data.qmd) runnin
 In [week 10](../week10/w10b_slurm2.qmd#zooming-out-workflows),
 we talked about managing complex bioinformatics workflows,
 and the advantages that formal Workflow Management Systems like
-[Nextflow](https://www.nextflow.io/) [@ditommaso2017]
+[Nextflow {{< fa external-link >}}](https://www.nextflow.io/){target="_blank"} [@ditommaso2017]
 have over DIY pipelines based on e.g. shell scripts.
+
 While you can use Nextflow to build your own workflows from scratch,
-we will here cover how to run an existing, community-developed Nextflow pipeline.
+we will here cover how to run an **existing** Nextflow pipeline from the
+["nf-core" initiative {{< fa external-link >}}](https://nf-co.re/){target="_blank"} [@ewels2020].
+This is worth covering for two reasons:
 
-This is well worth covering for two reasons:
-
-- Available pipelines cover many types of omics data,
-  so you may well be able to use one for your own research.
+- Available nf-core pipelines cover many types of omics data,
+  so you may well be able to use one for your research.
 - Running such a pipeline is a bit different and more involved than running a
   typical piece of bioinformatics software.
   But when you know how to run one nf-core pipeline,
   it will be relatively straightforward to run others as well.
 
-Recall from week 10 that the ["nf-core" initiative](https://nf-co.re/) [@ewels2020]
-has many pipelines available for various omics data analysis types.
-Here are their most popular pipelines --- we will run _rnaseq_:
+Here are the most popular nf-core pipelines --- we will run _rnaseq_ here:
 
 ![The 6 most popular nf-core pipelines as of October 2026](/img/nfcore-pipelines_2026-10-25.png){fig-align="center" width="95%" .lightbox fig-alt="Screenshot of six pipeline cards from the nf-core website: rnaseq (1396 stars), sarek (614), scrnaseq (360), mag (325), ampliseq (264), and chipseq (245). Each card shows a short description, topic tags, and the latest release version."}
 
 ### The nf-core _rnaseq_ pipeline
 
-The [nf-core _rnaseq_ pipeline](https://nf-co.re/rnaseq)
+The [nf-core _rnaseq_ pipeline {{< fa external-link >}}](https://nf-co.re/rnaseq){target="_blank"}
 is meant for RNA-seq datasets like the one from @garrigós2025,
 where reads are aligned to a reference genome to produce gene-level counts^[
-As opposed to transcript-level counts,
-which are harder to accurately obtain with short-read data.
+The pipeline also produces transcript-level counts,
+but these are harder to accurately obtain with short-read data.
 Additionally, the pipeline only works when a reference genome is available,
 as it cannot do _de novo_ transcriptome assembly.].
 
-The inputs of this pipeline are FASTQ files with raw reads,
+The **inputs** of this pipeline are FASTQ files with raw reads,
 and reference genome files (assembly & annotation),
-while the outputs include a gene count table that can be used for downstream
+while the **outputs** include a gene count table that can be used for downstream
 differential expression analysis, and many "QC outputs".
 Let's take a closer look at the key steps in the pipeline ---
 click on the image below to make it larger:
@@ -172,7 +170,7 @@ Here are some key aspects of running the nf-core _rnaseq_ pipeline
   Because the pipeline can run for many hours,
   we will **submit the main process as a batch job** too.
 
-- Nextflow **distinguishes between a final output dir and a "work dir"** (by default, `work`).
+- Nextflow **distinguishes** between a final output dir and a "work dir" (by default, `work`).
   All jobs run and produce outputs in sub-dirs of the work dir,
   and only a selection of their output files are copied to the final output dir^[
   Typically, not all outputs are copied, especially for intermediate steps like
@@ -181,71 +179,12 @@ Here are some key aspects of running the nf-core _rnaseq_ pipeline
 - Nextflow pipelines can be **restarted** using the `-resume` option,
   which will make them rerun only what is needed.
 
-### Test the Nextflow installation
-
-We'll use Nextflow via an OSC module and not via a container.
-That's because Nextflow itself needs to submit Slurm jobs and run Apptainer containers,
-which is awkward from inside a container,
-where the `sbatch` and `apptainer` commands aren't available.
-(The alternative is to use a Conda environment for Nextflow,
-but since a module is available at OSC, we will use that.)
-
-We'll start by finding and loading the Nextflow module.
-Then, we'll do a test run of the nf-core _rnaseq_ pipeline.
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: Load the Nextflow module
-
-We'll run version 3.26.0 of the _rnaseq_ pipeline,
-which requires Nextflow version 25.04.3 or later.
-Find the OSC Nextflow modules with a `module` command,
-and load one that is recent enough.
-Then, check which Nextflow version you're running with `nextflow -v`.
-
-<!----
-<details><summary>Solution _(Click to expand)_</summary>
-
-- Find the available module(s):
-
-  ```bash
-  module spider nextflow
-  ```
-  ```bash-out
-  --------------------------------------------------------------------------------
-    nextflow:
-  --------------------------------------------------------------------------------
-       Versions:
-          nextflow/24.10.4
-          nextflow/25.04.6
-
-  --------------------------------------------------------------------------------
-  ```
-
-- Only `nextflow/25.04.6` is recent enough
-  (version numbers start with year.month, so `24.10.4` is from October 2024) -- load it:
-
-  ```bash
-  module load nextflow/25.04.6
-  ```
-
-- Check that Nextflow works by printing its version:
-
-  ```bash
-  nextflow -v
-  ```
-  ```bash-out
-  nextflow version 25.04.6.5954
-  ```
-</details>
----->
-:::
-
 ## Test-run the _rnaseq_ pipeline
 
 ### Introduction and setup
 
-All nf-core pipelines can be test-run with a small test dataset that is included
-with the pipeline.
+All nf-core pipelines can be test-run with a **small test dataset**
+that the pipeline will download for you.
 Let's perform such a test run to become familiar with the command syntax and
 the pipeline's progress log and outputs.
 
@@ -263,20 +202,52 @@ mkdir testrun
 cd testrun
 ```
 
+### Load the Nextflow module
+
+We'll use Nextflow via the following OSC module:
+
+```bash
+module load nextflow/25.04.6
+```
+
+::: {.callout-tip collapse="true"}
+#### Why use a module here? _(Click to expand)_
+
+We use a module here because Nextflow itself needs to submit Slurm jobs and
+run Apptainer containers, which is awkward from inside a container,
+where the `sbatch` and `apptainer` commands aren't available.
+The alternative is to use a Conda environment for Nextflow,
+but since a module is available at OSC, we will use that.
+:::
+
+::: {.callout-tip collapse="true"}
+#### A newer Nextflow module is now available! _(Click to expand)_
+
+As of the day before this lecture (Nov 3, 2026),
+a newer Nextflow module is available at OSC (26.10.4).
+
+This didn't give me enough time to test the pipeline with this version,
+but if you run Nextflow/nf-core pipelines later,
+like for your final project or your own research, you may want to use this newer version.
+
+For example, we had to use a slightly older version of the _rnaseq_ **pipeline**
+with the older Nextflow version.
+When you use the newer Nextflow version,
+you will be able to use the latest version of the pipeline too.
+:::
+
 ### Create a configuration file
 
 The pipeline runs each tool in an Apptainer container that it downloads for us.
 To save time and storage space,
-we'll use a shared dir with containers that I already downloaded.
+we'll use a **shared dir with containers** that I already downloaded.
 We'll tell Nextflow about this dir in a
 [configuration (config) file](https://www.nextflow.io/docs/latest/config.html).
 
-Config files contain settings for how Nextflow runs a pipeline,
+**Config files** contain settings for how Nextflow runs a pipeline,
 such as where to store containers and how to run jobs.
-Each pipeline comes with its own config file(s) with default settings,
-and you can add to or override those settings with your own config file.
-The simplest way to do so is to create a file called `nextflow.config`
-in the dir from which you run the `nextflow run` command:
+The simplest way to override default settings is to create a file
+called `nextflow.config` in the dir from which you run the `nextflow run` command:
 Nextflow will automatically detect and use such a file.
 
 - Create the config file:
@@ -286,18 +257,14 @@ Nextflow will automatically detect and use such a file.
   ```
 
 - Open the newly created `nextflow.config` file in the VS Code editor
-  and paste the following into it:
+  and paste the following into it.
 
   ```{.groovy .file filename="nextflow.config"}
   apptainer.cacheDir='/fs/ess/PAS3493/share/nxf-containers'
   ```
 
-Settings in a config file have the form `<scope>.<setting>=<value>`,
-where a "scope" is a group of related settings.
-Here, we set the `cacheDir` setting in the `apptainer` scope,
-which tells Nextflow to look for containers in this dir,
-and to store any containers that it downloads there.
-In part II, we'll add a few more settings to make Nextflow submit Slurm batch jobs.
+  Here, we only changed the container cache dir, but in part II,
+  we'll add a few more settings to make Nextflow submit Slurm batch jobs.
 
 ### Starting the test run
 
@@ -311,19 +278,12 @@ Next, we'll run the test as follows:
   we would use `nf-core/sarek` instead.].
   We don't need to install the pipeline:
   Nextflow will download its code from GitHub for us.
-- The `-r` option specifies the pipeline version to use
-  (here, version `3.26.0`^[
-  The most recent version, 3.27.0, requires a newer version of Nextflow
-  than is available at OSC.]).
-  Always specify a version:
-  this makes your run reproducible, and you'll need to report it in your methods.
-  Without `-r`, which version is used depends on what Nextflow downloaded previously,
-  and isn't recorded in your code.
+- The `-r` option specifies the pipeline version to use.
 - The `-profile` option specifies which "profile(s)" to use:
-  - `test` tells the pipeline to use its built-in test dataset
+  - `test` tells the pipeline to use its small test dataset
   - `apptainer` tells the pipeline to run software via Apptainer containers
 - The `--outdir` option specifies the final output dir for the pipeline.
-- The `--skip_qc` option skips all QC steps except MultiQC,
+- The `--skip_qc` option skips most QC steps,
   which makes this test run a lot faster.
 
 ```bash
@@ -337,8 +297,8 @@ nextflow run nf-core/rnaseq \
 # [The output of this command is shown in the next section.]
 ```
 
-::: callout-note
-#### General Nextflow (`-`) vs. pipeline-specific (`--`) options
+::: {.callout-note collapse="true"}
+#### General Nextflow (`-`) vs. pipeline-specific (`--`) options _(Click to expand)_
 
 As you may have noticed, some options have a single dash and others a double dash.
 This is because `nextflow run` commands distinguish between two kinds of options:
@@ -347,10 +307,18 @@ This is because `nextflow run` commands distinguish between two kinds of options
   They control how Nextflow runs the pipeline:
   e.g., which pipeline version and profile(s) to use,
   and whether to resume a previous run.
-- **Pipeline-specific options** have a double dash (`--`) by convention.
+- **Pipeline-specific options** always have a double dash (`--`).
   They set the pipeline's inputs and outputs,
   and customize which steps will be run and how
   (larger pipelines can have 100+ of these).
+:::
+
+::: {.callout-note collapse="true"}
+#### Always specify a pipeline version _(Click to expand)_
+Always specify a version: this makes your run reproducible,
+and you'll need to report it in your methods.
+Without `-r`, which version is used depends on what Nextflow downloaded previously,
+and isn't recorded in your code.
 :::
 
 ### The test run's progress log
@@ -358,7 +326,9 @@ This is because `nextflow run` commands distinguish between two kinds of options
 <!-- TODO: regenerate outputs with rnaseq 3.26.0 and the apptainer profile.
 Then check: (1) the `ls work` output shouldn't have a `singularity` dir (containers are in apptainer.cacheDir),
 and the log's `configFiles` line should now also list testrun/nextflow.config;
-(2) if the -resume run still shows `Succeeded: 1`, change the quiz answer's "doesn't rerun any jobs". -->
+(2) if the -resume run still shows `Succeeded: 1`, change the quiz answer's "doesn't rerun any jobs".
+(3) make sure the header (trace_report_suffix) and the final summary come from the same run:
+the current launch time (13:05) + duration (11m) doesn't match "Completed at: 14:08". -->
 
 Since we ran the `nextflow run` command directly in the terminal,
 logging output (standard out and standard error) will be printed to the screen.
@@ -473,22 +443,19 @@ We'll call them jobs, because in our real run, each will be a Slurm batch job.]:
     while a cross (`✖`) would indicate that a job failed.
   - `2 of 5` means that 5 jobs have been submitted for the step,
     of which 2 have finished.
-    The second number only counts jobs that have been submitted so far,
-    so it can still go up as earlier steps finish for more samples.
   - `0 of 2` means that the step has started (2 jobs have been submitted),
     but none of its jobs have finished yet.
   - A dash (`-`) means that the step hasn't started yet.
 
 - The **number of jobs** differs between steps:
-  - Steps that process each sample separately, like trimming with TrimGalore,
-    have one job per sample: `5 of 5` for the 5 samples in the test dataset.
+  - Steps that process each sample separately have one job per sample:
+    `5 of 5` in the test dataset.
   - Steps that only need to run once, like preparing the reference genome,
     have a single job: `1 of 1`.
-    The same goes for steps that combine all samples, like MultiQC.
 
 - The **hexadecimal string** at the start of each line (e.g., `[a5/06472a]`)
   identifies one of that step's jobs (the most recently submitted one),
-  and also the dir in which that job ran --- we'll get back to this below.
+  and the dir in which that job ran.
 
 ```bash-out-solo
 executor >  local (29)
@@ -511,6 +478,17 @@ executor >  local (29)
 [-        ] NFC…EQ:FASTQ_QC_TRIM_FILTER_SETSTRANDEDNESS:FASTQ_SUBSAMPLE_FQ_SALMON:FQ_SUBSAMPLE -
 [-        ] NFC…EQ:FASTQ_QC_TRIM_FILTER_SETSTRANDEDNESS:FASTQ_SUBSAMPLE_FQ_SALMON:SALMON_QUANT -
 Plus 12 more processes waiting for tasks…
+```
+
+After some time, the pipeline should finish, hopefully successfully:
+
+```bash-out-solo
+[2e/794b4b] NFCORE_RNASEQ:RNASEQ:MULTIQC_RNASEQ:MULTIQC (multiqc_report)                       [100%] 1 of 1 ✔
+-[nf-core/rnaseq] Pipeline completed successfully -
+Completed at: 25-Oct-2026 14:08:04
+Duration    : 11m 7s
+CPU hours   : 0.6
+Succeeded   : 162
 ```
 
 ::: {.callout-tip collapse="true"}
@@ -537,17 +515,6 @@ Plus 12 more processes waiting for tasks…
   which is the case for 2 of the samples in the test dataset: `2 of 2`.
 :::
 
-After some time, the pipeline should finish, hopefully successfully:
-
-```bash-out-solo
-[2e/794b4b] NFCORE_RNASEQ:RNASEQ:MULTIQC_RNASEQ:MULTIQC (multiqc_report)                       [100%] 1 of 1 ✔
--[nf-core/rnaseq] Pipeline completed successfully -
-Completed at: 25-Oct-2026 14:08:04
-Duration    : 11m 7s
-CPU hours   : 0.6
-Succeeded   : 162
-```
-
 ::: {.callout-note collapse="true"}
 #### The output printed to your terminal should have colors not displayed above _(Click to expand)_
 
@@ -572,11 +539,11 @@ ls results/nfc-rnaseq
 The two most important outputs are:
 
 - The **MultiQC report** ---
-  this summarizes QC metrics from various steps, such as read trimming and alignment.
+  this summarizes QC metrics from various steps, such as read trimming and alignment^[
   Because we used `--skip_qc`, this test-run report is fairly minimal,
   but the report of our real run in part II will have lots more,
-  including a gene expression PCA plot.
-  Importantly, the report also lists the **versions** of each piece of software
+  including a gene expression PCA plot.].
+  The report also lists the **versions** of each piece of software
   that was run by the pipeline.
 
   ```bash
@@ -586,7 +553,7 @@ The two most important outputs are:
   -rw-rw----+ 1 jelmer PAS0471 2.9M Oct 25 14:17 results/nfc-rnaseq/multiqc/star_salmon/multiqc_report.html
   ```
 
-  You'll take a closer look at this type of report in [part II](w11c_nfcore2.qmd),
+  You'll take a closer look at this report in [part II](w11c_nfcore2.qmd),
   but here's an example screenshot, showing the STAR mapping rate:
 
   ![](/img/nfcore-rnaseq-testrun-mqc-star-mapping-rate.png){fig-align="center" width="90%" .no-border .lightbox fig-alt="Screenshot of the MultiQC report from the nf-core rnaseq test run, showing the STAR mapping rate for each sample."}
@@ -629,10 +596,10 @@ The two most important outputs are:
   ```
 
 In addition, the `pipeline_info` dir is useful for documenting your run:
-among other things, it has a file with all parameter settings that were used,
-a file with the versions of all software,
-and an execution report with the run time and memory usage of each step.
-When you publish results from the pipeline, cite both the pipeline and the tools it ran:
+it e.g. has a file with all parameter settings that were used,
+and a file with the versions of all software.
+When you publish results from the pipeline,
+**cite** both the pipeline and the tools it ran:
 the start of the log shows where to find these citations.
 
 <!--- TODO - put gene count illustration from earlier slides here? ---->
@@ -642,11 +609,9 @@ the start of the log shows where to find these citations.
 The `work` dir contains sub-dirs in which all jobs ran,
 and where they produced their outputs before the pipeline copied a selection of
 them to the final output dir.
-Because it holds _all_ outputs, including intermediate files,
+Because it contains all outputs, including intermediate files,
 it is usually much larger than the final output dir.
-
-For example, let's compare the sizes of the final output dir and the work dir
-with the `du` command (these sizes can get *much* larger for real data runs):
+For example, in this case (these sizes can get *much* larger for real data runs):
 
 ```bash
 du -sh results/nfc-rnaseq/ work
@@ -656,40 +621,31 @@ du -sh results/nfc-rnaseq/ work
 264M    work
 ```
 
-::: callout-tip
-#### `work` dir location
-In this case, `work` is in its default location,
-the dir from which you execute the `nextflow` command
-(i.e., the current working directory).
-For runs on real data, it's best to put the `work` dir elsewhere,
-typically in `/fs/scratch`, which is faster and has more space than `/fs/ess`
-(we'll do this in part II).
-:::
-
 You won't need to explore the `work` dir most of the time,
 but it can be useful for debugging or understanding the pipeline's behavior
 and the exact commands that it ran.
-Let's list its contents:
-
-```bash
-ls work
-```
-<pre class="bash-out"><code><span class="ls-blue">02</span>  <span class="ls-blue">07</span>  <span class="ls-blue">14</span>  <span class="ls-blue">1e</span>  <span class="ls-blue">23</span>  <span class="ls-blue">2f</span>  <span class="ls-blue">3b</span>  <span class="ls-blue">47</span>  <span class="ls-blue">51</span>  <span class="ls-blue">5a</span>  <span class="ls-blue">65</span>  <span class="ls-blue">6e</span>  <span class="ls-blue">78</span>  <span class="ls-blue">81</span>  <span class="ls-blue">8b</span>  <span class="ls-blue">93</span>  <span class="ls-blue">9e</span>  <span class="ls-blue">a5</span>  <span class="ls-blue">aa</span>  <span class="ls-blue">b0</span>  <span class="ls-blue">b7</span>  <span class="ls-blue">c0</span>  <span class="ls-blue">cf</span>            <span class="ls-blue">d8</span>  <span class="ls-blue">e6</span>  <span class="ls-blue">ec</span>  <span class="ls-blue">f7</span>  <span class="ls-blue">singularity</span>
-<span class="ls-blue">03</span>  <span class="ls-blue">08</span>  <span class="ls-blue">15</span>  <span class="ls-blue">1f</span>  <span class="ls-blue">24</span>  <span class="ls-blue">33</span>  <span class="ls-blue">40</span>  <span class="ls-blue">4b</span>  <span class="ls-blue">52</span>  <span class="ls-blue">5b</span>  <span class="ls-blue">66</span>  <span class="ls-blue">70</span>  <span class="ls-blue">7a</span>  <span class="ls-blue">82</span>  <span class="ls-blue">8c</span>  <span class="ls-blue">94</span>  <span class="ls-blue">9f</span>  <span class="ls-blue">a6</span>  <span class="ls-blue">ab</span>  <span class="ls-blue">b1</span>  <span class="ls-blue">ba</span>  <span class="ls-blue">c1</span>  <span class="ls-blue">collect-file</span>  <span class="ls-blue">d9</span>  <span class="ls-blue">e8</span>  <span class="ls-blue">ed</span>  <span class="ls-blue">f8</span>  <span class="ls-blue">stage-450f1767-7222-43e1-96cd-7d7b2a8a187c</span>
-<span class="ls-blue">04</span>  <span class="ls-blue">0c</span>  <span class="ls-blue">17</span>  <span class="ls-blue">20</span>  <span class="ls-blue">25</span>  <span class="ls-blue">37</span>  <span class="ls-blue">42</span>  <span class="ls-blue">4c</span>  <span class="ls-blue">55</span>  <span class="ls-blue">5c</span>  <span class="ls-blue">69</span>  <span class="ls-blue">71</span>  <span class="ls-blue">7b</span>  <span class="ls-blue">83</span>  <span class="ls-blue">8d</span>  <span class="ls-blue">95</span>  <span class="ls-blue">a1</span>  <span class="ls-blue">a7</span>  <span class="ls-blue">ad</span>  <span class="ls-blue">b2</span>  <span class="ls-blue">bc</span>  <span class="ls-blue">c3</span>  <span class="ls-blue">d2</span>            <span class="ls-blue">db</span>  <span class="ls-blue">e9</span>  <span class="ls-blue">f1</span>  <span class="ls-blue">fa</span>  <span class="ls-blue">tmp</span>
-<span class="ls-blue">05</span>  <span class="ls-blue">0f</span>  <span class="ls-blue">1a</span>  <span class="ls-blue">21</span>  <span class="ls-blue">2c</span>  <span class="ls-blue">38</span>  <span class="ls-blue">43</span>  <span class="ls-blue">4e</span>  <span class="ls-blue">56</span>  <span class="ls-blue">5d</span>  <span class="ls-blue">6a</span>  <span class="ls-blue">72</span>  <span class="ls-blue">7c</span>  <span class="ls-blue">86</span>  <span class="ls-blue">90</span>  <span class="ls-blue">9a</span>  <span class="ls-blue">a3</span>  <span class="ls-blue">a8</span>  <span class="ls-blue">ae</span>  <span class="ls-blue">b3</span>  <span class="ls-blue">bd</span>  <span class="ls-blue">c6</span>  <span class="ls-blue">d3</span>            <span class="ls-blue">e2</span>  <span class="ls-blue">ea</span>  <span class="ls-blue">f2</span>  <span class="ls-blue">fb</span>
-<span class="ls-blue">06</span>  <span class="ls-blue">11</span>  <span class="ls-blue">1d</span>  <span class="ls-blue">22</span>  <span class="ls-blue">2e</span>  <span class="ls-blue">3a</span>  <span class="ls-blue">45</span>  <span class="ls-blue">4f</span>  <span class="ls-blue">59</span>  <span class="ls-blue">63</span>  <span class="ls-blue">6c</span>  <span class="ls-blue">73</span>  <span class="ls-blue">80</span>  <span class="ls-blue">87</span>  <span class="ls-blue">91</span>  <span class="ls-blue">9d</span>  <span class="ls-blue">a4</span>  <span class="ls-blue">a9</span>  <span class="ls-blue">af</span>  <span class="ls-blue">b4</span>  <span class="ls-blue">bf</span>  <span class="ls-blue">ce</span>  <span class="ls-blue">d7</span>            <span class="ls-blue">e3</span>  <span class="ls-blue">eb</span>  <span class="ls-blue">f3</span>  <span class="ls-blue">ff</span></code></pre>
-
-How do you find your way around that? 😳
-As mentioned above, the hexadecimal code at the start of each line in the log
-(e.g., `[2e/794b4b]`) points to the subdir of the work dir in which that job ran
-(every individual job runs in its own dir).
 
 ::: exercise
 #### {{< fa user-edit >}} Self-study exercise: Explore the `work` dir of the MultiQC process
 
 In this exercise,
 you'll take a look at the `work` subdir of the pipeline's final process: MultiQC.
+
+1. Start by listing the `work` dir's contents:
+
+   ```bash
+   ls work
+   ```
+   <pre class="bash-out"><code><span class="ls-blue">02</span>  <span class="ls-blue">07</span>  <span class="ls-blue">14</span>  <span    class="ls-blue">1e</span>  <span class="ls-blue">23</span>  <span class="ls-blue">2f</span>  <span class="ls-blue">3b</span>  <span    class="ls-blue">47</span>  <span class="ls-blue">51</span>  <span class="ls-blue">5a</span>  <span class="ls-blue">65</span>  <span    class="ls-blue">6e</span>  <span class="ls-blue">78</span>  <span class="ls-blue">81</span>  <span class="ls-blue">8b</span>  <span    class="ls-blue">93</span>  <span class="ls-blue">9e</span>  <span class="ls-blue">a5</span>  <span class="ls-blue">aa</span>  <span    class="ls-blue">b0</span>  <span class="ls-blue">b7</span>  <span class="ls-blue">c0</span>  <span class="ls-blue">cf</span>               <span class="ls-blue">d8</span>  <span class="ls-blue">e6</span>  <span class="ls-blue">ec</span>  <span class="ls-blue">f7</span>  <span    class="ls-blue">singularity</span>
+   <span class="ls-blue">03</span>  <span class="ls-blue">08</span>  <span class="ls-blue">15</span>  <span class="ls-blue">1f</span>  <span    class="ls-blue">24</span>  <span class="ls-blue">33</span>  <span class="ls-blue">40</span>  <span class="ls-blue">4b</span>  <span    class="ls-blue">52</span>  <span class="ls-blue">5b</span>  <span class="ls-blue">66</span>  <span class="ls-blue">70</span>  <span    class="ls-blue">7a</span>  <span class="ls-blue">82</span>  <span class="ls-blue">8c</span>  <span class="ls-blue">94</span>  <span    class="ls-blue">9f</span>  <span class="ls-blue">a6</span>  <span class="ls-blue">ab</span>  <span class="ls-blue">b1</span>  <span    class="ls-blue">ba</span>  <span class="ls-blue">c1</span>  <span class="ls-blue">collect-file</span>  <span class="ls-blue">d9</span>     <span class="ls-blue">e8</span>  <span class="ls-blue">ed</span>  <span class="ls-blue">f8</span>  <span    class="ls-blue">stage-450f1767-7222-43e1-96cd-7d7b2a8a187c</span>
+   <span class="ls-blue">04</span>  <span class="ls-blue">0c</span>  <span class="ls-blue">17</span>  <span class="ls-blue">20</span>  <span    class="ls-blue">25</span>  <span class="ls-blue">37</span>  <span class="ls-blue">42</span>  <span class="ls-blue">4c</span>  <span    class="ls-blue">55</span>  <span class="ls-blue">5c</span>  <span class="ls-blue">69</span>  <span class="ls-blue">71</span>  <span    class="ls-blue">7b</span>  <span class="ls-blue">83</span>  <span class="ls-blue">8d</span>  <span class="ls-blue">95</span>  <span    class="ls-blue">a1</span>  <span class="ls-blue">a7</span>  <span class="ls-blue">ad</span>  <span class="ls-blue">b2</span>  <span    class="ls-blue">bc</span>  <span class="ls-blue">c3</span>  <span class="ls-blue">d2</span>            <span class="ls-blue">db</span>     <span class="ls-blue">e9</span>  <span class="ls-blue">f1</span>  <span class="ls-blue">fa</span>  <span class="ls-blue">tmp</span>
+   <span class="ls-blue">05</span>  <span class="ls-blue">0f</span>  <span class="ls-blue">1a</span>  <span class="ls-blue">21</span>  <span    class="ls-blue">2c</span>  <span class="ls-blue">38</span>  <span class="ls-blue">43</span>  <span class="ls-blue">4e</span>  <span    class="ls-blue">56</span>  <span class="ls-blue">5d</span>  <span class="ls-blue">6a</span>  <span class="ls-blue">72</span>  <span    class="ls-blue">7c</span>  <span class="ls-blue">86</span>  <span class="ls-blue">90</span>  <span class="ls-blue">9a</span>  <span    class="ls-blue">a3</span>  <span class="ls-blue">a8</span>  <span class="ls-blue">ae</span>  <span class="ls-blue">b3</span>  <span    class="ls-blue">bd</span>  <span class="ls-blue">c6</span>  <span class="ls-blue">d3</span>            <span class="ls-blue">e2</span>     <span class="ls-blue">ea</span>  <span class="ls-blue">f2</span>  <span class="ls-blue">fb</span>
+   <span class="ls-blue">06</span>  <span class="ls-blue">11</span>  <span class="ls-blue">1d</span>  <span class="ls-blue">22</span>  <span    class="ls-blue">2e</span>  <span class="ls-blue">3a</span>  <span class="ls-blue">45</span>  <span class="ls-blue">4f</span>  <span    class="ls-blue">59</span>  <span class="ls-blue">63</span>  <span class="ls-blue">6c</span>  <span class="ls-blue">73</span>  <span    class="ls-blue">80</span>  <span class="ls-blue">87</span>  <span class="ls-blue">91</span>  <span class="ls-blue">9d</span>  <span    class="ls-blue">a4</span>  <span class="ls-blue">a9</span>  <span class="ls-blue">af</span>  <span class="ls-blue">b4</span>  <span    class="ls-blue">bf</span>  <span class="ls-blue">ce</span>  <span class="ls-blue">d7</span>            <span class="ls-blue">e3</span>     <span class="ls-blue">eb</span>  <span class="ls-blue">f3</span>  <span class="ls-blue">ff</span></code></pre>
+
+   How do you find your way around that? 😳
+   As mentioned above, the hexadecimal code at the start of each line in the log
+   (e.g., `[2e/794b4b]`) points to the subdir of the work dir in which that job ran
+   (every individual job runs in its own dir).
 
 1. Find the line for the MultiQC process in the pipeline's log,
    and note its hexadecimal code.
@@ -721,10 +677,10 @@ you'll take a look at the `work` subdir of the pipeline's final process: MultiQC
    ```
    <pre class="bash-out"><code><span class="ls-blue">.</span>    .command.err    .exitcode             versions.yml
    <span class="ls-blue">..</span>   .command.log    multiqc_config.yml
-   1    .command.out    <span class="ls-blue">multiqc_report_data</span>
-   10   .command.run    multiqc_report.html
-   100  .command.sh     <span class="ls-blue">multiqc_report_plots</span>
-   101  .command.begin  .command.trace  name_replacement.txt
+   <span class="ls-blue">1</span>    .command.out    <span class="ls-blue">multiqc_report_data</span>
+   <span class="ls-blue">10</span>   .command.run    multiqc_report.html
+   <span class="ls-blue">100</span>  .command.sh     <span class="ls-blue">multiqc_report_plots</span>
+   <span class="ls-blue">101</span>  .command.begin  .command.trace  name_replacement.txt
    # [...Not all files shown...]</code></pre>
 
    The files in this `work` subdir include:
@@ -769,25 +725,36 @@ you'll take a look at the `work` subdir of the pipeline's final process: MultiQC
    </details>
 :::
 
+::: callout-tip
+#### `work` dir location: use Scratch for real data runs
+
+In this case, `work` is in its default location,
+the dir from which you execute the `nextflow` command
+(i.e., the current working directory).
+For runs on real data, it's best to put the `work` dir elsewhere,
+typically in `/fs/scratch`, which is faster and has more space than `/fs/ess`
+(we'll do this in part II).
+:::
+
 ## Re-running a pipeline with `-resume`
 
 When you rerun a pipeline with the `-resume` option,
 Nextflow checks for each job whether it was already successfully run before.
 It does so using a record of previous runs that it keeps in a hidden `.nextflow` dir.
-A job is skipped, and its earlier outputs reused, if:
+A job is **skipped**, and its earlier outputs reused, if:
 
 - Its inputs, command, and settings are the same as in the previous run, and
 - Its outputs are still present in the `work` dir
 
 All other jobs are rerun, along with any downstream jobs that depend on their outputs.
-This saves a lot of time in situations like these:
+This can save a lot of time:
 
-- After a pipeline failed partway through,
+- After a pipeline **failed** partway through,
   only the failed jobs and the jobs that depend on them are run.
-- After you added samples or changed an input file,
+- After you **added samples** or **changed an input file**,
   only the jobs for those samples or that file are run,
   plus jobs that combine all samples (like MultiQC).
-- After you changed a setting that only affects the very last step,
+- After you **changed a setting** that only affects the very last step,
   only that step is rerun.
 
 Let's quickly explore how the `-resume` option works.
@@ -795,8 +762,10 @@ We'll first remove the final output dir,
 and then re-run the same command as above, but now adding `-resume`:
 
 ```bash
+# Remove the results dir, so we can see the effect of -resume:
 rm -r results
 
+# Rerun the pipeline with -resume:
 nextflow run nf-core/rnaseq \
     -r 3.26.0 \
     -profile test,apptainer \
@@ -805,19 +774,11 @@ nextflow run nf-core/rnaseq \
     -resume
 ```
 
-<details class="details-quiz">
-<summary>Before running this: how long do you expect this run to take, and why?</summary>
-
-_The answer will be added after class._
-
-<!--
-It should finish very quickly:
+The run should finish quickly:
 all jobs had already finished successfully in the previous run,
 and their outputs are still in the `work` dir, which we didn't remove.
 So, Nextflow reruns few or no jobs,
 and mostly just copies the final outputs from the `work` dir to the output dir again.
--->
-</details>
 
 The process logging should look like this,
 where `cached: 1 ✔` (scroll to the right to see the full line)
@@ -843,8 +804,8 @@ Succeeded   : 5
 Cached      : 157
 ```
 
-::: callout-note
-#### It still takes a few minutes, and a few jobs _may_ be rerun
+::: {.callout-note collapse="true"}
+#### It still takes a few minutes, and a few jobs _may_ be rerun _(Click to expand)_
 
 The `-resume` run is not instantaneous, though, because Nextflow still has to
 check all jobs and copy the outputs to the final output dir.
@@ -862,38 +823,48 @@ Downstream jobs that use the outputs of a rerun job are then rerun as well.
 A few cache misses like this are normal and nothing to worry about.
 :::
 
-<details class="details-quiz">
-<summary>What if you had instead rerun the pipeline with `-resume`, but without `--skip_qc`?</summary>
+::: exercise
+#### {{< fa user-edit >}} Exercise 1: What would `-resume` do?
 
-_The answer will be added after class._
+1. What if you had instead rerun the pipeline with `-resume`, but without `--skip_qc`?
 
-<!--
-Most jobs would be cached, since their inputs, commands, and settings didn't change.
-But the QC steps that we skipped in the first run (e.g. Qualimap, RSeQC, and the DESeq2 PCA)
-would now be run for the first time,
-and MultiQC would be rerun, because the outputs of these new QC jobs are among its inputs.
--->
-</details>
+   A.  All jobs would be cached, since the input files didn't change.
+   B.  Most jobs would be cached, but some new jobs would be run.
+   C.  The entire pipeline would be rerun, since a setting changed.
 
-<details class="details-quiz">
-<summary>What if you had instead removed the `work` dir, and kept `results`, before rerunning with `-resume`?</summary>
+   <!----
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
-_The answer will be added after class._
+   **B.**
+   Most jobs would be cached, since their inputs, commands, and settings didn't change.
+   But the QC steps that we skipped in the first run (e.g. Qualimap, RSeQC, and the DESeq2 PCA)
+   would now be run for the first time,
+   and MultiQC would be rerun, because the outputs of these new QC jobs are among its inputs.
 
-<!--
-The entire pipeline would be rerun, taking as long as the first run:
-Nextflow keeps track of finished jobs and their outputs in the `work` dir
-(together with a hidden `.nextflow` dir in your working dir),
-and doesn't look at the final output dir at all.
-So, keep the `work` dir until you're done with a pipeline run.
-Conversely, after a successful run, you can remove the `work` dir to save space,
-as long as you won't need to resume.
--->
-</details>
+   </details>
+   ---->
+
+2. What if you had instead removed the `work` dir, and kept `results`,
+   before rerunning with `-resume`?
+
+   A.  No jobs would be rerun, since the final outputs are still in `results`.
+   B.  Only jobs whose outputs aren't in `results` would be rerun.
+   C.  The entire pipeline would be rerun.
+
+   <!----
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
+   **C.**
+   The entire pipeline would be rerun, taking as long as the first run:
+   Nextflow keeps track of finished jobs and their outputs in the `work` dir
+   (together with a hidden `.nextflow` dir in your working dir),
+   and doesn't look at the final output dir at all.
+   So, keep the `work` dir until you're done with a pipeline run.
+   Conversely, after a successful run, you can remove the `work` dir to save space,
+   as long as you won't need to resume.
+
+   </details>
+   ---->
+:::
 
 <hr style="height:1pt; visibility:hidden;" />
-
--------
-
-In [part II](w11c_nfcore2.qmd), we will prepare the inputs for a run of the
-_rnaseq_ pipeline on the @garrigós2025 data, and will run it via a Slurm batch job.
