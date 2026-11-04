@@ -62,10 +62,11 @@ Specifically, you will learn:
    (you won't need 4 cores this time, since the pipeline will submit jobs to Slurm itself,
    but if you still have a 4-core session open from part I, that's fine).
 
-2. In your VS Code terminal, go to your working dir for this week:
+2. In your VS Code terminal, go to your working dir for this week
+   (if you're continuing from part I, you are probably still in `week11/testrun`):
 
    ```bash
-   cd week11
+   cd /fs/ess/PAS3493/people/$USER/week11
    ```
 
 ## Preparation for the run
@@ -83,7 +84,7 @@ We will also create a README file to document the run:
 touch README.md
 ```
 
-Open the README and paste the following into it (change the name and username),
+Open the README and paste the following into it (change the name, date, and username),
 and then run the `mkdir` command to create dirs for scripts and metadata:
 
 ````{.markdown .file filename="README.md (excerpt)"}
@@ -221,7 +222,7 @@ done
 - The first `echo` command creates the sample sheet file with the header line.
 - In the loop, we only loop over the R1 FASTQ files,
   and infer the name of the corresponding R2 file by replacing `_R1` with `_R2`
-  with parameter expansion: the `${var/find/replace}` syntax
+  with parameter expansion: the `${var/search/replace}` syntax
   (see [week 7](../week07/w7b_scripts2.qmd#parameter-expansion)).
 - `basename` removes the dir name and the `_R1.fastq.gz` suffix from the R1 file path,
   leaving the sample ID.
@@ -234,9 +235,6 @@ done
 <details class="details-quiz">
 <summary>What would go wrong if the loop went over all FASTQ files (`../garrigos/fastq/*.fastq.gz`) instead of only the R1 files?</summary>
 
-_The answer will be added after class._
-
-<!--
 The sample sheet would have two rows per sample.
 The rows for the R1 files would be fine, but each R2 file would also get its own row:
 
@@ -245,7 +243,7 @@ The rows for the R1 files would be fine, but each R2 file would also get its own
 
 Depending on the pipeline's sample sheet checks, it would either stop with an error,
 or (worse) process these rows as extra, bogus samples.
--->
+
 </details>
 
 Run the code above and check the contents of your newly created sample sheet file:
@@ -261,6 +259,16 @@ S64,../garrigos/fastq/S64_R1.fastq.gz,../garrigos/fastq/S64_R2.fastq.gz,forward
 S65,../garrigos/fastq/S65_R1.fastq.gz,../garrigos/fastq/S65_R2.fastq.gz,forward
 S66,../garrigos/fastq/S66_R1.fastq.gz,../garrigos/fastq/S66_R2.fastq.gz,forward
 ```
+
+<details class="details-quiz">
+<summary>The sample sheet is in the `metadata` dir, but contains paths like `../garrigos/fastq/S63_R1.fastq.gz`. Relative to which dir do these paths need to be correct?</summary>
+
+Relative to the dir from which you run the pipeline (`week11`),
+not relative to the sample sheet's own location:
+from `metadata`, `../garrigos` would point to `week11/garrigos`, which doesn't exist.
+So, if you ran the pipeline from a different dir, it wouldn't find the FASTQ files.
+
+</details>
 
 ### Create a configuration file
 
@@ -288,8 +296,9 @@ and we need to create a new one in your `week11` dir.
 
 - Since the pipeline has many good default settings for batch jobs,
   we can keep this config file very simple.
-  We'll add our "**executor**" program (Slurm)
-  and the **OSC project **to be used for Slurm job submissions:
+  Besides the container dir setting from the test run,
+  we'll set the "**executor**" to Slurm
+  and specify the **OSC project** to be used for Slurm job submissions:
 
   ```{.groovy .file filename="nextflow.config"}
   apptainer.cacheDir='/fs/ess/PAS3493/share/nxf-containers'
@@ -358,10 +367,10 @@ nextflow run nf-core/rnaseq \
   our command starts with `nextflow run` followed by the pipeline name and version.
 - The `-profile` will now simply be `apptainer` (i.e. omitting `test`).
 - It's a good idea to always include the `-resume` option^[
-  It doesn't do anything when we run the pipeline for the first time,
-  (and Nextflow will even give a warning along these lines, but this is not a problem),
-  but if the run fails or we change a setting,
-  we can simply resubmit the same script and the pipeline will pick up where it left off.].
+  It doesn't do anything when we run the pipeline for the first time
+  (Nextflow will even print a warning about this, which you can ignore).
+  But if the run fails or we change a setting,
+  we can simply resubmit the same script, and the pipeline will pick up where it left off.].
 - We set the `-work-dir` to a dir within our project's **Scratch** dir (`/fs/scratch`),
   which is well suited for the many large intermediate files in the work dir
   due to its fast I/O and ample storage space.
@@ -397,10 +406,10 @@ Finally, we will change two pipeline-specific options from their defaults.
 First, we need to change one setting to make the pipeline work with our GTF file
 (`--featurecounts_group_type transcript_biotype`).
 Second, we want to remove reads that originate from **ribosomal RNA**,
-and you'll find the right option for that in the exercise below.
+and you'll find the right option for that in the self-study exercise below.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 1: Find the right pipeline option
+#### {{< fa user-edit >}} Self-study exercise: Find the right pipeline option
 Take a look at the
 ["Parameters" tab on the pipeline's documentation website](https://nf-co.re/rnaseq/3.26.0/parameters):
 
@@ -409,13 +418,30 @@ Take a look at the
 
 2. Find the option to remove reads that originate from ribosomal RNA (rRNA).
 
-<!----
-<details><summary> _Click for the solution_ </summary>
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
 
-The option to remove rRNA is `--remove_ribo_rna`.
+   The option to remove rRNA is `--remove_ribo_rna`.
 
-</details>
----->
+   </details>
+
+3. Say you had forgotten this option, and your pipeline run had already finished.
+   If you add the option and resubmit the script (which uses `-resume`),
+   what would be rerun?
+
+   A.  Only the rRNA removal step (SortMeRNA)
+   B.  SortMeRNA, plus the steps that process its output, like STAR and Salmon
+   C.  The entire pipeline, since a setting changed
+
+   <details><summary>{{< fa check-circle >}} _Click for the solution_</summary>
+
+   **B.**
+   Steps that come before rRNA removal, like read trimming,
+   and steps that don't use the reads, like preparing the reference genome,
+   would be cached, since their inputs and settings didn't change.
+   But STAR now receives different (rRNA-filtered) reads as input,
+   so it would be rerun, and so would every step that uses its outputs.
+
+   </details>
 :::
 
 ::: {.callout-note collapse="true"}
@@ -526,15 +552,12 @@ date
 <details class="details-quiz">
 <summary>The pipeline runs tools like STAR that need many cores and lots of memory. So why is it fine that this script only asks for 1 core and 8 GB?</summary>
 
-_The answer will be added after class._
-
-<!--
 The `#SBATCH` options are only for the "main" Nextflow process,
 which merely orchestrates the pipeline and submits jobs.
 The jobs that Nextflow submits for each step have their own resource requests,
 which the pipeline sets for each step
 (you could change these in your `nextflow.config` file, but we won't do that here).
--->
+
 </details>
 
 ::: {.callout-tip collapse="true"}
@@ -575,6 +598,7 @@ outdir=results/nfc-rnaseq
 workdir=/fs/scratch/PAS3493/$USER/week11/nfc-rnaseq-work
 ```
 ````
+
 Run the above lines in your terminal,
 then check that the input files are present at the specified paths:
 
@@ -854,7 +878,8 @@ To troubleshoot:
 2. If that isn't enough, go to the job's `Work dir`,
    and check the `.command.err` and `.command.log` files there
    (and `.command.sh`, to see the exact command that was run).
-3. Some errors occur before any job is run, e.g. a typo in an option or a missing input file.
+3. Some errors occur before any job is run,
+   e.g. a typo in a general Nextflow option or a missing input file.
    Those are shown in the Slurm log file too,
    with more details in the hidden file `.nextflow.log` in the dir from which you ran the pipeline.
 
@@ -866,7 +891,6 @@ because the script uses `-resume`, the pipeline will pick up where it left off.
 
 ### Overview
 
-<!-- TODO: regenerate outputs with rnaseq 3.26.0 and the apptainer profile -->
 <!-- TODO: copy the finished results of the reference run to /fs/ess/PAS3493/share/week11/nfc-rnaseq -->
 
 Once the pipeline run has finished,
@@ -909,26 +933,19 @@ right-click on it, and select `Download...`) and then open it on your own comput
 [copy of the MultiQC report on this website](../assets/multiqc_report_nfcore.html)).
 There's a lot of information in the report, so we'll just highlight a few things here.
 
-<!-- TODO: re-check these notes and the screenshot with 3.26.0 (FastQC raw/trim/filt columns, %rRNA fix, paired-end row grouping) -->
-
-The **General Statistics** table (the first section) is useful but also a bit tricky ---
-some notes:
+The **General Statistics** table (the first section) is useful --- some notes:
 
 - Most of the table's content is also present in later graphs,
   but the table allows for comparisons across metrics.
 - The `%rRNA` (% of reads identified as rRNA and removed by SortMeRNA)
   can only be found in this table.
-- Many columns are shown and it can be useful to click **"Configure Columns"**
-  and subset the table to only the columns you care about.
+- Many columns are shown, and it can be useful to subset the table.
   In particular, it's best to _hide the columns with statistics from Samtools_,
-  which can be confusing if not downright misleading
-  (e.g., they count alignments rather than reads,
-  so reads that map to multiple places are counted several times):
-  in the "Configure Columns" dialog box,
-  uncheck all boxes for stats with Samtools in their name.
-- Unfortunately, there are multiple rows per sample
-  (4 when the default columns are shown), in part because some stats are
-  for R1 and R2 files separately, while others are for each sample as a whole.
+  which can be confusing if not downright misleading^[
+  E.g., they count alignments rather than reads,
+  so reads that map to multiple places are counted several times.]:
+  Click **"Configure Columns"** and uncheck all boxes for stats with Samtools in
+  their name.
 
 ![](/img/multiqc-nfc-rnaseq-table.png){fig-align="center" width="90%" .no-border fig-alt="The General Statistics table after selecting only a subset of columns."}
 
@@ -1035,4 +1052,4 @@ you have learned how to run an nf-core pipeline at OSC:
 - Rerun with `-resume` after failures or changes, so that only affected steps are rerun
 - Find the key outputs: the MultiQC report and the gene count table
 
-<br>
+<hr style="height:1pt; visibility:hidden;" />
