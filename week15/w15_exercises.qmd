@@ -1,5 +1,5 @@
 ---
-title: "Week 15 exercises: RNA-seq analysis and Quarto reports"
+title: "Week 15 exercises:<br>RNA-seq analysis and Quarto reports"
 pagetitle: "Week 15 exercises"
 date: 2026-11-30
 date-modified: last-modified
@@ -53,25 +53,23 @@ go over those again.
 
 ### Setting up
 
-1. Open Positron and connect to OSC with your personal dir open
-   ([Setup: starting Positron and connecting to OSC](../week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc)).
+1. Open Positron and connect to OSC with your personal dir open,
+   [like in week 12](../week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc).
 
-2. Create a new Quarto document `w15_exercises.qmd` in your `week15` folder,
-   with a YAML header with a title, your name, the date, and `embed-resources: true`
-   ([Creating a Quarto document](../week12/w12b_r-basics.qmd#creating-a-quarto-document)).
+2. [Create a new Quarto document](../week12/w12b_r-basics.qmd#creating-a-quarto-document) `w15_exercises.qmd` in your `week15` folder,
+   with a YAML header with a title, your name, the date, and `embed-resources: true`.
 
-3. These exercises build on the DESeq2 object that you saved in the lecture
-   ([Running the DE analysis](w15a_rnaseq.qmd#running-the-de-analysis)).
+3. These exercises build on the DESeq2 object that you saved
+   [in the lecture](w15a_rnaseq.qmd#running-the-de-analysis).
    If you didn't run that code yet, do so in your lecture document first.
    Then, add the following chunk to the top of your exercises document,
    which will load the packages and recreate the objects from the lecture that you'll need:
 
 ```{r, eval=FALSE}
-library(tidyverse)
 library(DESeq2)
-library(EnhancedVolcano)
 library(pheatmap)
 library(here)
+library(tidyverse) # Load last (see the lecture)
 
 # Load the DESeq2 object that you saved in the lecture
 dds <- readRDS(here("week15/results/DE/dds.rds"))
@@ -80,30 +78,39 @@ dds <- readRDS(here("week15/results/DE/dds.rds"))
 meta <- as.data.frame(colData(dds))
 count_mat <- counts(dds)
 dds_vst <- varianceStabilizingTransformation(dds)
-res_rc24 <- results(dds, contrast = c("group", "relictum_24hpi", "control_24hpi"))
-top25_DE <- res_rc24 |>
+res_rc24 <- results(
+  dds,
+  contrast = c("group", "relictum_24hpi", "control_24hpi")
+)
+res_df <- res_rc24 |>
   as.data.frame() |>
-  arrange(padj) |>
-  head(n = 25) |>
-  rownames()
+  rownames_to_column("gene_id") |>
+  filter(!is.na(padj)) |>
+  mutate(DEG = padj < 0.05)
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-library(tidyverse)
 library(DESeq2)
-library(EnhancedVolcano)
 library(pheatmap)
+library(tidyverse)
 
-dds <- readRDS(here::here("assets/dds.rds"))
+# TODO: Replace with a regenerated full-data 'assets/week15/dds.rds'.
+# This older object has the same counts as the lecture's count table,
+# but ERR IDs (ERR10802863 = S63, etc.), so rename the samples:
+dds <- readRDS(here::here("assets/week15/dds_full_but-old.rds"))
+colnames(dds) <- sub("^ERR108028", "S", colnames(dds))
 meta <- as.data.frame(colData(dds))
 count_mat <- counts(dds)
 dds_vst <- varianceStabilizingTransformation(dds)
-res_rc24 <- results(dds, contrast = c("group", "relictum_24hpi", "control_24hpi"))
-top25_DE <- res_rc24 |>
+res_rc24 <- results(
+  dds,
+  contrast = c("group", "relictum_24hpi", "control_24hpi")
+)
+res_df <- res_rc24 |>
   as.data.frame() |>
-  arrange(padj) |>
-  head(n = 25) |>
-  rownames()
+  rownames_to_column("gene_id") |>
+  filter(!is.na(padj)) |>
+  mutate(DEG = padj < 0.05)
 ```
 
 ## Exercise 1: Gene counts and library sizes
@@ -116,25 +123,94 @@ top25_DE <- res_rc24 |>
    Instead, get these numbers in millions, rounded to whole numbers,
    and sorted from low to high.
 
+3. Make a bar plot of the library sizes with _ggplot2_.
+   To plot the counts, you first need a data frame in long format,
+   with one row per gene per sample
+   (as in [week 13](../week13/w13b_data-viz.qmd#reshaping-data-for-plotting)).
+   You can create one from `count_mat` as follows:
+
+   ```{r}
+   count_long <- count_mat |>
+     as.data.frame() |>
+     rownames_to_column("gene_id") |>
+     pivot_longer(
+       cols = !gene_id, # All columns except 'gene_id'
+       names_to = "sample_id",
+       values_to = "count"
+     )
+   ```
+
+   Then, compute the library size of each sample with `group_by()` and `summarize()`,
+   and pipe the result into `ggplot()`.
+
+4. Make a histogram of the `count` column of `count_long`.
+   Why is this plot hard to interpret?
+
+5. Plot `log10(count + 1)` instead.
+   What does the distribution look like now?
+   And why do you think we add 1 to the counts?
+
 ## Exercise 2: Volcano plots and outliers
 
-The `EnhancedVolcano()` function by default adds gene IDs to highly significant genes,
-but in the lecture, we turned off gene name labeling by setting `labSize = 0`.
-This is because the default p-value cut-off for point labeling is `1e-5`, and in this case,
-that would make the plot quite busy with gene labels.
+In the lecture's volcano plot, one gene stands out with a very high log~2~-fold change.
 
-1. Play around with the p-value cut-off and the labeling to create a volcano plot you like.
-   Check [the vignette](https://bioconductor.org/packages/release/bioc/vignettes/EnhancedVolcano/inst/doc/EnhancedVolcano.html),
-   or the help page (`?EnhancedVolcano`) to see how you can do this.
+1. Figure out the identity of this gene by filtering `res_df`.
 
-2. In the volcano plot, one gene stands out with a very high log~2~-fold change.
-   Figure out the identity of this gene,
-   either by labeling it in the plot, or by filtering the `res_rc24` table.
+2. Label this gene in the volcano plot.
+   To do so, add a `geom_text()` layer to the plot from the lecture,
+   with its own `data` argument: a data frame with only this gene.
+   You'll also need to map the `label` aesthetic to the gene ID column.
 
-3. Plot the expression levels of this gene across treatments and time points,
-   like we did for the top DEG in the lecture
-   ([Plot specific genes](w15a_rnaseq.qmd#plot-specific-genes)).
+3. Next, you'll plot the expression levels of individual genes,
+   starting with the most highly significant DEG.
+   First, get the ID of this gene:
+
+   ```{r}
+   top_gene <- res_df |>
+     arrange(padj) |>
+     head(n = 1)
+
+   top_gene$gene_id
+   ```
+
+   DESeq2 has a plotting function, `plotCounts()`, but its plots are not very good.
+   We will still use that function, but only to quickly extract the counts
+   for our gene of interest in the right format for plotting, using `returnData = TRUE`:
+
+   ```{r}
+   focal_gene_counts <- plotCounts(
+     dds,
+     gene = top_gene$gene_id,
+     intgroup = c("time", "treatment"),
+     returnData = TRUE
+   )
+
+   head(focal_gene_counts)
+   ```
+
+   Now, you can make the plot:
+
+   ```{r}
+   focal_gene_counts |>
+     # Treatment along the x-axis, gene counts along the y, color by treatment:
+     ggplot(aes(x = treatment, y = count, fill = treatment)) +
+     # Plot separate "facets" with the different time points:
+     facet_wrap(vars(time)) +
+     # Add a boxplot with a partly transparent (alpha) color:
+     geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+     # _And_ add individual points:
+     geom_point(size = 4, shape = 21, position = position_jitter(w = 0.1, h = 0)) +
+     # Plot styling (e.g., we don't need a legend):
+     theme_bw() +
+     theme(legend.position = "none")
+   ```
+
+4. Make the same plot for the gene with the very high log~2~-fold change.
    How would you interpret this?
+
+5. Plot one or two more of the most highly significant DEGs.
+   Do they have similar expression patterns across treatments and time points
+   as the top DEG?
 
 ## Exercise 3: A customized PCA plot
 
@@ -191,9 +267,21 @@ of ggplot2.
 Rather than plotting expression levels for many individual genes,
 you can create "heatmap" plots to plot dozens (possibly even hundreds) of genes at once.
 
-1. Make a heatmap of the top-25 most highly significant DEGs from the lecture
-   (`top25_DE`, which the setup chunk recreated)
+1. Make a heatmap of the top-25 most highly significant DEGs
    with the `pheatmap()` function, by running the code below.
+
+   First, create a vector with the IDs of these genes,
+   by sorting the results table by adjusted p-value,
+   keeping its first 25 rows, and extracting the gene IDs:
+
+   ```{r}
+   top25_DE <- res_df |>
+     arrange(padj) |>
+     head(n = 25) |>
+     pull(gene_id)
+   ```
+
+   (`pull()` extracts a single column from a data frame as a vector.)
 
    Unlike some of the functions in the lecture, `pheatmap()` can't directly use the DESeq2 object:
    you have to extract and subset the normalized count matrix,
@@ -259,7 +347,10 @@ and columns `gene_id` and `description`:
 ```{r, eval=FALSE}
 gene_descr <- read_tsv(
   here("garrigos/ref/annot.gtf.gz"),
-  col_names = FALSE, comment = "#", quote = "", show_col_types = FALSE
+  col_names = FALSE,
+  comment = "#",
+  quote = "",
+  show_col_types = FALSE
 ) |>
   filter(X3 == "gene") |>
   mutate(
@@ -295,7 +386,7 @@ your `w15_exercises.qmd` into a nicely formatted report.
    with a chunk option.
 
 4. Give your volcano plot from Exercise 2 a figure caption and a custom width and height
-   ([Figure options](../week14/w14a_quarto.qmd#figure-options)).
+   (see the [figure options](../week14/w14a_quarto.qmd#figure-options) from week 14).
 
 5. In your text, report the number of DEGs for the `relictum_24hpi` vs. `control_24hpi`
    comparison using **inline code**, so the number is computed when you render the document.
@@ -331,58 +422,90 @@ sort(round(colSums(count_mat) / 1000000))
 
 </details>
 
-### Exercise 2
+<details><summary>**3.** A bar plot of the library sizes</summary>
 
-<details><summary>**1.** A volcano plot with gene labels</summary>
-
-```{r, fig.height=6.5}
-EnhancedVolcano(
-  toptable = res_rc24,
-  title = "relictum vs. control at 24 hpi",
-  x = "log2FoldChange",
-  y = "padj",
-  lab = rownames(res_rc24),
-  labSize = 4, # Now we will show the gene labels
-  pCutoff = 10e-10, # Modify the p-value cut-off
-  subtitle = NULL, # I'll also remove the silly subtitle
-  caption = NULL, # ... and the caption
-)
+```{r}
+count_long |>
+  group_by(sample_id) |>
+  summarize(lib_size = sum(count) / 1e6) |> # 1e6 = 1 million
+  ggplot(aes(x = sample_id, y = lib_size)) +
+  geom_col() +
+  labs(x = "Sample", y = "Library size (millions of counts)") +
+  theme_classic()
 ```
 
 </details>
 
-<details><summary>**2.** The identity of the log~2~-fold change outlier</summary>
-
-- Labeling it in the plot:
+<details><summary>**4.** A histogram of the gene counts</summary>
 
 ```{r}
-#| fig-height: 6.5
-EnhancedVolcano(
-  toptable = res_rc24,
-  title = "relictum vs. control at 24 hpi",
-  x = "log2FoldChange",
-  y = "padj",
-  lab = rownames(res_rc24),
-  labSize = 4,
-  pCutoff = 0.05, # Modify the p-value cut-off
-  FCcutoff = 20, # Modify the LFC cut-off
-)
+count_long |>
+  ggplot(aes(x = count)) +
+  geom_histogram()
 ```
 
-- Finding it in the results table:
+Nearly all counts end up in the first bar,
+because most genes have low counts while a few have counts in the millions,
+which stretches the x-axis.
+
+</details>
+
+<details><summary>**5.** A histogram of the log-transformed gene counts</summary>
+
+```{r}
+count_long |>
+  ggplot(aes(x = log10(count + 1))) +
+  geom_histogram(binwidth = 0.1)
+```
+
+There is a tall peak at 0 (genes with zero counts in a sample),
+and among the remaining genes, most have between 10 and 10,000 counts.
+We add 1 because `log10(0)` is `-Inf`,
+so genes with zero counts couldn't be plotted.
+
+</details>
+
+### Exercise 2
+
+<details><summary>**1.** The identity of the log~2~-fold change outlier</summary>
+
+```{r}
+res_df |> filter(log2FoldChange > 20)
+```
+
+(Interestingly, `res_rc24` contains a second gene with a LFC \> 20,
+which is not in `res_df` because its `pvalue` and `padj` are `NA`:
 
 ```{r}
 as.data.frame(res_rc24) |> filter(log2FoldChange > 20)
 ```
 
-(Interestingly, there's a second gene with a LFC \> 20 that we hadn't seen in the plot,
-because it has `NA` as the `pvalue` and `padj`.
 See the collapsed box "`NA` values in the DESeq2 results table" in the lecture
 for why p-values can be set to `NA`.)
 
 </details>
 
-<details><summary>**3.** Plot the outlier gene</summary>
+<details><summary>**2.** Labeling the outlier gene in the volcano plot</summary>
+
+```{r}
+outlier <- res_df |> filter(log2FoldChange > 20)
+
+res_df |>
+  ggplot(aes(x = log2FoldChange, y = -log10(padj), color = DEG)) +
+  geom_point() +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
+  # Add the label, in black, and a bit above the point (vjust):
+  geom_text(data = outlier, aes(label = gene_id), color = "black", vjust = -1) +
+  scale_color_manual(values = c("grey60", "firebrick")) +
+  labs(title = "relictum vs. control at 24 hpi") +
+  theme_bw()
+```
+
+</details>
+
+Part 3 is a worked example, with the code in the exercise itself.
+
+<details><summary>**4.** Plot the outlier gene</summary>
 
 ```{r}
 focal_gene_counts <- plotCounts(
@@ -417,6 +540,31 @@ as.data.frame(res_rc24) |>
 
 So, we have to be careful with taking our statistical results at face value, and need to
 visualize important genes!
+
+</details>
+
+<details><summary>**5.** Plot more top DEGs</summary>
+
+For example, for the second most highly significant DEG:
+
+```{r}
+top_genes <- res_df |>
+  arrange(padj) |>
+  head(n = 3)
+
+plotCounts(
+  dds,
+  gene = top_genes$gene_id[2],
+  intgroup = c("time", "treatment"),
+  returnData = TRUE
+) |>
+  ggplot(aes(x = treatment, y = count, fill = treatment)) +
+  facet_wrap(vars(time)) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+  geom_point(size = 4, shape = 21, position = position_jitter(w = 0.1, h = 0)) +
+  theme_bw() +
+  theme(legend.position = "none")
+```
 
 </details>
 
@@ -530,7 +678,10 @@ sum(res_rc24$log2FoldChange > 1 & res_rc24$padj < 0.05, na.rm = TRUE)
 For example, for `cathemerium` vs. `control` at 24 hpi:
 
 ```{r}
-res_cc24 <- results(dds, contrast = c("group", "cathemerium_24hpi", "control_24hpi"))
+res_cc24 <- results(
+  dds,
+  contrast = c("group", "cathemerium_24hpi", "control_24hpi")
+)
 sum(res_cc24$padj < 0.05, na.rm = TRUE)
 ```
 
@@ -618,9 +769,9 @@ res_rc24 |>
   #| fig-cap: "Volcano plot for relictum vs. control at 24 hpi"
   #| fig-width: 8
   #| fig-height: 6.5
-  EnhancedVolcano(
+  res_df |>
+    ggplot(aes(x = log2FoldChange, y = -log10(padj), color = DEG)) +
     # [...]
-  )
   ```
   ````
 
