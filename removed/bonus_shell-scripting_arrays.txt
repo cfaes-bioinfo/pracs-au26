@@ -1,0 +1,227 @@
+## Arrays
+
+Bash "arrays" are basically lists of items, such as a list of file names or sample IDs.
+If you're familiar with R, they are like R vectors^[
+Or if you're familiar with Python, they are like Python lists.].
+
+Arrays are mainly used with `for` loops:
+you create an array and then loop over the individual items in the array.
+This usage represents an alternative to looping over files with a glob.
+Looping over files with a glob is generally easier and preferable,
+but arrays can be useful when you don't loop over files,
+such as over a list of sample IDs, or when your list of items is stored in a file.
+
+### Creating arrays
+
+You can create an array "manually" by typing a space-delimited list of items
+between parentheses:
+
+```bash
+# The array will contain 3 items: 'zmaysA', 'zmaysB', and 'zmaysC'
+sample_names=(zmaysA zmaysB zmaysC)
+```
+
+More commonly, you would populate an array from a file, in which case you
+also need command substitution:
+
+- If the file simply contains a list of items, one per line, you can use `cat`
+  (but see the section on file names with spaces below):
+
+  ```bash
+  sample_files=($(cat fastq_files.txt))
+  ```
+
+- For tabular files, you can include e.g. a `cut` command to extract the focal column:
+
+  ```bash
+  sample_ids=($(cut -f 1 samples.tsv))
+  ```
+
+### Accessing elements in arrays
+
+First off, it is useful to realize that arrays are closely related to regular variables,
+and to recall that the "full" notation to refer to a variable includes curly braces: `${myvar}`.
+When referencing arrays, the curly braces are always needed.
+
+- Using `[@]`, you can access all elements in the array
+  (and arrays are best quoted, like regular variables):
+
+  ```sh
+  echo "${sample_names[@]}"
+  ```
+  ```bash-out
+  zmaysA zmaysB zmaysC
+  ```
+
+- You can also use the `[@]` notation to loop over the elements in an array:
+
+  ```sh
+  for sample_name in "${sample_names[@]}"; do
+      echo "Processing sample: $sample_name"
+  done
+  ```
+  ```bash-out
+  Processing sample: zmaysA
+  Processing sample: zmaysB
+  Processing sample: zmaysC
+  ```
+
+::: {.callout-note collapse="true"}
+#### Other array operations _(Click to expand)_
+
+- Extract specific elements (note: unlike R vectors, Bash arrays are 0-indexed,
+  so the first item has index 0!):
+
+  ```sh
+  # Extract the first item
+  echo "${sample_names[0]}"
+  ```
+  ```bash-out
+  zmaysA
+  ```
+
+  ```bash
+  # Extract the third item
+  echo "${sample_names[2]}"
+  ```
+  ```bash-out
+  zmaysC
+  ```
+
+- Count the number of elements in the array:
+
+  ```sh
+  echo "${#sample_names[@]}"
+  ```
+  ```bash-out
+  3
+  ```
+:::
+
+### Arrays and file names with spaces
+
+The file `files.txt` contains a short list of file names,
+the last of which has a space in it:
+
+```sh
+cat files.txt
+```
+```bash-out
+file_A
+file_B
+file_C
+file D
+```
+
+What will happen if we read this list into an array, and then loop over the array?
+
+```sh
+# Populate an array with the list of files from 'files.txt'
+all_files=($(cat files.txt))
+
+# Loop over the array:
+for file in "${all_files[@]}"; do
+    echo "Current file: $file"
+done
+```
+```bash-out
+Current file: file_A
+Current file: file_B
+Current file: file_C
+Current file: file
+Current file: D
+```
+
+Uh-oh! The file name with the space in it was split into two items!
+Quoting the array in `"${all_files[@]}"` didn't help,
+because the damage had already been done when the array was _created_:
+the output of the unquoted command substitution in `($(cat files.txt))`
+was split at every space, and not just at every line break ---
+the same word splitting you saw with unquoted variables in
+[w7a](../week07/w7a_scripts1.qmd#quoting-variables).
+
+When file names may contain spaces,
+you can instead use the `mapfile` command to read each _line_ of a file
+into a separate array item
+(the `-t` option removes the line break characters from each item):
+
+```bash
+mapfile -t all_files < files.txt
+
+for file in "${all_files[@]}"; do
+    echo "Current file: $file"
+done
+```
+```bash-out
+Current file: file_A
+Current file: file_B
+Current file: file_C
+Current file: file D
+```
+
+Looping over a glob or using a `while read` loop (see above)
+will also correctly handle such file names.
+And this example once again shows that you should avoid spaces in file names!
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 7: Bash arrays
+
+First, create the `files.txt` file from the example above
+(this `printf` command prints each of its arguments on a separate line):
+
+```bash
+printf '%s\n' file_A file_B file_C "file D" > files.txt
+```
+
+1. Create an array with the first three file names (lines) listed in `files.txt`.
+   Then, loop over the array with a `for` loop,
+   and inside the loop, create (`touch`) each file in a new dir `arrays`.
+
+   <details><summary> {{< fa check-circle >}} _Click for the solution_</summary>
+
+   Create the array and loop over it:
+
+   ```bash
+   good_files=($(head -n 3 files.txt))
+
+   mkdir -p arrays
+   for good_file in "${good_files[@]}"; do
+       touch arrays/"$good_file"
+   done
+
+   ls arrays
+   ```
+   ```bash-out
+   file_A  file_B  file_C
+   ```
+
+   </details>
+
+2. Now, create the "problematic" file as well,
+   using `touch "arrays/file D"`.
+   Then, predict what the following loop, which uses a glob instead of an array,
+   will print --- and run it to check your prediction:
+
+   ```bash
+   for file in arrays/*; do
+       echo "Current file: $file"
+   done
+   ```
+
+   <details><summary> {{< fa check-circle >}} _Click for the solution_</summary>
+
+   Unlike with the array, the file name with a space is _not_ split:
+   the shell does not perform word splitting on the file names that a glob matches.
+   That's why looping over a glob is a safe choice even with "problematic" file names.
+
+   ```bash-out
+   Current file: arrays/file_A
+   Current file: arrays/file_B
+   Current file: arrays/file_C
+   Current file: arrays/file D
+   ```
+
+   </details>
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
