@@ -198,7 +198,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="dropdown-text">Week 12: R &amp; Quarto basics</span></a>
   </li>  
         <li class="dropdown-header">Week 13: Data wrangling &amp; visualization in R</li>
-        <li class="dropdown-header">Week 14: Quarto – beyond the basics</li>
+        <li class="dropdown-header">Week 14: Quarto and reproducible R workflows</li>
         <li class="dropdown-header">Week 15: R for omics data</li>
         <li class="dropdown-header">Week 16: Student presentations</li>
     </ul>
@@ -438,6 +438,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#color-palettes" id="toc-color-palettes" class="nav-link" data-scroll-target="#color-palettes"><span class="header-section-number">4.1</span> Color palettes</a></li>
   <li><a href="#customizing-themes" id="toc-customizing-themes" class="nav-link" data-scroll-target="#customizing-themes"><span class="header-section-number">4.2</span> Customizing themes</a></li>
+  <li><a href="#combining-plots-into-one-figure" id="toc-combining-plots-into-one-figure" class="nav-link" data-scroll-target="#combining-plots-into-one-figure"><span class="header-section-number">4.3</span> Combining plots into one figure</a></li>
   </ul></li>
   </ul>
 <div class="quarto-other-links"><h2>Other Links</h2><ul><li><a href="../week12/w12_overview.html"><i class="bi bi-check2-all"></i>Week 12 overview</a></li><li><a href="../week12/w12b_r-basics.html"><i class="bi bi-book"></i>w12a: Intro to R, RStudio, and Quarto</a></li><li><a href="../week13/w13a_data-wrangling.html"><i class="bi bi-book"></i>w13a: Working with tabular data in R</a></li><li><a href="../week13/w13b_data-viz.html"><i class="bi bi-book"></i>w13b: Data visualization in R</a></li></ul></div></nav>
@@ -486,7 +487,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Page last modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">November 3, 2026</p>
+      <p class="date-modified">November 5, 2026</p>
     </div>
   </div>
     
@@ -696,6 +697,44 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
+</section>
+<section id="combining-plots-into-one-figure" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="combining-plots-into-one-figure"><span class="header-section-number">4.3</span> Combining plots into one figure</h3>
+<p>Figures in papers often combine different plots as panels A, B, and so on. Faceting can’t do this, because all facets show the same type of plot and variables. Instead, you can use the <a href="https://patchwork.data-imaginist.com/"><em>patchwork</em></a> package, which is not part of the <em>tidyverse</em>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>First, save each plot as an object:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>scatter_plot <span class="ot">&lt;-</span> penguins <span class="sc">|&gt;</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> bill_len, <span class="at">y =</span> bill_dep, <span class="at">color =</span> species)) <span class="sc">+</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>box_plot <span class="ot">&lt;-</span> penguins <span class="sc">|&gt;</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> island, <span class="at">y =</span> body_mass)) <span class="sc">+</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Then, combine them with <code>|</code> to put plots side by side (or <code>/</code> to put them on top of each other), and add panel labels with <code>plot_annotation()</code>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>(scatter_plot <span class="sc">|</span> box_plot) <span class="sc">+</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_annotation</span>(<span class="at">tag_levels =</span> <span class="st">"A"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre class="warning-r-output"><code>Warning: Removed 2 rows containing missing values or values outside the scale range
+(`geom_point()`).</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre class="warning-r-output"><code>Warning: Removed 2 rows containing non-finite outside the scale range
+(`stat_boxplot()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="r_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The result is a single plot object, which you can save to a file with <code>ggsave()</code> like any other plot.</p>
 
 
 </section>
