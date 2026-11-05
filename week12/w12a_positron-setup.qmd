@@ -94,7 +94,8 @@ like with VS Code Server, your files are at OSC, and R and your code run at OSC.
 In this session, you will:
 
 1. Install Positron on your computer
-2. Set up the connection to OSC, and make sure R is always loaded at OSC
+2. Set up the connection to OSC, make sure R is always loaded at OSC,
+   and set up fast R package installation
 3. Connect Positron to an OSC compute node
 4. Check that Positron found R
 5. Open your personal folder at OSC
@@ -124,7 +125,8 @@ because Positron uses the same files on your computer and at OSC:
 But don't skip the step to
 [increase the connection timeout](#increase-the-connection-timeout),
 because Positron has its own settings,
-or the step to [make sure R is always loaded](#make-sure-r-is-always-loaded-at-osc).
+or the steps to [make sure R is always loaded](#make-sure-r-is-always-loaded-at-osc)
+and to set up [faster R package installation](#faster-r-package-installation-at-osc).
 :::
 
 ## Install Positron
@@ -519,6 +521,50 @@ since they have the same R modules.)
 If you later need a different R version,
 edit the `module load` line in `~/.bashrc`
 (you can see the available versions with `module spider R`).
+:::
+
+### Faster R package installation at OSC
+
+By default, R packages are installed at OSC by compiling them from their source code,
+which can take a long time: over 20 minutes for the _tidyverse_ that we'll use in week 13.
+Instead, we'll have R download ready-to-use ("binary") packages from
+[Posit Package Manager](https://packagemanager.posit.co),
+which takes only a few minutes.
+
+To do so, we'll add a few lines to your R settings file at OSC, `~/.Rprofile`.
+Run the following in your Positron terminal
+(again, the output should only consist of OSC's login messages):
+
+```bash
+ssh osc-pitzer-login 'cat /fs/ess/PAS3493/share/Rprofile >> ~/.Rprofile'
+```
+
+::: {.callout-note collapse="true"}
+#### What does this add to your `~/.Rprofile`? _(Click to expand)_
+R runs the code in `~/.Rprofile` every time it starts.
+The lines we added are:
+
+```{.r .file filename="&#126;/.Rprofile"}
+# Install R packages as precompiled binaries from Posit Package Manager
+local({
+  options(
+    repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/rhel9/latest"),
+    BioC_mirror = "https://packagemanager.posit.co/bioconductor/__linux__/rhel9/latest",
+    HTTPUserAgent = sprintf(
+      "R/%s R (%s)", getRversion(),
+      paste(getRversion(), R.version["platform"], R.version["arch"], R.version["os"])
+    )
+  )
+})
+```
+
+- `repos` and `BioC_mirror` make R download regular (CRAN) and Bioconductor packages,
+  respectively, from Posit Package Manager,
+  with binaries for the operating system that OSC uses (Red Hat Enterprise Linux 9, `rhel9`).
+- `HTTPUserAgent` tells Package Manager which R version you use,
+  so it sends packages that were built for that version.
+
+Posit Package Manager is free to use, so you can keep these settings after the course.
 :::
 
 ## Connecting to OSC

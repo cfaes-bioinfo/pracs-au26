@@ -72,7 +72,7 @@ installed DESeq2 and EnhancedVolcano with `BiocManager::install()`.
 #### Haven't installed the packages yet? _(Click to expand)_
 
 Then run the following code in the R console now.
-Installing DESeq2 and EnhancedVolcano can take 10--20 minutes.
+This takes a few minutes.
 
 ```{r, eval=FALSE}
 install.packages("BiocManager")
@@ -327,13 +327,11 @@ count_long |>
   ggplot(aes(x = sample_id, y = lib_size)) +
   geom_col() +
   labs(x = "Sample", y = "Library size (millions of counts)") +
-  theme_bw()
+  theme_classic()
 ```
 
-Most samples have 15--30 million counts,
-but sample S77 has fewer than 10 million.
-Differences like these are why we have to normalize the counts,
-as we'll do below.
+Most samples have 15--30 million counts, but sample S77 has fewer than 10 million.
+Differences like these are why we have to normalize the counts, as we'll do below.
 
 ::: exercise
 #### {{< fa user-edit >}} Self-study exercise 1: The distribution of gene counts
@@ -404,26 +402,26 @@ The authors of the study did this as well, they mention:
 > *We carried out a Variance Stabilizing Transformation (VST) of the counts to represent*
 > *the samples on a PCA plot.*
 
-Next, run and plot the PCA with a single call to the `plotPCA()` function from DESeq2:
+Next, run and plot the PCA with a single call to the DESeq2's `plotPCA()` function,
+where `intgroup` specifies the variables (columns) to color samples by:
 
 ```{r, eval=FALSE}
-# With 'intgroup' we specify the variables (columns) to color samples by
 plotPCA(dds_vst, intgroup = c("time", "treatment"))
 ```
+
 ```bash-out
 using ntop=500 top features by variance
 ```
 
-![](/img/PCA.png){fig-align="center" width="90%"}
+![](/img/PCA.png){fig-align="center" .no-border width="90%" fig-alt="PCA plot of the RNA-seq samples, colored by time and shaped by treatment."}
 
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 1: PCA
+#### {{< fa user-edit >}} Exercise 1: PCA interpretation
 
 - Based on your PCA plot,
   try to answer the three questions asked at the beginning of this PCA section.
-
 - How does our plot compare to the PCA plot in the paper (Figure 1),
   in terms of the conclusions you just drew?
 
@@ -434,6 +432,11 @@ using ntop=500 top features by variance
 </details>
 :::
 
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise 1: A better-looking PCA plot
+TODO
+:::
+
 ## Differential Expression (DE) analysis
 
 ### Figuring out how to do the analysis
@@ -441,16 +444,16 @@ using ntop=500 top features by variance
 The paper says that the authors compared each of the two infection treatments with the controls,
 and the two infection treatments with each other.
 But it doesn't say how they dealt with the time points.
+
 Our PCA showed that time has a large effect on gene expression, so we shouldn't ignore it,
 and the paper's Table 1, which reports DEGs separately for each time point,
 suggests that they did **pairwise comparisons between each combination of time and treatment**.
-That's what we'll do as well,
-using a single variable that combines time and treatment.
+That's what we'll do as well, using a single variable that combines time and treatment.
 
 ::: {.callout-note collapse="true"}
 #### How we came to this conclusion _(Click to expand)_
 
-First, let's see how the DE analysis was done in the paper:
+First, let's see what they say about the DE analysis in the Method sections:
 
 > *Then, we used the DESeq2 package [@love2014] to perform the differential gene
 > expression analysis comparing: (i) P. relictum-infected mosquitoes vs. controls, (ii) P.
@@ -458,10 +461,10 @@ First, let's see how the DE analysis was done in the paper:
 > vs. P. cathemerium-infected mosquitoes.*
 
 This is not terribly detailed and could be interpreted in a couple of different ways. For
-example, they may have compared infection statuses by *ignoring* time points ***or*** by
+example, they may have compared infection statuses by *ignoring* time points **or** by
 *controlling for* time points (and there are different ways to do the latter).
 
-_Ignoring time_ would mean analyzing the full dataset (all time points) while only using the
+**Ignoring time** would mean analyzing the full dataset (all time points) while only using the
 infection status as an independent variable, i.e. the design `~treatment`.
 
 <details><summary>{{< fa user-edit >}} Given the PCA results, do you think that ignoring the `time` variable is a good idea? _(Click for the answer)_</summary>
@@ -469,14 +472,14 @@ No: the time variable clearly has a large effect on overall patterns of gene exp
 in fact more so than the treatment.
 </details>
 
-_Controlling for time_ can be done in two ways:
+**Controlling for time** can be done in two ways:
 
 - A two-factor analysis: `~ time + treatment`
 - Pairwise comparisons between each combination of time and treatment
   (we'll see below *how* we can do that)
 
-If we take a look at Table 1 with the DE results, it will become clearer how they did
-their analysis:
+If we take a look at Table 1 with the DE results,
+it will become clearer how they did their analysis:
 
 ![](/img/paper_table1.png){fig-align="center" width="80%"}
 
@@ -500,25 +503,24 @@ The latter method is the more common one, and is what we will do below[^5].
 
 ### Setting the statistical design
 
-We will now create a new variable that is a combination of `treatment` and `time`,
+Now, create a new variable that is a combination of `treatment` and `time`,
 and call it `group`:
 
 ```{r}
-# Create a combined variable called 'group':
 dds$group <- factor(paste(dds$treatment, dds$time, sep = "_"))
 ```
 
-`paste()` pastes the values of the two columns together, separated by `_`.
+(`paste()` pastes the values of the two columns together, here separated by a `_`.)
+
+Which unique values does `group` have, and how many samples are in each?
 
 ```{r}
-# Which unique values does 'group' have, and how many samples are in each?
 table(dds$group)
 ```
 
-Next, we set the analysis design:
+Next, set the statistical analysis design (the symbol before `group` is a tilde, <kbd>~</kbd>):
 
 ```{r}
-# Set the statistical design (Note: the symbol before 'group' is a tilde, ~ )
 design(dds) <- ~group
 ```
 
@@ -530,26 +532,25 @@ While we had to do a lot of preparation to get to this stage,
 actually running the DE analysis is very simple:
 
 ```{r}
-# Run the DE analysis
-# (We are assigning the output back to the same `dds` object - the DE results are added to it)
 dds <- DESeq(dds)
 ```
 
+Note that we assign the output back to the same `dds` object:
+the DE results are added to it.
 The `DESeq()` function is a wrapper that performs three steps (functions) consecutively:
 
 - `estimateSizeFactors()` --- "Normalization" by library size and composition
 - `estimateDispersions()` --- Estimate gene-wise dispersion (variance in counts)
 - `nbinomWaldTest(ddsObj)` --- Fit the negative binomial GLM and calculate test statistics
 
-A key thing to understand is that DESeq2 automatically performed **pairwise**
-comparisons between **each of the (6) levels** of the `group` variable.
+DESeq2 automatically performed **pairwise** comparisons between
+**each of the (6) levels** of the `group` variable.
 This means that for any individual gene,
 it tested whether the gene is differentially expressed
 *separately for each of these pairwise comparisons*.
 
-This week's exercises build on this DESeq2 object,
-so let's save it to a file right away,
-so you can load it again later with `readRDS()`:
+Because this week's exercises build on this DESeq2 object,
+let's save it to a file right away, so you can load it again later with `readRDS()`:
 
 ```{r, eval=FALSE}
 dir.create(here("week15/results/DE"), recursive = TRUE, showWarnings = FALSE)
@@ -583,9 +584,9 @@ head(res_rc24)
 What do the columns in this table contain?
 
 - `baseMean`: Mean expression level across all samples
-- `log2FoldChange`: The "log2-fold change" of gene counts between the compared
+- `log2FoldChange`: The "log~2~-fold change" of gene counts between the compared
   levels
-- `lfcSE`: The uncertainty in terms of the standard error (SE) of the log2-fold
+- `lfcSE`: The uncertainty in terms of the standard error (SE) of the log~2~-fold
   change estimate
 - `stat`: The value for the Wald test's test statistic
 - `pvalue`: The *uncorrected* p-value from the Wald test
@@ -601,7 +602,7 @@ Some values in the DESeq2 results table can be set to `NA` for one of the follow
   (DESeq2 performs outlier detection using Cook's distance.)
 
 - If all samples have **zero counts** for a given gene,
-  the `baseMean` column will be zero, and the log2-fold change estimates,
+  the `baseMean` column will be zero, and the log~2~-fold change estimates,
   p-value and adjusted p-value will all be set to `NA`.
 
 - DESeq2 also automatically filters genes with a **low mean count** in the sense that it
@@ -642,9 +643,10 @@ more info, see this [StatQuest video](https://www.youtube.com/watch?v=K8LQSvtjcE
 
 ### Log2-fold changes
 
-In RNA-seq, log2-fold changes (LFCs) are the standard way of representing the **magnitude
-(*effect size*) of expression level differences** between two groups of interest. With A
-and B being the compared sample groups, the LFC is calculated as:
+In RNA-seq, log~2~-fold changes (LFCs) are the standard way of representing the
+**magnitude (*effect size*) of expression level differences**
+between two groups of interest.
+With A and B being the compared sample groups, the LFC is calculated as:
 
 ``` bash-out-solo
 log2(mean of A / mean of B)
@@ -817,7 +819,7 @@ focal_gene_counts |>
 
 ::: callout-important
 #### Outliers!
-The volcano plot above shows a gene with a very high log2-fold change.
+The volcano plot above shows a gene with a very high log~2~-fold change.
 Check out [Exercise 2 in this week's exercises](w15_exercises.qmd#exercise-2-volcano-plots-and-outliers)
 to see why it's important to plot individual genes,
 even if you don't get around to doing the exercise yourself.
