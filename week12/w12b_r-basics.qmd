@@ -75,17 +75,22 @@ which makes working with it much more pleasant!
 You installed Positron and set up a connection to OSC in the
 [previous lecture](./w12a_positron-setup.qmd).
 
-1. Open Positron on your computer.
-2. On the Welcome tab, under "Recent", click on your course folder at OSC:
+1. **Open Positron** on your computer.
+2. On the Welcome tab, under "**Recent**", click on your course folder at OSC:
 
    ![](/img/positron-recents.png){fig-align="center" width="70%" .lightbox fig-alt="Screenshot of the Positron Welcome tab showing the Recent folder."}
 
-3. Positron window will connect to an OSC compute node, which may take a little while.
+   ::: legend2
+   The `[SSH: osc-pitzer-compute]` part tells you this folder is a remote rather
+   than a local folder.
+   :::
 
-4. Once connected, click on the Console tab (next the Terminal tab) and make
+3. Positron will **connect** to an OSC compute node, which may take a little while.
+
+4. Once connected, click on the **Console tab** (next the Terminal tab) and make
    sure there's an active R session (the R version and other messages should be visible).
 
-## Orienting to Positron
+## Positron's layout
 
 Because Positron is built on VS Code, much of it should look familiar,
 but it adds some important components for what we may call **interactive data science**
@@ -96,7 +101,8 @@ The Positron window has the same five main regions as VS Code:
 
 ![Image from <https://positron.posit.co/layout.html>](../img/positron-layout.jpeg){.no-border fig-align="center" width="100%" fig-alt="Diagram of the Positron interface, with the five regions labeled: Editor, Panel, Activity Bar, Primary Side Bar, Secondary Side Bar."}
 
-But some of these regions have additional panes, highlighted in **bold** in the table below:
+But some of these regions have panes that aren't in VS Code,
+which are highlighted in **bold** in the table below:
 
 | Region                 | Where           | What's in it                                                   |
 | ---------------------- | --------------- | -------------------------------------------------------------- |
@@ -126,7 +132,7 @@ Like in VS Code, you can resize all panes, and drag them to other locations.
 you can get back to the default layout with the _View: Reset View Locations_
 command in the Command Palette.)
 
-## The basics of interacting with R
+## Interacting with R
 
 You can do many things in R:
 data manipulation, data visualization, statistical analysis, machine learning and more.
@@ -208,8 +214,8 @@ If your prompt turned into a `+`, you typed an incomplete command. For example:
 
 And once again like in the Unix shell,
 you can either try to finish the command or abort it.
-In Positron's console, you can abort with <kbd>Esc</kbd>
-(or with <kbd>Ctrl</kbd>+<kbd>C</kbd>) --- let's practice that here.
+In Positron's console, you can abort with <kbd>Ctrl</kbd>+<kbd>C</kbd>
+(also on a Mac) --- let's practice that here.
 
 ### Adding comments to your code
 
@@ -241,7 +247,7 @@ For example, the equivalent to the Shell's `pwd` command is the `getwd()` functi
 getwd()
 ```
 ```r-out
-[1] "/fs/ess/PAS3493/people"
+[1] "/fs/ess/PAS3493/people/jelmer"
 ```
 
 :::
@@ -250,31 +256,30 @@ getwd()
 :::
 ::: {.column width="48%"}
 
-```bash
+<div style="height: 6px;"></div>
+
+```{.bash .norun}
 # In the Unix shell
 pwd
 ```
 ```bash-out
-/fs/ess/PAS3493/people
+/fs/ess/PAS3493/people/jelmer
 ```
 
 :::
 :::
 
-Other than the slight difference in the name of the function/command,
-the key difference is that in R, you **always** need to include the parentheses.
-
-Inside those parentheses, you can provide **arguments** to a function,
-but just like with shell commands, whether you need to provide arguments,
+Inside those parentheses, you can provide **arguments** to a function.
+But just like with shell commands, whether you need to provide arguments,
 and what they are, depends on the function.
-For example, with `setwd()`, the equivalent to the Shell's `cd`,
-the required argument is the path to the directory you want to switch to:
+With `dir.create()`, the equivalent to the Shell's `mkdir`,
+the required argument is the directory you want to create:
 
 ::: {.columns}
 ::: {.column width="48%"}
 
 ```r
-setwd("/fs/ess/PAS3493/people")
+dir.create("week11")
 ```
 
 :::
@@ -283,8 +288,42 @@ setwd("/fs/ess/PAS3493/people")
 :::
 ::: {.column width="48%"}
 
-```bash
-cd /fs/ess/PAS3493/people
+<div style="height: 10px;"></div>
+
+```{.bash .norun}
+mkdir week11
+```
+
+:::
+:::
+
+And with `setwd()`, the equivalent to the Shell's `cd`,
+the required argument is the directory you want to switch to:
+
+::: {.columns}
+::: {.column width="48%"}
+
+```r
+setwd("week11")
+```
+
+```r
+getwd()
+```
+```r-out
+[1] "/fs/ess/PAS3493/people/jelmer/week11"
+```
+
+:::
+::: {.column width="4%"}
+
+:::
+::: {.column width="48%"}
+
+<div style="height: 10px;"></div>
+
+```{.bash .norun}
+cd week11
 ```
 
 :::
@@ -294,63 +333,42 @@ Two differences to note between the Shell and R:
 
 1. The argument goes **inside the parentheses** in R,
    instead of after the command in the Shell.
+2. Unlike in the Shell, **paths need to be quoted** in R^[
+   This is because in R, any character string that isn't quoted is supposed to be
+   an "object" like a variable (more about this later).].
 
-2. Unlike in the Shell, we need to **quote the path** in R!
-   This is because in R, as you'll see in more detail in a bit,
-    anything that is not quoted is supposed to be an "object" like a variable.
+### More on function arguments
 
-A final side-by-side example ---
-one of the equivalents to the Shell's `echo` is `print()`:
-
-::: {.columns}
-::: {.column width="48%"}
-
-```{r}
-print("Hello world")
-```
-
-:::
-::: {.column width="4%"}
-
-:::
-::: {.column width="48%"}
-
-```bash
-echo "Hello world"
-```
-```bash-out
-Hello world
-```
-
-:::
-:::
-
-### Function arguments
-
-In the example below,
-we pass the argument `6.53` to the number-rounding function `round()`:
+The `round()` function rounds numbers with decimals like `6.53`,
+by default to whole numbers like `6`. For example:
 
 ```{r}
 round(6.53)
 ```
 
 In most functions, including `round()`, arguments have **names** that can be used.
-For example,
-the argument to `round()` that represents the number to be rounded has the name `x`,
-so you can also use:
+For example, the argument to `round()` that represents the number to be rounded
+has the name `x`, so you can also use the code below.
+
+(Like in the shell, pressing the **up arrow** <kbd>↑</kbd> puts the previous
+command back in the prompt --- try that, and then edit the command.)
 
 ```{r}
 round(x = 6.53)
 ```
 
-*Naming arguments*, like in the example above,
+#### Using multiple arguments
+
+Naming arguments, like in the example above,
 is especially helpful to avoid confusion when you pass multiple arguments to a function.
-For example, `round()` accepts another argument,
-which is the number of digits to round to:
+For example, we can change `round()`'s default behavior of rounding to zero digits
+(whole numbers) with the optional argument `digits`:
 
 ```{r}
 round(x = 6.53, digits = 1)
 ```
+
+(Note that when you use multiple arguments, they are separated by a `comma`.)
 
 You _could_ choose not to name these arguments, but that isn't as easy to understand:
 
@@ -364,9 +382,11 @@ Moreover, when you name arguments, you can give them in **any order** you want:
 round(digits = 1, x = 6.53)
 ```
 
+#### Another comparison to the Shell
+
 Named arguments in R are similar to options in the Shell.
 For example, the equivalent to the Shell's `head` is `head()`,
-and the equivalent to `head`'s `-n` option is `head()`'s `n` argument:
+and like the former has a `-n` option, the latter has a `n` argument:
 
 ::: {.columns}
 ::: {.column width="58%"}
@@ -381,43 +401,86 @@ head(iris, n = 5)
 :::
 ::: {.column width="38%"}
 
-```bash
+```{.bash .norun}
 head -n 5 metadata.tsv
 ```
 
 :::
 :::
 
-::: callout-tip
-#### Where did `iris` come from?
-R comes shipped with several built-in datasets, like `iris`.
-We didn't need to quote this, because it is a so-called object in R.
+_(Where did `iris` come from? It is one of several built-in datasets in R.)_
+
+::: {.callout-note collapse="true"}
+#### Terminology: options, arguments, and commands in the shell vs. R _(Click to expand)_
+
+**Options and arguments**
+
+- In the Shell, you learned to distinguish options (like `-n 5`),
+  which change _how_ a command operates, from arguments (like `metadata.tsv`),
+  which tell it _what_ to operate on.
+- R doesn't make this distinction:
+  everything you put inside a function's parentheses is an argument.
+  So in `head(iris, n = 5)`, both `iris` and `n = 5` are arguments.
+
+**Command**
+
+- In the Shell, the term command can refer either to a program like `head`
+  or to a full line of code like `head -n 5 metadata.tsv`.
+- In R, something like `head()` is always called a function,
+  while "command" refers only to a full line of code like `head(iris, n = 5)`.
 :::
 
-You can usually see which arguments a function takes by pausing after you
-type the function and its opening parenthesis, e.g. `round(`:
-Positron will show a pop-up with the function's arguments and a short description.
+### Help information on functions
+
+#### Help pop-ups in the console
+
+When typing the above code, you've probably seen **automatic help pop-ups**
+appear several times.
+
+For example, you can usually see which arguments a function takes by pausing after
+you type the function and its opening parenthesis, e.g. `round(`:
+Positron will show a pop-up with the function's arguments,
+and a short description of its first argument:
 
 ![](/img/R-round-arguments-popup.png){fig-align="center" width="75%" .lightbox fig-alt="Screenshot of the Positron console showing the round() function and its arguments."}
 
-### More help information on functions
+And when you pause at a different argument,
+you should see help about _that_ argument:
 
-In the last example above, we saw how you can get quick "inline" help for a function.
-But you may want to see more extensive information on how a function works and
+![](/img/positron-help-round-digits-popup.png){fig-align="center" width="75%" .lightbox fig-alt="Screenshot of the Positron console showing the round() function and its arguments."}
+
+Admittedly, some of the language used in this help information can be hard to
+understand, especially as a beginner.
+
+#### Help pages
+
+::: {.columns}
+::: {.column width="45%"}
+
+You may want to see more extensive information on how a function works and
 what arguments it takes.
-
 The `help()` function and `?` help operator in R offer access to documentation pages
 for R functions (as well as datasets and some other objects).
 For example:
 
 ```r
+# Note: no parentheses here (this isn't a function *call*)!
 ?setwd
 ```
 
-The output should appear in the **Help** pane in the Secondary Side Bar (right),
-and look something like this:
+The output should appear in the **Help** pane in the Secondary (right-hand) Side Bar,
+and look something like what's shown in the screenshot on the right.
 
-![](/img/r-setwd-help.png){fig-align="center" width="60%" .lightbox fig-alt="Screenshot of the Positron Help pane showing the help page for setwd()."}
+Note that this help page covers both `setwd()` and `getwd()`
+(for more about help pages, see the box below).
+
+:::
+::: {.column width="55%"}
+
+![](/img/r-setwd-help.png){fig-align="center" width="93%" .lightbox fig-alt="Screenshot of the Positron Help pane showing the help page for setwd()."}
+
+:::
+:::
 
 ::: {.callout-note collapse="true"}
 #### Reading a more complicated help page: `?round` _(Click to expand)_
@@ -463,7 +526,14 @@ Part of the R help page for `round()`.
 
 ### Assigning stuff to objects
 
-You can assign a value to a variable with the **assignment operator** `<-`.
+In the Shell, we've assigned values to variables with `=`, like `x=1`.
+While this is possible in R too, the customary and recommended
+**"assignment operator"** is `<-` (`x <- 1`):
+
+- This is a smaller-than sign <kbd><</kbd> followed by a hyphen <kbd>-</kbd>.
+- You can also use the keyboard shortcut <kbd>Option</kbd>+<kbd>-</kbd> (Mac)
+  or <kbd>Alt</kbd>+<kbd>-</kbd> (Windows).
+
 For example:
 
 ::: {.columns}
@@ -480,7 +550,9 @@ length_cm <- 250
 :::
 ::: {.column width="48%"}
 
-```bash
+<div style="height: 12px;"></div>
+
+```{.bash .norun}
 # In the shell
 length_cm=250
 ```
@@ -488,12 +560,12 @@ length_cm=250
 :::
 :::
 
-Just like in the shell, `length_cm` can be called a **_variable_**.
-In R, though, you'll more often hear the general term **_object_**,
+Just like in the shell, `length_cm` can be called a **variable**.
+In R, though, you'll more often hear the general term **object**,
 because R objects can take on many forms,
 including more complicated things like tables.
 
-To see the contents of an object, you can also use the `print()` function,
+To see the contents of an object, you can use the `print()` function,
 as the equivalent of `echo` in the Unix shell:
 
 ::: {.columns}
@@ -509,7 +581,9 @@ print(length_cm)
 :::
 ::: {.column width="48%"}
 
-```bash
+<div style="height: 15px;"></div>
+
+```{.bash .norun}
 echo "$length_cm"
 ```
 ```bash-out
@@ -554,6 +628,8 @@ length_cm / 2.54
 
 :::
 :::
+
+<hr style="height:1pt; visibility:hidden;" />
 
 In the "SESSION" tab of the secondary (right-hand) side bar,
 take a look at the "VALUES" section:
@@ -657,7 +733,7 @@ R packages are basically add-ons or extensions to the functionality of the R lan
 
 - The function `library()` will **load** an R package in your current R session.
   Every time you want to use a package in R, you need to load it,
-  just like every time you want to use MS Word on your computer, you need to open it.
+  just like every time you want to use an OSC module in the Shell, you need to load it.
 
 For example, for the _pheatmap_ package to create heatmaps,
 which you will use in week 15:
@@ -666,17 +742,40 @@ which you will use in week 15:
 install.packages("pheatmap")
 ```
 ```r-out
-TODO - add some output
+Installing package into ‘/users/PAS0471/jelmer/R/rhel9/4.6.1’
+(as ‘lib’ is unspecified)
+trying URL 'https://cran.rstudio.com/src/contrib/pheatmap_1.0.13.tar.gz'
+Content type 'application/x-gzip' length 15162 bytes (14 KB)
+==================================================
+downloaded 14 KB
+
+* installing *source* package ‘pheatmap’ ...
+** this is package ‘pheatmap’ version ‘1.0.13’
+** package ‘pheatmap’ successfully unpacked and MD5 sums checked
+** using staged installation
+** R
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** testing if installed package can be loaded from temporary location
+** testing if installed package can be loaded from final location
+** testing if installed package keeps a record of temporary installation path
+* DONE (pheatmap)
+
+The downloaded source packages are in
+	‘/tmp/RtmpxMR47K/downloaded_packages’
 ```
 
 ```{r}
+# This should not produce any output
 library(pheatmap)
 ```
 
-At OSC,
-packages will by default be installed into a standard location in your **Home directory**,
+At OSC, packages will by default be installed into a standard location in
+your **Home directory**,
 so they can be accessed through time and regardless of what your working directory is,
-or what OSC project you are using^[And this works equivalently on your own computer.].
+or what OSC project you are using^[This works equivalently on your own computer.].
 
 However, package installation is done **separately** for:
 
@@ -694,9 +793,21 @@ and like you did with your personal dir in the previous lecture.
 When you open a folder,
 Positron makes it R's working directory, and starts a fresh R session.
 
-Earlier, you changed your working directory with `setwd()`.
+Earlier, you changed your working dir to `week11` with `setwd()`.
 To get back to the folder you opened,
-restart R by clicking the restart button (circular arrow) at the top of the Console.
+restart R by clicking the restart button at the top of the Console^[
+  You can also use the keyboard shortcut <kbd>Shift</kbd>+<kbd>Cmd</kbd>+<kbd>0</kbd> (Mac)
+  or <kbd>Shift</kbd>+<kbd>Ctrl</kbd>+<kbd>0</kbd> (Windows).]
+--- the circular arrow highlighted in this screenshot:
+
+![](/img/positron-restart-r-button.png){fig-align="center" width="75%" .lightbox fig-alt="Screenshot of ..."}
+
+::: legend2
+Click the circular arrow to restart R.
+:::
+
+![](/img/positron-r-restarted.png){fig-align="center" width="55%" .lightbox fig-alt="Screenshot of ..."}
+
 Then, run `getwd()` to check that your working directory is your personal dir again:
 
 ```r
@@ -751,19 +862,24 @@ a fully reproducible record of your analysis.
 
 ### Creating a Quarto document
 
-We'll create a new folder and document in Positron's terminal:
+We'll create a new document in Positron's terminal:
 
 1. Switch to the **terminal tab** in the bottom panel.
 
-2. In the terminal, create a folder and a new Quarto document in it:
+2. In the terminal, create a new Quarto document:
 
    ```bash
-   mkdir week12
    touch week12/week12a.qmd
    ```
 
 3. Open the file using the Explorer, or with the terminal
    <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>-click method you know from VS Code.
+
+
+::: {.callout-tip appearance="simple"}
+You can also use one of the New file buttons (similar to VS Code),
+but I wanted to emphasize that you can (and should) also use a Terminal in Positron!
+:::
 
 ### The YAML header
 
@@ -777,23 +893,57 @@ date: 2026-11-09
 ---
 ```
 
-The **YAML header** contains settings for the document,
-and is enclosed by two lines with three dashes (`---`):
-each line contains a `key: value` pair
-(note that there should be a space after the colon).
-There are many more YAML options,
-some of which you'll learn about in [week 14](../week14/w14a_quarto.qmd#yaml-header).
+The YAML header contains **settings** for the document, and:
+
+- Is enclosed by two lines with three dashes (`---`)
+- Each YAML header line contains a `key: value` pair
+  (there should be a space after the colon).
+
+There are many more YAML options, some of which you'll learn about in
+[week 14](../week14/w14a_quarto.qmd#yaml-header).
+
+::: callout-note
+#### Saving your file changes
+
+<div style="height: 3px;"></div>
+
+::: {.columns}
+::: {.column width="54%"}
+
+Unlike in (our version of) VS Code,
+file changes are **not auto-saved** by default in Positron.
+When you have unsaved changes, a large dot appears next to the file name,
+and you can press the disk icon ({{< fa floppy-disk >}})
+or <kbd>Cmd/Ctrl</kbd>+<kbd>S</kbd> to save your changes.
+
+-----
+
+If you want to **change this setting**, go to the Positron settings
+({{< fa gear >}} > Settings) and search for "Auto Save":
+
+:::
+::: {.column width="46%"}
+
+![](/img/positron-unsaved-changes.png){fig-align="center" width="90%" .no-border .lightbox fig-alt="Screenshot of ..."}
+
+![](/img/positron-settings-autosave.png){fig-align="center" width="100%" .no-border .lightbox fig-alt="Screenshot of ..."}
+
+:::
+:::
+
+:::
 
 ### Markdown text
 
-Everything outside of the YAML header and the code chunks is regular Markdown,
-just like in the Markdown files you've been writing in this course.
-Use headers to structure your document,
-and use text to describe what your code does and why ---
-this is where Quarto documents are much more informative than code alone.
+In a Quarto document, everything outside of the YAML header and the code chunks is
+**regular Markdown**, just like in the Markdown files you've been writing in this course.
+
+So, you can use headers to structure your document,
+and regular text to describe what your code does and why ---
+this is how Quarto documents can be much more informative than code alone.
 
 Add a header and a sentence below your YAML header,
-so that your document looks like this:
+so that your entire document now looks like this:
 
 ```{.markdown .file filename="week12a.qmd"}
 ---
@@ -810,7 +960,7 @@ R can be used as a calculator, for example to add numbers:
 ### Code chunks
 
 In Markdown, you've been making code blocks that start with ```` ```bash ````.
-In Quarto, you make an **executable code chunk** by adding curly braces
+In Quarto, you make an **executable code chunk** by adding **curly braces**
 around the language name, as in ```` ```{r} ````.
 
 You can insert a new chunk with
@@ -837,7 +987,7 @@ R can be used as a calculator, for example to add numbers:
 ::: {.columns}
 ::: {.column width="50%"}
 
-For code that's in a code chunk, you can either run the:
+If you want to run code that's in a code chunk, you have the option to either run the:
 
 - **Line your cursor is on (or the selected lines)**
   by pressing <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd>
@@ -851,7 +1001,7 @@ and its output is shown in the Console too:
 :::
 ::: {.column width="50%"}
 
-![](/img/quarto-run-cell-w-output.png){fig-align="center" width="90%" .lightbox fig-alt="Screenshot of a Quarto document in Positron, showing a code chunk with the Run Cell button above it, and the output in the Console."}
+![](/img/quarto-run-cell-w-output.png){fig-align="center" width="80%" .lightbox fig-alt="Screenshot of a Quarto document in Positron, showing a code chunk with the Run Cell button above it, and the output in the Console."}
 
 :::
 :::
@@ -859,20 +1009,31 @@ and its output is shown in the Console too:
 ### Rendering
 
 To render your **entire document** to HTML,
-click the `Preview` button at the top right of the editor,
-or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.
+click the `Preview` button at the top right of the editor^[
+  Or press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.]:
 
-<!---- TODO: Add a Positron screenshot of the Preview button ---->
-
-![](/img/quarto-preview-popup.png){fig-align="center" width="90%" .lightbox fig-alt="Screenshot of a Quarto document in Positron, showing the Preview button at the top right of the editor."}
+![](/img/positron-quarto-preview-button.png){fig-align="center" width="55%" .lightbox fig-alt="Screenshot of ..."}
 
 This will create a file `week12a.html` next to `week12a.qmd`,
-and show a preview of it in the **Viewer** pane.
-Every time you save the document, the preview will update.
+and show a preview of it in the **Viewer** pane:
+
+![](/img/positron-quarto-preview-in-viewer){fig-align="center" width="60%" .lightbox fig-alt="Screenshot of a Quarto document in Positron, showing the Preview button at the top right of the editor, and the rendered HTML in the Viewer pane."}
+
+It is likely that the following pop-up will appear ---
+if you click "Open in Browser", the preview will also open in a new browser tab:
+
+![](/img/quarto-preview-popup.png){fig-align="center" width="70%" .lightbox fig-alt="Screenshot of a Quarto document in Positron, showing the Preview button at the top right of the editor."}
+
+To **update** the preview after making changes,
+click `Preview` again (this is quick, since the preview server keeps running).
+Alternatively, check the "Render on Save" box in the editor toolbar,
+and the preview will update every time you save the document.
+
+::: {.callout-tip}
+#### Rendering behavior
 
 When you render, Quarto runs all code chunks from top to bottom
-in a **new, empty R session**.
-This means that:
+in a **new, empty R session**. This means that:
 
 - If any code produces an **error**, the document will not render.
   The error message will be shown in a Terminal tab named "Quarto Preview",
@@ -881,28 +1042,7 @@ This means that:
   any objects you created only in the console,
   or packages you loaded only in the console, won't exist during rendering.
 
-This may seem annoying at times,
-but it's exactly what makes Quarto documents reproducible.
-
-::: {.callout-tip collapse="true"}
-#### Rendering from the terminal with `quarto render` _(Click to expand)_
-
-You can also render a Quarto document from the terminal,
-using the `quarto render` command:
-
-```bash
-quarto render week12/week12a.qmd
-```
-
-This does a **one-time render**:
-just like `Preview`, it runs all code in a new R session
-and creates `week12a.html` next to `week12a.qmd`.
-But unlike `Preview`, it does not show the result in the Viewer pane,
-and does not re-render when you save the document.
-To look at the output, open the HTML file yourself.
-
-So, `Preview` is handy while you are writing and editing a document,
-whereas `quarto render` is handy to simply produce the final output file.
+This may seem annoying at times, but it helps make Quarto documents reproducible.
 :::
 
 ::: {.callout-note collapse="true"}
