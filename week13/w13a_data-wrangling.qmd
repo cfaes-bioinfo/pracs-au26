@@ -17,7 +17,7 @@ other-links:
   - text: "Week 13 overview"
     icon: check2-all
     href: w13_overview.html
-  - text: "w12b: Intro to R, Quarto, and Positron"
+  - text: "w12b: Intro to R, Positron, and Quarto"
     icon: book
     href: ../week12/w12b_r-basics.html
   - text: "Week 13 exercises"
@@ -48,22 +48,25 @@ R exercise:?
 
 One of R's most powerful features is its
 **built-in ability to deal with tabular data** ---
-i.e., data with rows and columns like you are familiar with from Excel
+i.e., data with rows and columns like those familiar from Excel
 spreadsheets and so on.
-In R, tabular data is stored in a data structure called "**data frame**".
+R stores tabular data in a data structure called a "**data frame**".
 
 In this lecture, you will learn:
 
 - The vector data structure, R's main data types, and comparisons
 - Data frames and different functions to reorganize and modify data frames
+- How to look at data frames in Positron's Data Explorer
 - Briefly about the similar matrix data structure
 
 ### Setting up
 
 1. Open Positron and connect to OSC with your personal dir open,
-   like in the previous lecture
-   ([Setup: starting Positron and connecting to OSC](../week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc)).
-2. Later in this lecture, you'll use the _tidyverse_, a collection of packages for data science.
+   like in the
+   ([previous lecture](/week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc)).
+2. Create a new folder `week13` in your personal dir.
+3. Create a new Quarto document `week13/week13a.qmd`, and add a YAML header.
+4. Later in this lecture, you'll use the _tidyverse_ package.
    Because installing it can take a while,
    start the installation now by running the following in the R console:
 
@@ -71,15 +74,10 @@ In this lecture, you will learn:
    install.packages("tidyverse")
    ```
 
-   While the installation is running, this console is busy.
+5. While the installation is running, this console is busy.
    So, start a second R console to work in:
    click the interpreter picker in the top-right corner,
-   select **New Console Session**, and then select R 4.5.2
-   (like in [this callout in week 12](../week12/w12a_positron-setup.qmd#check-that-r-works)).
-3. Create a new folder `week13` in your personal dir.
-4. Create a new Quarto document and save it as `week13a.qmd` in your `week13` folder
-   ([Quarto documents](../week12/w12b_r-basics.qmd#creating-a-quarto-document)),
-   and add a YAML header.
+   select **New Console Session**, and then select R 4.6.1.
 
 ## Vectors and data types
 
@@ -103,12 +101,14 @@ vector1 <- 8
 vector2 <- "panda"
 ```
 
-In the `"panda"` example, which is a **character string** (_string_ for short):
+In the second example, `"panda"` is a **character string** (_string_ for short):
 
 - `"panda"` constitutes _one element_, not 5 (its number of letters).
 - Unlike numbers, strings have to be quoted^[
   Either double quotes (`"..."`) or single quotes (`'...'`) work,
   but the former are more commonly used.].
+- This doesn't mean the quotes are part of the string itself:
+  they are just a way to tell R that it is a string.
 
 Recall that anything that is not quoted is interpreted as an object,
 like `iris` in the previous lecture.
@@ -141,7 +141,9 @@ numbers * 2
 ```
 
 Above, **every individual element in `numbers` was multiplied by 2**.
-This behavior is called "vectorization", and is a key feature of the R language.
+This behavior,
+where an operation is automatically applied to every element of a vector,
+is called "vectorization" --- a key feature of the R language.
 (You may have expected this code to _repeat_ `numbers` twice instead,
 but that did not happen!)
 
@@ -184,12 +186,6 @@ In R, you can do this using square brackets `[ ]` --- for example:
   numbers[2]
   ```
 
-- Get the second through the fourth elements with `[2:4]`:
-
-  ```{r}
-  numbers[2:4]
-  ```
-
 - Get the first and third elements with `[c(1, 3)]`:
 
   ```{r}
@@ -217,7 +213,9 @@ For more, see the [optional R self-study page](../bonus/r.qmd#exploring-vectors)
 
 R distinguishes between different kinds of data, such as character strings and numbers,
 using several pre-defined "data types".
-R's behavior depends heavily on the data type --- for example, the below fails:
+R's behavior depends heavily on the data type.
+For example, R refuses to perform mathematical operations on character strings,
+so the code below returns an error:
 
 ```{r, error=TRUE}
 "panda" * 5
@@ -230,8 +228,6 @@ typeof("panda")
 ```
 
 R set the data type of `"panda"` to `character`, i.e. a (character) string.
-The earlier command failed because R can't perform mathematical operations
-("_binary operator_") on vectors of type `character` ("_non-numeric argument_").
 
 Anything that is placed between quotes is a `character` --- even plain numbers:
 
@@ -365,13 +361,7 @@ because a vector can only contain a single data type.
 Type coercion can be the source of many surprises,
 and is one reason you need to be aware of R's data types.
 
-You can also convert vectors yourself using the `as.` group of functions:
-
-```{r}
-as.integer(c("0", "2"))
-as.character(c(0, 2))
-```
-
+You can also convert vectors yourself, with functions like `as.double()`.
 But not all conversions are possible ---
 for example, R can't turn `"kiwi"` into a number,
 so it returns a **missing value** (`NA`) instead, with a warning:
@@ -422,10 +412,6 @@ library(tidyverse)
 ```
 
 The output tells you which packages have been loaded as part of the tidyverse.
-
-One thing to note about the _tidyverse_ is that much of its functionality
-is also covered by base R functions, but it is better suited for quick and
-easy data manipulation.
 
 ::: {.callout-tip collapse="true"}
 ### Function name conflicts _(Click to expand)_
@@ -559,9 +545,9 @@ We'll use `here()` for all file paths from now on.
 
 _readr_  is one of the packages that is loaded as part of the core tidyverse,
 and has functions for reading and writing tabular data to and from plain-text
-files like CSV and TSV files.
+files like CSV (comma-separated) and TSV (tab-separated) files.
 
-The `read_tsv()` function will read TSV (tab-delimited files) -- for example:
+The `read_tsv()` function will read TSV files --- for example:
 
 ```{r eval= FALSE}
 meta <- read_tsv(file = here("garrigos/meta/metadata.tsv"))
@@ -583,23 +569,34 @@ meta
 To read and write CSV files instead, use `read_csv()` / `write_csv()` in the same way.
 :::
 
-You can also use the `View()` function to look at the data frame.
-This will open a new tab in your editor pane with a spreadsheet-like look and feel:
+To look at a data frame in a spreadsheet-like view,
+you can open it in Positron's **Data Explorer**:
+click the table icon next to `meta` in the Variables pane,
+or use the `View()` function:
 
 ```{r, eval=FALSE}
 View(meta)
-# (Should display the dataset in an editor pane tab)
+# (Should open the data frame in a new editor tab)
 ```
+
+You'll learn more about the Data Explorer [later in this lecture](#positrons-data-explorer).
+
+::: {.callout-tip appearance="simple"}
+You can also open a CSV or TSV (and even an Excel) file directly in the Data Explorer,
+without reading it into R:
+simply click on the file in the Explorer.
+This is a quick way to look at a data file,
+for example to check its column names before you read it.
+(To see the plain text instead, click the "Open as Plain Text File" button
+at the top of the Data Explorer.)
+:::
 
 ## Data frame basics
 
-Data frames are another R data structure, like vectors.
-
-They contain tabular data and can be thought of as vectors pasted side-by-side:
-each column is a vector.
-This means that each column can only contain one data type.
-
-It also implies that rows and columns aren't equivalent:
+Data frames are another R data structure,
+which can be thought of as vectors pasted side-by-side:
+each column is a vector, and can therefore only contain one data type.
+This also means that rows and columns aren't equivalent:
 recall that in tidy data, each column is a variable, and each row an observation.
 
 Note that the object we read in above is not a plain data frame but a so-called
@@ -608,8 +605,8 @@ The main difference is the nicer default printing behavior of tibbles:
 e.g. the data types of columns are shown,
 and only a limited number of rows are printed.
 
-::: callout-tip
-#### Regular data frames vs. tibbles
+::: {.callout-tip collapse="true"}
+#### Regular data frames vs. tibbles _(Click to expand)_
 Both data frames and tibbles are used in R to store tabular data containing rows and columns,
 often with mixed data types (character, integer, double etc).
 
@@ -628,19 +625,8 @@ and when subsetting they always return another tibble rather than simplifying to
 
 :::
 
-To see the structure of a data frame --- its dimensions, column names,
-and column data types --- use `str()`:
-
-```{r}
-str(iris)
-```
-
-The output for the `iris` data set above shows:
-
-- The object has the class `data.frame`
-- There are 150 observations (rows) and 5 variables (columns)
-- A full list of the variable names (e.g. Sepal.Length, Sepal.Width, etc.)
-- The data type of each variable (e.g. num, factor)
+To see the structure of any data frame --- its dimensions, column names,
+and column data types --- you can use the `str()` function, e.g. `str(meta)`.
 
 ### Extracting columns from a data frame
 
@@ -673,22 +659,63 @@ which is why gene IDs are stored as row names
 
 ## The _dplyr_ package
 
-The [_dplyr_](https://cran.r-project.org/package=dplyr) package provides very
+The [_dplyr_](https://cran.r-project.org/package=dplyr) package provides
 useful functions for **manipulating data in data frames** ("data wrangling").
-This type of data processing is often essential before you can move on to say,
-data visualization (**the next lecture**) or statistical data analysis.
+Such data processing is often essential before you can move on to
+data visualization (**the next lecture**) or statistical analyses.
 
 In this lecture, we'll cover the most commonly used _dplyr_ functions:
 
 - `select()` to pick columns (variables)
 - `filter()` to pick rows (observations)
-- `rename()` to change column names
 - `arrange()` to change the order of rows (i.e., to sort a data frame)
 - `mutate()` to modify values in columns and create new columns
 - `summarize()` to compute across-row summaries
 
 All these functions take a
 **data frame as the _input_, and output a new, modified data frame**.
+
+### The penguins data set
+
+The metadata table is a bit limited for showing what _dplyr_ can do:
+it is small, and all of its columns contain character strings.
+Therefore, we'll switch to the `penguins` data set,
+which comes with R (since version 4.5),
+like the `iris` data set from week 12.
+You'll also use it to make plots in the next lecture.
+
+::: {.callout-note}
+#### About the penguins data set
+
+This data set contains body measurements of penguins of 3 species
+collected on 3 islands in the Palmer Archipelago, Antarctica.
+It has 344 observations (rows) and 8 variables (columns):
+
+-   species (factor): Species of penguin (Adelie, Chinstrap, Gentoo)
+-   island (factor): Island where the penguin was found (Biscoe, Dream,
+    Torgersen)
+-   bill_len (num): Length of the penguin's bill in millimeters
+-   bill_dep (num): Depth of the penguin's bill in millimeters
+-   flipper_len (int): Length of the penguin's flipper in millimeters
+-   body_mass (int): Body mass of the penguin in grams
+-   sex (factor): Sex of penguins
+-   year (int): Year of data collection
+
+:::
+
+Unlike `meta`, `penguins` is a regular data frame and not a tibble,
+so printing it would show all 344 rows.
+Let's turn it into a tibble with the `as_tibble()` function,
+and assign the result back to the same name:
+
+```{r}
+penguins <- as_tibble(penguins)
+penguins
+```
+
+The `fct` in the output stands for **factor**,
+a data type for categorical data
+(more on factors [below](#arrange-to-sort-data-frames)).
 
 ## `select()` to pick columns (variables)
 
@@ -697,7 +724,7 @@ which subsets a data frame by including/excluding certain columns.
 By default, it only **includes the columns you specify**:
 
 ```{r}
-select(.data = meta, time, sample_id)
+select(.data = penguins, body_mass, species, island)
 ```
 
 Above, the first argument was the data frame,
@@ -711,83 +738,155 @@ objects, whose names are the column names.].
 The **order of the columns** in the output data frame is exactly as you list them in
 `select()`, and doesn't need to be the same as in the input data frame.
 In other words, `select()` is also one way to reorder columns:
-in the example above, we made `time` appear before `sample_id`.
+in the example above, we made `body_mass` appear first,
+even though it is the sixth column of `penguins`.
 
 You can also **specify columns that should be excluded**,
 by prefacing their name with a `!` (or a `-`):
 
 ```{r}
-# This will include all columns _except_ sample_id:
-select(.data = meta, !sample_id)
+# This will include all columns _except_ year:
+select(.data = penguins, !year)
 ```
 
 ::: {.callout-tip appearance='simple'}
-There are also ways to e.g. select _ranges_ of columns:
-check the `select()` help by typing `?select` to learn more.
+- There are also ways to e.g. select _ranges_ of columns:
+  check the `select()` help by typing `?select` to learn more.
+- To change column names, use the `rename()` function,
+  with the syntax `new_name = old_name` ---
+  for example, `rename(.data = penguins, mass = body_mass)`.
 :::
 
-## `rename()` to change column names
+## `filter()` to pick rows (observations)
 
-The next _dplyr_ function is one of the simplest:
-`rename()` to change column names.
+The `filter()` function outputs only those rows that satisfy one or more conditions.
+It is similar to Filter functionality in Excel --
+except that those only change what you _display_,
+while `filter()` will completely _exclude_ rows.
+But like all _dplyr_ functions, `filter()` outputs a new data frame,
+and does not modify the input data frame.
 
-The syntax to specify the new and old name within the function is `new_name = old_name`.
-For example:
+### Filter based on one condition
+
+This first `filter()` example outputs only rows (penguins) from the island Dream:
 
 ```{r}
-rename(.data = meta, sample = sample_id)
+filter(.data = penguins, island == "Dream")
 ```
+
+<details><summary>{{< fa user-edit >}} How many rows were output? _(Click to see the answer)_</summary>
+<p>
+124 rows were output, as shown in the first line above: `124 x 8` (rows x columns)
+</p>
+</details>
+
+::: {.callout-warning appearance='simple'}
+Remember to use **two** equals signs `==` to test for equality!
+:::
+
+### Filter based on multiple conditions
+
+It's also possible to filter based on multiple conditions.
+For example, you may want to see Gentoo penguins with a body mass above 5,000 g:
+
+```{r}
+filter(.data = penguins, species == "Gentoo", body_mass > 5000)
+```
+
+As in the example above, multiple conditions are by default combined
+using a Boolean ***AND***.
+In other words, in a given row, _each_ condition must be met to output the row.
+
+::: {.callout-note collapse="true"}
+#### What about a Boolean ***OR***? _(Click to expand)_
+
+If you want to combine conditions using a Boolean ***OR***,
+where only one of the conditions needs to be met,
+use a `|` (vertical bar) between the conditions:
+
+```{r}
+# Keep penguins that are either from Dream OR have a body mass above 5,000 g:
+filter(.data = penguins, island == "Dream" | body_mass > 5000)
+```
+:::
 
 ## The pipe (`|>`)
 
 Examples so far applied a single _dplyr_ function to a data frame,
 simply printing the output (a new data frame) to screen.
 But in practice, it's common to use several consecutive _dplyr_ functions to
-wrangle a dataframe into the format you want.
+wrangle a data frame into the format you want.
 
-For example, you may want to first `select()` one or more columns,
-and _then_ `rename()` a column.
+For example, you may want to first `filter()` rows,
+and _then_ `select()` columns.
 You could do that as follows:
 
 ```{r}
-meta_sel <- select(.data = meta, sample_id, time)
+penguins_filt <- filter(.data = penguins, island == "Dream")
 
-rename(.data = meta_sel, sample = sample_id)
+select(.data = penguins_filt, species, body_mass)
 ```
 
-And you could go on along these lines,
-successively creating new objects that you then use for the next step.
+And you could go on like this,
+successively creating new objects you use for the next step.
+But there is a more elegant way of doing this!
 
-But there is a more elegant way of doing this,
-directly sending ("piping") output from one function into the next function
-with the **pipe operator** `|>`
-(a vertical bar <kbd>|</kbd> followed by a greater-than sign <kbd>></kbd>).
-Let's start by seeing a reformulation of the code above with pipes:
+You can directly send ("pipe") output from one function into the next function
+with the **pipe operator** `|>`,
+which is a vertical bar <kbd>|</kbd> followed by a greater-than sign <kbd>></kbd>.
+Let's start by seeing a rephrasing of the code above, now using pipes:
 
 ```{r}
-meta |>
-  select(sample_id, time) |>
-  rename(sample = sample_id)
+penguins |>
+  filter(island == "Dream") |>
+  select(species, body_mass)
 ```
 
-What happened here? We took the `meta` data frame,
-sent ("piped") it into the `select()` function,
-whose output in turn was piped into the `rename()` function.
+What happened here? We took the `penguins` data frame,
+sent ("piped") it into the `filter()` function,
+whose output in turn was piped into the `select()` function.
 You can think of the pipe as **"then"**:
-take `meta`, _then_ select, _then_ rename.
+take `penguins`, _then_ filter, _then_ select.
 
 When using the pipe,
 you no longer specify the input data frame with the `.data` argument,
-because the function now gets its input data via the pipe
-(specifically, the input goes to the function's first argument by default).
+because the function now gets its input data via the pipe^[
+Specifically, the input goes to the function's first argument by default.].
 
 ::: {.callout-tip appearance='minimal'}
-Using pipes involves less typing and is especially more readable than using
+Using pipes involves less typing and, above all, is more readable than using
 successive assignments.
 
 For code readability,
 it is good practice to always start a new line after a pipe `|>`,
 and to keep the subsequent line(s) _indented_ as Positron will automatically do.
+:::
+
+::: {.callout-note collapse="true"}
+#### Automatic code formatting with Air _(Click to expand)_
+Positron comes with [Air](https://posit-dev.github.io/air/),
+a "formatter" that tidies up R code for you.
+For example, it adds spaces around operators like `<-` and `==`
+and after commas, and fixes indentation.
+
+To format the code in a Quarto code chunk,
+put your cursor in the chunk and run _Quarto: Format Cell_ from the Command Palette.
+(In an R script, use _Format Document_ instead.)
+
+To format your code automatically every time you save a file,
+open your settings file with _Preferences: Open User Settings (JSON)_
+and add the following:
+
+```json
+"[r]": {
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "Posit.air-vscode"
+},
+"[quarto]": {
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "quarto.quarto"
+}
+```
 :::
 
 ::: callout-note
@@ -801,99 +900,23 @@ which works the same in most cases,
 but only when you have one of the tidyverse packages loaded.
 :::
 
-## `filter()` to pick rows (observations)
-
-### Introduction
-
-The `filter()` function outputs only those rows that satisfy one or more conditions.
-It is similar to Filter functionality in Excel --
-except that those only change what you _display_,
-while `filter()` will completely _exclude_ rows.
-
-But if that sounds scary,
-recall that _dplyr_ functions always output a ***new*** data frame.
-Therefore, with any _dplyr_ function,
-you'll only modify existing data when you assign the output back to the input object,
-like in this example with the `select()` function:
-
-```{r, eval=FALSE}
-# [Don't run this - hypothetical example]
-# After running this, the 'meta' dataframe would no longer contain the treatment column:
-meta <- meta |> select(sample_id, time)
-```
-
-### Filter based on one condition
-
-This first `filter()` example outputs only rows (samples) from time point 10dpi:
-
-```{r}
-meta |>
-  filter(time == "10dpi")
-```
-
-<details><summary>{{< fa user-edit >}} How many rows were output? _(Click to see the answer)_</summary>
-<p>
-12 rows were output, as shown in the first line above: `12 x 3` (rows x columns)
-</p>
-</details>
-
-:::callout-warning
-### Remember to use _two_ equals signs `==` to test for equality!
-:::
-
-### Filter based on multiple conditions
-
-It's also possible to filter based on multiple conditions.
-For example, you may want to see control samples collected at 10dpi, excluding sample `S78`:
-
-```{r}
-meta |>
-  filter(time == "10dpi", treatment == "control", sample_id != "S78")
-```
-
-Like above, by default, multiple conditions are combined using a Boolean ***AND***.
-In other words, in a given row, _each_ condition must be met to output the row.
-
-If you want to combine conditions using a Boolean ***OR***,
-where only one of the conditions needs to be met,
-use a `|` between the conditions:
-
-```{r}
-# Keep rows that were either collected at 10dpi OR are control samples:
-meta |>
-  filter(time == "10dpi" | treatment == "control")
-```
-
-### Pipeline practice
-
-Finally, let's practice once more with "pipelines" that use multiple _dplyr_
-functions: `filter` rows, then `select` columns,
-and finally `rename` one of the remaining columns:
-
-```{r}
-meta |>
-  filter(time == "10dpi") |>
-  select(sample_id, treatment) |>
-  rename(sample = sample_id)
-```
-
 ::: exercise
 #### {{< fa user-edit >}} Exercise 2: Pipes
 
 1. Use a "pipeline" like above to output a data frame with two
-   columns (`sample_id` and `treatment`) only for the _cathemerium_ treatment.
+   columns (`island` and `body_mass`) only for Chinstrap penguins.
    How many rows does your output data frame have?
 
 <!----
    <details><summary>Click for the solution</summary>
 
    ```{r}
-   meta |>
-     select(sample_id, treatment) |>
-     filter(treatment == "cathemerium")
+   penguins |>
+     filter(species == "Chinstrap") |>
+     select(island, body_mass)
    ```
 
-   The output data frame has 7 rows and 2 columns.
+   The output data frame has 68 rows and 2 columns.
 
    </details>
 ---->
@@ -902,16 +925,16 @@ meta |>
    **Predict** whether each of them will work, and why. Then run them to check.
 
    ```r
-   meta |> filter(time == "10dpi") |> select(sample_id, treatment)
-   meta |> select(sample_id, treatment) |> filter(time == "10dpi")
+   penguins |> filter(island == "Dream") |> select(species, body_mass)
+   penguins |> select(species, body_mass) |> filter(island == "Dream")
    ```
 
 <!----
    <details><summary>Click for the solution</summary>
 
-   The first works, but the second fails with an error that the `time` column/object can't be found:
+   The first works, but the second fails with an error that the `island` column/object can't be found:
    in a pipeline, each function only "sees" the output of the previous step,
-   and `select()` already removed the `time` column before `filter()` got the data.
+   and `select()` already removed the `island` column before `filter()` got the data.
 
    </details>
 ---->
@@ -922,27 +945,25 @@ meta |>
 
 The `arrange()` function is like sorting functionality in Excel:
 it changes the order of rows based on the values in one or more columns^[
-It will always rearrange the order of rows as a whole,
-never just of individual columns since that would scramble the data.
-].
+Entire rows are always moved together:
+it never reorders the values within a single column on its own,
+because that would scramble the data.].
 Among other things, sorting can help you find observations with the smallest or
 largest values for a certain column.
 
-The `meta` dataframe is currently first sorted by `time` and then by `treatment`,
-whereas `sample_id`s within these groups are not sorted.
-You may, for example, want to sort by `sample_id` instead:
+For example, to see the lightest penguins first, sort by `body_mass`:
 
 ```{r}
-meta |>
-  arrange(sample_id)
+penguins |>
+  arrange(body_mass)
 ```
 
-Default sorting is alphabetically and, for numbers, from small to large.
+Default sorting is from small to large for numbers, and alphabetical for character strings.
 To sort in reverse order, use the `desc()` (descending) helper function:
 
 ```{r}
-meta |>
-  arrange(desc(sample_id))
+penguins |>
+  arrange(desc(body_mass))
 ```
 
 Finally, you may want to sort by multiple columns,
@@ -950,19 +971,25 @@ where ties in the first column are broken by a second column (and so on).
 Do this by simply listing the columns in the appropriate order:
 
 ```{r}
-# Sort first by treatment, then by time, then by sample_id:
-meta |>
-  arrange(treatment, time, sample_id)
+# Sort first by species, then from heaviest to lightest within each species:
+penguins |>
+  arrange(species, desc(body_mass))
 ```
 
-::: callout-note
-#### Sorting in a custom order with factors
-You may have noticed that sorting by `time` puts `10dpi` before `24hpi`,
-because character strings are sorted alphabetically ---
+Pay attention to the syntax:
+additional columns to sort by are additional arguments to the function,
+not part of the same argument with `c()`.
+Other _dplyr_ functions, like `select()`, work the same way.
+
+::: {.callout-note collapse="true"}
+#### Sorting in a custom order with factors _(Click to expand)_
+Because character strings are sorted alphabetically,
+sorting the metadata table by `time` puts `10dpi` before `24hpi` ---
 but 24 hpi is the earlier time point!
 
 To fix this, you can turn the column into a **factor**,
-R's way of storing categorical data with a set order of categories ("levels"):
+R's way of storing categorical data with a set order of categories ("levels").
+(The `species`, `island`, and `sex` columns in `penguins` are already factors.)
 
 ```{r}
 meta |>
@@ -975,45 +1002,118 @@ This order is also respected in plots and statistical analyses,
 and you'll use factors like this for the RNA-seq analysis in week 15.
 :::
 
+## Positron's Data Explorer
+
+Now that you know how to filter and sort data frames with code,
+let's see how you can do this interactively in Positron's **Data Explorer**.
+Open `penguins` in the Data Explorer,
+by clicking the table icon next to `penguins` in the Variables pane,
+or by running `View(penguins)`.
+
+<!---- TODO: Add a screenshot of penguins in the Data Explorer ---->
+
+The Data Explorer has three parts:
+
+- The **data grid** shows the rows and columns of the data frame.
+- The **summary panel** on the left shows, for each column,
+  its data type, the percentage of missing values, and a small plot of its distribution.
+  Click on a column to see more summary statistics, like its mean or number of unique values.
+  (If you don't see the summary panel,
+  click the arrow on the left side of the data grid.)
+- The **filter bar** at the top lets you filter rows.
+
+You can sort and filter rows in a similar way as with `arrange()` and `filter()`:
+
+- To **sort**, click the three dots in a column header,
+  and select `Sort Ascending` or `Sort Descending`.
+- To **filter**, click `+ Add Filter` in the filter bar,
+  pick a column, and choose a condition.
+  You can add multiple filters.
+
+Like Filter functionality in Excel,
+this only changes what you _see_:
+the `penguins` data frame itself is not modified.
+That makes the Data Explorer great for quickly looking at your data,
+but steps that are part of your analysis should be in your code,
+so that they are reproducible.
+
+Here, the Data Explorer can help:
+after sorting and/or filtering,
+click the **Convert to Code** button to get the R code that
+does the same sorting and filtering,
+which you can copy into your document.
+
+<!---- TODO: Add a screenshot of the Convert to Code pop-up ---->
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 3: The Data Explorer
+
+1. Use the summary panel to find which columns of `penguins` have missing values,
+   and how many.
+
+<!----
+   <details><summary>Click for the solution</summary>
+
+   `bill_len`, `bill_dep`, `flipper_len`, and `body_mass` each have 2 missing values,
+   and `sex` has 11.
+   The summary panel shows these as percentages:
+   for example, 11 out of 344 rows is 3.2%.
+
+   </details>
+---->
+
+2. In the Data Explorer, filter the rows to Gentoo penguins,
+   and sort them by flipper length, from long to short.
+   Which flipper length is the longest?
+   Then, use Convert to Code, copy the code into your document, and run it.
+   How does the code compare to what you would have written yourself?
+
+<!----
+   <details><summary>Click for the solution</summary>
+
+   The longest flipper length is 231 mm.
+   The code should use `filter()` and `arrange()` with `desc()`,
+   similar to what you would write yourself:
+
+   ```{r}
+   penguins |>
+     filter(species == "Gentoo") |>
+     arrange(desc(flipper_len))
+   ```
+
+   </details>
+---->
+
+:::
+
 ## `mutate()` to modify columns and create new ones
 
-So far, we've focused on functions that subset and reorganize data frames
-(and you've seen how to modify column names).
-But you haven't seen how you can _change the data_ or _compute derived data_.
+So far, we've focused on functions that subset and reorganize data frames.
+But you haven't yet seen how to _change the data_ or _compute derived data_.
+This can be done with the `mutate()` function.
 
-You can do this with the `mutate()` function.
-For a first example, let's go back to the `iris` dataframe:
-
-```{r}
-head(iris)
-```
-
-Let's say you wanted to compute the ratio of sepal length to width for each
-observation -- you can do so as follows with `mutate()`:
+For example, to add a column with the body mass in kilograms:
 
 ```{r}
-iris |>
-  mutate(sepal_ratio = Sepal.Length / Sepal.Width) |>
-  head()
+# The syntax is: <new-column> = <operation>
+penguins |>
+  select(species, body_mass) |>
+  mutate(body_mass_kg = body_mass / 1000)
 ```
 
-For an example with our `meta` dataframe, we'll use the `sub()` function,
-which can do a character-based search-and-replace.
-It takes three arguments: the pattern to search for, what to replace the pattern
-with, and the subject vector.
-For example, to shorten sample IDs by removing the shared prefix:
+Like operations on vectors,
+the division was applied to every element of the `body_mass` column.
+(We used `select()` first only so that the new column, which is added at the end,
+fits on the screen.)
 
-```{r}
-# Create a new column 'sample_id_short' by replacing the 'S' prefix of sample_id with nothing:
-meta |>
-  mutate(
-    sample_id_short = sub(pattern = "S", replacement = "", x = sample_id)
-  )
-```
-
-The above examples _added_ a new column to the dataframe.
+The above example _added_ a new column to the data frame.
 To _modify_ an existing column rather than adding a new one,
-simply "assign back to the same name":
+simply "assign back to the same name".
+For example, we can shorten the sample IDs in the metadata table
+by removing the shared `S` prefix with the `sub()` function,
+which does a character-based search-and-replace.
+It takes three arguments: the pattern to search for, what to replace the pattern
+with, and the subject vector:
 
 ```{r}
 meta |>
@@ -1022,114 +1122,73 @@ meta |>
   )
 ```
 
-:::exercise
-#### {{< fa user-edit >}} Self-study exercise: `mutate()`
-
-Another very useful function is `substr()`, short for _substring_,
-which can extract parts of a character vector by position:
-say, you can ask it to only keep the first three characters.
-It includes arguments for the desired `start` and `stop` positions of the substring:
-
-```{r}
-meta |>
-  mutate(treatment_short = substr(x = treatment, start = 1, stop = 3))
-```
-
-Use `mutate()` with `substr()` to:
-
-- Create a numeric `time_num` column, stripping the `hpi`/`dpi` suffix from `time`.
-- Create a column `time_unit`, keeping only the `hpi`/`dpi` suffix from `time`.
-
-Save the resulting data frame as `meta_time` (we will use it after this!).
-
-<details><summary>Click for the solution</summary>
-
-```{r}
-meta_time <- meta |>
-  mutate(
-    time_num = as.numeric(substr(time, 1, 2)),
-    time_unit = substr(time, 3, 5)
-  )
-
-meta_time
-```
-</details>
-:::
-
 ## `summarize()` to compute summary stats
 
 The final _dplyr_ function we'll cover is `summarize()`,
 which computes **summaries of your data across rows**.
-For example, to count the total number of samples in the entire dataset (all rows),
-using the helper function `n()`, which simply counts rows:
+For example, to compute the mean body mass across all penguins:
 
 ```{r}
 # The syntax is similar to 'mutate': <new-column> = <operation>
-meta_time |>
-  summarize(n_samples = n())
+penguins |>
+  summarize(mean_mass = mean(body_mass))
 ```
 
-The output is still a dataframe, but unlike with all previous _dplyr_ functions,
-it is completely different from the input dataframe,
-"collapsing" the data down to as little as a single number, like above.
-
-`summarize()` becomes really powerful in combination with the helper function
-`group_by()` to compute **groupwise** stats.
-For example, to get the number of samples for each treatment:
+The result is `NA`, because two penguins have a missing value for `body_mass`.
+Just like with vectors, you can get around this with `na.rm = TRUE`:
 
 ```{r}
-meta_time |>
-  group_by(treatment) |>
-  summarize(n_samples = n())
+penguins |>
+  summarize(mean_mass = mean(body_mass, na.rm = TRUE))
+```
+
+The output is still a data frame, but unlike with the previous _dplyr_ functions,
+its rows are not the rows of the input:
+`summarize()` "collapses" the data down, here to a single number.
+
+`summarize()` becomes really powerful in combination with `group_by()`,
+which lets you compute **groupwise** stats.
+For example, to get the mean body mass for each species,
+along with the number of penguins, using the helper function `n()`, which simply counts rows:
+
+```{r}
+penguins |>
+  group_by(species) |>
+  summarize(
+    mean_mass = mean(body_mass, na.rm = TRUE),
+    n_penguins = n()
+  )
 ```
 
 `group_by()` implicitly splits a data frame into groups of rows:
-here, one group for observations from each treatment.
+here, one group for observations from each species.
 After that, operations like in `summarize()` will happen separately for each group,
-which is how we ended up with per-treatment counts.
+which is how we ended up with per-species means and counts.
 
 :::exercise
-#### {{< fa user-edit >}} Exercise 3: `summarize()`
+#### {{< fa user-edit >}} Exercise 4: `summarize()`
 
-1. Count the number of samples in `meta_time` for each _combination_ of treatment and time point
-   (hint: `group_by()` accepts multiple columns).
-   Before running your code, **predict** how many rows the output will have.
-
-<!----
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
-
-   The output has 6 rows: one for each of the 3 treatments × 2 time points.
-
-   ```{r}
-   meta_time |>
-     group_by(treatment, time) |>
-     summarize(n_samples = n())
-   ```
-
-   </details>
----->
-
-2. Using the `iris` data set, compute the mean petal length and width for each species.
+Count the number of penguins for each _combination_ of species and island
+(hint: `group_by()` accepts multiple columns).
+Before running your code, **predict** how many rows the output will have.
 
 <!----
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-   The mean petal length and width for each iris species:
+The output has 5 rows, not 3 species × 3 islands = 9:
+Adelie penguins were found on all three islands,
+but Chinstrap penguins only on Dream, and Gentoo penguins only on Biscoe.
+`summarize()` only outputs combinations that occur in the data.
 
-   ```{r}
-   iris_summary <- iris |>
-     group_by(Species) |>
-     summarize(
-       avg_petal_length = mean(Petal.Length),
-       avg_petal_width = mean(Petal.Width)
-     )
-   iris_summary
-   ```
+```{r}
+penguins |>
+  group_by(species, island) |>
+  summarize(n_penguins = n())
+```
 
-   </details>
+</details>
 ---->
 :::
-
 
 ## Writing to files
 
@@ -1138,12 +1197,11 @@ you can use the `write_tsv()` function,
 with argument `x` for the R object and argument `file` for the file path:
 
 ```{r eval=FALSE}
-# Save the file in your week13 folder
-write_tsv(x = meta_time, file = here("week13/metadata_ed.tsv"))
+# First, create a data frame to write:
+penguins_gentoo <- penguins |> filter(species == "Gentoo")
 
-# To save it in a subfolder, include it in the path (the folder has to exist):
-dir.create(here("week13/results"))
-write_tsv(x = meta_time, file = here("week13/results/metadata_ed.tsv"))
+# Then, write it to a file in your week13 folder:
+write_tsv(x = penguins_gentoo, file = here("week13/penguins_gentoo.tsv"))
 ```
 
 As with reading files, using `here()` means that the file is written to the same place,
@@ -1166,10 +1224,14 @@ in different ways.
   Mixing types in a vector causes automatic coercion.
 - Missing values are coded as `NA`;
   use `na.rm = TRUE` to ignore them in functions like `sum()` and `mean()`.
-- Different columns of a data frame can contain different types of data, but in a matrix all
-  the elements are of the same data type.
-- Functions of the _dplyr_ package such as `filter()`, `select()`, `arrange()` and `mutate()`
-  provide a powerful way to manipulate large datasets.
+- Each column of a data frame is a vector,
+  so different columns can contain different types of data.
+- Functions of the _dplyr_ package such as `select()`, `filter()`, `arrange()`,
+  `mutate()`, and `summarize()` provide a powerful way to manipulate data frames.
+- The pipe `|>` sends the output of one function into the next,
+  so you can chain multiple steps together.
+- Positron's Data Explorer lets you look at, sort, and filter data frames interactively,
+  and its Convert to Code button turns your sorting and filtering into code.
 
 
 ::: callout-note
@@ -1183,7 +1245,7 @@ here are two particularly useful additional skills to learn:
   [chapter 5 of R for Data Science](https://r4ds.hadley.nz/data-tidy.html#sec-pivoting).
 
 - Joining/merging ---
-  combining multiple dataframes based on one or more shared columns.
+  combining multiple data frames based on one or more shared columns.
   This can be done with _dplyr_'s `join_*()` functions --
   see for example [chapter 19 of R for Data Science](https://r4ds.hadley.nz/joins.html).
 :::

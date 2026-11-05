@@ -33,45 +33,62 @@ language:
 
 --------------------------------------------------------------------------------
 
-<hr style="height:1pt; visibility:hidden;" />
-<hr style="height:1pt; visibility:hidden;" />
+<hr style="height:10pt; visibility:hidden;" />
 
 ## Introduction
 
 ### Overview & learning goals
 
-After running steps like read pre-processing, alignment, and quantification using the separate programs (like
-Jelmer taught) or using a nf-core rnaseq workflow, you will have a **gene count table**.
-Today, with that gene count table, you will:
+After running steps like read pre-processing, alignment, and quantification,
+either by running each tool step-by-step, or with the nf-core _rnaseq_ workflow,
+you will have a **gene count table**.
+Today, you will use such a gene count table to:
 
 - Create an R object that also incorporates the metadata
 - Perform exploratory data analysis including a PCA
 - Run a Differential Expression (DE) analysis
 - Extract and visualize the DE results, including with a heatmap
 
-### Bioconductor
+### Setting up
+
+1. Open Positron and connect to OSC with your personal dir open
+   ([Setup: starting Positron and connecting to OSC](../week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc)).
+2. Create a `week15` folder, and in it, create a new Quarto document `week15a.qmd`
+   with a YAML header.
+
+## Install and load R packages
 
 So far, you've installed R packages from CRAN with `install.packages()`.
-However, many packages for omics data analysis,
-including DESeq2 that we'll use today,
+However, many packages for omics data analysis, including DESeq2 that we'll use today,
 are instead available from [Bioconductor](https://bioconductor.org/),
-a repository of over 2,000 R packages for the analysis of high-throughput biological data,
-such as bulk and single-cell RNA-seq, ChIP-seq, methylation, and metabolomics data.
-Bioconductor packages are known for their extensive documentation,
-including tutorials ("vignettes") and complete workflows.
+a repository of packages for the analysis of high-throughput biological data.
+Bioconductor packages are installed with the `install()` function from the CRAN
+package `BiocManager`.
 
-Bioconductor packages are installed with the `install()` function from the CRAN package `BiocManager`:
+At the end of
+[week 14](../week14/w14a_quarto.qmd#before-next-week-install-packages-for-week-15),
+you already started installing the packages we'll use today with the following code:
 
 ```{r, eval=FALSE}
 install.packages("BiocManager")
-BiocManager::install("DESeq2")
+install.packages("pheatmap")
+BiocManager::install(c("DESeq2", "EnhancedVolcano"))
 ```
 
+Here, `install.packages()` installs BiocManager and the CRAN package pheatmap,
+and `BiocManager::install()` installs DESeq2 and EnhancedVolcano from Bioconductor.
+
 ::: {.callout-tip appearance="simple"}
-Unlike CRAN, Bioconductor releases a new version every 6 months,
-and each Bioconductor version is tied to a specific version of R.
-`BiocManager::install()` takes care of this for you by checking your version of R,
-and installing the matching versions of Bioconductor packages.
+To see which packages you have installed, and their versions,
+click the **Packages** icon (a cube) in the Activity Bar.
+This pane also shows which packages are loaded,
+and has buttons to install, update, and remove packages.
+:::
+
+::: callout-important
+#### Haven't installed the packages yet?
+Then run the code above in the R console now.
+Installing DESeq2 and EnhancedVolcano can take 10--20 minutes.
 :::
 
 For more about Bioconductor, including how to find packages,
@@ -79,37 +96,7 @@ its specialized data structures,
 and examples of working with DNA sequences,
 see the [optional self-study page on Bioconductor](../bonus/r-omics.qmd).
 
-### Setting up
-
-1. Open Positron and connect to OSC with your personal dir open
-   ([Setup: starting Positron and connecting to OSC](../week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc)).
-2. Create a `week15` folder, and in it, create a new Quarto document `week15a.qmd`
-   with a YAML header
-   ([Creating a Quarto document](../week12/w12b_r-basics.qmd#creating-a-quarto-document)).
-
-## Install and load R packages
-
-::: callout-important
-#### Install the packages before class
-Installing DESeq2 and EnhancedVolcano can take 10--20 minutes,
-so please run the code below in the R console **before class**
-(see the [week 15 overview](w15_overview.qmd)).
-:::
-
-```{r, eval=FALSE}
-if (!require("BiocManager")) {
-  install.packages("BiocManager")
-}
-if (!require("DESeq2")) {
-  BiocManager::install("DESeq2")
-}
-if (!require("EnhancedVolcano")) {
-  BiocManager::install("EnhancedVolcano")
-}
-if (!require("pheatmap")) {
-  install.packages("pheatmap")
-}
-```
+Now, load the packages:
 
 ```{r warning=FALSE}
 library(tidyverse) # Misc. data manipulation and plotting
@@ -144,24 +131,24 @@ metadata_file <- here::here("assets/metadata.tsv")
 
 ## Create a DESeq2 object
 
-Like in the *Culex* [paper](https://pmc.ncbi.nlm.nih.gov/articles/PMC12288828/) whose data we are working with,
-we will perform a Principal
-Component Analysis (PCA) and a Differential Expression (DE) analysis using the popular
-**DESeq2** package
+Like the authors of the *Culex* [paper](https://pmc.ncbi.nlm.nih.gov/articles/PMC12288828/) whose data we are working with,
+we will perform a Principal Component Analysis (PCA)
+and a Differential Expression (DE) analysis using the popular **DESeq2** package
 ([paper](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8),
 [website](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)).
 
-The DESeq2 package has its own "object type" (a specific R format type) and before we can
-do anything else, we need to create a DESeq2 object from three components:
+The DESeq2 package has its own "object type" (a specific R data structure),
+and before we can do anything else,
+we need to create a DESeq2 object from three components:
 
 1. **Metadata**\
-   Independent variables should be in the metadata,
+   The metadata should contain the independent variables,
    allowing DESeq2 to compare groups of samples.
 2. **Count table**\
-   A matrix (table) with one row per gene, and one column per sample.
+   A matrix (table) with one row per gene and one column per sample.
 3. **A statistical design**\
-   A statistical design formula (basically, which groups to compare) will tell DESeq2
-   *how* to analyze the data.
+   A statistical design formula (basically, which groups to compare)
+   that tells DESeq2 *how* to analyze the data.
 
 ### Metadata
 
@@ -227,8 +214,9 @@ count_df <- read_tsv(count_table_file, show_col_types = FALSE)
 head(count_df)
 ```
 
-Again, we have to make several modifications before we can include it in the DESeq2 object.
-DESeq2 expects counts as whole numbers (integers), and gene IDs as row names:
+Again, we have to make several modifications
+before we can include the count table in the DESeq2 object.
+DESeq2 expects counts as whole numbers (integers) and gene IDs as row names:
 
 ```{r}
 # Prepare the count table so it can be loaded into DESeq2
@@ -250,8 +238,9 @@ head(count_mat)
 
 #### Check that the sample IDs match
 
-When creating the DESeq2 object, DESeq2 assumes that sample IDs in both tables match and
-are provided in the same order. Let's make sure this is indeed the case:
+When creating the DESeq2 object, DESeq2 assumes that the sample IDs in both tables match
+and are in the same order.
+Let's make sure this is indeed the case:
 
 ```{r}
 # Check that sample IDs in the metadata and the count table match
@@ -260,8 +249,8 @@ all(row.names(meta) == colnames(count_mat))
 
 ### Create the DESeq2 object
 
-We will create the DESeq2 object using the function `DESeqDataSetFromMatrix()`, which we
-will provide with three arguments corresponding to the components discussed above:
+We will create the DESeq2 object using the function `DESeqDataSetFromMatrix()`,
+to which we will pass three arguments corresponding to the components discussed above:
 
 - The metadata with argument `colData`
 - The count data with argument `countData`
@@ -279,14 +268,14 @@ dds <- DESeqDataSetFromMatrix(
 )
 ```
 
-Before we will run the differential expression analysis, though,
-we will do a bit of exploratory data analysis using our `dds` object.
+Before we run the differential expression analysis, though,
+we will do some exploratory data analysis using our `dds` object.
 
 ## Exploratory Data Analysis
 
 ### The count matrix
 
-What are the number of rows (=number of genes) and columns (=number of samples)
+What are the numbers of rows (= number of genes) and columns (= number of samples)
 of our count matrix?
 
 ```{r}
@@ -349,7 +338,7 @@ First, normalize the count data to account for differences in library size
 among samples and "stabilize" the variance among genes[^4]:
 
 [^4]: Specifically, the point is to remove the dependence of the variance in expression
-      level on its mean, among genes
+      level on its mean, among genes.
 
 ```{r}
 dds_vst <- varianceStabilizingTransformation(dds)
@@ -362,7 +351,7 @@ dds_vst <- varianceStabilizingTransformation(dds)
 > the samples on a PCA plot.*
 :::
 
-Next, run and plot the PCA with a single function call, `plotPCA` from DESeq2:
+Next, run and plot the PCA with a single call to the `plotPCA()` function from DESeq2:
 
 ```{r, eval=FALSE}
 # With 'intgroup' we specify the variables (columns) to color samples by
@@ -436,7 +425,7 @@ and treatment.
 <hr style="height:1pt; visibility:hidden;" />
 
 That brings us a step closer,
-but pairwise comparisons with \>1 independent variable can (also!) be done in two ways:
+but pairwise comparisons with \>1 independent variable can also be done in two ways:
 
 - After **subsetting** the dataset to each combination of time and treatment
 - After creating a single, **combined independent variable** that is a combination of time and treatment
@@ -471,7 +460,7 @@ Now we're ready to run the DE analysis!
 
 ### Running the DE analysis
 
-While we had to do a lot of prep to get to this stage,
+While we had to do a lot of preparation to get to this stage,
 actually running the DE analysis is very simple:
 
 ```{r}
@@ -486,9 +475,10 @@ The `DESeq()` function is a wrapper that performs three steps (functions) consec
 - `estimateDispersions()` --- Estimate gene-wise dispersion (variance in counts)
 - `nbinomWaldTest(ddsObj)` --- Fit the negative binomial GLM and calculate test statistics
 
-A key thing to understand is that above, DESeq2 automatically performed **pairwise**
-comparisons between **each of the (6) levels** of the `group` variable. This means that
-for any individual gene, it tested whether the gene is differentially expressed
+A key thing to understand is that DESeq2 automatically performed **pairwise**
+comparisons between **each of the (6) levels** of the `group` variable.
+This means that for any individual gene,
+it tested whether the gene is differentially expressed
 *separately for each of these pairwise comparisons*.
 
 ## Extracting the DE results
@@ -560,7 +550,7 @@ sum(is.na(res_rc24$pvalue)) / nrow(res_rc24)
 And `NA` adjusted p-values:
 
 ```{r}
-# Number of genes with NA p-value:
+# Number of genes with NA adjusted p-value:
 sum(is.na(res_rc24$padj))
 
 # As a proportion of the total number of genes in the test:
@@ -594,8 +584,8 @@ Due to the log-transformation, the LFC increases more slowly than a raw fold-cha
 A nice property of LFC is that decreases and increases in expression are expressed
 symmetrically:
 
-- An LFC of `1` means that group A has a **two-fold higher** expression than group B
-- An LFC of `-1` means that group A has a **two-fold lower** expression than group B
+- An LFC of `1` means that group A has a **two-fold higher** expression level than group B
+- An LFC of `-1` means that group A has a **two-fold lower** expression level than group B
 
 <hr style="height:1pt; visibility:hidden;" />
 
@@ -687,7 +677,7 @@ comparisons.
 
 ## Visualizing the DE results
 
-To practice with visualization of the differential expression results,
+To practice visualizing the differential expression results,
 we will create a few plots for the results for the `relictum_24hpi` vs. `control_24hpi`
 comparison, which we extracted above.
 
@@ -711,12 +701,12 @@ EnhancedVolcano(
 
 ### Plot specific genes
 
-We can also create plots of expression levels for individual genes. That is especially
-interesting for genes with highly significant differential expression. So let's plot the
-most highly significant DEG.
+We can also create plots of expression levels for individual genes.
+That is especially interesting for genes with highly significant differential expression,
+so let's plot the most highly significant DEG.
 
-First, let's create a vector with most highly significant DEGs, which we'll use again for
-the heatmap below.
+First, let's create a vector with the most highly significant DEGs,
+which we'll use again for the heatmap below.
 
 ```{r}
 top25_DE <- row.names(res_rc24[order(res_rc24$padj)[1:25], ])
@@ -724,9 +714,9 @@ top25_DE <- row.names(res_rc24[order(res_rc24$padj)[1:25], ])
 top25_DE
 ```
 
-DESeq2 has a plotting function but the plot is not very good. We will still use that
-function but just to quickly extract the counts for our gene of interest in the right
-format for plotting, using `returnData = TRUE`:
+DESeq2 has a plotting function, but its plots are not very good.
+We will still use that function, but only to quickly extract the counts
+for our gene of interest in the right format for plotting, using `returnData = TRUE`:
 
 ```{r}
 focal_gene_counts <- plotCounts(
@@ -790,7 +780,7 @@ and make a heatmap for the top-25 most highly significant DEGs for our focal con
 
 Unlike with some of the functions we used before,
 we unfortunately can't directly use our DESeq2 object,
-but we have to extract and subset the count matrix,
+but have to extract and subset the count matrix
 and also pass the metadata to the heatmap function:
 
 ```{r}
