@@ -52,10 +52,11 @@ plots are fully customizable.
 In this lecture, you will learn:
 
 - Basic syntax of the `ggplot()` function, including aesthetic mappings with `aes()`
-- How to create scatter plots, bar graphs, and box plots with `geom_point()`, `geom_col()`, `geom_bar()`, and `geom_boxplot()`
-- How to add titles and labels with `labs()`, and apply themes like `theme_bw()`
+- How to create scatter plots, bar graphs, box plots, and histograms
+- How to change colors, add titles and labels with `labs()`, and apply themes like `theme_bw()`
+- How to change the order of categories in a plot
 - How to facet plots using `facet_wrap()` and `facet_grid()`
-- How to set figure captions and sizes with Quarto chunk options
+- How to reshape data from wide to long format with `pivot_longer()` for plotting
 - How to export plots in different formats
 
 ## Setting up
@@ -101,7 +102,7 @@ The [ggplot2 cheat sheet](https://rstudio.github.io/cheatsheets/data-visualizati
 gives an overview of the many types of plots you can create with _ggplot2_.
 :::
 
-#### Data
+### Data
 
 The first argument of `ggplot()` is your data frame,
 which you can provide inside the function, or by piping it into the function:
@@ -142,7 +143,7 @@ Because both of our variables are continuous,
 a scatter plot is a good choice:
 we'll add a `geom_point()` layer using the `+` operator.
 
-## Scatter plot
+### Geoms
 
 ```{r}
 penguins |>
@@ -151,6 +152,13 @@ penguins |>
 ```
 
 Finally, we can see the scatter plot!
+
+::: {.callout-note appearance="simple"}
+You'll see a warning that 2 rows were removed:
+two penguins have missing values (`NA`) for bill length and depth,
+and can't be plotted.
+This is expected, and you'll see the same warning for many plots below.
+:::
 
 ::: {.callout-tip collapse="true"}
 #### The Plots pane _(Click to expand)_
@@ -168,7 +176,10 @@ A few useful features of this pane:
   not how they look when you render or save them.
 :::
 
-Next, let's add a third variable to the plot by coloring the points by penguin `species`.
+## More aesthetics
+
+Besides `x` and `y`, there are other aesthetics, such as `color`, `shape`, and `size`.
+Let's add a third variable to the scatter plot by coloring the points by penguin `species`.
 To do so, we map the `species` variable to `color` inside the `aes()` function.
 When a categorical variable is mapped to color,
 _ggplot2_ automatically assigns a color to each category,
@@ -190,6 +201,10 @@ Now, each point is colored by the species of the penguin.
   a. `ggplot(aes(x = ..., y = ...), color = species)` -- still inside `ggplot()`, but outside `aes()`
   b. `geom_point(color = species)` -- inside `geom_point()`, outside `aes()`
   c. `geom_point(color = "red")` -- inside `geom_point()`, outside `aes()`, but with a fixed value instead of a variable
+
+  And what do you think will happen if you put a fixed value _inside_ `aes()`?
+
+  d. `geom_point(aes(color = "red"))`
 
 <!----
 <details>
@@ -220,12 +235,24 @@ penguins |>
 ```
 
 c. But with a fixed value instead of a variable name, it works fine
-   (more on this in the next exercise):
+   (more on this below):
 
 ```{r}
 penguins |>
   ggplot(aes(x = bill_len, y = bill_dep)) +
   geom_point(color = "red")
+```
+
+d. Inside `aes()`, the points are not red, but ggplot's default first color (salmon),
+   and a legend appears with a single entry: "red".
+   Inside `aes()`, `"red"` is treated as _data_:
+   a variable with the value "red" for every point,
+   which is mapped to the first color of ggplot's default color palette.
+
+```{r}
+penguins |>
+  ggplot(aes(x = bill_len, y = bill_dep)) +
+  geom_point(aes(color = "red"))
 ```
 
 **Why does (b) fail while (c) works, given that both are outside `aes()`?**
@@ -268,45 +295,12 @@ for other aesthetics that you can map variables to.
 
 :::
 
-### Mapping vs settings
+### Mapping vs. setting
 
 Sometimes you want to give all points the same color or size.
 To **map** a variable to an aesthetic, put it inside `aes()`;
 to **set** an aesthetic to a fixed value, put it outside `aes()`,
 like with `geom_point(color = "red")` in the previous exercise.
-
-::: exercise
-#### {{< fa user-edit >}} Exercise 2: A fixed value inside `aes()`
-
-What do you think will happen if you put `color = "red"` _inside_ `aes()`?
-Predict first, then run the code to check:
-
-```{r, eval=FALSE}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep)) +
-  geom_point(aes(color = "red"))
-```
-
-<!----
-<details>
-
-<summary>Click for the solution</summary>
-
-```{r}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep)) +
-  geom_point(aes(color = "red"))
-```
-
-The points are not red, but ggplot's default first color (salmon),
-and a legend appears with a single entry: "red".
-Inside `aes()`, `"red"` is treated as _data_:
-a variable with the value "red" for every point,
-which is mapped to the first color of ggplot's default color palette.
-
-</details>
----->
-:::
 
 ### Global and local mappings
 
@@ -337,6 +331,12 @@ penguins |>
 Here, we mapped `color = species` at the local level inside `geom_point()`.
 Therefore, only the points are colored by species,
 while `geom_smooth()` fits a single line across all species, in the default color (blue).
+
+## Customizing plots
+
+Next, we'll change the look of our plot:
+its colors, titles and labels, and overall theme.
+These functions work the same way for any type of plot.
 
 ### Manually changing the colors
 
@@ -402,6 +402,44 @@ with the `theme()` function:
 see the [optional R self-study page](../bonus/r.qmd#customizing-themes).
 :::
 
+::: exercise
+#### {{< fa user-edit >}} Exercise 2: Build a plot from scratch
+
+Create a scatter plot of flipper length (x-axis) versus body mass (y-axis), with:
+
+- Points colored by species
+- A separate linear trend line for each species
+- Axis labels that include the units (millimeters and grams)
+- A theme of your choice other than `theme_bw()`
+
+Is the relationship between flipper length and body mass similar for the three species?
+
+<!----
+<details>
+
+<summary>Click for the solution</summary>
+
+```{r}
+penguins |>
+  ggplot(aes(x = flipper_len, y = body_mass, color = species)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(
+    x = "Flipper length (mm)",
+    y = "Body mass (g)"
+  ) +
+  theme_classic()
+```
+
+To get a separate trend line for each species,
+`color = species` has to be a global mapping inside `ggplot()`.
+For all three species, heavier penguins tend to have longer flippers,
+and the trend lines have fairly similar slopes.
+
+</details>
+---->
+:::
+
 ## Other geoms
 
 So far, we've only made scatter plots with `geom_point()`,
@@ -429,6 +467,31 @@ island_means |>
   geom_col()
 ```
 
+The islands are shown in alphabetical order,
+because `island` is a factor whose levels (categories) are in that order.
+To change the order, you can redefine the factor levels with `mutate()` before plotting
+(see also [Sorting in a custom order with factors](w13a_data-wrangling.qmd#arrange-to-sort-data-frames)):
+
+```{r}
+island_means |>
+  mutate(island = factor(island, levels = c("Dream", "Biscoe", "Torgersen"))) |>
+  ggplot(aes(x = island, y = mean_body_mass)) +
+  geom_col()
+```
+
+::: {.callout-note collapse="true"}
+#### Ordering bars by their values with `fct_reorder()` _(Click to expand)_
+To order the bars from low to high values automatically,
+you can use the `fct_reorder()` function,
+which reorders the levels of a factor (here, `island`) by the values of another column:
+
+```{r}
+island_means |>
+  mutate(island = fct_reorder(island, mean_body_mass)) |>
+  ggplot(aes(x = island, y = mean_body_mass)) +
+  geom_col()
+```
+:::
 
 To plot the _number of penguins_ per island instead,
 you can use `geom_bar()` directly on the full data set,
@@ -455,6 +518,44 @@ box_plot_body_mass_and_island <- penguins |>
 
 box_plot_body_mass_and_island
 ```
+
+To color the boxes by species, we can map `species` to an aesthetic as before.
+But for "filled" shapes like boxes and bars,
+`color` only changes the outline,
+while `fill` changes the inside:
+
+```{r}
+penguins |>
+  ggplot(aes(x = island, y = body_mass, fill = species)) +
+  geom_boxplot()
+```
+
+To pick fill colors yourself, use `scale_fill_manual()` instead of `scale_color_manual()`.
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 3: `color` versus `fill`
+
+What do you think will happen if you map `species` to `color` instead of `fill` in the box plot above?
+Predict first, then run the code to check.
+
+<!----
+<details>
+
+<summary>Click for the solution</summary>
+
+```{r}
+penguins |>
+  ggplot(aes(x = island, y = body_mass, color = species)) +
+  geom_boxplot()
+```
+
+The boxes are still split by species,
+but only their outlines (and the outlier points) are colored,
+while the insides stay white.
+
+</details>
+---->
+:::
 
 ::: exercise
 #### {{< fa user-edit >}} Self-study exercise: Adding data points to a box plot
@@ -493,7 +594,95 @@ penguins |>
 </details>
 :::
 
-There are many other geoms, e.g. for histograms and line graphs:
+### Histograms
+
+To see the distribution of a single numeric variable, use a histogram.
+Like `geom_bar()`, `geom_histogram()` counts rows,
+but it first groups the values of a continuous variable into "bins":
+
+```{r}
+penguins |>
+  ggplot(aes(x = body_mass)) +
+  geom_histogram()
+```
+
+_ggplot2_ uses 30 bins by default, and prints a message suggesting you choose a better value.
+You can set the width of the bins with `binwidth`
+(here in grams, the unit of `body_mass`):
+
+```{r}
+penguins |>
+  ggplot(aes(x = body_mass)) +
+  geom_histogram(binwidth = 200)
+```
+
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise: Histograms
+
+1. Try a much smaller and a much larger `binwidth`, like 20 and 1,000.
+   What happens to the histogram?
+
+   <details>
+
+   <summary>Click for the solution</summary>
+
+   ```{r}
+   penguins |>
+     ggplot(aes(x = body_mass)) +
+     geom_histogram(binwidth = 20)
+
+   penguins |>
+     ggplot(aes(x = body_mass)) +
+     geom_histogram(binwidth = 1000)
+   ```
+
+   With very narrow bins, the histogram gets spiky and noisy,
+   while with very wide bins, you lose the shape of the distribution.
+   There is no single correct binwidth, so it's worth trying a few.
+
+   </details>
+
+2. Fill the histogram (with `binwidth = 200`) by `species`.
+   How are the bars of the different species arranged?
+
+   <details>
+
+   <summary>Click for the solution</summary>
+
+   ```{r}
+   penguins |>
+     ggplot(aes(x = body_mass, fill = species)) +
+     geom_histogram(binwidth = 200)
+   ```
+
+   The bars of the different species are stacked on top of each other,
+   so the total height of each bar is still the count across all species.
+
+   </details>
+
+3. Now, add `position = "identity"` and `alpha = 0.5` inside `geom_histogram()`.
+   What does each of these two options do?
+
+   <details>
+
+   <summary>Click for the solution</summary>
+
+   ```{r}
+   penguins |>
+     ggplot(aes(x = body_mass, fill = species)) +
+     geom_histogram(binwidth = 200, position = "identity", alpha = 0.5)
+   ```
+
+   - `position = "identity"` stops the stacking:
+     each species' bars start at zero, so they overlap.
+   - `alpha = 0.5` makes the bars semi-transparent
+     (`alpha` ranges from 0, fully transparent, to 1, opaque),
+     so you can see the overlapping bars.
+
+   </details>
+:::
+
+There are many other geoms, e.g. for violin plots and line graphs:
 see the [ggplot2 cheat sheet](https://rstudio.github.io/cheatsheets/data-visualization.pdf)
 for an overview.
 
@@ -527,43 +716,150 @@ penguins |>
   facet_grid(rows = vars(sex), cols = vars(species))
 ```
 
-## Figure options in Quarto documents
-
-When you render a Quarto document, any plots made in code chunks will be included in the
-output document.
-You can control how they are shown with **chunk options**:
-lines at the top of a chunk that start with `#|`,
-where each line sets one option.
-For example:
+Notice the third row of panels for penguins whose sex is unknown (`NA`).
+To remove these, we can filter the data frame before plotting,
+by inserting a `filter()` step in the pipeline before `ggplot()`:
 
 ```{r}
-#| echo: fenced
-#| fig-cap: "Body mass of penguins on different islands"
-#| fig-width: 6
-#| fig-height: 4
-#| fig-align: center
 penguins |>
+  filter(!is.na(sex)) |>
   ggplot(aes(x = island, y = body_mass)) +
-  geom_boxplot()
+  geom_boxplot() +
+  facet_grid(rows = vars(sex), cols = vars(species))
 ```
 
-- `fig-cap` --- Add a figure caption below the plot
-- `fig-width` and `fig-height` --- Set the size of the plot (in inches)
-- `fig-align` --- Align the plot to the `left`, `right`, or `center`
+Here, `is.na(sex)` is `TRUE` for penguins with a missing value for `sex`,
+and the `!` reverses this,
+so we keep only the penguins whose sex is known.
+Note that we use the pipe `|>` between data frame steps,
+but `+` to add layers to the plot.
 
-Another useful chunk option is `echo: false`,
-which runs the code and shows its output (here, the plot),
-but hides the code itself.
-You'll learn more chunk options in [week 14](../week14/w14a_quarto.qmd#chunk-options).
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise: Faceting a scatter plot
+
+1. Take your scatter plot from Exercise 2,
+   and facet it by `island` with `facet_wrap()`.
+   Which species are found on which island?
+
+   <details>
+
+   <summary>Click for the solution</summary>
+
+   ```{r}
+   penguins |>
+     ggplot(aes(x = flipper_len, y = body_mass, color = species)) +
+     geom_point() +
+     geom_smooth(method = "lm") +
+     labs(
+       x = "Flipper length (mm)",
+       y = "Body mass (g)"
+     ) +
+     theme_classic() +
+     facet_wrap(vars(island))
+   ```
+
+   Adelie penguins are found on all three islands,
+   Chinstrap penguins only on Dream,
+   and Gentoo penguins only on Biscoe.
+
+   </details>
+
+2. Now, facet the plot by `species` instead, and remove the color mapping.
+   Do you find this plot or the one with colors easier to read?
+   What is a disadvantage of each?
+
+   <details>
+
+   <summary>Click for the solution</summary>
+
+   ```{r}
+   penguins |>
+     ggplot(aes(x = flipper_len, y = body_mass)) +
+     geom_point() +
+     geom_smooth(method = "lm") +
+     labs(
+       x = "Flipper length (mm)",
+       y = "Body mass (g)"
+     ) +
+     theme_classic() +
+     facet_wrap(vars(species))
+   ```
+
+   With facets, points of different species no longer overlap,
+   but it's harder to compare the species directly.
+   With colors in a single panel, comparing species is easy,
+   but the plot can get crowded.
+
+   </details>
+:::
+
+::: {.callout-tip appearance="simple"}
+All facets show the same type of plot.
+To combine _different_ plots into one multi-panel figure,
+see the [optional R self-study page](../bonus/r.qmd#combining-plots-into-one-figure).
+:::
+
+## Reshaping data for plotting
+
+Say we want to see histograms of all three length measurements
+(bill length, bill depth, and flipper length) side by side.
+With facets, we could put each in its own panel ---
+but we can only facet by a _column_,
+and these measurements are spread across three columns.
+Recall the [Tidy data](w13a_data-wrangling.qmd#tidy-data) section from Monday:
+in this case, it's as if the measurement type is a variable
+that is hiding in the column names.
+
+The `pivot_longer()` function reshapes data from this "wide" format to a "long" format:
+
+```{r}
+penguins_long <- penguins |>
+  pivot_longer(
+    cols = c(bill_len, bill_dep, flipper_len), # the columns to combine
+    names_to = "measurement", # new column with the old column names
+    values_to = "mm" # new column with the values
+  )
+
+penguins_long |>
+  select(species, measurement, mm) |>
+  head()
+```
+
+Each penguin now has three rows, one per measurement.
+Now, we can facet by the new `measurement` column:
+
+```{r}
+penguins_long |>
+  ggplot(aes(x = mm, fill = species)) +
+  geom_histogram() +
+  facet_wrap(vars(measurement), scales = "free")
+```
+
+`scales = "free"` lets each panel have its own axis ranges,
+because flipper lengths are much larger than bill lengths and depths.
+
+::: {.callout-tip appearance="simple"}
+Many omics data sets, such as gene count tables with one column per sample,
+are in wide format,
+so you'll often need `pivot_longer()` before plotting them with _ggplot2_.
+:::
 
 ## Exporting plots
 
 To save a plot to a file, in formats like PNG, JPEG, or PDF,
-use the [`ggsave()`](https://ggplot2.tidyverse.org/reference/ggsave.html) function:
+use the [`ggsave()`](https://ggplot2.tidyverse.org/reference/ggsave.html) function.
+By default, `ggsave()` won't create a folder that doesn't exist,
+so first create a `results` folder in your `week13` folder, if it doesn't exist yet:
+
+```{r eval=FALSE}
+dir.create(here("week13/results"), showWarnings = FALSE)
+```
+
+Then, save the plot:
 
 ```{r eval=FALSE}
 ggsave(
-  filename = here("week13/results/boxplot.png"), # file path and name (the 'results' dir must exist)
+  filename = here("week13/results/boxplot.png"), # file path and name
   plot = box_plot_body_mass_and_island, # what to save
   width = 18,
   height = 12,
@@ -583,8 +879,11 @@ but `ggsave()` gives you more control and is reproducible.
 In this lecture, you learned:
 
 - The basic syntax of _ggplot2_, which builds plots layer by layer
-- How to map variables to aesthetics with `aes()`, and set aesthetics to fixed values outside of it
+- How to map variables to aesthetics like `color` and `fill` with `aes()`,
+  and set aesthetics to fixed values outside of it
 - How to make different types of plots with `geom_*()` functions
+- How to change the order of categories by changing factor levels
 - How to facet plots with `facet_wrap()` and `facet_grid()`
-- How to set figure captions and sizes with Quarto chunk options,
-  and how to save plots to files with `ggsave()`
+- How to reshape data with `pivot_longer()`,
+  and combine data wrangling and plotting in one pipeline
+- How to save plots to files with `ggsave()`

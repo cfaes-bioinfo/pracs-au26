@@ -1,5 +1,5 @@
 ---
-title: "RNA-seq count data analysis in R"
+title: "R for omics data I: RNA-seq count data analysis"
 subtitle: "Week 15 -- Lecture A"
 pagetitle: "w15a: RNA-seq"
 date: 2026-11-30
@@ -13,6 +13,7 @@ author:
         url: https://go.osu.edu/bioinformatics-core
       - name: Dept. of Plant Pathology, Ohio State University
         url: https://plantpath.osu.edu
+bibliography: ../references.bib
 execute:
   eval: true
 other-links:
@@ -47,65 +48,78 @@ Today, you will use such a gene count table to:
 - Create an R object that also incorporates the metadata
 - Perform exploratory data analysis including a PCA
 - Run a Differential Expression (DE) analysis
-- Extract and visualize the DE results, including with a heatmap
+- Extract and visualize the DE results, including with a volcano plot
 
 ### Setting up
 
 1. Open Positron and connect to OSC with your personal dir open
-   ([Setup: starting Positron and connecting to OSC](../week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc)).
+   ([Setup: starting Positron and connecting to OSC](/week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc)).
 2. Create a `week15` folder, and in it, create a new Quarto document `week15a.qmd`
    with a YAML header.
 
-## Install and load R packages
+## Load the R packages
 
-So far, you've installed R packages from CRAN with `install.packages()`.
-However, many packages for omics data analysis, including DESeq2 that we'll use today,
-are instead available from [Bioconductor](https://bioconductor.org/),
-a repository of packages for the analysis of high-throughput biological data.
-Bioconductor packages are installed with the `install()` function from the CRAN
-package `BiocManager`.
+You learned that you can install R packages with `install.packages()`.
+However, many packages for omics data analysis, including DESeq2,
+are not available through CRAN (the default R package repository),
+but from [Bioconductor](https://bioconductor.org/),
+a package repository for high-throughput biological data analysis.
+That's why the code you ran at the end of
+[week 14](/week14/w14a_quarto.qmd#before-next-week-install-packages-for-week-15)
+installed DESeq2 and EnhancedVolcano with `BiocManager::install()`.
 
-At the end of
-[week 14](../week14/w14a_quarto.qmd#before-next-week-install-packages-for-week-15),
-you already started installing the packages we'll use today with the following code:
+::: {.callout-note collapse="true"}
+#### Haven't installed the packages yet? _(Click to expand)_
+
+Then run the following code in the R console now.
+Installing DESeq2 and EnhancedVolcano can take 10--20 minutes.
 
 ```{r, eval=FALSE}
 install.packages("BiocManager")
 install.packages("pheatmap")
 BiocManager::install(c("DESeq2", "EnhancedVolcano"))
 ```
-
-Here, `install.packages()` installs BiocManager and the CRAN package pheatmap,
-and `BiocManager::install()` installs DESeq2 and EnhancedVolcano from Bioconductor.
+:::
 
 ::: {.callout-tip appearance="simple"}
-To see which packages you have installed, and their versions,
-click the **Packages** icon (a cube) in the Activity Bar.
-This pane also shows which packages are loaded,
-and has buttons to install, update, and remove packages.
-:::
-
-::: callout-important
-#### Haven't installed the packages yet?
-Then run the code above in the R console now.
-Installing DESeq2 and EnhancedVolcano can take 10--20 minutes.
-:::
-
 For more about Bioconductor, including how to find packages,
-its specialized data structures,
-and examples of working with DNA sequences,
-see the [optional self-study page on Bioconductor](../bonus/r-omics.qmd).
+its specialized data structures, and examples of working with DNA sequences,
+see the [optional self-study page on Bioconductor](/bonus/r-omics.qmd).
+:::
 
 Now, load the packages:
 
 ```{r warning=FALSE}
 library(tidyverse) # Misc. data manipulation and plotting
-library(pheatmap) # Heatmap plot
 library(EnhancedVolcano) # Volcano plot
-library(DESeq2) # Differential expression analysis
-library(here) # File referencing
 ```
 
+```{r, eval=FALSE}
+library(here) # File referencing
+```
+```r-out
+here() starts at /fs/ess/PAS3493/people/jelmer
+```
+
+```{r, echo=FALSE, message=FALSE}
+library(here)
+```
+
+```{r, eval=FALSE}
+library(DESeq2) # Differential expression analysis
+```
+
+Loading DESeq2 prints a lot of output, which you can ignore:
+
+<details>
+
+<summary>Click to see the output of `library(DESeq2)`</summary>
+
+```{r, echo=FALSE, warning=FALSE}
+library(DESeq2)
+```
+
+</details>
 
 ### Set the input file paths
 
@@ -114,7 +128,7 @@ For the differential expression analysis, we have the following input files:
 - **Metadata table** ---
   Metadata for the study, linking sample IDs to treatments
 - **Gene count table** ---
-  Produced by the [nf-core rnaseq workflow](https://nf-co.re/rnaseq)
+  Produced by the [nf-core rnaseq workflow](https://nf-co.re/rnaseq) [@ewels2020]
 
 ```{r, eval=FALSE}
 # We'll save the paths to our input files for later use
@@ -131,24 +145,18 @@ metadata_file <- here::here("assets/metadata.tsv")
 
 ## Create a DESeq2 object
 
-Like the authors of the *Culex* [paper](https://pmc.ncbi.nlm.nih.gov/articles/PMC12288828/) whose data we are working with,
+As was done in the @garrigós2025 paper,
 we will perform a Principal Component Analysis (PCA)
-and a Differential Expression (DE) analysis using the popular **DESeq2** package
-([paper](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8),
-[website](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)).
+and a Differential Expression (DE) analysis using the popular
+[**DESeq2** package](https://bioconductor.org/packages/release/bioc/html/DESeq2.html) [@love2014].
 
-The DESeq2 package has its own "object type" (a specific R data structure),
-and before we can do anything else,
+The DESeq2 package has its own "object type" and before we can do anything else,
 we need to create a DESeq2 object from three components:
 
-1. **Metadata**\
-   The metadata should contain the independent variables,
+1. **Metadata** --- containing the independent variables,
    allowing DESeq2 to compare groups of samples.
-2. **Count table**\
-   A matrix (table) with one row per gene and one column per sample.
-3. **A statistical design**\
-   A statistical design formula (basically, which groups to compare)
-   that tells DESeq2 *how* to analyze the data.
+2. **Count table** --- A matrix (table) with one row per gene and one column per sample.
+3. **A statistical design** --- A formula that tells DESeq2 which groups to compare.
 
 ### Metadata
 
@@ -163,12 +171,6 @@ meta_raw <- read_tsv(metadata_file, show_col_types = FALSE)
 # Take a look at the first 6 rows
 head(meta_raw)
 ```
-
-::: {.callout-tip appearance="minimal"}
-*This metadata table is an example of
-[tidy data](../week13/w13a_data-wrangling.qmd#tidy-data):
-it has one row per sample and one column per variable.*
-:::
 
 We'll make sure the data frame is sorted by sample ID, and that the sample IDs are
 contained in "row names":
@@ -195,10 +197,8 @@ meta <- meta_raw |>
 head(meta)
 ```
 
-::: {.callout-tip appearance="minimal"}
-*In the two outputs above, note the difference between having the sample IDs as a separate
-column versus as row names.*
-:::
+(In the two outputs above, note the difference between having the sample IDs as
+a separate column versus as row names.)
 
 ### Gene count table
 
@@ -247,6 +247,10 @@ Let's make sure this is indeed the case:
 all(row.names(meta) == colnames(count_mat))
 ```
 
+`row.names()` and `colnames()` get the row and column names,
+`==` compares them element by element,
+and `all()` checks whether all of these comparisons are `TRUE`.
+
 ### Create the DESeq2 object
 
 We will create the DESeq2 object using the function `DESeqDataSetFromMatrix()`,
@@ -282,40 +286,12 @@ of our count matrix?
 dim(count_mat)
 ```
 
-What are the summed and mean counts per gene, and the summed counts per sample?
-We'll show the first six results for each:
-
-```{r}
-# sum of rows in matrix
-head(rowSums(count_mat))
-# sum of columns in matrix
-head(colSums(count_mat))
-# mean of rows in matrix
-head(rowMeans(count_mat))
-```
-
 How many genes have total (= across all samples) counts that are non-zero?
+The `rowSums()` function computes the sum of each row (gene) of a matrix:
 
 ```{r}
-nrow(count_mat[rowSums(count_mat) > 0, ])
+sum(rowSums(count_mat) > 0)
 ```
-
-<hr style="height:1pt; visibility:hidden;" />
-
-::: exercise
-#### {{< fa user-edit >}} Self-study exercise 1: Gene counts
-
-- How many genes have total counts of at least 10?
-
-<details><summary>*Click to see the solution*</summary>
-
-```{r}
-nrow(count_mat[rowSums(count_mat) >= 10, ])
-```
-</details>
-:::
-
-<hr style="height:1pt; visibility:hidden;" />
 
 How do the "library sizes",
 i.e. the summed per-sample gene counts, compare across samples?
@@ -323,6 +299,85 @@ i.e. the summed per-sample gene counts, compare across samples?
 ```{r}
 colSums(count_mat)
 ```
+
+This is easier to see in a plot.
+To plot the counts with _ggplot2_, we first need a data frame in long format,
+with one row per gene per sample
+([Reshaping data for plotting](/week13/w13b_data-viz.qmd#reshaping-data-for-plotting)).
+We can create one from `count_df`:
+
+```{r}
+count_long <- count_df |>
+  pivot_longer(
+    cols = !c(gene_id, gene_name), # all columns except these two
+    names_to = "sample_id",
+    values_to = "count"
+  )
+
+head(count_long)
+```
+
+Next, we compute the library sizes with `group_by()` and `summarize()`,
+and pipe the result straight into `ggplot()`:
+
+```{r}
+count_long |>
+  group_by(sample_id) |>
+  summarize(lib_size = sum(count) / 1e6) |> # 1e6 = 1 million
+  ggplot(aes(x = sample_id, y = lib_size)) +
+  geom_col() +
+  labs(x = "Sample", y = "Library size (millions of counts)") +
+  theme_bw()
+```
+
+Most samples have 15--30 million counts,
+but sample S77 has fewer than 10 million.
+Differences like these are why we have to normalize the counts,
+as we'll do below.
+
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise 1: The distribution of gene counts
+
+1. Make a histogram of the `count` column of `count_long`.
+   Why is this plot hard to interpret?
+
+   <details>
+
+   <summary>Click for the solution</summary>
+
+   ```{r}
+   count_long |>
+     ggplot(aes(x = count)) +
+     geom_histogram()
+   ```
+
+   Nearly all counts end up in the first bar,
+   because most genes have low counts while a few have counts in the millions,
+   which stretches the x-axis.
+
+   </details>
+
+2. Plot `log10(count + 1)` instead.
+   What does the distribution look like now?
+   And why do you think we add 1 to the counts?
+
+   <details>
+
+   <summary>Click for the solution</summary>
+
+   ```{r}
+   count_long |>
+     ggplot(aes(x = log10(count + 1))) +
+     geom_histogram(binwidth = 0.1)
+   ```
+
+   There is a tall peak at 0 (genes with zero counts in a sample),
+   and among the remaining genes, most have between 10 and 10,000 counts.
+   We add 1 because `log10(0)` is `-Inf`,
+   so genes with zero counts couldn't be plotted.
+
+   </details>
+:::
 
 
 ### Principal Component Analysis (PCA)
@@ -344,12 +399,10 @@ among samples and "stabilize" the variance among genes[^4]:
 dds_vst <- varianceStabilizingTransformation(dds)
 ```
 
-::: callout-note
-#### The authors of the study did this as well:
+The authors of the study did this as well, they mention:
 
-> *We carried out a Variance Stabilizing Transformation (VST) of the counts to represent
-> the samples on a PCA plot.*
-:::
+> *We carried out a Variance Stabilizing Transformation (VST) of the counts to represent*
+> *the samples on a PCA plot.*
 
 Next, run and plot the PCA with a single call to the `plotPCA()` function from DESeq2:
 
@@ -361,7 +414,7 @@ plotPCA(dds_vst, intgroup = c("time", "treatment"))
 using ntop=500 top features by variance
 ```
 
-![](../img/PCA.png){fig-align="center" width="90%"}
+![](/img/PCA.png){fig-align="center" width="90%"}
 
 <hr style="height:1pt; visibility:hidden;" />
 
@@ -374,22 +427,32 @@ using ntop=500 top features by variance
 - How does our plot compare to the PCA plot in the paper (Figure 1),
   in terms of the conclusions you just drew?
 
-<!----
-<details><summary>*Click to see the paper's Figure 1*</summary>
+<details><summary> {{< fa info-circle >}} Click to see the paper's Figure 1 </summary>
 
-![](../img/garrigo_PCA.jpeg)
+![](/img/garrigo_PCA.jpeg)
 
 </details>
----->
 :::
 
 ## Differential Expression (DE) analysis
 
 ### Figuring out how to do the analysis
 
+The paper says that the authors compared each of the two infection treatments with the controls,
+and the two infection treatments with each other.
+But it doesn't say how they dealt with the time points.
+Our PCA showed that time has a large effect on gene expression, so we shouldn't ignore it,
+and the paper's Table 1, which reports DEGs separately for each time point,
+suggests that they did **pairwise comparisons between each combination of time and treatment**.
+That's what we'll do as well,
+using a single variable that combines time and treatment.
+
+::: {.callout-note collapse="true"}
+#### How we came to this conclusion _(Click to expand)_
+
 First, let's see how the DE analysis was done in the paper:
 
-> *Then, we used the DESeq2 package (Love et al., 2014) to perform the differential gene
+> *Then, we used the DESeq2 package [@love2014] to perform the differential gene
 > expression analysis comparing: (i) P. relictum-infected mosquitoes vs. controls, (ii) P.
 > cathemerium-infected mosquitoes vs. controls, and (iii) P. relictum-infected mosquitoes
 > vs. P. cathemerium-infected mosquitoes.*
@@ -415,7 +478,7 @@ _Controlling for time_ can be done in two ways:
 If we take a look at Table 1 with the DE results, it will become clearer how they did
 their analysis:
 
-![](../img/paper_table1.png){fig-align="center" width="80%"}
+![](/img/paper_table1.png){fig-align="center" width="80%"}
 
 <details><summary>{{< fa user-edit >}} How do you interpret this: did they run pairwise comparisons or a two-factor model? _(Click for the answer)_</summary>
 It looks like they performed pairwise comparisons between each combination of time
@@ -431,6 +494,7 @@ but pairwise comparisons with \>1 independent variable can also be done in two w
 - After creating a single, **combined independent variable** that is a combination of time and treatment
 
 The latter method is the more common one, and is what we will do below[^5].
+:::
 
 [^5]: I can't tell from the paper which method they used.
 
@@ -443,6 +507,8 @@ and call it `group`:
 # Create a combined variable called 'group':
 dds$group <- factor(paste(dds$treatment, dds$time, sep = "_"))
 ```
+
+`paste()` pastes the values of the two columns together, separated by `_`.
 
 ```{r}
 # Which unique values does 'group' have, and how many samples are in each?
@@ -480,6 +546,15 @@ comparisons between **each of the (6) levels** of the `group` variable.
 This means that for any individual gene,
 it tested whether the gene is differentially expressed
 *separately for each of these pairwise comparisons*.
+
+This week's exercises build on this DESeq2 object,
+so let's save it to a file right away,
+so you can load it again later with `readRDS()`:
+
+```{r, eval=FALSE}
+dir.create(here("week15/results/DE"), recursive = TRUE, showWarnings = FALSE)
+saveRDS(dds, here("week15/results/DE/dds.rds"))
+```
 
 ## Extracting the DE results
 
@@ -638,41 +713,12 @@ So, we have `r sum(res_rc24$padj < 0.05, na.rm = TRUE)` Differentially Expressed
 ::: exercise
 #### {{< fa user-edit >}} Exercise 3: DEGs
 
-The paper's Table 1 (which we saw above) reports the number of DEGs for a variety of
+The paper's Table 1 (see the box in [Figuring out how to do the analysis](#figuring-out-how-to-do-the-analysis)) reports the number of DEGs for a variety of
 comparisons.
 
-- How does the number of DEGs we just got compare to what they found in the paper for
-  this comparison?
+How does the number of DEGs we just got compare to what they found in the paper for
+this comparison?
 
-- The table also reports numbers of **up- and downregulated genes separately**. Can you
-  find this out for our DEGs?
-
-<!----
-  <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
-
-  - **Solution using tidyverse/dplyr:**
-
-    ```{r}
-    # First we need to convert the results table into a regular data frame
-    as.data.frame(res_rc24) |>
-      # Then we only select the rows/genes that are significant
-      filter(padj < 0.05) |>
-      # If we run count() on a logical test, we get the nrs. that are FALSE v. TRUE
-      dplyr::count(log2FoldChange > 0)
-    ```
-
-  - **Solution using base R:**
-
-    ```{r}
-    # Down-regulated (relictum < control):
-    sum(res_rc24$log2FoldChange < 0 & res_rc24$padj < 0.05, na.rm = TRUE)
-
-    # Up-regulated (relictum > control):
-    sum(res_rc24$log2FoldChange > 0 & res_rc24$padj < 0.05, na.rm = TRUE)
-    ```
-
-  </details>
----->
 :::
 
 ## Visualizing the DE results
@@ -705,11 +751,17 @@ We can also create plots of expression levels for individual genes.
 That is especially interesting for genes with highly significant differential expression,
 so let's plot the most highly significant DEG.
 
-First, let's create a vector with the most highly significant DEGs,
-which we'll use again for the heatmap below.
+First, let's create a vector with the IDs of the 25 most highly significant DEGs,
+which you'll also use for a heatmap in this week's exercises.
+To do so, we sort the results table by adjusted p-value,
+keep its first 25 rows, and extract their row names (the gene IDs):
 
 ```{r}
-top25_DE <- row.names(res_rc24[order(res_rc24$padj)[1:25], ])
+top25_DE <- res_rc24 |>
+  as.data.frame() |>
+  arrange(padj) |>
+  head(n = 25) |>
+  rownames()
 
 top25_DE
 ```
@@ -771,56 +823,6 @@ to see why it's important to plot individual genes,
 even if you don't get around to doing the exercise yourself.
 :::
 
-### Heatmaps
-
-Rather than plotting expression levels for many individual genes,
-we can create "heatmap" plots to plot dozens (possibly even hundreds) of genes at once.
-We will create heatmaps with the `pheatmap()` function,
-and make a heatmap for the top-25 most highly significant DEGs for our focal contrast.
-
-Unlike with some of the functions we used before,
-we unfortunately can't directly use our DESeq2 object,
-but have to extract and subset the count matrix
-and also pass the metadata to the heatmap function:
-
-```{r}
-# We need a normalized count matrix, like for the PCA
-# We can simply extract the matrix from the normalized dds object we created for the PCA
-norm_mat <- assay(dds_vst)
-
-# In the normalized count matrix, select only the genes of interest
-# We'll reuse the 'top25_DE' vector that we created for the individual gene plots
-norm_mat_sel <- norm_mat[match(top25_DE, rownames(norm_mat)), ]
-
-# Sort the metadata
-meta_sort <- meta |>
-  arrange(treatment, time) |>
-  select(treatment, time)
-```
-
-Now we can create the plot:
-
-```{r}
-pheatmap(
-  norm_mat_sel,
-  annotation_col = meta_sort, # Add the metadata
-  cluster_cols = FALSE, # Don't cluster samples (=columns, cols)
-  show_rownames = FALSE, # Don't show gene names
-  scale = "row", # Perform z-scaling for each gene
-)
-```
-
-Notes on the code and plot above:
-
-- The z-scaling with `scale =` will make sure we can compare genes with very different
-  expression levels: after all, we're interested in relative expression levels across
-  samples/sample groups.
-
-- `pheatmap` will by default perform hierarchical clustering both at the sample (`col`)
-  and gene (`row`) level, such that more similar samples and genes will appear closer to
-  each other.
-  Above, we turned clustering off for samples, since we want to keep them in their by-group order.
-
 ### Exporting the results
 
 To save the DE results tables, you can for example use the `write_tsv()` function.
@@ -832,9 +834,6 @@ dir.create(here("week15/results/DE"), recursive = TRUE, showWarnings = FALSE)
 
 # Write the results table to a TSV file
 write_tsv(as.data.frame(res_rc24), here("week15/results/DE/res_rc24.tsv"))
-
-# You can also save the whole DESeq2 object, so you can reload it later with readRDS()
-saveRDS(dds, here("week15/results/DE/dds.rds"))
 ```
 
 ## In Closing
@@ -845,7 +844,7 @@ typical RNA-seq workflow. Specifically, you have:
 - Performed exploratory data analysis including a PCA
 - Run a Differential Expression (DE) analysis with DESeq2
 - Extracted, interpreted, and visualized the DE results,
-  including with a volcano plot, single-gene plots, and a heatmap
+  including with a volcano plot and single-gene plots
 
 #### Next steps
 

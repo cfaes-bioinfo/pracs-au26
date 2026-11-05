@@ -1,7 +1,7 @@
 ---
-title: "Quarto: beyond the basics"
+title: "Quarto and reproducible R workflows"
 subtitle: "Week 14 -- Lecture A"
-pagetitle: "w14a: Quarto"
+pagetitle: "w14a: Quarto & R workflows"
 date: 2026-11-23
 date-modified: last-modified
 author:
@@ -39,6 +39,9 @@ you've been writing your R code in Quarto documents,
 using a basic YAML header, code chunks, and Markdown text.
 In this session, we'll take a closer look at each of these components,
 and at what happens when you render a document.
+We'll also see how to record the R and package versions you used,
+and how to run R code and render Quarto documents in Slurm batch jobs at OSC,
+which is useful for longer-running analyses.
 
 ### Learning goals
 
@@ -46,10 +49,11 @@ In this session, you will learn:
 
 -   What happens when Quarto renders a document
 -   More about **YAML** syntax and useful options in the YAML header
--   How to use **chunk options**, and how to set them for a whole document
+-   How to use **chunk options**, including for figures, and how to set them for a whole document
 -   How to label chunks and include R output in your Markdown text
--   How to use the visual editor for Quarto documents
+-   How to record the versions of R and R packages that you used
 -   How to render a document to Markdown that displays well on GitHub
+-   How to run R scripts and render Quarto documents in a Slurm batch job
 
 ## Setting up
 
@@ -138,8 +142,15 @@ in a file called `_quarto.yml` in the project's root directory
 Options in a document's own YAML header override these.
 :::
 
-#### YAML lists
+#### Quotes
 
+In YAML, strings usually don't need quotes,
+but they do when they contain special characters like `:` or `#`.
+For example, the title in the example above, `"Week 14: Quarto"`, needs quotes because of the colon.
+To be safe, you can always quote strings.
+
+::: {.callout-note collapse="true"}
+#### More YAML syntax: lists and comments _(Click to expand)_
 Some keys take a list of values, which can be written in two ways:
 
 ```yaml
@@ -152,20 +163,14 @@ author:
 keywords: [RNA-seq, mosquito, Plasmodium]
 ```
 
-#### Quotes and comments
-
-In YAML, strings usually don't need quotes,
-but they do when they contain special characters like `:` or `#`.
-For example, the title in the example above, `"Week 14: Quarto"`, needs quotes because of the colon.
-To be safe, you can always quote strings.
-
 As in R and the shell, a `#` starts a comment.
+:::
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise 1: YAML header
 
 1. Change the YAML header of your `week14a.qmd` to include a title, a subtitle,
-   two authors (you and a classmate) in block syntax, today's date,
+   your name as the author, today's date,
    a table of contents, and the `darkly` theme. Render the document.
 
 <!----
@@ -177,9 +182,7 @@ As in R and the shell, a `#` starts a comment.
    ---
    title: "Week 14: Quarto"
    subtitle: "Beyond the basics"
-   author:
-     - Jane Doe
-     - John Smith
+   author: "Jane Doe"
    date: 2026-11-23
    format:
      html:
@@ -247,7 +250,6 @@ A few useful chunk options:
 - `#| include: false` --- Run the code, but show neither the code nor its output.
 - `#| warning: false` and `#| message: false` --- Hide warnings and messages,
   such as the ones printed when loading some packages.
-- `#| fig-cap: "Your figure caption"` --- Add a figure caption.
 - `#| fig-show: hide` --- Hide figures.
 
 ::: {.callout-tip appearance="simple"}
@@ -261,17 +263,30 @@ but the `#|` syntax is preferred.
 More chunk options can be found
 [here](https://quarto.org/docs/computations/execution-options.html).
 
-```{r eval=TRUE}
-#| echo: fenced
-# Example code chunk
-2 * 2
+#### Figure options
+
+When you render a document, any plots made in code chunks are included in the output.
+Several chunk options control how plots are shown --- for example:
+
+```{r}
+#| include: false
+library(ggplot2)
 ```
 
 ```{r}
-#| eval: true
 #| echo: fenced
-2 * 3
+#| fig-cap: "Body mass of penguins on different islands"
+#| fig-width: 6
+#| fig-height: 4
+#| fig-align: center
+penguins |>
+  ggplot(aes(x = island, y = body_mass)) +
+  geom_boxplot()
 ```
+
+- `fig-cap` --- Add a figure caption below the plot.
+- `fig-width` and `fig-height` --- Set the size of the plot (in inches).
+- `fig-align` --- Align the plot to the `left`, `right`, or `center`.
 
 #### Global vs. chunk-specific options
 
@@ -310,13 +325,13 @@ which makes it easier to find the chunk that caused a problem:
 2 + 3
 ```
 
-#### Running all chunks above
-
+::: {.callout-tip appearance="simple"}
 Besides `Run Cell`, which runs the current chunk,
 the line above each chunk has a `Run Above` button,
 which runs all code chunks _above_ the current chunk.
 This is useful when you've restarted R or opened a document in a new session,
 and want to get back to where you were.
+:::
 
 <!---- TODO: Add a Positron screenshot of the Run Cell / Run Above buttons above a chunk ---->
 
@@ -340,41 +355,30 @@ Add code chunks to your document to do the following:
    </details>
 ---->
 
-2. Check the number of rows and columns of the `diamonds` data set
-   (which comes with _ggplot2_).
-   Then, select its first 5 columns, keep only rows with a carat greater than 0.23,
-   and rename the `color` variable to `colors`.
+2. Add a chunk that creates a scatter plot of the `diamonds` data set
+   (which comes with _ggplot2_), with `carat` on the x-axis and `price` on the y-axis.
+   Use chunk options to hide the code, add a figure caption,
+   and make the figure 5 inches wide and 4 inches tall.
 
 <!----
    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-   ```r
-   dim(diamonds)
-
+   ````{.markdown}
+   ```{{r}}
+   #| echo: false
+   #| fig-cap: "Price versus carat of diamonds"
+   #| fig-width: 5
+   #| fig-height: 4
    diamonds |>
-     select(1:5) |>
-     filter(carat > 0.23) |>
-     rename(colors = color)
-   ```
-
-   </details>
----->
-
-3. Create a scatter plot with `carat` on the x-axis and `depth` on the y-axis.
-
-<!----
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
-
-   ```r
-   diamonds |>
-     ggplot(aes(carat, depth)) +
+     ggplot(aes(x = carat, y = price)) +
      geom_point()
    ```
+   ````
 
    </details>
 ---->
 
-4. Temporarily **remove** `embed-resources: true` from your YAML header and render.
+3. Temporarily **remove** `embed-resources: true` from your YAML header and render.
    In the Explorer, what was created besides the HTML file?
    Download only the HTML file and open it on your computer: what's missing, and why?
    Then put `embed-resources: true` back.
@@ -439,7 +443,8 @@ so they always match your data and code --- no more copy-pasting numbers.
    </details>
 :::
 
-## Source editor vs. Visual editor
+::: {.callout-note collapse="true"}
+#### The visual editor _(Click to expand)_
 
 So far, you've edited Quarto documents in the default **source editor**,
 where you type everything yourself:
@@ -459,7 +464,18 @@ click the `...` button in the top-right of the editor,
 and select "**Edit in Visual Mode**" or "**Edit in Source Mode**".
 
 <!---- TODO: Add a Positron screenshot of a Quarto document in the visual editor ---->
+:::
 
+## Recording R and package versions
+
+For reproducibility, it's good practice to record which versions of R and R packages you used.
+An easy way to do so is to end each Quarto document with a chunk that runs `sessionInfo()`.
+Its output lists your R version, your operating system,
+and the versions of all loaded packages:
+
+```{r}
+sessionInfo()
+```
 
 ## Output for GitHub
 
@@ -481,6 +497,91 @@ use `quarto render` in the terminal
 This creates a `.md` file, plus a `_files` folder with the figures:
 commit both to your repository.
 
+## Running R in a Slurm batch job
+
+So far, you've run all your R code interactively, in Positron.
+But some analyses take a long time to run,
+like differential expression analyses of large data sets,
+or simply rendering a document whose code takes an hour.
+Instead of keeping Positron open (your compute job ends after a few hours),
+you can run such code in a **Slurm batch job**, like you did with shell scripts in
+[week 10](../week10/w10b_slurm2.qmd).
+
+There are two commands to run R code from the shell:
+
+- `Rscript my-script.R` runs an R script (`.R` file) from start to finish
+  (see the box on R scripts in
+  [week 12](../week12/w12b_r-basics.qmd#rendering)).
+- `quarto render my-doc.qmd` renders a Quarto document,
+  like you did in the terminal [above](#rendering-from-the-terminal).
+
+Here is a shell script that renders a Quarto document in a batch job:
+
+<!----
+TODO: Test at OSC whether `quarto` is available in a batch job.
+Positron bundles Quarto, and batch jobs inherit the environment of the shell they're submitted from,
+so it should work when submitted from Positron's terminal: check `which quarto` there, and submit the script once.
+If it doesn't work, use the full path to Positron's bundled `quarto` in the script.
+---->
+
+```{.bash .file filename="scripts/render.sh"}
+#!/bin/bash
+#SBATCH --account=PAS3493
+#SBATCH --time=60
+#SBATCH --mail-type=FAIL
+#SBATCH --output=slurm-render-%j.out
+
+# Load R (this is the same module as in your ~/.bashrc)
+module load gcc/12.3.0 R/4.6.1
+
+set -euo pipefail
+
+# Copy the placeholder variables
+qmd_file=$1
+
+# Render the Quarto document
+quarto render "$qmd_file"
+```
+
+<!----
+TODO: Check whether `module load` actually fails after `set -euo pipefail` at OSC
+(a known Lmod issue in some setups, not confirmed at OSC).
+If it works fine, remove the second bullet point below and use the usual order.
+---->
+
+- Unlike most software in this course, we load R with an OSC module rather than a container,
+  because that's the R installation that you installed all your packages for.
+- The `module load` line comes before `set -euo pipefail`,
+  because the `module` command can fail with the strict settings of `set -u`.
+- To run an R script instead, replace `quarto render` with `Rscript`,
+  and pass the script an R script instead of a Quarto document.
+
+You would submit this script as follows:
+
+```bash
+sbatch scripts/render.sh week14/week14a.qmd
+```
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 3: Render a document in a batch job
+
+1. Create the script above as `scripts/render.sh` in your personal dir,
+   and submit it to render your `week14a.qmd`.
+
+2. When the job has finished, check the Slurm log file and the rendered HTML file.
+   Was the HTML file updated? (Hint: `ls -l` shows when a file was last modified.)
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   The Slurm log file `slurm-render-<job-id>.out` should contain the same
+   rendering messages you see when you render in the terminal,
+   and `ls -l week14` should show that `week14a.html` was just modified.
+
+   </details>
+---->
+:::
+
 ## Before next week: install packages for week 15
 
 Installing the R packages for next week's RNA-seq analysis can take 10--20 minutes,
@@ -500,9 +601,8 @@ please make sure to run it before next week's class
 (see the [week 15 overview](../week15/w15_overview.qmd#before-class-install-packages)).
 
 <!----
-TODO: Proposed new sections for this "beyond the basics" session (not yet written):
+TODO: Proposed new sections for this session (not yet written):
 
-- Rendering in a Slurm batch job with `quarto render` (ties back to weeks 7 and 10)
 - Avoiding slow re-renders: `cache: true` / `freeze`
 - Turning an R script into a Quarto document
 ---->

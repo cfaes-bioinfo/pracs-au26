@@ -66,18 +66,6 @@ In this lecture, you will learn:
    ([previous lecture](/week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc)).
 2. Create a new folder `week13` in your personal dir.
 3. Create a new Quarto document `week13/week13a.qmd`, and add a YAML header.
-4. Later in this lecture, you'll use the _tidyverse_ package.
-   Because installing it can take a while,
-   start the installation now by running the following in the R console:
-
-   ```{r eval=FALSE}
-   install.packages("tidyverse")
-   ```
-
-5. While the installation is running, this console is busy.
-   So, start a second R console to work in:
-   click the interpreter picker in the top-right corner,
-   select **New Console Session**, and then select R 4.6.1.
 
 ## Vectors and data types
 
@@ -402,10 +390,9 @@ Dataframe-centric refers to doing most if not all data analysis while keeping
 the data in R's data frame data structure.
 
 All core tidyverse packages can be installed and loaded with a single command.
-You installed the tidyverse at the start of this lecture^[
-If the installation is still running, wait for it to finish:
-you'll see the `>` prompt again in that first console session.
-], so you only need to _load_ it, which you do as follows:
+You installed the tidyverse
+[at the end of last week's lecture](../week12/w12b_r-basics.qmd#before-next-week-install-packages-for-week-13),
+so you only need to _load_ it, which you do as follows:
 
 ```{r}
 library(tidyverse)
@@ -475,7 +462,7 @@ so organizing your data this way from the start
 will make your analyses easier.
 The metadata file that we'll read next is an example of tidy data.
 
-## Reading data
+## Data frames: reading and basics
 
 ### File paths in Quarto documents
 
@@ -496,15 +483,9 @@ but `../garrigos` when rendering.
 The _here_ package solves this problem:
 its `here()` function creates file paths that start at your project's top-level folder,
 no matter what your working directory is.
-To set it up:
+You installed _here_ along with the tidyverse, so to set it up:
 
-1. Install the package in the console:
-
-   ```{r eval=FALSE}
-   install.packages("here")
-   ```
-
-2. Mark your personal dir as the top-level folder,
+1. Mark your personal dir as the top-level folder,
    by creating an empty file called `.here` in it.
    In the terminal, which should be in your personal dir, run:
 
@@ -515,7 +496,7 @@ To set it up:
    When _here_ is loaded, it looks for this file
    in the working directory and, if needed, in the folders above it.
 
-3. Load the package in your document:
+2. Load the package in your document:
 
    ```{r eval=FALSE}
    library(here)
@@ -591,7 +572,7 @@ for example to check its column names before you read it.
 at the top of the Data Explorer.)
 :::
 
-## Data frame basics
+### Data frame basics
 
 Data frames are another R data structure,
 which can be thought of as vectors pasted side-by-side:
@@ -627,6 +608,13 @@ and when subsetting they always return another tibble rather than simplifying to
 
 To see the structure of any data frame --- its dimensions, column names,
 and column data types --- you can use the `str()` function, e.g. `str(meta)`.
+To get only its dimensions,
+use `nrow()` for the number of rows, `ncol()` for the number of columns,
+or `dim()` for both:
+
+```{r}
+dim(meta)
+```
 
 ### Extracting columns from a data frame
 
@@ -655,9 +643,17 @@ expects the RNA-seq gene counts as a matrix, with genes as rows and samples as c
 Row and column names are not part of a matrix's data itself,
 which is why gene IDs are stored as row names
 (in a data frame, they would usually be stored in a separate column instead).
+
+To extract elements from a matrix with square brackets,
+you specify both the rows and the columns, separated by a comma: `[rows, columns]`.
+You can use positions or row/column names,
+and leaving a position empty means "all" ---
+for example, `count_mat[c("gene1", "gene2"), ]` would get the rows of two genes
+and all columns.
+(This works for data frames too.)
 :::
 
-## The _dplyr_ package
+## Subsetting and sorting with _dplyr_
 
 The [_dplyr_](https://cran.r-project.org/package=dplyr) package provides
 useful functions for **manipulating data in data frames** ("data wrangling").
@@ -717,7 +713,7 @@ The `fct` in the output stands for **factor**,
 a data type for categorical data
 (more on factors [below](#arrange-to-sort-data-frames)).
 
-## `select()` to pick columns (variables)
+### `select()` to pick columns (variables)
 
 The first `dplyr` function you'll learn about is `select()`,
 which subsets a data frame by including/excluding certain columns.
@@ -757,7 +753,7 @@ select(.data = penguins, !year)
   for example, `rename(.data = penguins, mass = body_mass)`.
 :::
 
-## `filter()` to pick rows (observations)
+### `filter()` to pick rows (observations)
 
 The `filter()` function outputs only those rows that satisfy one or more conditions.
 It is similar to Filter functionality in Excel --
@@ -766,7 +762,7 @@ while `filter()` will completely _exclude_ rows.
 But like all _dplyr_ functions, `filter()` outputs a new data frame,
 and does not modify the input data frame.
 
-### Filter based on one condition
+#### Filter based on one condition
 
 This first `filter()` example outputs only rows (penguins) from the island Dream:
 
@@ -784,7 +780,7 @@ filter(.data = penguins, island == "Dream")
 Remember to use **two** equals signs `==` to test for equality!
 :::
 
-### Filter based on multiple conditions
+#### Filter based on multiple conditions
 
 It's also possible to filter based on multiple conditions.
 For example, you may want to see Gentoo penguins with a body mass above 5,000 g:
@@ -810,7 +806,17 @@ filter(.data = penguins, island == "Dream" | body_mass > 5000)
 ```
 :::
 
-## The pipe (`|>`)
+::: {.callout-tip appearance='simple'}
+To keep rows whose value matches any one of several values,
+use the `%in%` operator with a vector of those values ---
+for example, to keep penguins from two of the three islands:
+
+```{r}
+filter(.data = penguins, island %in% c("Dream", "Biscoe"))
+```
+:::
+
+### The pipe (`|>`)
 
 Examples so far applied a single _dplyr_ function to a data frame,
 simply printing the output (a new data frame) to screen.
@@ -890,7 +896,7 @@ and add the following:
 :::
 
 ::: callout-note
-### Using the pipe keyboard shortcut
+#### Using the pipe keyboard shortcut
 
 In Positron, you can insert a pipe with the keyboard shortcut
 <kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>M</kbd>.
@@ -941,7 +947,7 @@ but only when you have one of the tidyverse packages loaded.
 
 :::
 
-## `arrange()` to sort data frames
+### `arrange()` to sort data frames
 
 The `arrange()` function is like sorting functionality in Excel:
 it changes the order of rows based on the values in one or more columns^[
@@ -1002,7 +1008,7 @@ This order is also respected in plots and statistical analyses,
 and you'll use factors like this for the RNA-seq analysis in week 15.
 :::
 
-## Positron's Data Explorer
+### Positron's Data Explorer
 
 Now that you know how to filter and sort data frames with code,
 let's see how you can do this interactively in Positron's **Data Explorer**.
@@ -1046,12 +1052,11 @@ which you can copy into your document.
 <!---- TODO: Add a screenshot of the Convert to Code pop-up ---->
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 3: The Data Explorer
+#### {{< fa user-edit >}} Self-study exercise: The Data Explorer
 
 1. Use the summary panel to find which columns of `penguins` have missing values,
    and how many.
 
-<!----
    <details><summary>Click for the solution</summary>
 
    `bill_len`, `bill_dep`, `flipper_len`, and `body_mass` each have 2 missing values,
@@ -1060,7 +1065,6 @@ which you can copy into your document.
    for example, 11 out of 344 rows is 3.2%.
 
    </details>
----->
 
 2. In the Data Explorer, filter the rows to Gentoo penguins,
    and sort them by flipper length, from long to short.
@@ -1068,7 +1072,6 @@ which you can copy into your document.
    Then, use Convert to Code, copy the code into your document, and run it.
    How does the code compare to what you would have written yourself?
 
-<!----
    <details><summary>Click for the solution</summary>
 
    The longest flipper length is 231 mm.
@@ -1082,11 +1085,12 @@ which you can copy into your document.
    ```
 
    </details>
----->
 
 :::
 
-## `mutate()` to modify columns and create new ones
+## Modifying, summarizing, and saving data
+
+### `mutate()` to modify columns and create new ones
 
 So far, we've focused on functions that subset and reorganize data frames.
 But you haven't yet seen how to _change the data_ or _compute derived data_.
@@ -1122,7 +1126,7 @@ meta |>
   )
 ```
 
-## `summarize()` to compute summary stats
+### `summarize()` to compute summary stats
 
 The final _dplyr_ function we'll cover is `summarize()`,
 which computes **summaries of your data across rows**.
@@ -1166,13 +1170,12 @@ After that, operations like in `summarize()` will happen separately for each gro
 which is how we ended up with per-species means and counts.
 
 :::exercise
-#### {{< fa user-edit >}} Exercise 4: `summarize()`
+#### {{< fa user-edit >}} Self-study exercise: `summarize()`
 
 Count the number of penguins for each _combination_ of species and island
 (hint: `group_by()` accepts multiple columns).
 Before running your code, **predict** how many rows the output will have.
 
-<!----
 <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
 The output has 5 rows, not 3 species × 3 islands = 9:
@@ -1187,10 +1190,15 @@ penguins |>
 ```
 
 </details>
----->
 :::
 
-## Writing to files
+::: {.callout-tip appearance='simple'}
+Counting rows per group is so common that _dplyr_ has a shortcut for it:
+`penguins |> count(species)` gives the same counts as
+`group_by(species)` followed by `summarize(n = n())`.
+:::
+
+### Writing to files
 
 To write a data frame to a TSV file,
 you can use the `write_tsv()` function,
@@ -1242,7 +1250,9 @@ here are two particularly useful additional skills to learn:
 
 - Pivoting/reshaping --- moving between 'wide' and 'long' data formats
   with `pivot_wider()` and `pivot_longer()`. This is covered in
-  [chapter 5 of R for Data Science](https://r4ds.hadley.nz/data-tidy.html#sec-pivoting).
+  [chapter 5 of R for Data Science](https://r4ds.hadley.nz/data-tidy.html#sec-pivoting)
+  (see also [Reshaping data for plotting](w13b_data-viz.qmd#reshaping-data-for-plotting)
+  in Wednesday's lecture).
 
 - Joining/merging ---
   combining multiple data frames based on one or more shared columns.

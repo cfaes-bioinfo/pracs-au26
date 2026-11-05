@@ -192,3 +192,40 @@ penguins |>
     legend.position = "top"
   )
 ```
+
+### Combining plots into one figure
+
+Figures in papers often combine different plots as panels A, B, and so on.
+Faceting can't do this, because all facets show the same type of plot and variables.
+Instead, you can use the [_patchwork_](https://patchwork.data-imaginist.com/) package,
+which is not part of the _tidyverse_:
+
+```{r}
+library(patchwork)
+```
+
+First, save each plot as an object:
+
+```{r}
+scatter_plot <- penguins |>
+  ggplot(aes(x = bill_len, y = bill_dep, color = species)) +
+  geom_point()
+
+box_plot <- penguins |>
+  ggplot(aes(x = island, y = body_mass)) +
+  geom_boxplot()
+```
+
+Then, combine them with `|` to put plots side by side
+(or `/` to put them on top of each other),
+and add panel labels with `plot_annotation()`:
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+(scatter_plot | box_plot) +
+  plot_annotation(tag_levels = "A")
+```
+
+The result is a single plot object,
+which you can save to a file with `ggsave()` like any other plot.
