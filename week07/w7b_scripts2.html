@@ -1,0 +1,2060 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Jelmer Poelstra">
+<meta name="dcterms.date" content="2026-10-07">
+
+<title>w7b: Shell scripting II – PRACS-AU26</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../img/favicon.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-eec68b17241c1efd3eae2de50d816e3e.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-dc7214d3aee0816495374db93584c688.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/quarto-contrib/fontawesome6-6.7.2/all.min.css" rel="stylesheet">
+<link href="../site_libs/quarto-contrib/fontawesome6-6.7.2/latex-fontsize.css" rel="stylesheet">
+<script src="../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="../site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="../site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../img/logo4c.png" alt="" class="navbar-logo light-content">
+    <img src="../img/logo4c.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">PRACS-AU26</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> <i class="bi bi-house-fill" role="img" aria-label="Home">
+</i> 
+<span class="menu-text"> </span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-modules" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Modules</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-modules">    
+        <li>
+    <a class="dropdown-item" href="../week01/w1_overview.html">
+ <span class="dropdown-text">Week 1: Omics data</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week02/w2_overview.html">
+ <span class="dropdown-text">Week 2: Project organization, OSC, and Markdown</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week03/w3_overview.html">
+ <span class="dropdown-text">Week 3: Unix shell – basics</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week04/w4_overview.html">
+ <span class="dropdown-text">Week 4: Unix shell – working with files</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week05/w5_overview.html">
+ <span class="dropdown-text">Week 5: Version control with Git and GitHub</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week06/w6_overview.html">
+ <span class="dropdown-text">Week 6: Using software at OSC</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week07/w7_overview.html">
+ <span class="dropdown-text">Week 7: Shell scripts</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week08/w8_overview.html">
+ <span class="dropdown-text">Week 8: Generative AI in research and coding</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week09/w9_overview.html">
+ <span class="dropdown-text">Week 9: Coding with an AI agent</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week10/w10_overview.html">
+ <span class="dropdown-text">Week 10: Slurm batch jobs and workflows</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week11/w11_overview.html">
+ <span class="dropdown-text">Week 11: Data management and nf-core pipelines</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week12/w12_overview.html">
+ <span class="dropdown-text">Week 12: R &amp; Quarto basics</span></a>
+  </li>  
+        <li class="dropdown-header">Week 13: Data wrangling &amp; visualization in R</li>
+        <li class="dropdown-header">Week 14: Quarto – beyond the basics</li>
+        <li class="dropdown-header">Week 15: R for omics data</li>
+        <li class="dropdown-header">Week 16: Student presentations</li>
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-exercises" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Exercises</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-exercises">    
+        <li>
+    <a class="dropdown-item" href="../week02/w2_exercises.html">
+ <span class="dropdown-text">Ex. 1: Markdown and project organization (week 2)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week04/w4_exercises.html">
+ <span class="dropdown-text">Ex. 2: Unix shell – working with files (week 4)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week06/w6_exercises.html">
+ <span class="dropdown-text">Ex. 3: OSC software (week 6)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week10/w10_exercises.html">
+ <span class="dropdown-text">Ex. 4: Slurm batch jobs (week 10)</span></a>
+  </li>  
+        <li class="dropdown-header">Ex. 5: R data wrangling and visualization (week 13)</li>
+        <li class="dropdown-header">Ex. 6: R for omics data (week 15)</li>
+        <li><hr class="dropdown-divider"></li>
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-assignments" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Assignments</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-assignments">    
+        <li class="dropdown-header">Graded assignments:</li>
+        <li>
+    <a class="dropdown-item" href="../GA/GA1.html">
+ <span class="dropdown-text">GA1: Markdown and Unix shell (week 3)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../GA/GA2.html">
+ <span class="dropdown-text">GA2: Version control (week 5)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../GA/GA3.html">
+ <span class="dropdown-text">GA3: Shell scripts (week 7)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../GA/GA4.html">
+ <span class="dropdown-text">GA4: Shell scripts and genAI (week 9)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../GA/GA5.html">
+ <span class="dropdown-text">GA5: A multi-step workflow (week 11)</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">Final project:</li>
+        <li>
+    <a class="dropdown-item" href="../FP/FP-info.html">
+ <span class="dropdown-text">General information</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../FP/FP1.html">
+ <span class="dropdown-text">FP1: Proposal (week 12)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../FP/FP2.html">
+ <span class="dropdown-text">FP2: Progress report (week 14)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../FP/FP3.html">
+ <span class="dropdown-text">FP3: Oral presentation (week 16)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../FP/FP4.html">
+ <span class="dropdown-text">FP4: Final submission (week 16)</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">Ungraded assignments:</li>
+        <li>
+    <a class="dropdown-item" href="https://forms.cloud.microsoft/r/wqriyRJSmd" target="_blank">
+ <span class="dropdown-text">UA1: Pre-course survey (week 1) <i class="fa-solid fa-external-link" aria-label="external-link"></i></span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../UA/UA2.html">
+ <span class="dropdown-text">UA2: OSC account setup (week 1)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../UA/UA3.html">
+ <span class="dropdown-text">UA3: GitHub account setup (week 5)</span></a>
+  </li>  
+        <li class="dropdown-header">UA4: Post-course survey (week 16) <i class="fa-solid fa-external-link" aria-label="external-link"></i></li>
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-bonus" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Bonus</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-bonus">    
+        <li class="dropdown-header">Optional self-study material:</li>
+        <li>
+    <a class="dropdown-item" href="../bonus/shell.html">
+ <span class="dropdown-text">Unix shell (week 4)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/shell-data-tools.html">
+ <span class="dropdown-text">Unix shell data tools (week 4)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/git.html">
+ <span class="dropdown-text">Version control (week 5)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/conda.html">
+ <span class="dropdown-text">Software management with Conda (week 6)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/shell-scripting.html">
+ <span class="dropdown-text">Shell scripting (week 7)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/shell-config.html">
+ <span class="dropdown-text">Shell configuration (week 7)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/claude-code.html">
+ <span class="dropdown-text">Claude Code (week 9)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/copilot.html">
+ <span class="dropdown-text">GitHub Copilot (week 9)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/slurm.html">
+ <span class="dropdown-text">Slurm batch jobs (week 10)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/data.html">
+ <span class="dropdown-text">Project and data management (week 11)</span></a>
+  </li>  
+        <li class="dropdown-header">R (weeks 12-13)</li>
+        <li>
+    <a class="dropdown-item" href="../bonus/posit-assistant.html">
+ <span class="dropdown-text">Posit Assistant (week 13)</span></a>
+  </li>  
+        <li class="dropdown-header">R for omics data (week 15)</li>
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-reference" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Reference</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-reference">    
+        <li>
+    <a class="dropdown-item" href="../ref/about.html">
+ <span class="dropdown-text"><strong>About this course</strong></span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">Reference pages:</li>
+        <li>
+    <a class="dropdown-item" href="../bonus/vscode.html">
+ <span class="dropdown-text">VS Code tips and tricks</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/vscode-local.html">
+ <span class="dropdown-text">Connecting a local VS Code installation to OSC</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/ssh.html">
+ <span class="dropdown-text">SSH and file transfer</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../ref/ncbi.html">
+ <span class="dropdown-text">Finding and downloading data from NCBI</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">Reference lists:</li>
+        <li>
+    <a class="dropdown-item" href="../ref/resources.html">
+ <span class="dropdown-text">Further resources</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../ref/refs.html">
+ <span class="dropdown-text">Literature reference list</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">Website GitHub repo:</li>
+        <li>
+    <a class="dropdown-item" href="https://github.com/cfaes-bioinfo/pracs-au26" target="_blank">
+ <span class="dropdown-text">Source code <i class="fa-solid fa-external-link" aria-label="external-link"></i></span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://github.com/cfaes-bioinfo/pracs-au26/issues/new" target="_blank">
+ <span class="dropdown-text">Report an issue <i class="fa-solid fa-external-link" aria-label="external-link"></i></span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="https://osu.instructure.com/courses/213814" target="_blank"> 
+<span class="menu-text"><i class="fa-solid fa-graduation-cap" aria-label="CarmenCanvas" title="CarmenCanvas"></i></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://ondemand.osc.edu" target="_blank"> 
+<span class="menu-text"><i class="fa-solid fa-desktop" aria-label="OSC OnDemand" title="OSC OnDemand"></i></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a>
+  <ul class="collapse">
+  <li><a href="#learning-goals" id="toc-learning-goals" class="nav-link" data-scroll-target="#learning-goals"><span class="header-section-number">1.1</span> Learning goals</a></li>
+  <li><a href="#the-big-picture" id="toc-the-big-picture" class="nav-link" data-scroll-target="#the-big-picture"><span class="header-section-number">1.2</span> The big picture</a></li>
+  <li><a href="#getting-ready" id="toc-getting-ready" class="nav-link" data-scroll-target="#getting-ready"><span class="header-section-number">1.3</span> Getting ready</a></li>
+  </ul></li>
+  <li><a href="#markdown-setup" id="toc-markdown-setup" class="nav-link" data-scroll-target="#markdown-setup"><span class="header-section-number">2</span> Markdown setup</a></li>
+  <li><a href="#for-loops" id="toc-for-loops" class="nav-link" data-scroll-target="#for-loops"><span class="header-section-number">3</span> For loops</a>
+  <ul class="collapse">
+  <li><a href="#a-non-coding-example" id="toc-a-non-coding-example" class="nav-link" data-scroll-target="#a-non-coding-example"><span class="header-section-number">3.1</span> A non-coding example</a></li>
+  <li><a href="#a-first-shell-loop" id="toc-a-first-shell-loop" class="nav-link" data-scroll-target="#a-first-shell-loop"><span class="header-section-number">3.2</span> A first shell loop</a></li>
+  <li><a href="#multiple-actions-per-iteration" id="toc-multiple-actions-per-iteration" class="nav-link" data-scroll-target="#multiple-actions-per-iteration"><span class="header-section-number">3.3</span> Multiple actions per iteration</a></li>
+  <li><a href="#loop-recap-so-far" id="toc-loop-recap-so-far" class="nav-link" data-scroll-target="#loop-recap-so-far"><span class="header-section-number">3.4</span> Loop recap so far</a></li>
+  <li><a href="#combining-loops-and-globbing" id="toc-combining-loops-and-globbing" class="nav-link" data-scroll-target="#combining-loops-and-globbing"><span class="header-section-number">3.5</span> Combining loops and globbing</a></li>
+  </ul></li>
+  <li><a href="#running-a-script-many-times-with-a-loop" id="toc-running-a-script-many-times-with-a-loop" class="nav-link" data-scroll-target="#running-a-script-many-times-with-a-loop"><span class="header-section-number">4</span> Running a script many times with a loop</a>
+  <ul class="collapse">
+  <li><a href="#your-fastqc-script" id="toc-your-fastqc-script" class="nav-link" data-scroll-target="#your-fastqc-script"><span class="header-section-number">4.1</span> Your FastQC script</a></li>
+  <li><a href="#a-protocol-markdown-file" id="toc-a-protocol-markdown-file" class="nav-link" data-scroll-target="#a-protocol-markdown-file"><span class="header-section-number">4.2</span> A “protocol” Markdown file</a></li>
+  <li><a href="#looping-over-fastq-files" id="toc-looping-over-fastq-files" class="nav-link" data-scroll-target="#looping-over-fastq-files"><span class="header-section-number">4.3</span> Looping over FASTQ files</a></li>
+  </ul></li>
+  <li><a href="#self-study-looping-over-samples" id="toc-self-study-looping-over-samples" class="nav-link" data-scroll-target="#self-study-looping-over-samples"><span class="header-section-number">5</span> Self-study: Looping over samples</a>
+  <ul class="collapse">
+  <li><a href="#parameter-expansion" id="toc-parameter-expansion" class="nav-link" data-scroll-target="#parameter-expansion"><span class="header-section-number">5.1</span> Parameter expansion</a></li>
+  <li><a href="#a-per-sample-loop" id="toc-a-per-sample-loop" class="nav-link" data-scroll-target="#a-per-sample-loop"><span class="header-section-number">5.2</span> A per-sample loop</a></li>
+  </ul></li>
+  <li><a href="#recap-and-next-steps" id="toc-recap-and-next-steps" class="nav-link" data-scroll-target="#recap-and-next-steps"><span class="header-section-number">6</span> Recap and next steps</a></li>
+  </ul>
+<div class="quarto-other-links"><h2>Also this week</h2><ul><li><a href="w7_overview.html"><i class="bi bi-check2-all"></i>Week 7 overview</a></li><li><a href="w7a_scripts1.html"><i class="bi bi-book"></i>w7a: Shell scripting I</a></li><li><a href="../bonus/shell-scripting.html"><i class="bi bi-book"></i>Advanced shell scripting (optional)</a></li><li><a href="../GA/GA3.html"><i class="bi bi-pencil-square"></i>Graded Assignment 3</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Shell scripting II – rerunning scripts with loops</h1>
+<p class="subtitle lead">Week 7 – Lecture B</p>
+</div>
+
+
+<div class="quarto-title-meta-author">
+  <div class="quarto-title-meta-heading">Author</div>
+  <div class="quarto-title-meta-heading">Affiliations</div>
+  
+    <div class="quarto-title-meta-contents">
+    <p class="author">Jelmer Poelstra <a href="mailto:poelstra.1@osu.edu" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> <a href="https://orcid.org/0000-0002-3514-7462" class="quarto-title-author-orcid" aria-label="ORCID profile for Jelmer Poelstra"> <img alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            <a href="https://go.osu.edu/bioinformatics-core">
+            CFAES Bioinformatics Core, Ohio State University
+            </a>
+          </p>
+        <p class="affiliation">
+            <a href="https://plantpath.osu.edu">
+            Dept. of Plant Pathology, Ohio State University
+            </a>
+          </p>
+      </div>
+  </div>
+
+<div class="quarto-title-meta">
+
+      
+    <div>
+    <div class="quarto-title-meta-heading">Presented on</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">October 7, 2026</p>
+    </div>
+  </div>
+  
+    <div>
+    <div class="quarto-title-meta-heading">Page last modified</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date-modified">October 17, 2026</p>
+    </div>
+  </div>
+    
+  </div>
+  
+
+
+</header>
+
+
+<hr>
+<hr style="height:1pt; visibility:hidden;">
+<hr style="height:1pt; visibility:hidden;">
+<section id="introduction" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="introduction"><span class="header-section-number">1</span> Introduction</h2>
+<section id="learning-goals" class="level3" data-number="1.1">
+<h3 data-number="1.1" class="anchored" data-anchor-id="learning-goals"><span class="header-section-number">1.1</span> Learning goals</h3>
+<p>In the previous session, you wrote a shell script to run FastQC for a single FASTQ file. Here, we will focus on running that script many times with loops. Specifically, you will learn:</p>
+<ul>
+<li>How <code>for</code> loops work</li>
+<li>How to use a <code>for</code> loop to loop over files and run a shell script many times</li>
+<li>How to keep a record of your analysis steps in a Markdown file</li>
+<li><em>Self-study</em>: How to use parameter expansion to search-and-replace text in variables</li>
+<li><em>Self-study</em>: How to loop over samples (e.g., pairs of FASTQ files) rather than individual files</li>
+</ul>
+</section>
+<section id="the-big-picture" class="level3" data-number="1.2">
+<h3 data-number="1.2" class="anchored" data-anchor-id="the-big-picture"><span class="header-section-number">1.2</span> The big picture</h3>
+<p>The strategy you’ve learned so far, and that we will stick to, is writing scripts that run <strong>a single program a single time</strong>. We do this even though you commonly need to run a CLI tool many times, e.g.&nbsp;separately for each file or sample. That’s because at OSC and other HPC systems, you can save a lot of time by submitting a <strong>separate batch job</strong> for each file or sample, since these jobs can all run simultaneously<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. To accommodate this, you will:</p>
+<ul>
+<li>Make your scripts flexible by passing arguments to them <em>(as seen in the previous session)</em></li>
+<li>Loop over files/samples outside of the script, and run/submit the script many times <em>(as you’ll see today)</em></li>
+</ul>
+<p>As a result, you’ll also type important <strong>code outside of your scripts</strong>, and that code orchestrates your workflow. You will store that code in <strong>Markdown files</strong>, which then provide a record of what you did.</p>
+</section>
+<section id="getting-ready" class="level3" data-number="1.3">
+<h3 data-number="1.3" class="anchored" data-anchor-id="getting-ready"><span class="header-section-number">1.3</span> Getting ready</h3>
+<ol type="1">
+<li>At <a href="https://ondemand.osc.edu" class="uri">https://ondemand.osc.edu</a>, start a VS Code session in <code>/fs/ess/PAS3493/people/$USER</code>.</li>
+<li>In the terminal, navigate to your <code>week07</code> dir.</li>
+</ol>
+</section>
+</section>
+<section id="markdown-setup" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="markdown-setup"><span class="header-section-number">2</span> Markdown setup</h2>
+<p>Today, and more commonly from now on, we will store some of our shell code in Markdown files rather than typing it directly in the terminal, for the reasons explained above.</p>
+<p>I’ll demonstrate a <strong>“visual” Markdown editing</strong> approach in VS Code that is more similar to that of a word processor. You can then decide whether you want to switch to that approach from now on, or to keep using the “raw” Markdown editor.</p>
+<ol type="1">
+<li><p>Create a <strong>new Markdown file</strong> in your <code>week07</code> dir, which you’ll use as a scratch file to practice with loops — run the below command and open the file in the VS Code editor:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> loops-practice.md</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p>Copy-paste the following into your <code>loops-practice.md</code> — a <strong>skeleton</strong> for what we’ll do in this session:</p>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>loops-practice.md</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2" data-filename="loops-practice.md"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># For loop practice</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Author**: <span class="dt">&lt;</span><span class="kw">your-name</span><span class="dt">&gt;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Date**: 2026-10-07</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Working dir**: <span class="in">`/fs/ess/PAS3493/people/&lt;user&gt;/week07`</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>In this file, we'll practice writing **`for` loops** in the shell.</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">## A first shell loop</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="in">```{bash}</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="fu">## Multiple actions per iteration</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="fu">## Combining loops and globbing</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="fu">## Exercise 1</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="fu">## Exercise 2</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="fu">## Self-study: Parameter expansion</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="fu">## Self-study exercise 1</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="fu">## Self-study: A per-sample loop</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="fu">## Self-study exercise 2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div></li>
+</ol>
+<div class="columns">
+<div class="column">
+<ol start="3" type="1">
+<li>Find and install the <strong>Quarto extension</strong> in VS Code (click “Trust Publisher and Install” when prompted).</li>
+</ol>
+<hr style="height:1pt; visibility:hidden;">
+<hr style="height:1pt; visibility:hidden;">
+<hr style="height:1pt; visibility:hidden;">
+<ol start="4" type="1">
+<li>Find the <code>...</code> button in the top-right of the editor, and in the dropdown, select “<strong>Edit in Visual Mode</strong>”:</li>
+</ol>
+</div><div class="column">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="../img/vscode-quarto-ext-install.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img src="../img/vscode-quarto-ext-install.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:83.0%" alt="A screenshot showing the Quarto extension in VS Code."></a></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="../img/vscode-quarto-ext-view-dropdown.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="../img/vscode-quarto-ext-view-dropdown.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:65.0%" alt="A screenshot showing the editor's '...' dropdown menu, with 'Edit in Visual Mode' at the bottom."></a></p>
+</figure>
+</div>
+<div class="legend2">
+<p>“Edit in Visual Mode” is at the bottom of the dropdown menu.</p>
+</div>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; You may get a pop-up like this — click “Use Visual Mode” (the reformatting it warns about is harmless):</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="../img/quarto-ext-formatting.png" class="lightbox" data-gallery="quarto-lightbox-gallery-3"><img src="../img/quarto-ext-formatting.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:60.0%" alt="A screenshot showing the Quarto extension in VS Code."></a></p>
+</figure>
+</div>
+<ol start="5" type="1">
+<li>Then, the editor will look like in the screenshot below — similar to the Markdown preview you’ve seen before, but <strong>editable</strong>, and with formatting buttons across the top:</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="../img/vscode-quarto-ext-visual.png" class="lightbox" data-gallery="quarto-lightbox-gallery-4"><img src="../img/vscode-quarto-ext-visual.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:85.0%" alt="A screenshot showing the VS Code editor in Visual Mode."></a></p>
+</figure>
+</div>
+<ol start="6" type="1">
+<li><p>The main <strong>wrinkle</strong> with this setup is that in order to easily send code from the editor to the terminal (so you don’t have to copy-and-paste), we need to make code blocks with a <strong>```{bash}</strong> instead of <strong>```bash</strong> opening line<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
+<p>Practice with creating a new code block below the “Multiple actions per iteration” header — type <strong>```{bash}</strong> and then press <kbd>Enter</kbd> to turn it into a code block (you won’t have to type the closing ``` line!):</p></li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="../img/vscode-quarto-ext-new-code-block1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-5"><img src="../img/vscode-quarto-ext-new-code-block1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:42.0%" alt="A screenshot showing the VS Code editor in Visual Mode with a new code block being created."></a></p>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="../img/vscode-quarto-ext-new-code-block2.png" class="lightbox" data-gallery="quarto-lightbox-gallery-6"><img src="../img/vscode-quarto-ext-new-code-block2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:42.0%" alt="A screenshot showing the VS Code editor in Visual Mode with a new code block being created."></a></p>
+</figure>
+</div>
+<ol start="7" type="1">
+<li>To send the code in a code block to the terminal, you can click the Play button at the right end of the code block, or press <kbd>Shift</kbd>+<kbd>Enter</kbd> when your cursor is in the code block. We’ll practice this in a bit.</li>
+</ol>
+<hr style="height:1pt; visibility:hidden;">
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Prefer the “raw” Markdown editor? Then follow the instructions below for additional setup. <em>(Click to expand)</em>
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p><em>None of this is required, but it will make your life easier.</em> <em>From now on, we’ll write some of our code in Markdown files,</em> <em>and then want to send that code to the terminal without having to copy-and-paste.</em> <em>The visual editor has a pre-set keyboard shortcut for that, but the raw Markdown editor does not.</em></p>
+<p><strong>Set a keyboard shortcut to send code from the editor to the terminal.</strong><br>
+This shortcut will send selected code in the editor to the terminal. When no text is selected, the shortcut sends the line your cursor is on (in VS Code, your entire line is implicitly “selected” when your cursor is on it). To run a multi-line command like a <code>for</code> loop, first select all of its lines.</p>
+<div class="columns">
+<div class="column">
+<ol type="1">
+<li>Click <i class="fa-solid fa-cog" aria-label="cog"></i> (bottom-left) &gt; <code>Keyboard Shortcuts</code>.</li>
+<li>Type “Run Selected Text” in the search box, and you should see the option “<em>Terminal: Run Selected Text in Active Terminal</em>”.</li>
+<li>Click on that line, then add the shortcut <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (don’t worry about any warnings that other keybindings exist for this action; also, the keyboard shortcut is up to you, but I’d recommend this one).</li>
+</ol>
+</div><div class="column">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="../img/vscode-enter-line-shortcut.png" class="lightbox" data-gallery="quarto-lightbox-gallery-7"><img src="../img/vscode-enter-line-shortcut.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:90.0%" alt="A screenshot showing the VS Code keyboard shortcuts settings with the 'Run Selected Text in Active Terminal' option selected."></a></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Set a keyboard shortcut to create a new code block.</strong><br>
+Unlike in Visual Mode, you can continue to work with the “regular” <strong>```bash</strong> code blocks. But it’s tedious to type the opening and closing lines each time — and in this mode, it’s straightforward to set a keyboard shortcut to create a new code block.</p>
+<ol type="1">
+<li><p>Open the Command Palette with <kbd>Ctrl/Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>, and look for “Preferences: Open Keyboard Shortcuts (JSON)” — you’ll want the <strong>JSON</strong> file option.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="../img/vscode-shortcut-insert-code-block.png" class="lightbox" data-gallery="quarto-lightbox-gallery-8"><img src="../img/vscode-shortcut-insert-code-block.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:65.0%" alt="A screenshot showing the VS Code keyboard shortcuts settings with the 'Insert Snippet' option selected."></a></p>
+</figure>
+</div></li>
+<li><p>Copy-paste the following into the JSON file, and save it (select the correct block for your operating system). This sets a keyboard shortcut for the insertion of a so-called “code snippet” that creates a new code block:</p></li>
+</ol>
+<div class="columns">
+<div class="column" style="width:5%;">
+
+</div><div class="column" style="width:90%;">
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Windows</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">Mac</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">[</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"key"</span><span class="fu">:</span> <span class="st">"ctrl+shift+i"</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"command"</span><span class="fu">:</span> <span class="st">"editor.action.insertSnippet"</span><span class="fu">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"when"</span><span class="fu">:</span> <span class="st">"editorTextFocus &amp;&amp; editorLangId == markdown"</span><span class="fu">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"args"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"snippet"</span><span class="fu">:</span> <span class="st">"```bash</span><span class="ch">\n</span><span class="st">$0</span><span class="ch">\n</span><span class="st">```</span><span class="ch">\n</span><span class="st">"</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="ot">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">[</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"key"</span><span class="fu">:</span> <span class="st">"cmd+shift+i"</span><span class="fu">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"command"</span><span class="fu">:</span> <span class="st">"editor.action.insertSnippet"</span><span class="fu">,</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"when"</span><span class="fu">:</span> <span class="st">"editorTextFocus &amp;&amp; editorLangId == markdown"</span><span class="fu">,</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"args"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">"snippet"</span><span class="fu">:</span> <span class="st">"```bash</span><span class="ch">\n</span><span class="st">$0</span><span class="ch">\n</span><span class="st">```</span><span class="ch">\n</span><span class="st">"</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="ot">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="column" style="width:5%;">
+
+</div>
+<p>If your file already contains other shortcuts, add only the <code>{ ... }</code> part (preceded by a comma) inside the existing <code>[ ]</code>, rather than pasting a second set of square brackets.</p>
+<ol start="3" type="1">
+<li>Now, you can press <kbd>Ctrl/Cmd</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd> to create a new code block in your Markdown file.</li>
+</ol>
+<hr style="height:1pt; visibility:hidden;">
+</div>
+</div>
+</div>
+</section>
+<section id="for-loops" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="for-loops"><span class="header-section-number">3</span> For loops</h2>
+<p>Loops are used to <strong>repeat operations</strong>. Here, we’ll cover the most common type of loop, the <code>for</code> loop<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>, which:</p>
+<ol type="1">
+<li><strong>Iterates over</strong> (i.e., goes through, one by one) <strong>a pre-defined collection</strong>, such as a list of files.</li>
+<li>Uses <strong>one</strong> element of the collection in <strong>each iteration</strong> (or “round”) of the loop, allowing you to perform one or more actions for that element.</li>
+</ol>
+<section id="a-non-coding-example" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="a-non-coding-example"><span class="header-section-number">3.1</span> A non-coding example</h3>
+<p>In a way, you’re likely to already think in <code>for</code> loops regularly in your daily life. Say you have a rack with three tubes, and your protocol says:</p>
+<blockquote class="blockquote">
+<p><strong>For each tube</strong> in the rack: add 10 µL of buffer to the tube, vortex it, and spin it down.</p>
+</blockquote>
+<p>Here’s what that instruction consists of:</p>
+<ul>
+<li>A <strong>collection</strong> of items to go through: the tubes in the rack.</li>
+<li>A set of <strong>actions</strong> that are <strong>repeated for every item</strong>: add buffer, vortex, spin down.</li>
+<li>A <strong>placeholder</strong> that stands in for “the item I’m currently working on”: “the tube” or “it”. In the first round, “the tube” means tube 1; in the second round, tube 2; and so on.</li>
+</ul>
+<p>You’d go through the tubes one at a time, doing all three actions for a tube before moving on to the next one. And you’re done when you run out of tubes: with three tubes, you’d do this three times. If we wrote that protocol step in <code>for</code> loop syntax, it would look like this <em>(this is not real code!)</em>:</p>
+<div class="norun-box">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash norun code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> tube <span class="kw">in</span> tube1 tube2 tube3<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="ex">add</span> 10 µL buffer to <span class="va">$tube</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="ex">vortex</span> <span class="va">$tube</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="ex">spin</span> down <span class="va">$tube</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>In shell code, a <code>for</code> loop has the same three components:</p>
+<ul>
+<li>The <strong>collection</strong> comes after <code>in</code>: here, <code>tube1 tube2 tube3</code>.</li>
+<li>The <strong>actions</strong> go between <code>do</code> and <code>done</code>, in <em>indented lines</em> so it’s clear what is being <strong>repeated</strong>.</li>
+<li>The <strong>placeholder</strong> is a variable, whose name you choose and put after <code>for</code>: here, <code>tube</code>. Inside the loop, you refer to it with <code>$tube</code>, and in each round of the loop, it contains a different item from the collection.</li>
+</ul>
+</section>
+<section id="a-first-shell-loop" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="a-first-shell-loop"><span class="header-section-number">3.2</span> A first shell loop</h3>
+<p>Let’s type out the example below in your <code>loops-practice.md</code> and then run it in the terminal. Here, the collection is a short list of three fruits, and the only action is to print the current fruit.</p>
+<p>In your code block below the “A first shell loop” header, type the following:</p>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>loops-practice.md (excerpt)</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6" data-filename="loops-practice.md (excerpt)"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fruit <span class="kw">in</span> apple banana plum<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"Fruit: </span><span class="va">$fruit</span><span class="st">"</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Then, <strong>send the code to the terminal</strong>: either press the Play button at the right end of the code block, or press <kbd>Shift</kbd>+<kbd>Enter</kbd> with your cursor in the code block (this assumes your in visual editing mode).</p>
+<p>You should see your code appear in the terminal along with the following output, which shows that the <code>echo</code> line ran three times, and that each time, the variable <code>$fruit</code> contained a different fruit:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fruit <span class="kw">in</span> apple banana plum<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"Fruit: </span><span class="va">$fruit</span><span class="st">"</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>Fruit: apple
+Fruit: banana
+Fruit: plum</code></pre>
+<p><strong>Under the hood</strong>, the following was actually run by the shell — three times, a value was assigned to <code>$fruit</code>, and then, the exact same <code>echo</code> command was run every time:</p>
+<div class="columns">
+<div class="column" style="width:55%;">
+<div class="norun-box">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash norun code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="va">fruit</span><span class="op">=</span>apple</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Fruit: </span><span class="va">$fruit</span><span class="st">"</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="va">fruit</span><span class="op">=</span>banana</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Fruit: </span><span class="va">$fruit</span><span class="st">"</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="va">fruit</span><span class="op">=</span>plum</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Fruit: </span><span class="va">$fruit</span><span class="st">"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div><div class="column" style="width:45%;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="../img/frootloops.jpg" class="lightbox" data-gallery="quarto-lightbox-gallery-9"><img src="../img/frootloops.jpg" class="no-border img-fluid quarto-figure quarto-figure-center figure-img" style="width:70.0%" alt="A photo of a bowl of Froot Loops cereal."></a></p>
+</figure>
+</div>
+<div class="legend2">
+<p>© Kellogg’s</p>
+</div>
+</div>
+</div>
+</section>
+<section id="multiple-actions-per-iteration" class="level3" data-number="3.3">
+<h3 data-number="3.3" class="anchored" data-anchor-id="multiple-actions-per-iteration"><span class="header-section-number">3.3</span> Multiple actions per iteration</h3>
+<p>Just like in the tube example, you can perform multiple actions in each round of the loop: every line between <code>do</code> and <code>done</code> is run for every item.</p>
+<p>For the next example, we will count the number of characters in each fruit’s name. Here’s how to do that for a single word, where we add the <code>-n</code> option to <code>echo</code> to prevent it from adding a newline (which would otherwise be counted as a character too), and use the <code>-c</code> option of <code>wc</code> to count the number of characters rather than lines:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="at">-n</span> <span class="st">"apple"</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-c</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>5</code></pre>
+<p>Below, for each fruit, we print its name and then count the number of characters in its name:</p>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>loops-practice.md (excerpt)</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12" data-filename="loops-practice.md (excerpt)"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fruit <span class="kw">in</span> apple banana plum<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"Fruit: </span><span class="va">$fruit</span><span class="st">"</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"Number of characters:"</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="at">-n</span> <span class="st">"</span><span class="va">$fruit</span><span class="st">"</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-c</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<pre class="bash-out"><code>Fruit: apple
+Number of characters:
+5
+
+Fruit: banana
+Number of characters:
+6
+
+Fruit: plum
+Number of characters:
+4
+</code></pre>
+<p>Notice that all four lines ran for <code>apple</code> before any of them ran for <code>banana</code>: the loop completes all actions for one item before moving on to the next item.</p>
+</section>
+<section id="loop-recap-so-far" class="level3" data-number="3.4">
+<h3 data-number="3.4" class="anchored" data-anchor-id="loop-recap-so-far"><span class="header-section-number">3.4</span> Loop recap so far</h3>
+<p>To recap some key things you should understand about <code>for</code> loops:</p>
+<ul>
+<li>In each iteration of the loop, one element in the collection is being <strong>assigned to the variable</strong> specified after <code>for</code>.</li>
+<li>The loop will run exactly <strong>as many times</strong> as there are items in the collection.</li>
+<li>The <strong>indented</strong> lines’ code is being <strong>repeated</strong>: all lines are run for one item before the loop moves on to the next<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>.</li>
+<li>The <strong>variable name</strong> is up to you. Like with other variables, try to choose a name that is descriptive.</li>
+<li>Like with other variables, use a <code>$</code> when you reference (<code>echo "$fruit"</code>) but not when you assign (<code>for fruit</code>).</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>More about the syntax of <code>for</code> loops <em>(Click to expand)</em>
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>On the first and last, unindented lines, <code>for</code> loops contain the following mandatory keywords:</p>
+<table class="table-striped table-hover caption-top table">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Keyword</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>for</code></td>
+<td>After <code>for</code>, we set the <strong>variable name</strong> (an arbitrary name; above we used <code>fruit</code>)</td>
+</tr>
+<tr class="even">
+<td><code>in</code></td>
+<td>After <code>in</code>, we specify the <strong>collection</strong> (list of items) we are looping over</td>
+</tr>
+<tr class="odd">
+<td><code>do</code></td>
+<td>After <code>do</code>, we have one or more lines specifying what to do with each item</td>
+</tr>
+<tr class="even">
+<td><code>done</code></td>
+<td>Tells the shell we are done with the loop</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Why is there “<code>; do</code>” in a <code>for</code> loop? <em>(Click to expand)</em>
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>You may find the <code>; do</code> at the end of the first line of the <code>for</code> loop to be odd. What is that all about?</p>
+<p>First, let’s see what a semicolon does in the first place. It’s a way to enter multiple commands on a single line — for example, the line below would first run <code>ls</code> and then <code>echo "Hello"</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span><span class="kw">;</span> <span class="bu">echo</span> <span class="st">"Hello"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>(So, <code>;</code> can be thought of as a counterpart to <code>\</code>, which allows you to spread a single command</em> <em>across multiple lines: with a <code>;</code>, you can have multiple commands on a single line.)</em></p>
+<p>Alternatively, you could write <code>for</code> loops like so:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fruit <span class="kw">in</span> apple banana plum</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"Fruit: </span><span class="va">$fruit</span><span class="st">"</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Some people prefer that variant. You can do it either way, but we will continue to demonstrate the <code>; do</code> variant, which is more symmetric, and saves a line of code.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="combining-loops-and-globbing" class="level3" data-number="3.5">
+<h3 data-number="3.5" class="anchored" data-anchor-id="combining-loops-and-globbing"><span class="header-section-number">3.5</span> Combining loops and globbing</h3>
+<p>In an omics data analysis, you will often have many files that need to be processed in the same way. For example, we wrote a <code>fastqc.sh</code> script that runs FastQC for a single FASTQ file, and we want to run that script for all FASTQ files in a directory. We can loop over file names just like we looped over fruits above:</p>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>loops-practice.md (excerpt)</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16" data-filename="loops-practice.md (excerpt)"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_file <span class="kw">in</span> ../garrigos/fastq/S63_R1.fastq.gz ../garrigos/fastq/S63_R2.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"Now processing file: </span><span class="va">$fastq_file</span><span class="st">"</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<pre class="bash-out"><code>Now processing file: ../garrigos/fastq/S63_R1.fastq.gz
+Now processing file: ../garrigos/fastq/S63_R2.fastq.gz</code></pre>
+<p>However, typing out all file names is tedious and error-prone. Instead, we can use <strong>globbing</strong> to automatically generate a list of file names, and then loop over that list, all in one line of code:</p>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>loops-practice.md (excerpt)</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18" data-filename="loops-practice.md (excerpt)"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_file <span class="kw">in</span> ../garrigos/fastq/<span class="pp">*</span>fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"Running an analysis on </span><span class="va">$fastq_file</span><span class="st">"</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># [This is where you would put additional commands to process each FASTQ file]</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<pre class="bash-out"><code>Running an analysis on ../garrigos/fastq/S63_R1.fastq.gz
+Running an analysis on ../garrigos/fastq/S63_R2.fastq.gz
+Running an analysis on ../garrigos/fastq/S64_R1.fastq.gz
+Running an analysis on ../garrigos/fastq/S64_R2.fastq.gz
+# [...output truncated...]</code></pre>
+<p>The shell expands the glob into a list of matching file names <strong>before</strong> the loop starts (recall from <a href="../week04/w4b_shell-files1.html#globbing">week 4</a> that expansion is done by the shell itself), so to the loop, this is no different from the typed-out list of file names above.</p>
+<hr style="height:1pt; visibility:hidden;">
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-in-class-exercise-1-what-will-these-loops-print" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-in-class-exercise-1-what-will-these-loops-print"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> In-class exercise 1: What will these loops print?</h4>
+<p>Create these files:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> sandbox</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> sandbox/file1.txt sandbox/S1_R1.fastq.gz sandbox/S1_R2.fastq.gz</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Now, what do you expect the output of each of the following loops to be? Test your predictions by running the loops (either directly in the terminal or by putting them in your Markdown file <code>loops-practice.md</code> and sending them to the terminal):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> file <span class="kw">in</span> sandbox/<span class="pp">*</span>fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"I have found file </span><span class="va">$file</span><span class="st">"</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details>
+<summary>
+<i class="fa-solid fa-check-circle" aria-label="check-circle"></i> <em>Click for the solution</em>
+</summary>
+<p>The glob only matches the two FASTQ files, so the loop runs twice:</p>
+<pre class="bash-out-solo"><code>I have found file sandbox/S1_R1.fastq.gz
+I have found file sandbox/S1_R2.fastq.gz</code></pre>
+</details>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> file <span class="kw">in</span> sandbox/f<span class="pp">*</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"</span><span class="va">$f</span><span class="st">"</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details>
+<summary>
+<i class="fa-solid fa-check-circle" aria-label="check-circle"></i> <em>Click for the solution</em>
+</summary>
+<p>Look closely: the loop variable is <code>file</code>, but the <code>echo</code> line uses <code>$f</code> — a variable that was never assigned. Because we’re at the interactive prompt rather than in a script with <code>set -u</code>, the shell doesn’t complain about the unset variable, instead treating it as an empty string.</p>
+<p>So the loop prints one empty line for each matching file: here, that is just <code>file1.txt</code>. This is exactly the kind of silent failure that <code>set -u</code> protects you from: in a script with strict Bash settings, this typo would cause an immediate error instead.</p>
+</details>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> file <span class="kw">in</span> sandbox/<span class="pp">*</span>.bam<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"I have found file </span><span class="va">$file</span><span class="st">"</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details>
+<summary>
+<i class="fa-solid fa-check-circle" aria-label="check-circle"></i> <em>Click for the solution</em>
+</summary>
+<p>You might expect no output at all, since no files match the pattern. But when a glob pattern doesn’t match any files, the shell leaves the pattern as is, so the loop runs once, with the literal string <code>sandbox/*.bam</code>:</p>
+<pre class="bash-out-solo"><code>I have found file sandbox/*.bam</code></pre>
+<p>So if you make a typo in a glob pattern in a loop that runs a script, the script will be run once for a non-existent “file”. This is one more reason to print input file names in your scripts’ logging output!</p>
+</details>
+</section>
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-in-class-exercise-2-another-loop" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-in-class-exercise-2-another-loop"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> In-class exercise 2: Another loop</h4>
+<p>Modify the globbing loop above (the one printing “Running an analysis on …”) to print the following for each FASTQ file (output for 2 files shown):</p>
+<pre class="bash-out-solo"><code>Running an analysis on ../garrigos/fastq/S63_R1.fastq.gz
+File size:
+-rw-rw----+ 1 jelmer PAS0471 21M Sep  9 13:46 <span class="ls-red">../garrigos/fastq/S63_R1.fastq.gz</span>
+Number of lines:
+2000000
+
+Running an analysis on ../garrigos/fastq/S63_R2.fastq.gz
+File size:
+-rw-rw----+ 1 jelmer PAS0471 22M Sep  9 13:46 <span class="ls-red">../garrigos/fastq/S63_R2.fastq.gz</span>
+Number of lines:
+2000000</code></pre>
+<details>
+<summary>
+<i class="fa-solid fa-lightbulb" aria-label="lightbulb"></i> <em>Click for a hint</em>
+</summary>
+<p>To count the lines in a gzip-compressed file, recall from the <a href="../week04/w4_exercises.html">week 4 exercises</a> that <code>zcat</code> prints the decompressed contents of a file, which you can then pipe into another command.</p>
+</details>
+<details>
+<summary>
+<i class="fa-solid fa-check-circle" aria-label="check-circle"></i> <em>Click for the solution</em>
+</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq_file <span class="kw">in</span> ../garrigos/fastq/<span class="pp">*</span>fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"Running an analysis on </span><span class="va">$fastq_file</span><span class="st">"</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"File size:"</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ls</span> <span class="at">-lh</span> <span class="st">"</span><span class="va">$fastq_file</span><span class="st">"</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"Number of lines:"</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">zcat</span> <span class="st">"</span><span class="va">$fastq_file</span><span class="st">"</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Each FASTQ file has 2,000,000 lines, and since each read takes up 4 lines, it contains 500,000 reads. R1 and R2 files of a sample always have the same number of reads, since they contain the forward and reverse reads of the same DNA fragments: each read in the R1 file has a “mate” in the R2 file, in the same order.</p>
+</details>
+</section>
+</section>
+</section>
+<section id="running-a-script-many-times-with-a-loop" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="running-a-script-many-times-with-a-loop"><span class="header-section-number">4</span> Running a script many times with a loop</h2>
+<section id="your-fastqc-script" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="your-fastqc-script"><span class="header-section-number">4.1</span> Your FastQC script</h3>
+<p>In the previous session, you wrote a script to run FastQC (saved at <code>scripts/fastqc.sh</code>). Recall that the script accepts one FASTQ file as an argument, so it can only be run for one file at a time. For example:</p>
+<div class="norun-box">
+<pre class="norun"><code>bash scripts/fastqc.sh ../garrigos/fastq/S63_R1.fastq.gz results/fastqc</code></pre>
+</div>
+<details>
+<summary>
+<em>Click to see the contents of the <code>fastqc.sh</code> script</em>
+</summary>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>scripts/fastqc.sh</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28" data-filename="scripts/fastqc.sh"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-euo</span> pipefail</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="co"># FastQC container</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="va">CONTAINER</span><span class="op">=</span>oras://community.wave.seqera.io/library/fastqc:0.12.1--104d26ddd9519960</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Copy the placeholder variables</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a><span class="va">fastq</span><span class="op">=</span><span class="st">"</span><span class="va">$1</span><span class="st">"</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a><span class="va">outdir</span><span class="op">=</span><span class="st">"</span><span class="va">$2</span><span class="st">"</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Initial logging</span></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Starting script fastqc.sh"</span></span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a><span class="fu">date</span></span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Input FASTQ file:   </span><span class="va">$fastq</span><span class="st">"</span></span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Output dir:         </span><span class="va">$outdir</span><span class="st">"</span></span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span></span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the output dir if needed</span></span>
+<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> <span class="st">"</span><span class="va">$outdir</span><span class="st">"</span></span>
+<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Run FastQC with its container</span></span>
+<span id="cb28-22"><a href="#cb28-22" aria-hidden="true" tabindex="-1"></a><span class="ex">apptainer</span> exec <span class="st">"</span><span class="va">$CONTAINER</span><span class="st">"</span> fastqc <span class="at">--outdir</span> <span class="st">"</span><span class="va">$outdir</span><span class="st">"</span> <span class="st">"</span><span class="va">$fastq</span><span class="st">"</span></span>
+<span id="cb28-23"><a href="#cb28-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-24"><a href="#cb28-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Final logging</span></span>
+<span id="cb28-25"><a href="#cb28-25" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span></span>
+<span id="cb28-26"><a href="#cb28-26" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Used FastQC version:"</span></span>
+<span id="cb28-27"><a href="#cb28-27" aria-hidden="true" tabindex="-1"></a><span class="ex">apptainer</span> exec <span class="st">"</span><span class="va">$CONTAINER</span><span class="st">"</span> fastqc <span class="at">--version</span></span>
+<span id="cb28-28"><a href="#cb28-28" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span></span>
+<span id="cb28-29"><a href="#cb28-29" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Successfully finished script fastqc.sh"</span></span>
+<span id="cb28-30"><a href="#cb28-30" aria-hidden="true" tabindex="-1"></a><span class="fu">date</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</details>
+</section>
+<section id="a-protocol-markdown-file" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="a-protocol-markdown-file"><span class="header-section-number">4.2</span> A “protocol” Markdown file</h3>
+<p>To run the script repeatedly, for <strong>all FASTQ files</strong>, we’ll use a loop.</p>
+<p>While this is still practice, it does resemble a real analysis step unlike the loops in your <code>loops-practice.md</code> file. So, let’s use this opportunity to see what a proper record of such a step would look like: we’ll store the loop in a “protocol” section of a new <code>README.md</code> file, which also describes the project as a whole (for small projects, such a simple protocol in the main <code>README.md</code> can suffice).</p>
+<ol type="1">
+<li><p>Create a <code>README.md</code> file in your <code>week07</code> dir and open it in the editor:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> README.md</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p>Copy-paste the following into your <code>README.md</code>:</p>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>README.md</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30" data-filename="README.md"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># RNA-seq data analysis</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="fu">## General information</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Author**: <span class="dt">&lt;</span><span class="kw">your-name</span><span class="dt">&gt;</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Date**: 2026-10-07</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Environment**: Pitzer cluster at OSC via VS Code</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Working dir**: <span class="in">`/fs/ess/PAS3493/people/&lt;user&gt;/week07`</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="fu">## Project background</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>This project is ...</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a><span class="fu">## Protocol</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div></li>
+</ol>
+<div class="callout callout-style-simple callout-tip">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>In a few weeks, we’ll discuss how you can organize this kind of information for larger projects.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="looping-over-fastq-files" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="looping-over-fastq-files"><span class="header-section-number">4.3</span> Looping over FASTQ files</h3>
+<p>You will now loop over all FASTQ files in the <code>../garrigos/fastq</code> dir, and run your <code>fastqc.sh</code> script for each file. Add the following under <code>## Protocol</code> in your <code>README.md</code>, and then run the code inside the code block (this will take a few minutes to run for all 44 files):</p>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>README.md (excerpt)</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31" data-filename="README.md (excerpt)"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">### Step 1 - Run FastQC for each FASTQ file:</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="in">```{bash}</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fastq <span class="kw">in</span> ../garrigos/fastq/<span class="pp">*</span>fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bash</span> scripts/fastqc.sh <span class="st">"</span><span class="va">$fastq</span><span class="st">"</span> results/fastqc</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<pre class="bash-out"><code>Starting script fastqc.sh
+Wed Oct  7 13:58:21 EDT 2026
+Input FASTQ file:   ../garrigos/fastq/S63_R1.fastq.gz
+Output dir:         results/fastqc
+
+Started analysis of S63_R1.fastq.gz
+Approx 5% complete for S63_R1.fastq.gz
+# [...output truncated...]
+
+Successfully finished script fastqc.sh
+Wed Oct  7 13:58:26 EDT 2026
+
+Starting script fastqc.sh
+Wed Oct  7 13:58:26 EDT 2026
+Input FASTQ file:   ../garrigos/fastq/S63_R2.fastq.gz
+Output dir:         results/fastqc
+
+Started analysis of S63_R2.fastq.gz
+Approx 5% complete for S63_R2.fastq.gz
+# [...output truncated...]</code></pre>
+<p>That produces a lot of output! You can hopefully see that this looping approach is quite powerful, allowing you to easily run a script many times.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Two different variables called <code>fastq</code>
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The loop variable <code>fastq</code> and the variable <code>fastq</code> inside the <code>fastqc.sh</code> script share a name, but they are <strong>separate variables</strong>: a script runs in its own, new shell, which can’t see the variables you assigned in your terminal. The only way the file name gets into the script is as an argument: the loop passes <code>"$fastq"</code> as the first argument, which the script receives as <code>$1</code> and then copies to its own <code>fastq</code> variable.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>This loop runs the script sequentially, not in parallel
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The loop above runs the <code>fastqc.sh</code> script <strong>sequentially</strong>: only after it has finished for the first FASTQ file, it will run for the second file, and so on. If these had been full-size FASTQ files, it may have taken hours for this to finish.</p>
+<p>So, while you have now learned an elegant way to run a script many times, you have not yet learned how to run it simultaneously in parallel. In week 10, you’ll learn about doing this by submitting scripts as batch jobs.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="self-study-looping-over-samples" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="self-study-looping-over-samples"><span class="header-section-number">5</span> Self-study: Looping over samples</h2>
+<p>FastQC is run separately for each FASTQ file, but many tools that process paired-end data need the R1 and R2 files of a sample <em>together</em>. Such tools should be run once per sample, i.e.&nbsp;once per <em>pair</em> of FASTQ files.</p>
+<p>How can you loop over pairs of FASTQ files? There are two main ways:</p>
+<ul>
+<li>Create a list of <strong>sample IDs</strong>, loop over these IDs, and find the pair of FASTQ files with matching names.</li>
+<li>Loop over the <strong>R1 files only</strong> and then deduce the name of the corresponding R2 file inside the loop. This works because R1 and R2 file names are identical except for the read-direction identifier (typically <code>_R1</code>/<code>_R2</code>).</li>
+</ul>
+<p>We will use the second method. To deduce the R2 file name, you’ll first need to learn about parameter expansion.</p>
+<div class="callout callout-style-simple callout-tip">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>Type and run the code in this self-study section from your <code>loops-practice.md</code> file.</p>
+</div>
+</div>
+</div>
+<section id="parameter-expansion" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="parameter-expansion"><span class="header-section-number">5.1</span> Parameter expansion</h3>
+<p>“Parameter expansion” (“parameter” is another word for variable) is the shell’s term for retrieving a variable’s value, as in <code>$fastq</code>. Some special forms of parameter expansion modify the value as it is retrieved — for example, to search-and-replace text:</p>
+<ul>
+<li><p>Start by assigning a short DNA sequence to a variable:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="va">dna_seq</span><span class="op">=</span><span class="st">"AAGTTCAT"</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$dna_seq</span><span class="st">"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>AAGTTCAT</code></pre></li>
+<li><p>Now, use parameter expansion to replace all <code>T</code>s with <code>U</code>s:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">${dna_seq</span><span class="op">//</span><span class="ss">T</span><span class="op">/</span>U<span class="va">}</span><span class="st">"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>AAGUUCAU</code></pre></li>
+<li><p>You can also assign the result of the parameter expansion back to a variable:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="va">rna_seq</span><span class="op">=</span><span class="st">"</span><span class="va">${dna_seq</span><span class="op">//</span><span class="ss">T</span><span class="op">/</span>U<span class="va">}</span><span class="st">"</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$rna_seq</span><span class="st">"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>AAGUUCAU</code></pre></li>
+</ul>
+<p>So, the syntax for this type of parameter expansion is <code>${var_name//&lt;search&gt;/&lt;replace&gt;}</code> — let’s deconstruct that:</p>
+<ol type="1">
+<li>You reference the variable using the “full notation” with braces: here, <code>${dna_seq}</code>.</li>
+<li>You add two forward slashes after the variable name, and then the search pattern: here, <code>//T</code>.</li>
+<li>After another forward slash, enter the replacement: here, <code>/U</code>.</li>
+</ol>
+<hr style="height:1pt; visibility:hidden;">
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Replace all matches or just the first? <em>(Click to expand)</em>
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>If you only want to replace the <strong>first</strong> match, use a single forward slash after the variable name: <code>${var_name/&lt;search&gt;/&lt;replace&gt;}</code>. Compare:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">${dna_seq</span><span class="op">/</span><span class="ss">T</span><span class="op">/</span>U<span class="va">}</span><span class="st">"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>AAGUTCAT</code></pre>
+</div>
+</div>
+</div>
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-self-study-exercise-1-get-the-r2-file-name-with-parameter-expansion" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-self-study-exercise-1-get-the-r2-file-name-with-parameter-expansion"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Self-study exercise 1: Get the R2 file name with parameter expansion</h4>
+<p>After assigning the file name <code>../garrigos/fastq/S63_R1.fastq.gz</code> to a variable, as shown below, add the parameter expansion to obtain the name of the corresponding R2 file to the second line:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_R1</span><span class="op">=</span>../garrigos/fastq/S63_R1.fastq.gz</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_R2</span><span class="op">=</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details>
+<summary>
+<i class="fa-solid fa-check-circle" aria-label="check-circle"></i> <em>Click for the solution</em>
+</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_R1</span><span class="op">=</span>../garrigos/fastq/S63_R1.fastq.gz</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="va">fastq_R2</span><span class="op">=</span><span class="st">"</span><span class="va">${fastq_R1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span><span class="st">"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Test that it worked:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb43"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$fastq_R2</span><span class="st">"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>../garrigos/fastq/S63_R2.fastq.gz</code></pre>
+</details>
+<p>Next, a labmate suggests the shorter <code>fastq_R2="${fastq_R1/1/2}"</code>. Does that give the correct result for this file? Would it still work if the sample were called <code>S61</code> instead of <code>S63</code>?</p>
+<details>
+<summary>
+<i class="fa-solid fa-check-circle" aria-label="check-circle"></i> <em>Click for the solution</em>
+</summary>
+<p>It works for <code>S63</code>, since the first <code>1</code> in the path happens to be the one in <code>R1</code>. But for <code>../garrigos/fastq/S61_R1.fastq.gz</code>, the <code>1</code> in the sample ID would be replaced instead, giving <code>../garrigos/fastq/S62_R1.fastq.gz</code> — the R1 file of a different sample! So, make your search pattern as specific as possible, like <code>_R1</code>.</p>
+</details>
+</section>
+</section>
+<section id="a-per-sample-loop" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="a-per-sample-loop"><span class="header-section-number">5.2</span> A per-sample loop</h3>
+<p>Using parameter expansion, you can create a loop that iterates over R1 FASTQ files only, and then deduces the corresponding R2 file name. Here is a loop that runs once per sample, and prints the two file names for each:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb45"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> R1 <span class="kw">in</span> ../garrigos/fastq/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">R2</span><span class="op">=</span><span class="st">"</span><span class="va">${R1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span><span class="st">"</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"R1 file: </span><span class="va">$R1</span><span class="st">"</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">"R2 file: </span><span class="va">$R2</span><span class="st">"</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>R1 file: ../garrigos/fastq/S63_R1.fastq.gz
+R2 file: ../garrigos/fastq/S63_R2.fastq.gz
+
+R1 file: ../garrigos/fastq/S64_R1.fastq.gz
+R2 file: ../garrigos/fastq/S64_R2.fastq.gz
+
+# [...output truncated...]</code></pre>
+<div class="callout callout-style-simple callout-warning">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>Search for <code>_R1</code> and not just <code>R1</code>: in other datasets, the string “R1” may also occur in the sample ID (e.g.&nbsp;<code>ERR1234</code>)!</p>
+</div>
+</div>
+</div>
+<p>To run a script for each sample, you would replace the <code>echo</code> lines with a call to a script that accepts both files as arguments. You’ll practice that in the exercise below with a “mock” script, and in a later week, you’ll write such a script for the program TrimGalore.</p>
+<hr style="height:1pt; visibility:hidden;">
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-self-study-exercise-2-run-a-script-with-a-per-sample-loop" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-self-study-exercise-2-run-a-script-with-a-per-sample-loop"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Self-study exercise 2: Run a script with a per-sample loop</h4>
+<ul>
+<li><p>Write a script <code>scripts/trim_mock.sh</code> that accepts three arguments: an R1 FASTQ file (assigned to <code>$R1</code>), an R2 FASTQ file (assigned to <code>$R2</code>), and an output dir (assigned to <code>$outdir</code>).</p>
+<p>You can use your <code>fastqc.sh</code> script as a template, but instead of running FastQC, this script should “mock-run” the fictional <code>trimmer</code> program as follows:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb47"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mock-run the tool: by prefacing the command with 'echo',</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="co"># the command will merely be printed, not run.</span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> trimmer <span class="at">--in1</span> <span class="st">"</span><span class="va">$R1</span><span class="st">"</span> <span class="at">--in2</span> <span class="st">"</span><span class="va">$R2</span><span class="st">"</span> <span class="at">--outdir</span> <span class="st">"</span><span class="va">$outdir</span><span class="st">"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> <em>Click for the solution</em></p>
+</summary>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>scripts/trim_mock.sh</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb48" data-filename="scripts/trim_mock.sh"><pre class="sourceCode bash file code-with-copy"><code class="sourceCode bash"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-euo</span> pipefail</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Copy the placeholder variables</span></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="va">R1</span><span class="op">=</span><span class="st">"</span><span class="va">$1</span><span class="st">"</span></span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a><span class="va">R2</span><span class="op">=</span><span class="st">"</span><span class="va">$2</span><span class="st">"</span></span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a><span class="va">outdir</span><span class="op">=</span><span class="st">"</span><span class="va">$3</span><span class="st">"</span></span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Initial logging</span></span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Starting script trim_mock.sh"</span></span>
+<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a><span class="fu">date</span></span>
+<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Input R1 file:       </span><span class="va">$R1</span><span class="st">"</span></span>
+<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Input R2 file:       </span><span class="va">$R2</span><span class="st">"</span></span>
+<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Output dir:          </span><span class="va">$outdir</span><span class="st">"</span></span>
+<span id="cb48-15"><a href="#cb48-15" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span></span>
+<span id="cb48-16"><a href="#cb48-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-17"><a href="#cb48-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the output dir if needed</span></span>
+<span id="cb48-18"><a href="#cb48-18" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> <span class="st">"</span><span class="va">$outdir</span><span class="st">"</span></span>
+<span id="cb48-19"><a href="#cb48-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-20"><a href="#cb48-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Mock-run the tool</span></span>
+<span id="cb48-21"><a href="#cb48-21" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> trimmer <span class="at">--in1</span> <span class="st">"</span><span class="va">$R1</span><span class="st">"</span> <span class="at">--in2</span> <span class="st">"</span><span class="va">$R2</span><span class="st">"</span> <span class="at">--outdir</span> <span class="st">"</span><span class="va">$outdir</span><span class="st">"</span></span>
+<span id="cb48-22"><a href="#cb48-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-23"><a href="#cb48-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Final logging</span></span>
+<span id="cb48-24"><a href="#cb48-24" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span></span>
+<span id="cb48-25"><a href="#cb48-25" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Successfully finished script trim_mock.sh"</span></span>
+<span id="cb48-26"><a href="#cb48-26" aria-hidden="true" tabindex="-1"></a><span class="fu">date</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</details></li>
+<li><p>In your <code>loops-practice.md</code> file, write a loop over all R1 FASTQ files that runs the <code>trim_mock.sh</code> script for each sample.</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> <em>Click for the solution</em></p>
+</summary>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>loops-practice.md (excerpt)</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb49" data-filename="loops-practice.md (excerpt)"><pre class="sourceCode markdown file code-with-copy"><code class="sourceCode markdown"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">## Self-study exercise 2</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>We will loop over R1 files only, and deduce the R2 file name:</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> R1 <span class="kw">in</span> ../garrigos/fastq/<span class="pp">*</span>_R1.fastq.gz<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>    <span class="va">R2</span><span class="op">=</span><span class="st">"</span><span class="va">${R1</span><span class="op">/</span><span class="ss">_R1</span><span class="op">/</span>_R2<span class="va">}</span><span class="st">"</span></span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bash</span> scripts/trim_mock.sh <span class="st">"</span><span class="va">$R1</span><span class="st">"</span> <span class="st">"</span><span class="va">$R2</span><span class="st">"</span> results/trim_mock</span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<pre class="bash-out"><code>Starting script trim_mock.sh
+Wed Oct  7 14:05:10 EDT 2026
+Input R1 file:       ../garrigos/fastq/S63_R1.fastq.gz
+Input R2 file:       ../garrigos/fastq/S63_R2.fastq.gz
+Output dir:          results/trim_mock
+
+trimmer --in1 ../garrigos/fastq/S63_R1.fastq.gz --in2 ../garrigos/fastq/S63_R2.fastq.gz --outdir results/trim_mock
+
+Successfully finished script trim_mock.sh
+Wed Oct  7 14:05:10 EDT 2026
+
+Starting script trim_mock.sh
+Wed Oct  7 14:05:10 EDT 2026
+Input R1 file:       ../garrigos/fastq/S64_R1.fastq.gz
+# [...output truncated...]</code></pre>
+</details></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="recap-and-next-steps" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="recap-and-next-steps"><span class="header-section-number">6</span> Recap and next steps</h2>
+<p>In this lecture, you’ve learned how to write and use <code>for</code> loops, and how to use them to run a shell script many times: both for each FASTQ file and, using parameter expansion, for each sample. You’ve also started recording your analysis steps in a “protocol” Markdown file.</p>
+<p>The <a href="../bonus/shell-scripting.html">optional shell scripting self-study page</a> covers command substitution, <code>basename</code> and <code>dirname</code>, renaming files with loops, and more. Next week, we’ll look at using generative AI when coding. And in week 10, we’ll move on to submitting shell scripts as batch jobs at OSC.</p>
+<hr style="height:1pt; visibility:hidden;">
+
+
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p> It is possible to use another strategy that parallelizes program runs within a script, but we will use this strategy instead.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p> This makes the code blocks “executable” — you’ll learn much more about that when we start using Quarto with R code in week 12.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p> You can learn about <code>while</code> loops in the <a href="../bonus/shell-scripting.html">optional shell scripting self-study page</a>.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p> The indentation itself is optional for the shell, but makes loops much easier to read.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script>
+(function () {
+  // Site-wide "Previous / Next page" navigation, injected before the
+  // page footer on every rendered page (see format.html.include-after-body
+  // in _quarto.yml). Edit the array below to add, remove, or reorder
+  // pages -- href paths are relative to the project root (same layout as
+  // the rendered .html output) and must be unique path suffixes.
+  //
+  // Revealjs slide decks ARE included here, so that the regular pages
+  // right before/after one link to it correctly (its title is marked
+  // "(slides)" so it's clear the link leaves the article format) -- but
+  // slide decks use format.revealjs, not format.html, so this script
+  // (wired in via format.html.include-after-body) never loads on a slide
+  // deck itself. In other words: pages link into and out of slide decks,
+  // but a slide deck has no Previous/Next of its own.
+  var pageNavOrder = [
+    { href: "index.html", title: "Home" },
+    { href: "week01/w1_overview.html", title: "Week 1: Overview" },
+    { href: "week01/w1a_course-intro.html", title: "Introduction to the course (slides)" },
+    { href: "week01/w1b_omics-data.html", title: "An overview of omics data (slides)" },
+    { href: "UA/UA2.html", title: "UA2: OSC account setup" },
+    { href: "week02/w2_overview.html", title: "Week 2: Overview" },
+    { href: "week02/w2a_project-org.html", title: "Project file organization (slides)" },
+    { href: "week02/w2b_osc.html", title: "The Ohio Supercomputer Center (slides)" },
+    { href: "week02/w2c_vscode.html", title: "VS Code" },
+    { href: "week02/w2d_markdown.html", title: "Markdown (slides)" },
+    { href: "week02/w2d_markdown_notes.html", title: "Markdown (notes)" },
+    { href: "week02/w2_exercises.html", title: "Week 2: Exercises" },
+    { href: "week03/w3_overview.html", title: "Week 3: Overview" },
+    { href: "week03/w3a_shell-basics.html", title: "Unix shell basics" },
+    { href: "GA/GA1.html", title: "GA1: Markdown and Unix shell basics" },
+    { href: "week04/w4_overview.html", title: "Week 4: Overview" },
+    { href: "week04/w4a_genomics-files.html", title: "Genomics file types (slides)" },
+    { href: "week04/w4b_shell-files1.html", title: "Shell files I" },
+    { href: "week04/w4c_shell-files2.html", title: "Shell files II" },
+    { href: "week04/w4_exercises.html", title: "Week 4: Exercises" },
+    { href: "week05/w5_overview.html", title: "Week 5: Overview" },
+    { href: "week05/w5a_git-intro.html", title: "Git intro (slides)" },
+    { href: "week05/w5b_git.html", title: "Git" },
+    { href: "UA/UA3.html", title: "UA3: Create a GitHub account" },
+    { href: "week05/w5c_github.html", title: "GitHub" },
+    { href: "GA/GA2.html", title: "GA2: Unix shell data tools & version control" },
+    { href: "week06/w6_overview.html", title: "Week 6: Overview" },
+    { href: "week06/w6a_osc.html", title: "A closer look at OSC" },
+    { href: "week06/w6b_software.html", title: "Software management at OSC" },
+    { href: "week06/w6_exercises.html", title: "Week 6: Exercises" },
+    { href: "week07/w7_overview.html", title: "Week 7: Overview" },
+    { href: "week07/w7a_scripts1.html", title: "Shell scripting I" },
+    { href: "week07/w7b_scripts2.html", title: "Shell scripting II" },
+    { href: "week07/w7c_scripts3.html", title: "Shell scripting III" },
+    { href: "GA/GA3.html", title: "GA3: Software and shell scripts" },
+    { href: "week08/w8_overview.html", title: "Week 8: Overview" },
+    { href: "week08/w8a_genAI.html", title: "Generative AI in research and coding (slides)" },
+    { href: "week09/w9_overview.html", title: "Week 9: Overview" },
+    { href: "week09/w9a_claude.html", title: "Coding with an AI agent in VS Code" },
+    { href: "GA/GA4.html", title: "GA4: Shell scripts with and without genAI" },
+    { href: "week10/w10_overview.html", title: "Week 10: Overview" },
+    { href: "week10/w10a_slurm1.html", title: "Slurm batch jobs I" },
+    { href: "week10/w10b_slurm-options.html", title: "Common Slurm options (slides)" },
+    { href: "week10/w10b_slurm2.html", title: "Slurm batch jobs II" },
+    { href: "week10/w10_exercises.html", title: "Week 10: Exercises" }
+  ];
+
+  // Builds a relative href from one manifest entry to another, based on
+  // path depth alone -- deliberately avoids assuming anything about the
+  // site's domain or deployment subpath (e.g. GitHub Pages project sites).
+  function relativeHref(fromHref, toHref) {
+    var depth = fromHref.split("/").length - 1;
+    var prefix = "";
+    for (var i = 0; i < depth; i++) prefix += "../";
+    return prefix + toHref;
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var path = window.location.pathname;
+    var index = pageNavOrder.findIndex(function (entry) {
+      if (entry.href === "index.html") {
+        return path.endsWith("/index.html") || path.endsWith("/");
+      }
+      return path.endsWith("/" + entry.href);
+    });
+    if (index === -1) return;
+
+    var current = pageNavOrder[index];
+    var prev = pageNavOrder[index - 1];
+    // The homepage has its own full course table right there on the page,
+    // so a "Next" link to Week 1 would just be redundant -- suppress it.
+    var next = current.href === "index.html" ? null : pageNavOrder[index + 1];
+    if (!prev && !next) return;
+
+    var nav = document.createElement("div");
+    nav.id = "page-nav";
+
+    if (prev) {
+      var prevLink = document.createElement("a");
+      prevLink.href = relativeHref(current.href, prev.href);
+      prevLink.className = "page-nav-prev";
+      prevLink.innerHTML =
+        '<span class="page-nav-label">← Previous</span>' +
+        '<span class="page-nav-title">' + prev.title + "</span>";
+      nav.appendChild(prevLink);
+    } else {
+      nav.appendChild(document.createElement("span"));
+    }
+
+    if (next) {
+      var nextLink = document.createElement("a");
+      nextLink.href = relativeHref(current.href, next.href);
+      nextLink.className = "page-nav-next";
+      nextLink.innerHTML =
+        '<span class="page-nav-label">Next →</span>' +
+        '<span class="page-nav-title">' + next.title + "</span>";
+      nav.appendChild(nextLink);
+    }
+
+    // Append inside the article content column (not as a sibling of
+    // #quarto-content before the full-bleed footer) so the nav bar
+    // inherits the same centered width/padding as the page text above it.
+    var content = document.getElementById("quarto-document-content");
+    if (content) {
+      content.appendChild(nav);
+    } else {
+      var footer = document.querySelector("footer.footer");
+      if (footer && footer.parentNode) {
+        footer.parentNode.insertBefore(nav, footer);
+      } else {
+        document.body.appendChild(nav);
+      }
+    }
+  });
+})();
+</script>
+<script>
+(function () {
+  // Line highlighting for code blocks on regular (HTML) pages, e.g.
+  //   ```{.bash hl-lines="2,4-5"}
+  // (Quarto's own code-line-numbers="2,4-5" highlighting only works in
+  // revealjs slides). Pandoc passes the attribute through as
+  // data-hl-lines on div.sourceCode, and wraps each line in its own
+  // <span>; this adds the .hl-line class (styled in styles.css) to the
+  // listed lines. Numbers are the displayed line numbers, so with
+  // startFrom="12", hl-lines="13" is the block's second line. Wired in via
+  // format.html.include-after-body in _quarto.yml.
+  document.querySelectorAll("div.sourceCode[data-hl-lines]").forEach(function (div) {
+    var lines = div.querySelectorAll("pre > code > span");
+    var first = parseInt(div.dataset.startfrom || "1", 10);
+    div.dataset.hlLines.split(",").forEach(function (part) {
+      var ends = part.trim().split("-").map(Number);
+      var from = ends[0];
+      var to = ends.length > 1 ? ends[1] : from;
+      for (var n = from; n <= to; n++) {
+        var line = lines[n - first];
+        if (line) line.classList.add("hl-line");
+      }
+    });
+  });
+
+  // Text highlighting, e.g. for placeholders to replace:
+  //   ```{.file hl-text="<osc-username>"}
+  // Separate several strings with "|": hl-text="<user>|<project>".
+  // Each occurrence is wrapped in <span class="hl-text"> (styled in
+  // styles.css). Matches are found within single text nodes, so in
+  // syntax-highlighted code a string must not span several tokens.
+  // The copy button copies textContent, so it is unaffected.
+  document.querySelectorAll("div.sourceCode[data-hl-text]").forEach(function (div) {
+    var targets = div.dataset.hlText.split("|").filter(Boolean);
+    var code = div.querySelector("pre > code");
+    if (!code || !targets.length) return;
+    var walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (node) {
+      var text = node.nodeValue;
+      var frag = document.createDocumentFragment();
+      var pos = 0;
+      var found = false;
+      while (true) {
+        // Earliest match of any target from pos
+        var best = -1, len = 0;
+        targets.forEach(function (t) {
+          var i = text.indexOf(t, pos);
+          if (i !== -1 && (best === -1 || i < best)) { best = i; len = t.length; }
+        });
+        if (best === -1) break;
+        found = true;
+        frag.appendChild(document.createTextNode(text.slice(pos, best)));
+        var span = document.createElement("span");
+        span.className = "hl-text";
+        span.textContent = text.slice(best, best + len);
+        frag.appendChild(span);
+        pos = best + len;
+      }
+      if (!found) return;
+      frag.appendChild(document.createTextNode(text.slice(pos)));
+      node.parentNode.replaceChild(frag, node);
+    });
+  });
+})();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/cfaes-bioinfo\.github\.io\/pracs-au26");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>2026, Jelmer Poelstra, <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a> &nbsp; <img src="http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" class="img-fluid" style="width:10.0%"></p>
+</div>   
+    <div class="nav-footer-center">
+<p><img src="../img/CFAES-Horiz-RGBHEX.svg" class="img-fluid" style="width:40.0%"></p>
+</div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/cfaes-bioinfo/pracs-au26">
+      <i class="bi bi-github" role="img" aria-label="The GitHub repo for this website">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
+(function() {
+  let previousOnload = window.onload;
+  window.onload = () => {
+    if (previousOnload) {
+      previousOnload();
+    }
+    lightboxQuarto.on('slide_before_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      const href = trigger.getAttribute('href');
+      if (href !== null) {
+        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
+        if (imgEl !== null) {
+          const srcAttr = imgEl.getAttribute("src");
+          if (srcAttr && srcAttr.startsWith("data:")) {
+            slideConfig.href = srcAttr;
+          }
+        }
+      } 
+    });
+  
+    lightboxQuarto.on('slide_after_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(slideNode);
+      }
+    });
+  
+  };
+  
+})();
+          </script>
+
+
+
+
+</body></html>

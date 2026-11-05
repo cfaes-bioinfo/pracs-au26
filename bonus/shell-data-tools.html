@@ -1,0 +1,2497 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Jelmer Poelstra">
+<meta name="dcterms.date" content="2026-10-10">
+
+<title>Unix data tools – PRACS-AU26</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../img/favicon.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-eec68b17241c1efd3eae2de50d816e3e.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-dc7214d3aee0816495374db93584c688.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/quarto-contrib/fontawesome6-6.7.2/all.min.css" rel="stylesheet">
+<link href="../site_libs/quarto-contrib/fontawesome6-6.7.2/latex-fontsize.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../img/logo4c.png" alt="" class="navbar-logo light-content">
+    <img src="../img/logo4c.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">PRACS-AU26</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> <i class="bi bi-house-fill" role="img" aria-label="Home">
+</i> 
+<span class="menu-text"> </span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-modules" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Modules</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-modules">    
+        <li>
+    <a class="dropdown-item" href="../week01/w1_overview.html">
+ <span class="dropdown-text">Week 1: Omics data</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week02/w2_overview.html">
+ <span class="dropdown-text">Week 2: Project organization, OSC, and Markdown</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week03/w3_overview.html">
+ <span class="dropdown-text">Week 3: Unix shell – basics</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week04/w4_overview.html">
+ <span class="dropdown-text">Week 4: Unix shell – working with files</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week05/w5_overview.html">
+ <span class="dropdown-text">Week 5: Version control with Git and GitHub</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week06/w6_overview.html">
+ <span class="dropdown-text">Week 6: Using software at OSC</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week07/w7_overview.html">
+ <span class="dropdown-text">Week 7: Shell scripts</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week08/w8_overview.html">
+ <span class="dropdown-text">Week 8: Generative AI in research and coding</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week09/w9_overview.html">
+ <span class="dropdown-text">Week 9: Coding with an AI agent</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week10/w10_overview.html">
+ <span class="dropdown-text">Week 10: Slurm batch jobs and workflows</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week11/w11_overview.html">
+ <span class="dropdown-text">Week 11: Data management and nf-core pipelines</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week12/w12_overview.html">
+ <span class="dropdown-text">Week 12: R &amp; Quarto basics</span></a>
+  </li>  
+        <li class="dropdown-header">Week 13: Data wrangling &amp; visualization in R</li>
+        <li class="dropdown-header">Week 14: Quarto – beyond the basics</li>
+        <li class="dropdown-header">Week 15: R for omics data</li>
+        <li class="dropdown-header">Week 16: Student presentations</li>
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-exercises" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Exercises</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-exercises">    
+        <li>
+    <a class="dropdown-item" href="../week02/w2_exercises.html">
+ <span class="dropdown-text">Ex. 1: Markdown and project organization (week 2)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week04/w4_exercises.html">
+ <span class="dropdown-text">Ex. 2: Unix shell – working with files (week 4)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week06/w6_exercises.html">
+ <span class="dropdown-text">Ex. 3: OSC software (week 6)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../week10/w10_exercises.html">
+ <span class="dropdown-text">Ex. 4: Slurm batch jobs (week 10)</span></a>
+  </li>  
+        <li class="dropdown-header">Ex. 5: R data wrangling and visualization (week 13)</li>
+        <li class="dropdown-header">Ex. 6: R for omics data (week 15)</li>
+        <li><hr class="dropdown-divider"></li>
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-assignments" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Assignments</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-assignments">    
+        <li class="dropdown-header">Graded assignments:</li>
+        <li>
+    <a class="dropdown-item" href="../GA/GA1.html">
+ <span class="dropdown-text">GA1: Markdown and Unix shell (week 3)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../GA/GA2.html">
+ <span class="dropdown-text">GA2: Version control (week 5)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../GA/GA3.html">
+ <span class="dropdown-text">GA3: Shell scripts (week 7)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../GA/GA4.html">
+ <span class="dropdown-text">GA4: Shell scripts and genAI (week 9)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../GA/GA5.html">
+ <span class="dropdown-text">GA5: A multi-step workflow (week 11)</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">Final project:</li>
+        <li>
+    <a class="dropdown-item" href="../FP/FP-info.html">
+ <span class="dropdown-text">General information</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../FP/FP1.html">
+ <span class="dropdown-text">FP1: Proposal (week 12)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../FP/FP2.html">
+ <span class="dropdown-text">FP2: Progress report (week 14)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../FP/FP3.html">
+ <span class="dropdown-text">FP3: Oral presentation (week 16)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../FP/FP4.html">
+ <span class="dropdown-text">FP4: Final submission (week 16)</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">Ungraded assignments:</li>
+        <li>
+    <a class="dropdown-item" href="https://forms.cloud.microsoft/r/wqriyRJSmd" target="_blank">
+ <span class="dropdown-text">UA1: Pre-course survey (week 1) <i class="fa-solid fa-external-link" aria-label="external-link"></i></span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../UA/UA2.html">
+ <span class="dropdown-text">UA2: OSC account setup (week 1)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../UA/UA3.html">
+ <span class="dropdown-text">UA3: GitHub account setup (week 5)</span></a>
+  </li>  
+        <li class="dropdown-header">UA4: Post-course survey (week 16) <i class="fa-solid fa-external-link" aria-label="external-link"></i></li>
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-bonus" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Bonus</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-bonus">    
+        <li class="dropdown-header">Optional self-study material:</li>
+        <li>
+    <a class="dropdown-item" href="../bonus/shell.html">
+ <span class="dropdown-text">Unix shell (week 4)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/shell-data-tools.html">
+ <span class="dropdown-text">Unix shell data tools (week 4)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/git.html">
+ <span class="dropdown-text">Version control (week 5)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/conda.html">
+ <span class="dropdown-text">Software management with Conda (week 6)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/shell-scripting.html">
+ <span class="dropdown-text">Shell scripting (week 7)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/shell-config.html">
+ <span class="dropdown-text">Shell configuration (week 7)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/claude-code.html">
+ <span class="dropdown-text">Claude Code (week 9)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/copilot.html">
+ <span class="dropdown-text">GitHub Copilot (week 9)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/slurm.html">
+ <span class="dropdown-text">Slurm batch jobs (week 10)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/data.html">
+ <span class="dropdown-text">Project and data management (week 11)</span></a>
+  </li>  
+        <li class="dropdown-header">R (weeks 12-13)</li>
+        <li>
+    <a class="dropdown-item" href="../bonus/posit-assistant.html">
+ <span class="dropdown-text">Posit Assistant (week 13)</span></a>
+  </li>  
+        <li class="dropdown-header">R for omics data (week 15)</li>
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-reference" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Reference</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-reference">    
+        <li>
+    <a class="dropdown-item" href="../ref/about.html">
+ <span class="dropdown-text"><strong>About this course</strong></span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">Reference pages:</li>
+        <li>
+    <a class="dropdown-item" href="../bonus/vscode.html">
+ <span class="dropdown-text">VS Code tips and tricks</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/vscode-local.html">
+ <span class="dropdown-text">Connecting a local VS Code installation to OSC</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../bonus/ssh.html">
+ <span class="dropdown-text">SSH and file transfer</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../ref/ncbi.html">
+ <span class="dropdown-text">Finding and downloading data from NCBI</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">Reference lists:</li>
+        <li>
+    <a class="dropdown-item" href="../ref/resources.html">
+ <span class="dropdown-text">Further resources</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../ref/refs.html">
+ <span class="dropdown-text">Literature reference list</span></a>
+  </li>  
+        <li><hr class="dropdown-divider"></li>
+        <li class="dropdown-header">Website GitHub repo:</li>
+        <li>
+    <a class="dropdown-item" href="https://github.com/cfaes-bioinfo/pracs-au26" target="_blank">
+ <span class="dropdown-text">Source code <i class="fa-solid fa-external-link" aria-label="external-link"></i></span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://github.com/cfaes-bioinfo/pracs-au26/issues/new" target="_blank">
+ <span class="dropdown-text">Report an issue <i class="fa-solid fa-external-link" aria-label="external-link"></i></span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="https://osu.instructure.com/courses/213814" target="_blank"> 
+<span class="menu-text"><i class="fa-solid fa-graduation-cap" aria-label="CarmenCanvas" title="CarmenCanvas"></i></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://ondemand.osc.edu" target="_blank"> 
+<span class="menu-text"><i class="fa-solid fa-desktop" aria-label="OSC OnDemand" title="OSC OnDemand"></i></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a>
+  <ul class="collapse">
+  <li><a href="#setting-up" id="toc-setting-up" class="nav-link" data-scroll-target="#setting-up"><span class="header-section-number">1.1</span> Setting up</a></li>
+  </ul></li>
+  <li><a href="#regular-expressions-with-grep" id="toc-regular-expressions-with-grep" class="nav-link" data-scroll-target="#regular-expressions-with-grep"><span class="header-section-number">2</span> Regular expressions with <code>grep</code></a>
+  <ul class="collapse">
+  <li><a href="#what-are-regular-expressions" id="toc-what-are-regular-expressions" class="nav-link" data-scroll-target="#what-are-regular-expressions"><span class="header-section-number">2.1</span> What are regular expressions?</a></li>
+  <li><a href="#anchors-and" id="toc-anchors-and" class="nav-link" data-scroll-target="#anchors-and"><span class="header-section-number">2.2</span> Anchors: <code>^</code> and <code>$</code></a></li>
+  <li><a href="#any-character-.-repetition-and-grep--o" id="toc-any-character-.-repetition-and-grep--o" class="nav-link" data-scroll-target="#any-character-.-repetition-and-grep--o"><span class="header-section-number">2.3</span> Any character (<code>.</code>), repetition (<code>*</code>), and <code>grep -o</code></a></li>
+  <li><a href="#character-classes-...-and-..." id="toc-character-classes-...-and-..." class="nav-link" data-scroll-target="#character-classes-...-and-..."><span class="header-section-number">2.4</span> Character classes: <code>[...]</code> and <code>[^...]</code></a></li>
+  <li><a href="#extended-regular-expressions-grep--e" id="toc-extended-regular-expressions-grep--e" class="nav-link" data-scroll-target="#extended-regular-expressions-grep--e"><span class="header-section-number">2.5</span> Extended regular expressions: <code>grep -E</code></a></li>
+  <li><a href="#regular-expressions-vs.-shell-wildcards" id="toc-regular-expressions-vs.-shell-wildcards" class="nav-link" data-scroll-target="#regular-expressions-vs.-shell-wildcards"><span class="header-section-number">2.6</span> Regular expressions vs.&nbsp;shell wildcards</a></li>
+  </ul></li>
+  <li><a href="#more-sort-and-uniq-and-friends" id="toc-more-sort-and-uniq-and-friends" class="nav-link" data-scroll-target="#more-sort-and-uniq-and-friends"><span class="header-section-number">3</span> More <code>sort</code> and <code>uniq</code>, and friends</a>
+  <ul class="collapse">
+  <li><a href="#sorting-by-column-numerically" id="toc-sorting-by-column-numerically" class="nav-link" data-scroll-target="#sorting-by-column-numerically"><span class="header-section-number">3.1</span> Sorting by column, numerically</a></li>
+  <li><a href="#other-useful-sort-options" id="toc-other-useful-sort-options" class="nav-link" data-scroll-target="#other-useful-sort-options"><span class="header-section-number">3.2</span> Other useful <code>sort</code> options</a></li>
+  <li><a href="#finding-duplicates-with-uniq--d" id="toc-finding-duplicates-with-uniq--d" class="nav-link" data-scroll-target="#finding-duplicates-with-uniq--d"><span class="header-section-number">3.3</span> Finding duplicates with <code>uniq -d</code></a></li>
+  <li><a href="#column--t-for-viewing-tabular-files" id="toc-column--t-for-viewing-tabular-files" class="nav-link" data-scroll-target="#column--t-for-viewing-tabular-files"><span class="header-section-number">3.4</span> <code>column -t</code> for viewing tabular files</a></li>
+  <li><a href="#paste-to-combine-lines" id="toc-paste-to-combine-lines" class="nav-link" data-scroll-target="#paste-to-combine-lines"><span class="header-section-number">3.5</span> <code>paste</code> to combine lines</a></li>
+  </ul></li>
+  <li><a href="#tr-to-translate-characters" id="toc-tr-to-translate-characters" class="nav-link" data-scroll-target="#tr-to-translate-characters"><span class="header-section-number">4</span> <code>tr</code> to translate characters</a>
+  <ul class="collapse">
+  <li><a href="#substituting-characters" id="toc-substituting-characters" class="nav-link" data-scroll-target="#substituting-characters"><span class="header-section-number">4.1</span> Substituting characters</a></li>
+  <li><a href="#reverse-complementing-a-sequence" id="toc-reverse-complementing-a-sequence" class="nav-link" data-scroll-target="#reverse-complementing-a-sequence"><span class="header-section-number">4.2</span> Reverse complementing a sequence</a></li>
+  <li><a href="#deleting-and-squeezing-characters" id="toc-deleting-and-squeezing-characters" class="nav-link" data-scroll-target="#deleting-and-squeezing-characters"><span class="header-section-number">4.3</span> Deleting and “squeezing” characters</a></li>
+  </ul></li>
+  <li><a href="#awk-for-tabular-data-processing" id="toc-awk-for-tabular-data-processing" class="nav-link" data-scroll-target="#awk-for-tabular-data-processing"><span class="header-section-number">5</span> <code>awk</code> for tabular data processing</a>
+  <ul class="collapse">
+  <li><a href="#records-and-fields" id="toc-records-and-fields" class="nav-link" data-scroll-target="#records-and-fields"><span class="header-section-number">5.1</span> Records and fields</a></li>
+  <li><a href="#pattern-action-pairs" id="toc-pattern-action-pairs" class="nav-link" data-scroll-target="#pattern-action-pairs"><span class="header-section-number">5.2</span> Pattern-action pairs</a></li>
+  <li><a href="#begin-and-end" id="toc-begin-and-end" class="nav-link" data-scroll-target="#begin-and-end"><span class="header-section-number">5.3</span> <code>BEGIN</code> and <code>END</code></a></li>
+  <li><a href="#processing-fastq-files-with-awk" id="toc-processing-fastq-files-with-awk" class="nav-link" data-scroll-target="#processing-fastq-files-with-awk"><span class="header-section-number">5.4</span> Processing FASTQ files with <code>awk</code></a></li>
+  <li><a href="#awk-reference-tables" id="toc-awk-reference-tables" class="nav-link" data-scroll-target="#awk-reference-tables"><span class="header-section-number">5.5</span> <code>awk</code> reference tables</a></li>
+  </ul></li>
+  <li><a href="#sed-to-find-and-replace" id="toc-sed-to-find-and-replace" class="nav-link" data-scroll-target="#sed-to-find-and-replace"><span class="header-section-number">6</span> <code>sed</code> to find and replace</a>
+  <ul class="collapse">
+  <li><a href="#substitution-with-spatternreplacement" id="toc-substitution-with-spatternreplacement" class="nav-link" data-scroll-target="#substitution-with-spatternreplacement"><span class="header-section-number">6.1</span> Substitution with <code>s/pattern/replacement/</code></a></li>
+  <li><a href="#selecting-lines-with-addresses" id="toc-selecting-lines-with-addresses" class="nav-link" data-scroll-target="#selecting-lines-with-addresses"><span class="header-section-number">6.2</span> Selecting lines with addresses</a></li>
+  <li><a href="#using-a-different-delimiter" id="toc-using-a-different-delimiter" class="nav-link" data-scroll-target="#using-a-different-delimiter"><span class="header-section-number">6.3</span> Using a different delimiter</a></li>
+  <li><a href="#capture-groups-and-backreferences" id="toc-capture-groups-and-backreferences" class="nav-link" data-scroll-target="#capture-groups-and-backreferences"><span class="header-section-number">6.4</span> Capture groups and backreferences</a></li>
+  </ul></li>
+  <li><a href="#putting-it-together-genes-per-chromosome" id="toc-putting-it-together-genes-per-chromosome" class="nav-link" data-scroll-target="#putting-it-together-genes-per-chromosome"><span class="header-section-number">7</span> Putting it together: genes per chromosome</a>
+  <ul class="collapse">
+  <li><a href="#step-1-sequence-lengths-from-the-fasta-file" id="toc-step-1-sequence-lengths-from-the-fasta-file" class="nav-link" data-scroll-target="#step-1-sequence-lengths-from-the-fasta-file"><span class="header-section-number">7.1</span> Step 1: Sequence lengths from the FASTA file</a></li>
+  <li><a href="#step-2-gene-counts-from-the-gtf-file" id="toc-step-2-gene-counts-from-the-gtf-file" class="nav-link" data-scroll-target="#step-2-gene-counts-from-the-gtf-file"><span class="header-section-number">7.2</span> Step 2: Gene counts from the GTF file</a></li>
+  <li><a href="#step-3-merging-the-two-files-with-join" id="toc-step-3-merging-the-two-files-with-join" class="nav-link" data-scroll-target="#step-3-merging-the-two-files-with-join"><span class="header-section-number">7.3</span> Step 3: Merging the two files with <code>join</code></a></li>
+  <li><a href="#step-4-computing-gene-density" id="toc-step-4-computing-gene-density" class="nav-link" data-scroll-target="#step-4-computing-gene-density"><span class="header-section-number">7.4</span> Step 4: Computing gene density</a></li>
+  </ul></li>
+  <li><a href="#wrap-up-which-tool-when" id="toc-wrap-up-which-tool-when" class="nav-link" data-scroll-target="#wrap-up-which-tool-when"><span class="header-section-number">8</span> Wrap-up: which tool when?</a></li>
+  </ul>
+<div class="quarto-other-links"><h2>Other Links</h2><ul><li><a href="../week04/w4_overview.html"><i class="bi bi-check2-all"></i>Week 4 overview</a></li><li><a href="../week04/w4c_shell-files2.html"><i class="bi bi-book"></i>w4c: Shell files II</a></li><li><a href="shell.html"><i class="bi bi-book"></i>More Unix shell (bonus)</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">More Unix data tools:<br>regular expressions, <code>awk</code>, <code>sed</code> &amp; more</h1>
+<p class="subtitle lead">Optional self-study content</p>
+</div>
+
+
+<div class="quarto-title-meta-author">
+  <div class="quarto-title-meta-heading">Author</div>
+  <div class="quarto-title-meta-heading">Affiliations</div>
+  
+    <div class="quarto-title-meta-contents">
+    <p class="author">Jelmer Poelstra <a href="mailto:poelstra.1@osu.edu" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> <a href="https://orcid.org/0000-0002-3514-7462" class="quarto-title-author-orcid" aria-label="ORCID profile for Jelmer Poelstra"> <img alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            <a href="https://go.osu.edu/bioinformatics-core">
+            CFAES Bioinformatics Core, Ohio State University
+            </a>
+          </p>
+        <p class="affiliation">
+            <a href="https://plantpath.osu.edu">
+            Dept. of Plant Pathology, Ohio State University
+            </a>
+          </p>
+      </div>
+  </div>
+
+<div class="quarto-title-meta">
+
+      
+    <div>
+    <div class="quarto-title-meta-heading">Published on</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">October 10, 2026</p>
+    </div>
+  </div>
+  
+    <div>
+    <div class="quarto-title-meta-heading">Page last modified</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date-modified">November 3, 2026</p>
+    </div>
+  </div>
+    
+  </div>
+  
+
+
+</header>
+
+
+<hr>
+<hr style="height:1pt; visibility:hidden;">
+<div class="callout callout-style-default callout-warning callout-empty-content callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>This page is a draft and is still under construction.
+</div>
+</div>
+<div class="callout-body-container callout-body">
+
+</div>
+</div>
+<hr style="height:1pt; visibility:hidden;">
+<section id="introduction" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="introduction"><span class="header-section-number">1</span> Introduction</h2>
+<p>This page contains optional self-study material that builds on the <a href="../week04/w4c_shell-files2.html">w4c lecture</a>, where you learned the basics of <code>grep</code>, <code>cut</code>, <code>sort</code>, and <code>uniq</code>. Here, you’ll go further with those commands and learn several new ones:</p>
+<ul>
+<li><a href="#regular-expressions-with-grep">Regular expressions</a>, to search for text <em>patterns</em> rather than fixed text</li>
+<li><a href="#more-sort-and-uniq-and-friends">More <code>sort</code> and <code>uniq</code></a>, plus the related commands <code>column</code>, <code>paste</code>, and <code>comm</code></li>
+<li><a href="#tr-to-translate-characters"><code>tr</code></a> to substitute or delete single characters</li>
+<li><a href="#awk-for-tabular-data-processing"><code>awk</code></a> to filter and process tabular data</li>
+<li><a href="#sed-to-find-and-replace"><code>sed</code></a> to find and replace text, and more</li>
+<li><a href="#putting-it-together-genes-per-chromosome"><code>join</code></a> to merge two tables, in a final example that combines many of these tools</li>
+</ul>
+<p>Throughout, you’ll work with the files from the <span class="citation" data-cites="garrigós2025">Garrigós et al. (<a href="#ref-garrigós2025" role="doc-biblioref">2025</a>)</span> dataset, plus the <em>Culex pipiens</em> genome assembly FASTA file.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Aim for reading fluency, not memorization
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>awk</code> and <code>sed</code> are small programming languages in their own right, and nobody remembers all of their syntax. Aim to understand what the examples do, so that you can recognize, adapt, and look up such commands later. This also matters for week 8: generative AI is quite good at writing one-liners like the ones on this page, but you’ll need to be able to read them to check that they do what you want.</p>
+</div>
+</div>
+<section id="setting-up" class="level3" data-number="1.1">
+<h3 data-number="1.1" class="anchored" data-anchor-id="setting-up"><span class="header-section-number">1.1</span> Setting up</h3>
+<ol type="1">
+<li><p>At <a href="https://ondemand.osc.edu" class="uri">https://ondemand.osc.edu</a>, start a VS Code session in <code>/fs/ess/PAS3493/people/$USER</code>.</p></li>
+<li><p>Create a dir for this page and move into it:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> week04/data-tools</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> week04/data-tools</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p>Copy the metadata file and one FASTQ file, like in w4c:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> ../../garrigos/meta/metadata.tsv .</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> ../../garrigos/fastq/S63_R1.fastq.gz .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p>Create a decompressed copy of the GTF file. This way, you won’t have to start every command with <code>zcat</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> ../../garrigos/ref/annot.gtf.gz <span class="op">&gt;</span> annot.gtf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p>Download the genome assembly FASTA file from NCBI with <code>wget</code>, create a decompressed copy named <code>genome.fna</code>, and remove the compressed file:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/016/801/865/GCF_016801865.2_TS_CPP_V2/GCF_016801865.2_TS_CPP_V2_genomic.fna.gz</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> GCF_016801865.2_TS_CPP_V2_genomic.fna.gz <span class="op">&gt;</span> genome.fna</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> GCF_016801865.2_TS_CPP_V2_genomic.fna.gz</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><code>wget</code> downloads a file from a URL. You’ll learn more about it, and download this same file again, in week 11.</p>
+</div>
+</div>
+</div></li>
+<li><p>Check that you have these four files:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-lh</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>-rw-rw----+ 1 jelmer PAS0471 123M Sep 21 10:12 annot.gtf
+-rw-rw----+ 1 jelmer PAS0471 547M Sep 21 10:13 genome.fna
+-rw-rw----+ 1 jelmer PAS0471  457 Sep 21 10:11 metadata.tsv
+-rw-rw----+ 1 jelmer PAS0471  21M Sep 21 10:11 S63_R1.fastq.gz</code></pre></li>
+</ol>
+<div class="callout callout-style-simple callout-tip">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>The decompressed genome FASTA takes up quite a bit of space, so remove <code>genome.fna</code> once you’re done with this page.</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="regular-expressions-with-grep" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="regular-expressions-with-grep"><span class="header-section-number">2</span> Regular expressions with <code>grep</code></h2>
+<section id="what-are-regular-expressions" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="what-are-regular-expressions"><span class="header-section-number">2.1</span> What are regular expressions?</h3>
+<p>In w4c, you used <code>grep</code> to search for fixed text, like <code>relictum</code>. But <code>grep</code> actually interprets its search pattern as a <strong>regular expression</strong> (“regex”): a pattern in which some characters have a special meaning. With regular expressions, you can for example search for:</p>
+<ul>
+<li>Lines that <em>start</em> with a <code>&gt;</code> (the header lines of a FASTA file)</li>
+<li>Reads that end in a stretch of 15 or more <code>A</code>s</li>
+<li>Any text between quotes that follows <code>gene_id</code> in a GTF file</li>
+</ul>
+<p>Regular expressions are used far beyond <code>grep</code>: <code>sed</code> and <code>awk</code> (later on this page) use them, as do R and Python, and even VS Code’s search box (click the <code>.*</code> button in the search box to turn on regex search). So, time spent learning them pays off in many places.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Use single quotes around regular expressions
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Some regex symbols, like <code>$</code> and <code>\</code>, also have a special meaning to the shell. Inside double quotes, the shell may therefore change the pattern before <code>grep</code> gets to see it. Inside <strong>single quotes</strong>, the shell leaves everything alone, so on this page, we’ll use single quotes around regular expressions.</p>
+</div>
+</div>
+</section>
+<section id="anchors-and" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="anchors-and"><span class="header-section-number">2.2</span> Anchors: <code>^</code> and <code>$</code></h3>
+<p>By default, a pattern can match anywhere in a line. <code>^</code> anchors a pattern to the <strong>start</strong> of a line, and <code>$</code> anchors it to the <strong>end</strong> of a line. To see the difference, search the sample IDs in the metadata file (column 1) for the number <code>6</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cut</span> <span class="at">-f</span> 1 metadata.tsv <span class="kw">|</span> <span class="fu">grep</span> <span class="st">'6'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>S7<span class="match-red">6</span>
+S8<span class="match-red">6</span>
+S<span class="match-red">6</span>4
+S<span class="match-red">6</span>7
+S<span class="match-red">66</span>
+S<span class="match-red">6</span>9
+S<span class="match-red">6</span>3
+S<span class="match-red">6</span>5
+S<span class="match-red">6</span>8</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Only sample IDs that start with 'S6':</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cut</span> <span class="at">-f</span> 1 metadata.tsv <span class="kw">|</span> <span class="fu">grep</span> <span class="st">'^S6'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code><span class="match-red">S6</span>4
+<span class="match-red">S6</span>7
+<span class="match-red">S6</span>6
+<span class="match-red">S6</span>9
+<span class="match-red">S6</span>3
+<span class="match-red">S6</span>5
+<span class="match-red">S6</span>8</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Only sample IDs that end with '6':</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cut</span> <span class="at">-f</span> 1 metadata.tsv <span class="kw">|</span> <span class="fu">grep</span> <span class="st">'6$'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>S7<span class="match-red">6</span>
+S8<span class="match-red">6</span>
+S6<span class="match-red">6</span></code></pre>
+<p>Anchors are especially useful with genomics files, in which certain types of lines start with a specific character. For example, to count the sequences in a FASTA file, count its header lines, which start with a <code>&gt;</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-c</span> <span class="st">'^&gt;'</span> genome.fna</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>290</code></pre>
+<p>Let’s also look at the first few headers:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="st">'^&gt;'</span> genome.fna <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 5</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>&gt;NC_068937.1 Culex pipiens pallens isolate TS chromosome 1, TS_CPP_V2, whole genome shotgun sequence
+&gt;NC_068938.1 Culex pipiens pallens isolate TS chromosome 2, TS_CPP_V2, whole genome shotgun sequence
+&gt;NC_068939.1 Culex pipiens pallens isolate TS chromosome 3, TS_CPP_V2, whole genome shotgun sequence
+&gt;NW_026292818.1 Culex pipiens pallens isolate TS unplaced genomic scaffold, TS_CPP_V2 Cpp_Un0001, whole genome shotgun sequence
+&gt;NW_026292819.1 Culex pipiens pallens isolate TS unplaced genomic scaffold, TS_CPP_V2 Cpp_Un0002, whole genome shotgun sequence</code></pre>
+<p>So, the genome assembly consists of 290 sequences: the three <em>Culex</em> chromosomes, and many smaller “unplaced scaffolds” (pieces of the genome that could not be assigned to a chromosome).</p>
+<div class="callout callout-style-simple callout-tip">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>Combining both anchors, <code>^$</code> matches <strong>empty lines</strong>, so <code>grep -v '^$'</code> removes all empty lines from its input.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="any-character-.-repetition-and-grep--o" class="level3" data-number="2.3">
+<h3 data-number="2.3" class="anchored" data-anchor-id="any-character-.-repetition-and-grep--o"><span class="header-section-number">2.3</span> Any character (<code>.</code>), repetition (<code>*</code>), and <code>grep -o</code></h3>
+<p>Two more key regex symbols are:</p>
+<ul>
+<li><code>.</code> — matches any <strong>single character</strong>.</li>
+<li><code>*</code> — matches the <strong>preceding character</strong> any number of times, including zero.</li>
+</ul>
+<p>Together, <code>.*</code> therefore matches any number of any characters, like the <code>*</code> shell wildcard does.</p>
+<p>To see exactly what a regular expression matches, use <code>grep</code>’s <code>-o</code> option, which prints <strong>only the matching part</strong> of each line instead of the full line. Let’s try to extract the gene ID (the quoted text after <code>gene_id</code>) from the first line of the GTF file’s table part:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^#'</span> annot.gtf <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 1 <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-o</span> <span class="st">'gene_id ".*"'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>gene_id "LOC120427725"; transcript_id ""; db_xref "GeneID:120427725"; description "homeotic protein deformed"; gbkey "Gene"; gene "LOC120427725"; gene_biotype "protein_coding"</code></pre>
+<p>That’s a lot more than we wanted! The problem is that <code>.*</code> is “<strong>greedy</strong>”: it matches as much as possible, so the match runs all the way to the <em>last</em> <code>"</code> on the line. Character classes, discussed next, offer a solution.</p>
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>To match one of these special characters literally, put a backslash before it (“escape” it). For example, <code>NC_068937\.1</code> only matches an actual period between <code>7</code> and <code>1</code>, while <code>NC_068937.1</code> would also match, e.g., <code>NC_06893701</code>.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="character-classes-...-and-..." class="level3" data-number="2.4">
+<h3 data-number="2.4" class="anchored" data-anchor-id="character-classes-...-and-..."><span class="header-section-number">2.4</span> Character classes: <code>[...]</code> and <code>[^...]</code></h3>
+<p>A <strong>character class</strong> matches <strong>one character from a set</strong>, which you list between square brackets:</p>
+<ul>
+<li><code>[ACGT]</code> matches a single <code>A</code>, <code>C</code>, <code>G</code>, <em>or</em> <code>T</code>.</li>
+<li>Ranges are allowed: <code>[0-9]</code> matches any digit, and <code>[a-z]</code> any lowercase letter.</li>
+<li>A <code>^</code> as the <em>first</em> character inside the brackets <strong>negates</strong> the class: <code>[^ACGT]</code> matches any single character that is <em>not</em> <code>A</code>, <code>C</code>, <code>G</code>, or <code>T</code>.</li>
+</ul>
+<div class="callout callout-style-simple callout-warning">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>Note the two different meanings of <code>^</code>: <em>outside</em> brackets, it anchors to the start of a line, while as the first character <em>inside</em> brackets, it negates the character class.</p>
+</div>
+</div>
+</div>
+<p>Negated character classes are the solution to our greedy matching problem. Instead of “any characters, followed by a quote” (<code>.*"</code>), we ask for “any characters <em>except</em> a quote, followed by a quote” (<code>[^"]*"</code>). This way, the match can’t extend beyond the next quote:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^#'</span> annot.gtf <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 1 <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-o</span> <span class="st">'gene_id "[^"]*"'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>gene_id "LOC120427725"</code></pre>
+<p>The same trick works to extract just the sequence IDs from the FASTA headers — everything after the <code>&gt;</code> up until the first space:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-o</span> <span class="st">'^&gt;[^ ]*'</span> genome.fna <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 4</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>&gt;NC_068937.1
+&gt;NC_068938.1
+&gt;NC_068939.1
+&gt;NW_026292818.1</code></pre>
+<section id="extracting-and-counting-matches" class="level4">
+<h4 class="anchored" data-anchor-id="extracting-and-counting-matches">Extracting and counting matches</h4>
+<p>Combining <code>grep -o</code> with the <code>sort | uniq -c</code> frequency-table approach from w4c is a very handy way to summarize information that is “hidden” inside a column. For example, the GTF file’s attribute column (column 9) has a <code>gene_biotype</code> for every gene. How many genes of each type are there?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-o</span> <span class="st">'gene_biotype "[^"]*"'</span> annot.gtf <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-nr</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>  16297 gene_biotype "protein_coding"
+   1620 gene_biotype "lncRNA"
+    842 gene_biotype "pseudogene"
+    686 gene_biotype "tRNA"
+    155 gene_biotype "rRNA"
+     58 gene_biotype "snRNA"
+      9 gene_biotype "snoRNA"
+      5 gene_biotype "transcribed_pseudogene"
+      1 gene_biotype "misc_RNA"</code></pre>
+<p>Most genes are protein-coding, but the annotation also includes, e.g., about 1,600 long non-coding RNA (lncRNA) genes.</p>
+</section>
+</section>
+<section id="extended-regular-expressions-grep--e" class="level3" data-number="2.5">
+<h3 data-number="2.5" class="anchored" data-anchor-id="extended-regular-expressions-grep--e"><span class="header-section-number">2.5</span> Extended regular expressions: <code>grep -E</code></h3>
+<p>Several other useful regex symbols are only available as “<strong>extended</strong> regular expressions”, which you can turn on with <code>grep -E</code>:</p>
+<table class="table-striped table-hover caption-top table">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 35%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Symbol</th>
+<th>Matches</th>
+<th>Example</th>
+<th>Example matches</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>+</code></td>
+<td>The preceding character <strong>one or more</strong> times</td>
+<td><code>[0-9]+</code></td>
+<td><code>7</code>, <code>2046</code></td>
+</tr>
+<tr class="even">
+<td><code>?</code></td>
+<td>The preceding character <strong>zero or one</strong> time</td>
+<td><code>genes?</code></td>
+<td><code>gene</code>, <code>genes</code></td>
+</tr>
+<tr class="odd">
+<td><code>{n}</code></td>
+<td>The preceding character <strong>exactly <em>n</em></strong> times</td>
+<td><code>A{3}</code></td>
+<td><code>AAA</code></td>
+</tr>
+<tr class="even">
+<td><code>{n,}</code></td>
+<td>The preceding character <strong>at least <em>n</em></strong> times</td>
+<td><code>A{3,}</code></td>
+<td><code>AAA</code>, <code>AAAAAA</code></td>
+</tr>
+<tr class="odd">
+<td><code>{n,m}</code></td>
+<td>The preceding character <strong><em>n</em> to <em>m</em></strong> times</td>
+<td><code>A{3,5}</code></td>
+<td><code>AAA</code>, <code>AAAAA</code></td>
+</tr>
+<tr class="even">
+<td><code>|</code></td>
+<td><strong>Either</strong> the pattern on the left <strong>or</strong> the one on the right</td>
+<td><code>cecropin|defensin</code></td>
+<td><code>cecropin</code>, <code>defensin</code></td>
+</tr>
+<tr class="odd">
+<td><code>( )</code></td>
+<td><strong>Groups</strong> a pattern, e.g.&nbsp;to repeat it</td>
+<td><code>(CA)+</code></td>
+<td><code>CA</code>, <code>CACACA</code></td>
+</tr>
+</tbody>
+</table>
+<p>For example, how many reads in the FASTQ file end in at least 15 <code>A</code>s, which may be the poly-A tails of mRNAs?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> S63_R1.fastq.gz <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-cE</span> <span class="st">'A{15,}$'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>199</code></pre>
+<p>And which GTF features belong to genes for the antimicrobial peptides cecropin or defensin, which are part of the mosquito immune response?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-E</span> <span class="st">'cecropin|defensin'</span> annot.gtf <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 3 <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>     16 CDS
+     17 exon
+      7 gene
+      8 start_codon
+      8 stop_codon
+      8 transcript</code></pre>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Basic vs.&nbsp;extended regular expressions <em>(Click to expand)</em>
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Without <code>-E</code>, <code>grep</code> uses “<strong>basic</strong>” regular expressions, in which <code>+</code>, <code>?</code>, <code>{ }</code>, <code>|</code>, and <code>( )</code> are just literal characters. In the GNU version of <code>grep</code> (which is what OSC uses), you can still use their special meaning by putting a backslash before them:</p>
+<table class="table-striped table-hover caption-top table">
+<colgroup>
+<col style="width: 57%">
+<col style="width: 42%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Extended (<code>grep -E</code>)</th>
+<th>Basic (<code>grep</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>A+</code></td>
+<td><code>A\+</code></td>
+</tr>
+<tr class="even">
+<td><code>A{15,}</code></td>
+<td><code>A\{15,\}</code></td>
+</tr>
+<tr class="odd">
+<td><code>cecropin|defensin</code></td>
+<td><code>cecropin&amp;#124;defensin</code></td>
+</tr>
+</tbody>
+</table>
+<p>That gets hard to read quickly, so it’s easiest to simply use <code>-E</code> whenever you need these symbols. The same goes for <code>sed</code>, which also has an <code>-E</code> option. <code>awk</code> always uses extended regular expressions.</p>
+<p>When searching online, you’ll also come across “Perl-compatible” regular expressions (<code>grep -P</code>), which offer additional shortcuts. For example, <code>\t</code> matches a Tab with <code>grep -P</code>, but not with <code>grep</code> or <code>grep -E</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Print lines with 'gene' as the feature type (column 3), surrounded by Tabs:</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-P</span> <span class="st">'\tgene\t'</span> annot.gtf <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Printing full FASTQ records with <code>grep -A</code> and <code>-B</code> <em>(Click to expand)</em>
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>When you search a FASTQ file for a sequence, <code>grep</code> only prints the matching sequence line. To see the full 4-line FASTQ record of each matching read, also print 1 line <strong>b</strong>efore (<code>-B 1</code>) and 2 lines <strong>a</strong>fter (<code>-A 2</code>) each match. The <code>--no-group-separator</code> option prevents <code>grep</code> from printing <code>--</code> lines between non-adjacent matches, so that the output is valid FASTQ:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> S63_R1.fastq.gz <span class="kw">|</span> <span class="fu">grep</span> <span class="at">--no-group-separator</span> <span class="at">-B</span> 1 <span class="at">-A</span> 2 <span class="at">-E</span> <span class="st">'A{15,}$'</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 8</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>@ERR10802863.17755922 17755922 length=73
+AGAATGCATACACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
++
+AAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+@ERR10802863.21692370 21692370 length=73
+AGATCAACTACTGAGAAATGTGTTGAGCGATAAATACAGTTCATTAAAATCAACCAGAAAAAAAAAAAAAAAA
++
+AAAAAEEEEEEEEEEEEEEEEEEEEAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE</code></pre>
+</div>
+</div>
+</div>
+</section>
+<section id="regular-expressions-vs.-shell-wildcards" class="level3" data-number="2.6">
+<h3 data-number="2.6" class="anchored" data-anchor-id="regular-expressions-vs.-shell-wildcards"><span class="header-section-number">2.6</span> Regular expressions vs.&nbsp;shell wildcards</h3>
+<p>Regular expressions and the shell wildcards from w4b (and the <a href="../bonus/shell.html#other-shell-wildcards">More Unix shell</a> page) look similar, but they are different things:</p>
+<ul>
+<li><strong>Shell wildcards</strong> match <strong>file names</strong>, and are expanded by the shell <em>before</em> a command runs.</li>
+<li><strong>Regular expressions</strong> match <strong>text</strong> in a command’s input, and are interpreted by the command itself (e.g.&nbsp;<code>grep</code>).</li>
+</ul>
+<p>Confusingly, some symbols have a different meaning in each:</p>
+<table class="table-striped table-hover caption-top table">
+<colgroup>
+<col style="width: 26%">
+<col style="width: 30%">
+<col style="width: 43%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Shell wildcard</th>
+<th>Regex equivalent</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>?</code></td>
+<td><code>.</code></td>
+<td>Any single character</td>
+</tr>
+<tr class="even">
+<td><code>*</code></td>
+<td><code>.*</code></td>
+<td>Any number of any characters</td>
+</tr>
+<tr class="odd">
+<td><code>[...]</code> and <code>[^...]</code></td>
+<td>Same</td>
+<td>One character that is / is not in the set</td>
+</tr>
+</tbody>
+</table>
+<p>Also recall from w4c that <code>grep</code> patterns don’t need to match the entire line, whereas a glob pattern has to match the entire file name.</p>
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-1-regular-expressions" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-1-regular-expressions"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Exercise 1: Regular expressions</h4>
+<ol type="a">
+<li><p>Thinking of the shell wildcard <code>S6*</code>, a classmate expects the command below to count the 7 samples whose ID starts with <code>S6</code>. What count do you think it will report instead, and why? Run the command to check your answer.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cut</span> <span class="at">-f</span> 1 metadata.tsv <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-c</span> <span class="st">'S6*'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<p>It reports <code>22</code>: every single sample ID.</p>
+<p>In a regular expression, <code>*</code> means “the preceding character any number of times, <em>including zero</em>”. So, <code>S6*</code> matches an <code>S</code> followed by zero or more <code>6</code>s — and every sample ID contains an <code>S</code>.</p>
+<p>The regex equivalent of the wildcard is <code>S6.*</code>, but since <code>grep</code> patterns don’t need to match the full line, plain <code>S6</code> (or, more precisely, <code>^S6</code>) is all you need here.</p>
+</details></li>
+<li><p>Count the number of FASTA headers that start with <code>&gt;NC</code>, and the number that start with <code>&gt;NW</code>, and print the <code>&gt;NC</code> headers. What do the <code>NC</code> sequences represent, and what do the <code>NW</code> ones represent?</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-c</span> <span class="st">'^&gt;NC'</span> genome.fna</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>4</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-c</span> <span class="st">'^&gt;NW'</span> genome.fna</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>286</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="st">'^&gt;NC'</span> genome.fna</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>&gt;NC_068937.1 Culex pipiens pallens isolate TS chromosome 1, TS_CPP_V2, whole genome shotgun sequence
+&gt;NC_068938.1 Culex pipiens pallens isolate TS chromosome 2, TS_CPP_V2, whole genome shotgun sequence
+&gt;NC_068939.1 Culex pipiens pallens isolate TS chromosome 3, TS_CPP_V2, whole genome shotgun sequence
+&gt;NC_015079.1 Culex pipiens pipiens mitochondrion, complete genome</code></pre>
+<p>The 4 <code>NC</code> sequences are the 3 chromosomes plus the mitochondrial genome, while the 286 <code>NW</code> sequences are the unplaced scaffolds (in NCBI’s RefSeq database, <code>NC_</code> IDs are used for complete molecules like chromosomes, and <code>NW_</code> IDs for scaffolds).</p>
+</details></li>
+<li><p>A labmate counts the reads in a FASTQ file by counting the header lines, which start with <code>@</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> S63_R1.fastq.gz <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-c</span> <span class="st">'^@'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>For this file, that gives the correct answer of 500,000 reads. But why could this approach overcount the reads in other FASTQ files? <em>(Hint: think about the quality scores, and see the table in the</em> <em><a href="../week04/w4a_genomics-files.html#fastq-quality-scores">w4a FASTQ quality score slides</a>.)</em></p>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<p>The <code>@</code> character is also used as a quality score: it represents a Phred score of 31 (one more than <code>?</code>, which represents 30). So, a quality score line can start with an <code>@</code>, and would then be counted as a read.</p>
+<p>It happens to work for our file because its quality scores are “binned” into just a few values, none of which is 31. More robust approaches are to divide the number of lines by 4, or to search for a longer, more specific header pattern like <code>'^@ERR'</code>.</p>
+</details></li>
+<li><p>How many genes have a description that contains “heat shock”, and are any of these descriptions shared by multiple genes? <em>(Hint: <code>description</code> attributes are only present on <code>gene</code> lines,</em> <em>so you can adapt the <code>gene_biotype</code> command above.)</em></p>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<p>Allow any characters except a quote both before and after “heat shock”, so that the match stays within the description’s quotes:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-o</span> <span class="st">'description "[^"]*heat shock[^"]*"'</span> annot.gtf <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-nr</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>      3 description "heat shock protein 70 B2"
+      2 description "heat shock 70 kDa protein cognate 4-like"
+      1 description "heat shock protein beta-1"
+      1 description "heat shock protein 83-like"
+      1 description "heat shock protein 83"
+      1 description "heat shock protein 75 kDa, mitochondrial"
+      1 description "heat shock protein 70 A2-like"
+      1 description "heat shock protein 60A-like"
+      1 description "heat shock factor-binding protein 1"
+      1 description "heat shock factor protein"
+      1 description "heat shock 70 kDa protein cognate 5"
+      1 description "heat shock 70 kDa protein cognate 4"
+      1 description "heat shock 70 kDa protein cognate 2"
+      1 description "heat shock 70 kDa protein 4"
+      1 description "activator of 90 kDa heat shock protein ATPase homolog 1"
+      1 description "10 kDa heat shock protein, mitochondrial"</code></pre>
+<p>There are 16 distinct descriptions, two of which are shared by multiple genes. To count the genes, count the matching lines:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-c</span> <span class="st">'description "[^"]*heat shock'</span> annot.gtf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>19</code></pre>
+</details></li>
+</ol>
+</section>
+</section>
+</section>
+<section id="more-sort-and-uniq-and-friends" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="more-sort-and-uniq-and-friends"><span class="header-section-number">3</span> More <code>sort</code> and <code>uniq</code>, and friends</h2>
+<section id="sorting-by-column-numerically" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="sorting-by-column-numerically"><span class="header-section-number">3.1</span> Sorting by column, numerically</h3>
+<p>In w4c, you saw that <code>sort -k</code> sorts by specific columns, and that <code>sort -n</code> sorts numerically. You can combine the two by adding an <code>n</code> to a specific column (key).</p>
+<p>To try this, create a small file with the sequence ID, feature type, and start and end positions (columns 1 and 3-5) of the first 6 genes in the GTF file. (The <code>-w</code> option makes <code>grep</code> only match <code>gene</code> as a whole word.)</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cut</span> <span class="at">-f</span> 1,3-5 annot.gtf <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-w</span> <span class="st">'gene'</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 6 <span class="op">&gt;</span> genes6.tsv</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> genes6.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_068937.1     gene    2046    110808
+NC_068937.1     gene    48457   50554
+NC_068937.1     gene    76295   82374
+NC_068937.1     gene    82671   86331
+NC_068937.1     gene    160196  177583
+NC_068937.1     gene    299209  303777</code></pre>
+<p>These genes are already sorted by their start position (column 3 in this file). But see what happens when you sort them by that column <em>without</em> telling <code>sort</code> that it contains numbers:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb43"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span> <span class="at">-k3,3</span> genes6.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_068937.1     gene    160196  177583
+NC_068937.1     gene    2046    110808
+NC_068937.1     gene    299209  303777
+NC_068937.1     gene    48457   50554
+NC_068937.1     gene    76295   82374
+NC_068937.1     gene    82671   86331</code></pre>
+<p>Sorting alphabetically, <code>sort</code> compares character by character, so <code>160196</code> comes before <code>2046</code> because <code>1</code> comes before <code>2</code>. With <code>-k3,3n</code>, you get the correct numeric order back:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb45"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span> <span class="at">-k3,3n</span> genes6.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_068937.1     gene    2046    110808
+NC_068937.1     gene    48457   50554
+NC_068937.1     gene    76295   82374
+NC_068937.1     gene    82671   86331
+NC_068937.1     gene    160196  177583
+NC_068937.1     gene    299209  303777</code></pre>
+<p>A common use of this is to sort an annotation file by position, first by sequence ID (alphabetically) and then by start position (numerically). For the GTF file, whose start positions are in column 4, that would be:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb47"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># [Example only, no need to run this]</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span> <span class="at">-k1,1</span> <span class="at">-k4,4n</span> annot.gtf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Many genomics tools require their input files to be sorted this way.</p>
+</section>
+<section id="other-useful-sort-options" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="other-useful-sort-options"><span class="header-section-number">3.2</span> Other useful <code>sort</code> options</h3>
+<ul>
+<li><p><code>-c</code> checks whether a file is already sorted. It prints nothing if the file is sorted, and reports the first out-of-order line if not:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb48"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span> <span class="at">-c</span> <span class="at">-k3,3n</span> genes6.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb49"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span> <span class="at">-c</span> <span class="at">-k3,3</span> genes6.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>sort: genes6.tsv:5: disorder: NC_068937.1     gene    160196  177583</code></pre></li>
+<li><p><code>-u</code> only keeps unique lines, so <code>sort -u</code> does the same as <code>sort | uniq</code>.</p></li>
+<li><p><code>-V</code> (“version sort”) sorts numbers <em>within text</em> by their numeric value:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb51"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="co"># printf prints text like echo does, and '\n' starts a new line:</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">"sample1\nsample10\nsample2\n"</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-V</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>sample1
+sample2
+sample10</code></pre>
+<p><em>(Without <code>-V</code>, <code>sample10</code> would come before <code>sample2</code>.)</em></p></li>
+<li><p><code>-g</code> sorts numbers in scientific notation (like <code>1e-5</code>) correctly, which <code>-n</code> doesn’t. This is useful for, e.g., p-values.</p></li>
+<li><p><code>-t</code> sets the column delimiter, which by default is any whitespace. For example, <code>sort -t , -k2,2</code> sorts a CSV file by its second column.</p></li>
+</ul>
+</section>
+<section id="finding-duplicates-with-uniq--d" class="level3" data-number="3.3">
+<h3 data-number="3.3" class="anchored" data-anchor-id="finding-duplicates-with-uniq--d"><span class="header-section-number">3.3</span> Finding duplicates with <code>uniq -d</code></h3>
+<p>With the <code>-d</code> option, <code>uniq</code> only prints lines that occur more than once (one copy of each). For example, how many gene descriptions are shared by multiple genes?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb53"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-o</span> <span class="st">'description "[^"]*"'</span> annot.gtf <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-d</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>1424</code></pre>
+<p>To see which descriptions are shared by the most genes, use the frequency table approach instead:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb55"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-o</span> <span class="st">'description "[^"]*"'</span> annot.gtf <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-nr</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 5</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>    156 description "5S ribosomal RNA"
+    141 description "uncharacterized protein K02A2.6-like"
+     44 description "pickpocket protein 28-like"
+     41 description "transfer RNA valine (anticodon AAC)"
+     39 description "transfer RNA tyrosine (anticodon GUA)"</code></pre>
+<p><em>(The 156 5S ribosomal RNA genes are not an error:</em> <em>rRNA genes typically occur in many copies in a genome.)</em></p>
+</section>
+<section id="column--t-for-viewing-tabular-files" class="level3" data-number="3.4">
+<h3 data-number="3.4" class="anchored" data-anchor-id="column--t-for-viewing-tabular-files"><span class="header-section-number">3.4</span> <code>column -t</code> for viewing tabular files</h3>
+<p>When the values in a column differ in length, tabular files can look messy in the terminal:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb57"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^#'</span> annot.gtf <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 1-8 <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_068937.1     Gnomon  gene    2046    110808  .       +       .
+NC_068937.1     Gnomon  transcript      2046    110808  .       +       .
+NC_068937.1     Gnomon  exon    2046    2531    .       +       .</code></pre>
+<p><code>column -t</code> lines up the columns nicely:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb59"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^#'</span> annot.gtf <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 1-8 <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3 <span class="kw">|</span> <span class="ex">column</span> <span class="at">-t</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_068937.1  Gnomon  gene        2046  110808  .  +  .
+NC_068937.1  Gnomon  transcript  2046  110808  .  +  .
+NC_068937.1  Gnomon  exon        2046  2531    .  +  .</code></pre>
+<p><code>column</code> is only meant for viewing: it separates columns with spaces, so don’t save its output as a TSV file. For a CSV file, specify the delimiter with <code>-s</code>: <code>column -s , -t my-data.csv</code>.</p>
+</section>
+<section id="paste-to-combine-lines" class="level3" data-number="3.5">
+<h3 data-number="3.5" class="anchored" data-anchor-id="paste-to-combine-lines"><span class="header-section-number">3.5</span> <code>paste</code> to combine lines</h3>
+<p><code>paste</code> combines lines <strong>side by side</strong>, separated by Tabs. Given two files, it pastes line 1 of the first file next to line 1 of the second, and so on.</p>
+<p>A neat trick is to give <code>paste</code> a dash (<code>-</code>) for each line it should combine from its standard input. With four dashes, <code>paste</code> combines every four lines into one — which turns each 4-line FASTQ record into a single line:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb61"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> S63_R1.fastq.gz <span class="kw">|</span> <span class="fu">paste</span> <span class="at">-</span> <span class="at">-</span> <span class="at">-</span> <span class="at">-</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>@ERR10802863.8435456 8435456 length=74  CAACGAATACATCATGTTTGCGAAACTACTCCTCCTCGCCTTGGTGGGGATCAGTACTGCGTACCAGTATGAGT      +       AAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+@ERR10802863.27637245 27637245 length=74        GCCACACTTTTGAAGAACAGCGTCATTGTTCTTAATTTTGTCGGCAACGCCTGCACGAGCCTTCCACGTAAGTT      +       AAAAAEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAEE&lt;EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE</code></pre>
+<p>Now that each read is one line, with the sequence in column 2, you can use all the column-based tools you know. For example, which read sequences occur most often?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb63"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> S63_R1.fastq.gz <span class="kw">|</span> <span class="fu">paste</span> <span class="at">-</span> <span class="at">-</span> <span class="at">-</span> <span class="at">-</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 2 <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-nr</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 5</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>  32589 NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+    255 ATAAATTAAAGGGCCGCAGTATTTTGACTGTGCGAAGGTAGCATAATCACTAGTCTTTTAATTGGAGGCTTGT
+    223 AACAGCGTAATTTTTTTTTAGAGTTCATATCGACAAAAAAGATTGCGACCTCGATGTTGGATTAAGAGTTATTT
+    204 AAATTAAAGGGCCGCAGTATTTTGACTGTGCGAAGGTAGCATAATCACTAGTCTTTTAATTGGAGGCTTGTATG
+    138 GCAAAAGTACGTCGACGTGCACTGCCACGACAGTGACGACCAGAGCGTGAAGCTGTACAAGAACCAGATCGCC</code></pre>
+<p>By far the most common “sequence” is that of the all-<code>N</code> reads you found in w4c. The FastQC program, which you’ll use in week 6, reports such “overrepresented sequences” too.</p>
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-2-sort-uniq-and-paste" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-2-sort-uniq-and-paste"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Exercise 2: <code>sort</code>, <code>uniq</code>, and <code>paste</code></h4>
+<ol type="a">
+<li><p>The experiment has 2 time points and 3 treatments. Create a frequency table of the number of samples for each <em>combination</em> of time point and treatment. Is the design balanced, i.e.&nbsp;does every combination have the same number of samples?</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-lightbulb" aria-label="lightbulb"></i> &nbsp; <em>Click for a hint</em></p>
+</summary>
+<p>Select both the time point and the treatment column with <code>cut</code>.</p>
+</details>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<p>Select columns 2 and 3 with <code>cut -f 2,3</code>, and keep the rest of the w4c frequency table pipeline the same:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb65"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> +2 metadata.tsv <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 2,3 <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>      4 10dpi   cathemerium
+      4 10dpi   control
+      4 10dpi   relictum
+      3 24hpi   cathemerium
+      3 24hpi   control
+      4 24hpi   relictum</code></pre>
+<p>Because <code>uniq</code> compares entire lines, it counts each distinct combination of time point and treatment. The design is not fully balanced: at 24hpi, there are only 3 samples for both the cathemerium and control treatments.</p>
+</details></li>
+<li><p>A labmate wants to sort the GTF file by start position (column 4). They remove the header lines and then sort as follows:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb67"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^#'</span> annot.gtf <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-k4</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Without running it, can you spot two problems with this command?</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<ol type="1">
+<li>Without <code>n</code>, the start positions are sorted alphabetically, so that, e.g., <code>160196</code> would come before <code>2046</code>.</li>
+<li>The sequence ID (column 1) is ignored, so features from different chromosomes and scaffolds get mixed up. To sort by position <em>within</em> each sequence, use <code>sort -k1,1 -k4,4n</code>.</li>
+</ol>
+<p><em>(A minor third point: <code>-k4</code> means “from column 4 to the end of the line”,</em> <em>rather than just column 4 as <code>-k4,4</code> would.)</em></p>
+<p>You can see the second problem right away in the output, whose first lines come from three different scaffolds:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb68"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^#'</span> annot.gtf <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-k4</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3 <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 1-5</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NW_026292908.1  Gnomon  CDS     10      11481
+NW_026292919.1  Gnomon  CDS     10      1167
+NW_026292909.1  Gnomon  CDS     10      1587</code></pre>
+</details></li>
+<li><p><code>paste - - - -</code> is a safe way to put each FASTQ read on a single line. Would <code>paste - -</code> similarly be a safe way to put each sequence in <code>genome.fna</code> on a single line, next to its header? Why or why not?</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<p>No: in FASTQ files, every record consists of exactly 4 lines, but in FASTA files, a sequence can be spread across any number of lines (recall exercise 2 in the <a href="../week04/w4a_genomics-files.html">w4a slides</a>). In <code>genome.fna</code>, each line holds 80 bases, so <code>paste - -</code> would mostly paste one 80-base line next to the next one.</p>
+</details></li>
+</ol>
+</section>
+</section>
+</section>
+<section id="tr-to-translate-characters" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="tr-to-translate-characters"><span class="header-section-number">4</span> <code>tr</code> to translate characters</h2>
+<section id="substituting-characters" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="substituting-characters"><span class="header-section-number">4.1</span> Substituting characters</h3>
+<p>The <code>tr</code> (<strong>tr</strong>anslate) command substitutes characters one-for-one: the first character in its first argument is replaced by the first character in its second argument, and so on. For example, to replace every <code>a</code> by a <code>b</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb70"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"aaaaccc"</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="st">'a'</span> <span class="st">'b'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>bbbbccc</code></pre>
+<p>Oddly enough, <code>tr</code> does not accept a file name as an argument: it only reads from standard input. So, to use it on a file, pipe the output of <code>cat</code> into <code>tr</code>. For example, to turn the Tab-separated <code>metadata.tsv</code> into a comma-separated file, replace each Tab (<code>\t</code>) by a comma:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb72"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> metadata.tsv <span class="kw">|</span> <span class="fu">tr</span> <span class="st">'\t'</span> <span class="st">','</span> <span class="op">&gt;</span> metadata.csv</span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-n</span> 3 metadata.csv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>sample_id,time,treatment
+S82,10dpi,cathemerium
+S75,10dpi,cathemerium</code></pre>
+<p><code>tr</code> also understands <strong>ranges</strong> of characters. This is handy because many genome FASTA files, including ours, are “<strong>soft-masked</strong>”: repetitive regions are written in lowercase letters. For example, lines 12 and 13 of the genome FASTA file contain both:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb74"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-n</span> 13 genome.fna <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-n</span> 2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>CCTAATTCATGGAGGTGAATAGAGCATACGTAAATACAAAACTCATGACATTAGCCTGTAAGGATTGTGTaattaatgca
+aaaatattgaTAGAATGAAAGATGCAAGTCccaaaaattttaagtaaatgaATAGTAATCATAAAGATAActgatgatga</code></pre>
+<p>To convert everything to uppercase, translate the range <code>a-z</code> into <code>A-Z</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb76"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-n</span> 13 genome.fna <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-n</span> 2 <span class="kw">|</span> <span class="fu">tr</span> <span class="st">'a-z'</span> <span class="st">'A-Z'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>CCTAATTCATGGAGGTGAATAGAGCATACGTAAATACAAAACTCATGACATTAGCCTGTAAGGATTGTGTAATTAATGCA
+AAAATATTGATAGAATGAAAGATGCAAGTCCCAAAAATTTTAAGTAAATGAATAGTAATCATAAAGATAACTGATGATGA</code></pre>
+</section>
+<section id="reverse-complementing-a-sequence" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="reverse-complementing-a-sequence"><span class="header-section-number">4.2</span> Reverse complementing a sequence</h3>
+<p>Combined with <code>rev</code>, which reverses each line, <code>tr</code> can create the <strong>reverse complement</strong> of a DNA sequence: <code>rev</code> takes care of the “reverse” part, and <code>tr</code> of the “complement” part by swapping <code>A</code> with <code>T</code> and <code>C</code> with <code>G</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb78"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"ATGCCGTA"</span> <span class="kw">|</span> <span class="fu">rev</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="st">'ACGT'</span> <span class="st">'TGCA'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>TACGGCAT</code></pre>
+</section>
+<section id="deleting-and-squeezing-characters" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="deleting-and-squeezing-characters"><span class="header-section-number">4.3</span> Deleting and “squeezing” characters</h3>
+<ul>
+<li><p>The <code>-d</code> option <strong>deletes</strong> characters. For example, by deleting all newlines (<code>\n</code>) from the sequence lines of the genome FASTA, you can count the total number of bases in the genome assembly (this takes a few seconds):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb80"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^&gt;'</span> genome.fna <span class="kw">|</span> <span class="fu">tr</span> <span class="at">-d</span> <span class="st">'\n'</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-c</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>566354144</code></pre>
+<p>So, the <em>Culex pipiens</em> genome assembly is about 566 million bases (566 Mb) long.</p></li>
+<li><p>The <code>-s</code> option “<strong>squeezes</strong>” runs of the same character into one. For example, to turn a variable number of spaces into a single space:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb82"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"a     b   c"</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="at">-s</span> <span class="st">' '</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>a b c</code></pre></li>
+</ul>
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-3-tr" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-3-tr"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Exercise 3: <code>tr</code></h4>
+<ol type="a">
+<li><p>A labmate wants to rename the <code>control</code> treatment to <code>mock</code> in the metadata file, and runs the command below. What do you think the output will look like? Run the command to check.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb84"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> metadata.tsv <span class="kw">|</span> <span class="fu">tr</span> <span class="st">'control'</span> <span class="st">'mock'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<p>The output is mangled, also outside of the <code>control</code> lines:</p>
+<pre class="bash-out"><code>sampke_id       kime    kkeakmeck
+S82     10dpi   makhemekium
+S75     10dpi   makhemekium
+[...]
+S78     10dpi   mkckkkk
+S84     10dpi   mkckkkk
+[...]</code></pre>
+<p><code>tr</code> translates individual <em>characters</em>, not words: every <code>c</code> became an <code>m</code>, every <code>n</code> a <code>c</code>, and so on, anywhere in the file. Because the second argument is shorter than the first, the remaining characters (<code>t</code>, <code>r</code>, <code>o</code>, and <code>l</code>) all became its last character, <code>k</code>.</p>
+<p>To replace a word, use <code>sed</code>, which is covered below.</p>
+</details></li>
+<li><p>Use <code>tr</code> to calculate which percentage of the genome assembly is soft-masked (i.e., written in lowercase).</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-lightbulb" aria-label="lightbulb"></i> &nbsp; <em>Click for a hint</em></p>
+</summary>
+<p>Combine <code>-d</code> with the <code>-c</code> option, which takes the complement of the (first) set of characters: e.g., <code>tr -cd 'xyz'</code> deletes everything <em>except</em> <code>x</code>, <code>y</code>, and <code>z</code>. Then compare with the total of 566,354,144 bases.</p>
+</details>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<p>Delete everything except lowercase bases, and count the remaining characters:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb86"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^&gt;'</span> genome.fna <span class="kw">|</span> <span class="fu">tr</span> <span class="at">-cd</span> <span class="st">'acgtn'</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-c</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>315245493</code></pre>
+<p>315,245,493 / 566,354,144 = 0.56, so <strong>56%</strong> of the assembly is soft-masked. Large fractions of many genomes, including those of mosquitoes, consist of repetitive DNA such as transposable elements.</p>
+<p><em>(The <code>grep -v '^&gt;'</code> step is needed because the header lines contain lowercase letters too.)</em></p>
+</details></li>
+<li><p>A labmate wants the reverse complement of the entire genome, and runs:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb88"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rev</span> genome.fna <span class="kw">|</span> <span class="fu">tr</span> <span class="st">'ACGT'</span> <span class="st">'TGCA'</span> <span class="op">&gt;</span> genome_revcomp.fna</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Without running it, can you name at least two problems with this command?</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<ol type="1">
+<li><code>rev</code> reverses each <em>line</em> separately, but leaves the order of the lines unchanged. Because the sequences are spread across many lines, they are therefore not properly reversed.</li>
+<li>The header lines are also reversed and “complemented”: e.g., the first header would end in <code>[...] sneipip xeluG 1.739860_GN&gt;</code>.</li>
+<li>Lowercase (soft-masked) bases are not complemented, since <code>tr</code> is case-sensitive.</li>
+</ol>
+<p>This is a task for a dedicated bioinformatics tool.</p>
+</details></li>
+</ol>
+</section>
+</section>
+</section>
+<section id="awk-for-tabular-data-processing" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="awk-for-tabular-data-processing"><span class="header-section-number">5</span> <code>awk</code> for tabular data processing</h2>
+<p><code>awk</code> is a small programming language in its own right, which is especially good at quickly processing tabular data. For example, it can select rows based on the values in specific columns, reorder columns, or do calculations. To understand <code>awk</code>, you need to know about two core concepts: <strong>records and fields</strong>, and <strong>pattern-action pairs</strong>.</p>
+<section id="records-and-fields" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="records-and-fields"><span class="header-section-number">5.1</span> Records and fields</h3>
+<p><code>awk</code> processes its input one <strong>record</strong> at a time, and by default, each line is one record. Within a record, each column is a <strong>field</strong>. The entire record is available as <code>$0</code>, and the fields as <code>$1</code> (first column), <code>$2</code> (second column), and so on.</p>
+<p>An <code>awk</code> command is placed between single quotes, and actions go between curly braces <code>{ }</code>. For example, to print columns 3 and 1 of the metadata file:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb89"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="st">'{ print $3, $1 }'</span> metadata.tsv <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>treatment sample_id
+cathemerium S82
+cathemerium S75</code></pre>
+<p>This already goes beyond <code>cut</code>, which can’t change the order of columns. Note how the comma <code>,</code> between the columns made <code>awk</code> separate them with a space. Without the comma, the columns are pasted together, and to separate them with a Tab, you can add a <code>"\t"</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb91"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="st">'{ print $3 $1 }'</span> metadata.tsv <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>treatmentsample_id
+cathemeriumS82
+cathemeriumS75</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb93"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="st">'{ print $3 "\t" $1 }'</span> metadata.tsv <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>treatment       sample_id
+cathemerium     S82
+cathemerium     S75</code></pre>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Set the column delimiter with <code>-F '\t'</code> for TSV files
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>By default, <code>awk</code> splits fields on <em>any</em> whitespace: Tabs as well as spaces. That works for the metadata file, which contains no spaces, but not for the GTF file, whose ninth column contains spaces. See what happens when you try to print column 9 of a GTF line:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb95"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb95-1"><a href="#cb95-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^#'</span> annot.gtf <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 1 <span class="kw">|</span> <span class="fu">awk</span> <span class="st">'{ print $9 }'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>gene_id</code></pre>
+<p>The built-in variable <code>NF</code> (<strong>n</strong>umber of <strong>f</strong>ields) shows that <code>awk</code> split this line into 24 fields, rather than the 9 columns of a GTF file:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb97"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb97-1"><a href="#cb97-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^#'</span> annot.gtf <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 1 <span class="kw">|</span> <span class="fu">awk</span> <span class="st">'{ print NF }'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>24</code></pre>
+<p>With <code>-F '\t'</code>, you tell <code>awk</code> to only split fields on Tabs:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb99"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^#'</span> annot.gtf <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 1 <span class="kw">|</span> <span class="fu">awk</span> <span class="at">-F</span> <span class="st">'\t'</span> <span class="st">'{ print NF }'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>9</code></pre>
+<p>To be safe, always use <code>-F '\t'</code> with Tab-separated files.</p>
+</div>
+</div>
+</section>
+<section id="pattern-action-pairs" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="pattern-action-pairs"><span class="header-section-number">5.2</span> Pattern-action pairs</h3>
+<p>The general syntax of an <code>awk</code> command is <code>awk 'pattern { action }' file</code>, where:</p>
+<ul>
+<li>The <strong>pattern</strong> is a condition that is tested for each record.</li>
+<li>The <strong>action</strong> is performed for each record for which the pattern is true.</li>
+</ul>
+<p>Either of the two can be omitted:</p>
+<ul>
+<li>Omit the pattern, like in the examples above, and the action is performed for <em>every</em> record.</li>
+<li>Omit the action, and every record that matches the pattern is printed in full.</li>
+</ul>
+<section id="patterns" class="level4">
+<h4 class="anchored" data-anchor-id="patterns">Patterns</h4>
+<p>Patterns are often comparisons, such as <code>$3 == "control"</code> (column 3 equals “control”; note the double <code>==</code> and the quotes around the text). Patterns can also be combined, for example with <code>&amp;&amp;</code> (“and”). To print all infected (i.e., non-control) samples from the 24hpi time point:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb101"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="st">'$2 == "24hpi" &amp;&amp; $3 != "control"'</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>S64     24hpi   cathemerium
+S67     24hpi   cathemerium
+S70     24hpi   cathemerium
+S71     24hpi   relictum
+S74     24hpi   relictum
+S65     24hpi   relictum
+S68     24hpi   relictum</code></pre>
+<p>Here are the most important comparison and logical operators:</p>
+<table class="table-striped table-hover caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Operator</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>a == b</code></td>
+<td><code>a</code> is equal to <code>b</code></td>
+</tr>
+<tr class="even">
+<td><code>a != b</code></td>
+<td><code>a</code> is not equal to <code>b</code></td>
+</tr>
+<tr class="odd">
+<td><code>a &lt; b</code> / <code>a &gt; b</code></td>
+<td><code>a</code> is less than / greater than <code>b</code></td>
+</tr>
+<tr class="even">
+<td><code>a &lt;= b</code> / <code>a &gt;= b</code></td>
+<td><code>a</code> is less than or equal to / greater than or equal to <code>b</code></td>
+</tr>
+<tr class="odd">
+<td><code>a ~ /b/</code></td>
+<td><code>a</code> matches regular expression <code>b</code></td>
+</tr>
+<tr class="even">
+<td><code>a !~ /b/</code></td>
+<td><code>a</code> does not match regular expression <code>b</code></td>
+</tr>
+<tr class="odd">
+<td><code>a &amp;&amp; b</code></td>
+<td><code>a</code> <strong>and</strong> <code>b</code></td>
+</tr>
+<tr class="even">
+<td><code>a</code> <code>||</code> <code>b</code></td>
+<td><code>a</code> <strong>or</strong> <code>b</code></td>
+</tr>
+<tr class="odd">
+<td><code>!a</code></td>
+<td><strong>not</strong> <code>a</code></td>
+</tr>
+</tbody>
+</table>
+<p>As the <code>~</code> operator shows, <code>awk</code> can also use regular expressions, which go between forward slashes. For example, <code>$1 ~ /^NW_/</code> would select features on the unplaced scaffolds.</p>
+<p>You can also <strong>calculate</strong> in patterns. For example, the length of a GTF feature is its end position (column 5) minus its start position (column 4), plus 1<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. So, to print all genes longer than 1 Mb (1,000,000 bases):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb103"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="at">-F</span> <span class="st">'\t'</span> <span class="st">'$3 == "gene" &amp;&amp; $5 - $4 + 1 &gt; 1000000'</span> annot.gtf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_068939.1     Gnomon  gene    10362825        11542514        .       +       .       gene_id "LOC120432606"; transcript_id ""; db_xref "GeneID:120432606"; description "RNA-binding protein Musashi homolog Rbp6"; gbkey "Gene"; gene "LOC120432606"; gene_biotype "protein_coding";</code></pre>
+<p>Only one gene, on chromosome 3, is that long.</p>
+</section>
+<section id="actions" class="level4">
+<h4 class="anchored" data-anchor-id="actions">Actions</h4>
+<p>Patterns and actions can of course be combined. For example, to print the sequence ID, start, end, and length of each gene:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb105"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="at">-F</span> <span class="st">'\t'</span> <span class="st">'$3 == "gene" { print $1, $4, $5, $5 - $4 + 1 }'</span> annot.gtf <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_068937.1 2046 110808 108763
+NC_068937.1 48457 50554 2098
+NC_068937.1 76295 82374 6080</code></pre>
+</section>
+</section>
+<section id="begin-and-end" class="level3" data-number="5.3">
+<h3 data-number="5.3" class="anchored" data-anchor-id="begin-and-end"><span class="header-section-number">5.3</span> <code>BEGIN</code> and <code>END</code></h3>
+<p>Two special patterns are <code>BEGIN</code> and <code>END</code>, whose actions are performed once: before the first record and after the last record, respectively.</p>
+<p><code>BEGIN</code> is often used to set options. For example, setting the variable <code>OFS</code> (<strong>o</strong>utput <strong>f</strong>ield <strong>s</strong>eparator) to a Tab makes the commas in <code>print</code> produce Tabs instead of spaces:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb107"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="at">-F</span> <span class="st">'\t'</span> <span class="st">'BEGIN { OFS = "\t" } $3 == "gene" { print $1, $4, $5, $5 - $4 + 1 }'</span> annot.gtf <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_068937.1     2046    110808  108763
+NC_068937.1     48457   50554   2098
+NC_068937.1     76295   82374   6080</code></pre>
+<p><code>END</code> is useful for printing a summary after processing all records. For example, to compute the mean gene length, add up the lengths of all genes in a variable <code>sum</code>, count the genes in a variable <code>n</code>, and divide the two at the end:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb109"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="at">-F</span> <span class="st">'\t'</span> <span class="st">'$3 == "gene" { sum += $5 - $4 + 1; n++ } END { print sum / n }'</span> annot.gtf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>18961.9</code></pre>
+<p>In this command:</p>
+<ul>
+<li><code>sum += x</code> is shorthand for <code>sum = sum + x</code>, and <code>n++</code> for <code>n = n + 1</code>.</li>
+<li>Two statements within one action are separated by a semicolon <code>;</code>.</li>
+<li>You don’t need to create (initialize) <code>sum</code> and <code>n</code> beforehand: <code>awk</code> variables start out as 0.</li>
+</ul>
+</section>
+<section id="processing-fastq-files-with-awk" class="level3" data-number="5.4">
+<h3 data-number="5.4" class="anchored" data-anchor-id="processing-fastq-files-with-awk"><span class="header-section-number">5.4</span> Processing FASTQ files with <code>awk</code></h3>
+<p>The built-in variable <code>NR</code> holds the current record (line) number. This is very handy for FASTQ files, where the sequence is always on the 2nd line of each 4-line record: the lines for which <code>NR % 4 == 2</code> (the remainder after dividing the line number by 4 is 2). Combined with the <code>length()</code> function, this gives you the length of every read — and then, a frequency table of read lengths:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb111"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb111-1"><a href="#cb111-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> S63_R1.fastq.gz <span class="kw">|</span> <span class="fu">awk</span> <span class="st">'NR % 4 == 2 { print length($0) }'</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-nr</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 5</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code> 303297 74
+ 123453 73
+  32678 35
+  28617 72
+   8483 71</code></pre>
+<p>Most reads are 72–74 bases long, but 32,678 reads are only 35 bases long: the all-<code>N</code> reads you saw in w4c and in the <code>paste</code> section above.</p>
+</section>
+<section id="awk-reference-tables" class="level3" data-number="5.5">
+<h3 data-number="5.5" class="anchored" data-anchor-id="awk-reference-tables"><span class="header-section-number">5.5</span> <code>awk</code> reference tables</h3>
+<p>Some useful built-in variables:</p>
+<table class="table-striped table-hover caption-top table">
+<colgroup>
+<col style="width: 47%">
+<col style="width: 52%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>$0</code></td>
+<td>The entire record (by default, a line)</td>
+</tr>
+<tr class="even">
+<td><code>$1</code>, <code>$2</code>, …</td>
+<td>The first, second, … field (by default, a column)</td>
+</tr>
+<tr class="odd">
+<td><code>NR</code></td>
+<td><strong>N</strong>umber of the current <strong>r</strong>ecord (in <code>END</code>: total number of records)</td>
+</tr>
+<tr class="even">
+<td><code>NF</code></td>
+<td><strong>N</strong>umber of <strong>f</strong>ields in the current record</td>
+</tr>
+<tr class="odd">
+<td><code>FS</code></td>
+<td>Input <strong>f</strong>ield <strong>s</strong>eparator (set with <code>-F</code>; default: any whitespace)</td>
+</tr>
+<tr class="even">
+<td><code>OFS</code></td>
+<td><strong>O</strong>utput <strong>f</strong>ield <strong>s</strong>eparator (default: a space)</td>
+</tr>
+</tbody>
+</table>
+<p>Some useful functions and statements:</p>
+<table class="table-striped table-hover caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 59%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function / statement</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>length(s)</code></td>
+<td>Number of characters in <code>s</code> (<code>length()</code> alone: in the whole record)</td>
+</tr>
+<tr class="even">
+<td><code>tolower(s)</code> / <code>toupper(s)</code></td>
+<td><code>s</code> converted to lowercase / uppercase</td>
+</tr>
+<tr class="odd">
+<td><code>substr(s, start, n)</code></td>
+<td>The part of <code>s</code> that starts at position <code>start</code> and is <code>n</code> characters long</td>
+</tr>
+<tr class="even">
+<td><code>split(s, arr, sep)</code></td>
+<td>Splits <code>s</code> into pieces on <code>sep</code>, and stores the pieces in array <code>arr</code></td>
+</tr>
+<tr class="odd">
+<td><code>sub(regex, repl, s)</code></td>
+<td>Replaces the first match of <code>regex</code> in <code>s</code> by <code>repl</code></td>
+</tr>
+<tr class="even">
+<td><code>gsub(regex, repl, s)</code></td>
+<td>Replaces every match of <code>regex</code> in <code>s</code> by <code>repl</code></td>
+</tr>
+<tr class="odd">
+<td><code>next</code></td>
+<td>Skips to the next record, without considering any remaining pattern-action pairs</td>
+</tr>
+<tr class="even">
+<td><code>exit</code></td>
+<td>Stops processing records (any <code>END</code> action is still performed)</td>
+</tr>
+</tbody>
+</table>
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-4-awk" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-4-awk"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Exercise 4: <code>awk</code></h4>
+<ol type="a">
+<li><p>A classmate wants to print the control samples, but makes a small typo:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb113"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb113-1"><a href="#cb113-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="st">'$3 = "control"'</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>What do you think this will print? Run the command to check.</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<p>It prints <em>every</em> line, with the third column replaced by <code>control</code> (and with spaces instead of Tabs between the columns):</p>
+<pre class="bash-out"><code>sample_id time control
+S82 10dpi control
+S75 10dpi control
+[...]</code></pre>
+<p>A single <code>=</code> doesn’t compare but <em>assigns</em> a value: it sets column 3 to <code>control</code> for every line. Furthermore, the result of that assignment, the text <code>control</code>, counts as “true”, so every line is printed. When <code>awk</code> changes a field, it rebuilds the line using <code>OFS</code>, which is a space by default.</p>
+<p>With <code>==</code>, the command works as intended:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb115"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="st">'$3 == "control"'</span> metadata.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details></li>
+<li><p>Compute the mean length of exons. Why do you think it is so much shorter than the mean gene length of nearly 19,000 bases?</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<p>Change the pattern from <code>"gene"</code> to <code>"exon"</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb116"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb116-1"><a href="#cb116-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="at">-F</span> <span class="st">'\t'</span> <span class="st">'$3 == "exon" { sum += $5 - $4 + 1; n++ } END { print sum / n }'</span> annot.gtf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>542.133</code></pre>
+<p>Exons are only about 540 bases long on average, because most genes consist of multiple exons separated by introns, which are often much longer than the exons. The length of a gene spans all of its exons <em>and</em> introns.</p>
+</details></li>
+<li><p>Remove all reads shorter than 50 bases from <code>S63_R1.fastq.gz</code>, and save the remaining reads in a new FASTQ file <code>S63_R1_filtered.fastq</code>. How many reads are left?</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-lightbulb" aria-label="lightbulb"></i> &nbsp; <em>Click for a hint</em></p>
+</summary>
+<p>Put each read on one line with <code>paste</code>, filter with <code>awk</code>, and then turn each line back into a 4-line FASTQ record with <code>tr</code>. (The <code>length()</code> function can also take a specific field, like <code>length($2)</code>.)</p>
+</details>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<p>After <code>paste - - - -</code>, the sequence is in column 2, so keep only lines with <code>length($2) &gt;= 50</code>. Then, replace the Tabs that <code>paste</code> inserted by newlines:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb118"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb118-1"><a href="#cb118-1" aria-hidden="true" tabindex="-1"></a><span class="fu">zcat</span> S63_R1.fastq.gz <span class="kw">|</span></span>
+<span id="cb118-2"><a href="#cb118-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">paste</span> <span class="at">-</span> <span class="at">-</span> <span class="at">-</span> <span class="at">-</span> <span class="kw">|</span></span>
+<span id="cb118-3"><a href="#cb118-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">awk</span> <span class="at">-F</span> <span class="st">'\t'</span> <span class="st">'length($2) &gt;= 50'</span> <span class="kw">|</span></span>
+<span id="cb118-4"><a href="#cb118-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tr</span> <span class="st">'\t'</span> <span class="st">'\n'</span> <span class="op">&gt;</span> S63_R1_filtered.fastq</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>(A line that ends with a pipe <code>|</code> continues on the next line,</em> <em>which makes long pipelines easier to read.)</em></p>
+<p>Count the reads by dividing the number of lines by 4:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb119"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wc</span> <span class="at">-l</span> S63_R1_filtered.fastq</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>1869040 S63_R1_filtered.fastq</code></pre>
+<p>1,869,040 / 4 = 467,260 reads are left, so 32,740 reads were shorter than 50 bases.</p>
+<p><em>(In practice, you would use a dedicated read-trimming program for this,</em> <em>which can filter reads by length and quality in one go.)</em></p>
+</details></li>
+</ol>
+</section>
+</section>
+</section>
+<section id="sed-to-find-and-replace" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="sed-to-find-and-replace"><span class="header-section-number">6</span> <code>sed</code> to find and replace</h2>
+<section id="substitution-with-spatternreplacement" class="level3" data-number="6.1">
+<h3 data-number="6.1" class="anchored" data-anchor-id="substitution-with-spatternreplacement"><span class="header-section-number">6.1</span> Substitution with <code>s/pattern/replacement/</code></h3>
+<p><code>sed</code> (<strong>s</strong>tream <strong>ed</strong>itor) is most often used to <strong>find and replace</strong> text, using the syntax <code>s/pattern/replacement/</code>, where <code>s</code> stands for “substitute”. Unlike <code>tr</code>, <code>sed</code> replaces whole patterns rather than single characters. So, here is how you <em>can</em> rename the <code>control</code> treatment to <code>mock</code> (recall Exercise 3a):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb121"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'s/control/mock/'</span> metadata.tsv <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 8 <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-n</span> 4</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>S83     10dpi   cathemerium
+S78     10dpi   mock
+S84     10dpi   mock
+S77     10dpi   mock</code></pre>
+<p>The pattern is a regular expression, and by default, <code>sed</code> only replaces the <strong>first match on each line</strong>. To replace all matches, add the <code>g</code> (“global”) modifier at the end:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb123"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"AAACCCAAA"</span> <span class="kw">|</span> <span class="fu">sed</span> <span class="st">'s/A/T/'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>TAACCCAAA</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb125"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb125-1"><a href="#cb125-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"AAACCCAAA"</span> <span class="kw">|</span> <span class="fu">sed</span> <span class="st">'s/A/T/g'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>TTTCCCTTT</code></pre>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Saving the output of <code>sed</code>
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Like the other commands on this page, <code>sed</code> does not change the input file, but prints its output to the screen. To save the output, redirect it to a <em>new</em> file (recall from w4c that you should never redirect to the input file itself):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb127"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb127-1"><a href="#cb127-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'s/control/mock/'</span> metadata.tsv <span class="op">&gt;</span> metadata_mock.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>sed</code> also has an <code>-i</code> option to edit a file <strong>in place</strong>, e.g.&nbsp;<code>sed -i 's/control/mock/' metadata.tsv</code>. This is convenient, but be careful: there is no undo, so make sure your command works before adding <code>-i</code>.</p>
+</div>
+</div>
+</section>
+<section id="selecting-lines-with-addresses" class="level3" data-number="6.2">
+<h3 data-number="6.2" class="anchored" data-anchor-id="selecting-lines-with-addresses"><span class="header-section-number">6.2</span> Selecting lines with addresses</h3>
+<p>By default, <code>sed</code> operates on every line. You can restrict it to certain lines by putting an “<strong>address</strong>” in front of the command: either a line number or range of line numbers, or a regular expression between slashes. For example, many tools use only the first “word” of a FASTA header as the sequence ID, and long headers can be a nuisance. To remove everything from the first space onwards, but only on header lines:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb128"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="st">'/^&gt;/ s/ .*//'</span> genome.fna <span class="kw">|</span> <span class="fu">grep</span> <span class="st">'^&gt;'</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>&gt;NC_068937.1
+&gt;NC_068938.1
+&gt;NC_068939.1</code></pre>
+<p>Besides <code>s</code>, two other handy <code>sed</code> commands are <code>d</code> (<strong>d</strong>elete) and <code>p</code> (<strong>p</strong>rint):</p>
+<ul>
+<li><code>sed '/^#/d' annot.gtf</code> deletes all lines starting with <code>#</code>, i.e.&nbsp;it does the same as <code>grep -v '^#' annot.gtf</code>.</li>
+<li><code>sed '1d' metadata.tsv</code> deletes the first line, i.e.&nbsp;it does the same as <code>tail -n +2 metadata.tsv</code>.</li>
+<li><code>sed -n '12,13p' genome.fna</code> prints lines 12 to 13. The <code>-n</code> option turns off <code>sed</code>’s default printing of every line, so only the lines selected with <code>p</code> are printed.</li>
+</ul>
+</section>
+<section id="using-a-different-delimiter" class="level3" data-number="6.3">
+<h3 data-number="6.3" class="anchored" data-anchor-id="using-a-different-delimiter"><span class="header-section-number">6.3</span> Using a different delimiter</h3>
+<p>The <code>/</code> in <code>s/pattern/replacement/</code> can be replaced by (almost) any other character. This is useful when the pattern or replacement contains slashes, like file paths. For example, to remove the dirs from a list of file paths (the <code>.*/</code> greedily matches everything up to and including the <em>last</em> <code>/</code>):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb130"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> ../../garrigos/fastq/<span class="pp">*</span>fastq.gz <span class="kw">|</span> <span class="fu">sed</span> <span class="st">'s#.*/##'</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>S63_R1.fastq.gz
+S63_R2.fastq.gz
+S64_R1.fastq.gz</code></pre>
+<p>To apply multiple substitutions in one <code>sed</code> command, put <code>-e</code> before each one. For example, to also remove the read direction and extension, and get a list of sample IDs:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb132"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> ../../garrigos/fastq/<span class="pp">*</span>fastq.gz <span class="kw">|</span> <span class="fu">sed</span> <span class="at">-e</span> <span class="st">'s#.*/##'</span> <span class="at">-e</span> <span class="st">'s/_R[12]\.fastq\.gz$//'</span> <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-u</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>S63
+S64
+S65</code></pre>
+</section>
+<section id="capture-groups-and-backreferences" class="level3" data-number="6.4">
+<h3 data-number="6.4" class="anchored" data-anchor-id="capture-groups-and-backreferences"><span class="header-section-number">6.4</span> Capture groups and backreferences</h3>
+<p>A powerful regex feature is that you can <strong>capture</strong> parts of a match by putting them in parentheses <code>( )</code>, and then <strong>recall</strong> them in the replacement with <code>\1</code> (the first group), <code>\2</code> (the second group), and so on. (Use <code>sed -E</code>, so that the parentheses don’t need backslashes.)</p>
+<p>For example, genomic regions are often written as <code>&lt;seqID&gt;:&lt;start&gt;-&lt;end&gt;</code>. To turn such a region into three Tab-separated columns:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb134"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"NC_068937.1:2046-110808"</span> <span class="kw">|</span> <span class="fu">sed</span> <span class="at">-E</span> <span class="st">'s/^([^:]+):([0-9]+)-([0-9]+)$/\1\t\2\t\3/'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_068937.1     2046    110808</code></pre>
+<p>Here, <code>([^:]+)</code> captures everything up to the colon, and each <code>([0-9]+)</code> captures a number.</p>
+<p>Capture groups are also a way to extract information from a line. For example, to extract the gene ID from the GTF’s gene lines, match the <em>entire</em> line, and replace it by just the captured ID:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb136"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="at">-F</span> <span class="st">'\t'</span> <span class="st">'$3 == "gene"'</span> annot.gtf <span class="kw">|</span> <span class="fu">sed</span> <span class="at">-E</span> <span class="st">'s/.*gene_id "([^"]+)".*/\1/'</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>LOC120427725
+LOC120427726
+LOC128092783</code></pre>
+<p>Let’s try the same with the transcript IDs, on all lines of the GTF file:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb138"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb138-1"><a href="#cb138-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^#'</span> annot.gtf <span class="kw">|</span> <span class="fu">sed</span> <span class="at">-E</span> <span class="st">'s/.*transcript_id "([^"]+)".*/\1/'</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_068937.1     Gnomon  gene    2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id ""; db_xref "GeneID:120427725"; description "homeotic protein deformed"; gbkey "Gene"; gene "LOC120427725"; gene_biotype "protein_coding";
+XM_052707445.1
+XM_052707445.1</code></pre>
+<p>What went wrong in the first line? Gene lines have an empty transcript ID (<code>transcript_id ""</code>), which doesn’t match <code>[^"]+</code> (one or more non-quote characters). And when the pattern doesn’t match, <code>sed</code> simply prints the line unchanged.</p>
+<p>The solution is to combine the <code>-n</code> option with the <code>p</code> modifier, which prints a line only if a substitution was made:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb140"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb140-1"><a href="#cb140-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-v</span> <span class="st">'^#'</span> annot.gtf <span class="kw">|</span> <span class="fu">sed</span> <span class="at">-E</span> <span class="at">-n</span> <span class="st">'s/.*transcript_id "([^"]+)".*/\1/p'</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>XM_052707445.1
+XM_052707445.1
+XM_052707445.1</code></pre>
+<section id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-5-sed" class="level4 exercise">
+<h4 class="anchored" data-anchor-id="b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c20666120757365722d65646974203e7d7d-exercise-5-sed"><i class="fa-solid fa-user-edit" aria-label="user-edit"></i> Exercise 5: <code>sed</code></h4>
+<ol type="a">
+<li><p>Above, <code>sed 's#.*/##'</code> removed the dirs from a file path. What do you think the command below will print instead? Run it to check.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb142"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb142-1"><a href="#cb142-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"../../garrigos/fastq/S63_R1.fastq.gz"</span> <span class="kw">|</span> <span class="fu">sed</span> <span class="st">'s#/.*##'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<pre class="bash-out"><code>..</code></pre>
+<p>The pattern <code>/.*</code> matches the <em>first</em> <code>/</code> and everything after it, so only the first <code>..</code> is left.</p>
+</details></li>
+<li><p>Create a version of the metadata file in which the <code>time</code> column holds the number of hours post-infection: <code>240</code> instead of <code>10dpi</code>, and <code>24</code> instead of <code>24hpi</code>. Also rename the column header from <code>time</code> to <code>time_h</code> — make sure that only the header is affected.</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-lightbulb" aria-label="lightbulb"></i> &nbsp; <em>Click for a hint</em></p>
+</summary>
+<p>Use <code>-e</code> for multiple substitutions, and an address to restrict the header change to line 1.</p>
+</details>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb144"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb144-1"><a href="#cb144-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-e</span> <span class="st">'1s/time/time_h/'</span> <span class="at">-e</span> <span class="st">'s/10dpi/240/'</span> <span class="at">-e</span> <span class="st">'s/24hpi/24/'</span> metadata.tsv <span class="op">&gt;</span> metadata_hours.tsv</span>
+<span id="cb144-2"><a href="#cb144-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-n</span> 3 metadata_hours.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>sample_id       time_h  treatment
+S82     240     cathemerium
+S75     240     cathemerium</code></pre>
+<p>In this case, <code>s/time/time_h/</code> without the <code>1</code> address would have worked too, because no other line contains <code>time</code>. But with the address, you can be sure that only the header line is changed.</p>
+</details></li>
+<li><p>Do the reverse of the <code>sed</code> capture group example above: for each gene in the GTF file, print its region in the format <code>&lt;seqID&gt;:&lt;start&gt;-&lt;end&gt;</code>, e.g.&nbsp;<code>NC_068937.1:2046-110808</code>. Can you think of a way to do this with <code>awk</code> instead?</p>
+<details>
+<summary>
+<p><i class="fa-solid fa-check-circle" aria-label="check-circle"></i> &nbsp; <em>Click to see the solution</em></p>
+</summary>
+<p>With <code>sed</code>, first select the gene lines and the relevant columns, and then capture and rearrange the three columns:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb146"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb146-1"><a href="#cb146-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="at">-F</span> <span class="st">'\t'</span> <span class="st">'$3 == "gene"'</span> annot.gtf <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 1,4,5 <span class="kw">|</span></span>
+<span id="cb146-2"><a href="#cb146-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sed</span> <span class="at">-E</span> <span class="st">'s/^([^\t]+)\t([0-9]+)\t([0-9]+)$/\1:\2-\3/'</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_068937.1:2046-110808
+NC_068937.1:48457-50554
+NC_068937.1:76295-82374</code></pre>
+<p>With <code>awk</code>, this is a lot simpler: print the columns separated by the desired text (between quotes):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb148"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb148-1"><a href="#cb148-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="at">-F</span> <span class="st">'\t'</span> <span class="st">'$3 == "gene" { print $1 ":" $4 "-" $5 }'</span> annot.gtf <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>As you can see, there is often more than one way to do something with these tools.</p>
+</details></li>
+</ol>
+</section>
+</section>
+</section>
+<section id="putting-it-together-genes-per-chromosome" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="putting-it-together-genes-per-chromosome"><span class="header-section-number">7</span> Putting it together: genes per chromosome</h2>
+<p>As a final example, let’s combine several of the tools on this page to answer a biological question: <strong>how gene-dense is each chromosome?</strong> To compute the number of genes per million bases (Mb) for each sequence, you’ll need information from two files: sequence lengths from the genome FASTA, and gene counts from the GTF. You’ll then merge these with a new command, <code>join</code>.</p>
+<section id="step-1-sequence-lengths-from-the-fasta-file" class="level3" data-number="7.1">
+<h3 data-number="7.1" class="anchored" data-anchor-id="step-1-sequence-lengths-from-the-fasta-file"><span class="header-section-number">7.1</span> Step 1: Sequence lengths from the FASTA file</h3>
+<p>Computing the length of each sequence in a FASTA file takes a slightly more complex <code>awk</code> command, because each sequence is spread across many lines:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb149"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb149-1"><a href="#cb149-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="st">'/^&gt;/ { if (id) print id "\t" len; id = substr($1, 2); len = 0; next }</span></span>
+<span id="cb149-2"><a href="#cb149-2" aria-hidden="true" tabindex="-1"></a><span class="st">     { len += length($0) }</span></span>
+<span id="cb149-3"><a href="#cb149-3" aria-hidden="true" tabindex="-1"></a><span class="st">     END { print id "\t" len }'</span> genome.fna <span class="kw">|</span> <span class="fu">sort</span> <span class="at">-k1,1</span> <span class="op">&gt;</span> seq_lengths.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Here is what this does:</p>
+<ul>
+<li>For <strong>header lines</strong> (pattern <code>/^&gt;/</code>):
+<ul>
+<li>If this isn’t the first header, print the ID and length of the <em>previous</em> sequence.</li>
+<li>Store the new sequence ID: the first field without the <code>&gt;</code> (<code>substr($1, 2)</code> takes everything from the 2nd character onwards).</li>
+<li>Reset the length to 0, and skip to the next line (<code>next</code>).</li>
+</ul></li>
+<li>For <strong>sequence lines</strong> (no pattern, but header lines never get here because of <code>next</code>): add the number of bases on the line to the length.</li>
+<li>At the <strong>end</strong>, print the ID and length of the last sequence, which hasn’t been printed yet.</li>
+<li>Finally, sort by sequence ID, which <code>join</code> will need.</li>
+</ul>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb150"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb150-1"><a href="#cb150-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-n</span> 4 seq_lengths.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_015079.1     14856
+NC_068937.1     139153999
+NC_068938.1     224097512
+NC_068939.1     186194774</code></pre>
+</section>
+<section id="step-2-gene-counts-from-the-gtf-file" class="level3" data-number="7.2">
+<h3 data-number="7.2" class="anchored" data-anchor-id="step-2-gene-counts-from-the-gtf-file"><span class="header-section-number">7.2</span> Step 2: Gene counts from the GTF file</h3>
+<p>To count the genes on each sequence, make a frequency table of column 1 for the gene lines. Then, swap the two columns of <code>uniq -c</code>’s output with <code>awk</code>, so that the sequence ID comes first, as in the other file:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb152"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb152-1"><a href="#cb152-1" aria-hidden="true" tabindex="-1"></a><span class="fu">awk</span> <span class="at">-F</span> <span class="st">'\t'</span> <span class="st">'$3 == "gene"'</span> annot.gtf <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-f</span> 1 <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="at">-c</span> <span class="kw">|</span></span>
+<span id="cb152-2"><a href="#cb152-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">awk</span> <span class="st">'{ print $2 "\t" $1 }'</span> <span class="op">&gt;</span> gene_counts.tsv</span>
+<span id="cb152-3"><a href="#cb152-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb152-4"><a href="#cb152-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-n</span> 4 gene_counts.tsv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_015079.1     13
+NC_068937.1     5173
+NC_068938.1     7532
+NC_068939.1     6248</code></pre>
+</section>
+<section id="step-3-merging-the-two-files-with-join" class="level3" data-number="7.3">
+<h3 data-number="7.3" class="anchored" data-anchor-id="step-3-merging-the-two-files-with-join"><span class="header-section-number">7.3</span> Step 3: Merging the two files with <code>join</code></h3>
+<p><code>join</code> merges two files based on a shared column — by default, the first column of each file. For every sequence ID that occurs in both files, it prints the ID followed by the remaining columns of both files:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb154"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb154-1"><a href="#cb154-1" aria-hidden="true" tabindex="-1"></a><span class="fu">join</span> seq_lengths.tsv gene_counts.tsv <span class="kw">|</span> <span class="fu">head</span> <span class="at">-n</span> 4</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_015079.1 14856 13
+NC_068937.1 139153999 5173
+NC_068938.1 224097512 7532
+NC_068939.1 186194774 6248</code></pre>
+<div class="callout callout-style-simple callout-warning">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><code>join</code> requires both files to be <strong>sorted</strong> on the join column. If they aren’t, it will miss matches (usually, but not always, with a warning).</p>
+</div>
+</div>
+</div>
+<details class="details-quiz">
+<summary>
+The joined output has fewer lines than <code>seq_lengths.tsv</code>. Which sequences are missing, and why?
+</summary>
+<code>join</code> only prints lines whose ID occurs in <em>both</em> files (this is called an “inner join”). Sequences without any annotated genes don’t occur in <code>gene_counts.tsv</code>, so they’re left out. To also keep the lines that only occur in the first file, use <code>join -a 1</code>.
+</details>
+</section>
+<section id="step-4-computing-gene-density" class="level3" data-number="7.4">
+<h3 data-number="7.4" class="anchored" data-anchor-id="step-4-computing-gene-density"><span class="header-section-number">7.4</span> Step 4: Computing gene density</h3>
+<p>Finally, use <code>awk</code> to divide the number of genes (column 3) by the length in Mb (column 2 divided by 1,000,000), and only keep the sequences with <code>NC</code> IDs:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb156"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb156-1"><a href="#cb156-1" aria-hidden="true" tabindex="-1"></a><span class="fu">join</span> seq_lengths.tsv gene_counts.tsv <span class="kw">|</span></span>
+<span id="cb156-2"><a href="#cb156-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">awk</span> <span class="st">'{ print $1, $2, $3, $3 / ($2 / 1000000) }'</span> <span class="kw">|</span></span>
+<span id="cb156-3"><a href="#cb156-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">grep</span> <span class="st">'^NC'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="bash-out"><code>NC_015079.1 14856 13 875.067
+NC_068937.1 139153999 5173 37.1746
+NC_068938.1 224097512 7532 33.6104
+NC_068939.1 186194774 6248 33.5563</code></pre>
+<p>So, the three chromosomes have a similar gene density of about 34–37 genes per Mb. The mitochondrial genome (<code>NC_015079.1</code>) is far more gene-dense: its 13 genes are packed into fewer than 15,000 bases.</p>
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>For more complex merges of tables, R is a better tool: its <em>dplyr</em> package, which you’ll learn about in week 13, has a set of flexible <code>join</code> functions.</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="wrap-up-which-tool-when" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="wrap-up-which-tool-when"><span class="header-section-number">8</span> Wrap-up: which tool when?</h2>
+<table class="table-striped table-hover caption-top table">
+<colgroup>
+<col style="width: 64%">
+<col style="width: 35%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Tool(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Find lines that contain a (regex) pattern</td>
+<td><code>grep</code></td>
+</tr>
+<tr class="even">
+<td>Extract the matching part of lines</td>
+<td><code>grep -o</code>, or <code>sed -E</code> with capture groups</td>
+</tr>
+<tr class="odd">
+<td>Select columns</td>
+<td><code>cut</code>; <code>awk</code> to also reorder them</td>
+</tr>
+<tr class="even">
+<td>Select rows based on the values in a column</td>
+<td><code>awk</code></td>
+</tr>
+<tr class="odd">
+<td>Calculate with values in columns</td>
+<td><code>awk</code></td>
+</tr>
+<tr class="even">
+<td>Replace text</td>
+<td><code>sed</code>; <code>tr</code> for single characters</td>
+</tr>
+<tr class="odd">
+<td>Count or summarize values</td>
+<td><code>sort</code> and <code>uniq -c</code></td>
+</tr>
+<tr class="even">
+<td>Merge two tables</td>
+<td><code>join</code></td>
+</tr>
+</tbody>
+</table>
+<p>These tools shine for quick, one-off questions about (large) files, and for small processing steps in shell scripts. But when a pipeline gets long or hard to read, it’s often better to switch to:</p>
+<ul>
+<li><strong>R or Python</strong>, for more complex data wrangling, statistics, and plotting (you’ll start learning R in week 12).</li>
+<li><strong>Dedicated bioinformatics tools</strong>, for format-specific tasks like filtering or reverse complementing reads and sequences. Such tools handle the details of file formats (like multi-line FASTA sequences, or soft-masked bases) for you.</li>
+</ul>
+<p>Finally, now that you’re done with this page, remove the large genome FASTA file:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb158"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb158-1"><a href="#cb158-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> genome.fna</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><br></p>
+
+
+
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-garrigós2025" class="csl-entry" role="listitem">
+Garrigós, Marta, Guillem Ylla, Josué Martínez-de la Puente, Jordi Figuerola, and María José Ruiz-López. 2025. <span>“Two Avian <em>Plasmodium</em> Species Trigger Different Transcriptional Responses on Their Vector <em>Culex <span class="nocase">p</span>ipiens</em>.”</span> <em>Molecular Ecology</em> 34 (15): e17240. <a href="https://doi.org/10.1111/mec.17240">https://doi.org/10.1111/mec.17240</a>.
+</div>
+</div></section><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p> The plus 1 is needed because GTF coordinates are “1-based and inclusive”: a feature with start and end position 2046 is 1 base long. Watch out: in other formats, like BED, this is not the case.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script>
+(function () {
+  // Site-wide "Previous / Next page" navigation, injected before the
+  // page footer on every rendered page (see format.html.include-after-body
+  // in _quarto.yml). Edit the array below to add, remove, or reorder
+  // pages -- href paths are relative to the project root (same layout as
+  // the rendered .html output) and must be unique path suffixes.
+  //
+  // Revealjs slide decks ARE included here, so that the regular pages
+  // right before/after one link to it correctly (its title is marked
+  // "(slides)" so it's clear the link leaves the article format) -- but
+  // slide decks use format.revealjs, not format.html, so this script
+  // (wired in via format.html.include-after-body) never loads on a slide
+  // deck itself. In other words: pages link into and out of slide decks,
+  // but a slide deck has no Previous/Next of its own.
+  var pageNavOrder = [
+    { href: "index.html", title: "Home" },
+    { href: "week01/w1_overview.html", title: "Week 1: Overview" },
+    { href: "week01/w1a_course-intro.html", title: "Introduction to the course (slides)" },
+    { href: "week01/w1b_omics-data.html", title: "An overview of omics data (slides)" },
+    { href: "UA/UA2.html", title: "UA2: OSC account setup" },
+    { href: "week02/w2_overview.html", title: "Week 2: Overview" },
+    { href: "week02/w2a_project-org.html", title: "Project file organization (slides)" },
+    { href: "week02/w2b_osc.html", title: "The Ohio Supercomputer Center (slides)" },
+    { href: "week02/w2c_vscode.html", title: "VS Code" },
+    { href: "week02/w2d_markdown.html", title: "Markdown (slides)" },
+    { href: "week02/w2d_markdown_notes.html", title: "Markdown (notes)" },
+    { href: "week02/w2_exercises.html", title: "Week 2: Exercises" },
+    { href: "week03/w3_overview.html", title: "Week 3: Overview" },
+    { href: "week03/w3a_shell-basics.html", title: "Unix shell basics" },
+    { href: "GA/GA1.html", title: "GA1: Markdown and Unix shell basics" },
+    { href: "week04/w4_overview.html", title: "Week 4: Overview" },
+    { href: "week04/w4a_genomics-files.html", title: "Genomics file types (slides)" },
+    { href: "week04/w4b_shell-files1.html", title: "Shell files I" },
+    { href: "week04/w4c_shell-files2.html", title: "Shell files II" },
+    { href: "week04/w4_exercises.html", title: "Week 4: Exercises" },
+    { href: "week05/w5_overview.html", title: "Week 5: Overview" },
+    { href: "week05/w5a_git-intro.html", title: "Git intro (slides)" },
+    { href: "week05/w5b_git.html", title: "Git" },
+    { href: "UA/UA3.html", title: "UA3: Create a GitHub account" },
+    { href: "week05/w5c_github.html", title: "GitHub" },
+    { href: "GA/GA2.html", title: "GA2: Unix shell data tools & version control" },
+    { href: "week06/w6_overview.html", title: "Week 6: Overview" },
+    { href: "week06/w6a_osc.html", title: "A closer look at OSC" },
+    { href: "week06/w6b_software.html", title: "Software management at OSC" },
+    { href: "week06/w6_exercises.html", title: "Week 6: Exercises" },
+    { href: "week07/w7_overview.html", title: "Week 7: Overview" },
+    { href: "week07/w7a_scripts1.html", title: "Shell scripting I" },
+    { href: "week07/w7b_scripts2.html", title: "Shell scripting II" },
+    { href: "week07/w7c_scripts3.html", title: "Shell scripting III" },
+    { href: "GA/GA3.html", title: "GA3: Software and shell scripts" },
+    { href: "week08/w8_overview.html", title: "Week 8: Overview" },
+    { href: "week08/w8a_genAI.html", title: "Generative AI in research and coding (slides)" },
+    { href: "week09/w9_overview.html", title: "Week 9: Overview" },
+    { href: "week09/w9a_claude.html", title: "Coding with an AI agent in VS Code" },
+    { href: "GA/GA4.html", title: "GA4: Shell scripts with and without genAI" },
+    { href: "week10/w10_overview.html", title: "Week 10: Overview" },
+    { href: "week10/w10a_slurm1.html", title: "Slurm batch jobs I" },
+    { href: "week10/w10b_slurm-options.html", title: "Common Slurm options (slides)" },
+    { href: "week10/w10b_slurm2.html", title: "Slurm batch jobs II" },
+    { href: "week10/w10_exercises.html", title: "Week 10: Exercises" }
+  ];
+
+  // Builds a relative href from one manifest entry to another, based on
+  // path depth alone -- deliberately avoids assuming anything about the
+  // site's domain or deployment subpath (e.g. GitHub Pages project sites).
+  function relativeHref(fromHref, toHref) {
+    var depth = fromHref.split("/").length - 1;
+    var prefix = "";
+    for (var i = 0; i < depth; i++) prefix += "../";
+    return prefix + toHref;
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var path = window.location.pathname;
+    var index = pageNavOrder.findIndex(function (entry) {
+      if (entry.href === "index.html") {
+        return path.endsWith("/index.html") || path.endsWith("/");
+      }
+      return path.endsWith("/" + entry.href);
+    });
+    if (index === -1) return;
+
+    var current = pageNavOrder[index];
+    var prev = pageNavOrder[index - 1];
+    // The homepage has its own full course table right there on the page,
+    // so a "Next" link to Week 1 would just be redundant -- suppress it.
+    var next = current.href === "index.html" ? null : pageNavOrder[index + 1];
+    if (!prev && !next) return;
+
+    var nav = document.createElement("div");
+    nav.id = "page-nav";
+
+    if (prev) {
+      var prevLink = document.createElement("a");
+      prevLink.href = relativeHref(current.href, prev.href);
+      prevLink.className = "page-nav-prev";
+      prevLink.innerHTML =
+        '<span class="page-nav-label">← Previous</span>' +
+        '<span class="page-nav-title">' + prev.title + "</span>";
+      nav.appendChild(prevLink);
+    } else {
+      nav.appendChild(document.createElement("span"));
+    }
+
+    if (next) {
+      var nextLink = document.createElement("a");
+      nextLink.href = relativeHref(current.href, next.href);
+      nextLink.className = "page-nav-next";
+      nextLink.innerHTML =
+        '<span class="page-nav-label">Next →</span>' +
+        '<span class="page-nav-title">' + next.title + "</span>";
+      nav.appendChild(nextLink);
+    }
+
+    // Append inside the article content column (not as a sibling of
+    // #quarto-content before the full-bleed footer) so the nav bar
+    // inherits the same centered width/padding as the page text above it.
+    var content = document.getElementById("quarto-document-content");
+    if (content) {
+      content.appendChild(nav);
+    } else {
+      var footer = document.querySelector("footer.footer");
+      if (footer && footer.parentNode) {
+        footer.parentNode.insertBefore(nav, footer);
+      } else {
+        document.body.appendChild(nav);
+      }
+    }
+  });
+})();
+</script>
+<script>
+(function () {
+  // Line highlighting for code blocks on regular (HTML) pages, e.g.
+  //   ```{.bash hl-lines="2,4-5"}
+  // (Quarto's own code-line-numbers="2,4-5" highlighting only works in
+  // revealjs slides). Pandoc passes the attribute through as
+  // data-hl-lines on div.sourceCode, and wraps each line in its own
+  // <span>; this adds the .hl-line class (styled in styles.css) to the
+  // listed lines. Numbers are the displayed line numbers, so with
+  // startFrom="12", hl-lines="13" is the block's second line. Wired in via
+  // format.html.include-after-body in _quarto.yml.
+  document.querySelectorAll("div.sourceCode[data-hl-lines]").forEach(function (div) {
+    var lines = div.querySelectorAll("pre > code > span");
+    var first = parseInt(div.dataset.startfrom || "1", 10);
+    div.dataset.hlLines.split(",").forEach(function (part) {
+      var ends = part.trim().split("-").map(Number);
+      var from = ends[0];
+      var to = ends.length > 1 ? ends[1] : from;
+      for (var n = from; n <= to; n++) {
+        var line = lines[n - first];
+        if (line) line.classList.add("hl-line");
+      }
+    });
+  });
+
+  // Text highlighting, e.g. for placeholders to replace:
+  //   ```{.file hl-text="<osc-username>"}
+  // Separate several strings with "|": hl-text="<user>|<project>".
+  // Each occurrence is wrapped in <span class="hl-text"> (styled in
+  // styles.css). Matches are found within single text nodes, so in
+  // syntax-highlighted code a string must not span several tokens.
+  // The copy button copies textContent, so it is unaffected.
+  document.querySelectorAll("div.sourceCode[data-hl-text]").forEach(function (div) {
+    var targets = div.dataset.hlText.split("|").filter(Boolean);
+    var code = div.querySelector("pre > code");
+    if (!code || !targets.length) return;
+    var walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (node) {
+      var text = node.nodeValue;
+      var frag = document.createDocumentFragment();
+      var pos = 0;
+      var found = false;
+      while (true) {
+        // Earliest match of any target from pos
+        var best = -1, len = 0;
+        targets.forEach(function (t) {
+          var i = text.indexOf(t, pos);
+          if (i !== -1 && (best === -1 || i < best)) { best = i; len = t.length; }
+        });
+        if (best === -1) break;
+        found = true;
+        frag.appendChild(document.createTextNode(text.slice(pos, best)));
+        var span = document.createElement("span");
+        span.className = "hl-text";
+        span.textContent = text.slice(best, best + len);
+        frag.appendChild(span);
+        pos = best + len;
+      }
+      if (!found) return;
+      frag.appendChild(document.createTextNode(text.slice(pos)));
+      node.parentNode.replaceChild(frag, node);
+    });
+  });
+})();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/cfaes-bioinfo\.github\.io\/pracs-au26");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>2026, Jelmer Poelstra, <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a> &nbsp; <img src="http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc.png" class="img-fluid" style="width:10.0%"></p>
+</div>   
+    <div class="nav-footer-center">
+<p><img src="../img/CFAES-Horiz-RGBHEX.svg" class="img-fluid" style="width:40.0%"></p>
+</div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/cfaes-bioinfo/pracs-au26">
+      <i class="bi bi-github" role="img" aria-label="The GitHub repo for this website">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
