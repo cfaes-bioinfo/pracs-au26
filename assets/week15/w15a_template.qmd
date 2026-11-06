@@ -1,0 +1,274 @@
+---
+title: "Week 15A: RNA-seq count data analysis"
+author: "Your Name"
+date: 2026-11-30
+format:
+  html:
+    embed-resources: true
+    toc: true
+---
+
+This document goes with the
+[week 15A page](https://cfaes-bioinfo.github.io/pracs-au26/week15/w15a_rnaseq.html),
+and its headings match the page's sections.
+
+- Code chunks with code are ready to run:
+  run them **one by one, in order**, as we go through the page.
+- Empty code chunks have a comment saying what to do:
+  write that code yourself, using the page as a guide.
+- Write your answers to the exercises under each exercise heading.
+
+## Today's R packages
+
+### Load the packages
+
+```{r}
+#| message: false
+library(here)
+library(DESeq2)
+library(tidyverse)
+```
+
+### Set the input file paths
+
+```{r}
+counts_file <- "/fs/ess/PAS3493/share/week15/salmon.merged.gene_counts_length_scaled.tsv"
+metadata_file <- here("garrigos/meta/metadata.tsv")
+```
+
+## Create a DESeq2 object
+
+### Planning the DE analysis
+
+#### Exercise 1: Independent variables
+
+1. How many independent variables does the experiment have?
+
+   _Your answer:_
+
+2. Can you think of two alternative ways to analyze the data?
+
+   _Your answer:_
+
+### Metadata
+
+Load the metadata file and take a look:
+
+```{r}
+meta_raw <- read_tsv(metadata_file, show_col_types = FALSE)
+head(meta_raw)
+```
+
+Sort by sample ID, move the sample IDs to row names,
+and create the combined time and treatment variable `group`:
+
+```{r}
+meta <- meta_raw |>
+  # 1. Sort by the 'sample_id' column
+  arrange(sample_id) |>
+  # 2. Turn the 'sample_id' column into row names:
+  column_to_rownames("sample_id") |>
+  mutate(
+    # 3. Turn the 'time' and 'treatment' columns into "factors":
+    time = factor(time, levels = c("24hpi", "10dpi")),
+    treatment = factor(
+      treatment,
+      levels = c("control", "cathemerium", "relictum")
+    ),
+    # 4. Create a 'group' column that combines treatment and time:
+    group = factor(paste(treatment, time, sep = "_"))
+  )
+
+head(meta)
+```
+
+Which unique values does `group` have, and how many samples are in each?
+
+```{r}
+meta |> count(group)
+```
+
+### Gene count table
+
+Load the gene count table and take a look:
+
+```{r}
+count_df <- read_tsv(counts_file, show_col_types = FALSE)
+head(count_df)
+```
+
+Turn it into a matrix of whole numbers with gene IDs as row names:
+
+```{r}
+count_mat <- count_df |>
+  # 1. Turn the 'gene_id' column into row names:
+  column_to_rownames("gene_id") |>
+  # 2. Remove a remaining non-numeric column (which has gene names):
+  select(-gene_name) |>
+  # 3. Round everything to whole numbers:
+  round() |>
+  # 4. Convert it to a formal 'matrix' format:
+  as.matrix()
+
+head(count_mat)
+```
+
+Check that the sample IDs in the metadata and the count table match:
+
+```{r}
+all(row.names(meta) == colnames(count_mat))
+```
+
+### Create the DESeq2 object
+
+```{r}
+# Create a DESeq2 object named 'dds' with DESeqDataSetFromMatrix(),
+# from the metadata, the count matrix, and the design '~group'
+
+```
+
+## Exploratory Data Analysis
+
+### The count matrix
+
+```{r}
+# Get the numbers of rows (genes) and columns (samples) of the count matrix
+
+```
+
+```{r}
+# Count the genes with non-zero total counts across all samples
+
+```
+
+```{r}
+# Compute the library sizes (in millions of counts) and sort them
+
+```
+
+### Principal Component Analysis (PCA)
+
+```{r}
+# Normalize the counts with the Variance Stabilizing Transformation,
+# and store the result as 'dds_vst'
+
+```
+
+```{r}
+# Run and plot the PCA, coloring samples by time and treatment
+
+```
+
+#### Exercise 2: PCA interpretation
+
+- Do the samples cluster by treatment and/or time point?
+  Which of these two variables has a greater effect?
+  Is there an overall interaction between them?
+
+  _Your answer:_
+
+- How does this plot compare to the PCA plot in the paper (Figure 1)?
+
+  _Your answer:_
+
+## Differential Expression (DE) analysis
+
+### Running the DE analysis
+
+```{r}
+# Run the DE analysis, and assign the output back to 'dds'
+
+```
+
+## Extracting the DE results
+
+### The results table
+
+```{r}
+# Extract the results for relictum_24hpi vs. control_24hpi as 'res_rc24',
+# and take a look at the first rows
+
+```
+
+### Log2-fold changes
+
+#### Exercise 3: Log-fold changes
+
+What do you expect `log2(8 / 2)` and `log2(2 / 8)` to return?
+
+_Your answer:_
+
+Now, check your answer:
+
+```{r}
+log2(8 / 2)
+log2(2 / 8)
+```
+
+### Numbers of Differentially Expressed Genes (DEGs)
+
+```{r}
+# Count the genes with an adjusted p-value below 0.05
+
+```
+
+#### Self-study exercise 4: DEGs
+
+How does the number of DEGs we just got compare to what the paper found
+for this comparison (Table 1)?
+
+_Your answer:_
+
+## Volcano plot
+
+Prepare the results table for plotting:
+
+```{r}
+res_df <- res_rc24 |>
+  # 1. Convert it to a regular data frame:
+  as.data.frame() |>
+  # 2. Turn the row names (gene IDs) into a column:
+  rownames_to_column("gene_id") |>
+  # 3. Remove genes with an NA adjusted p-value:
+  filter(!is.na(padj)) |>
+  # 4. Add a column that indicates whether each gene is a DEG:
+  mutate(DEG = padj < 0.05)
+```
+
+Create the plot:
+
+```{r}
+res_df |>
+  ggplot(aes(x = log2FoldChange, y = -log10(padj), color = DEG)) +
+  geom_point() +
+  # Add a dashed horizontal line at the significance threshold:
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
+  # Gray for non-significant genes, red for DEGs:
+  scale_color_manual(values = c("grey60", "firebrick")) +
+  labs(title = "relictum vs. control at 24 hpi") +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank())
+```
+
+## Exporting the results
+
+Create a results directory, if it doesn't already exist:
+
+```{r}
+dir.create(here("week15/results/DE"), recursive = TRUE, showWarnings = FALSE)
+```
+
+Save the results table, after moving the gene IDs from the row names into a column:
+
+```{r}
+res_rc24 |>
+  as.data.frame() |>
+  rownames_to_column("gene_id") |>
+  write_tsv(here("week15/results/DE/res_rc24.tsv"))
+```
+
+Save the DESeq2 object, which this week's exercises build on:
+
+```{r}
+saveRDS(dds, here("week15/results/DE/dds.rds"))
+```
