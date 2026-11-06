@@ -66,22 +66,14 @@ Today, you will use such a gene count table to:
    Its headings match this page's sections,
    and it already has most of today's code,
    but some chunks are empty: you'll write that code yourself as we go.
-   Also, you'll write your exercise answers in this document.
-
-::: callout-important
-Run the chunks one by one, in order, as we go through the page ---
-don't use "Run All".
-Each step builds on the previous one,
-and running a chunk before we've talked about it means you'll miss what it does.
-:::
 
 ## Today's R packages
 
 ### Bioconductor packages
 
 You learned that `install.packages()` allows you to install R packages.
-However, only packages that are available through the R package repository CRAN
-can be installed this way --- and some packages aren't.
+However, this only works for packages in the R package repository CRAN,
+and not all packages are on CRAN.
 
 In particular, many packages for omics data analysis are instead available
 via [Bioconductor](https://bioconductor.org/),
@@ -113,9 +105,9 @@ see the [optional self-study page on Bioconductor](/bonus/r-omics.qmd).
 
 Now, load the packages we'll use today:
 
-- **here** --- for file referencing
-- **DESeq2** --- for differential expression analysis
-- **tidyverse** --- for data manipulation and plotting
+- **here** --- For file referencing.
+- **DESeq2** --- For differential expression analysis.
+- **tidyverse** --- For data manipulation and plotting.
 
 ```{r, eval=FALSE}
 library(here)
@@ -164,19 +156,31 @@ package's function you want to use: for example,
 `dplyr::count()` to explicitly use the dplyr version.
 :::
 
-### Set the input file paths
+### Set the input and output file paths
 
 For the differential expression analysis, we have the following input files:
 
-- **Metadata table** --- Metadata for the study, linking sample IDs to treatments
+- **Metadata table** --- Metadata for the study, linking sample IDs to treatments and time points.
 - **Gene count table** --- Produced by the
   [nf-core rnaseq {{< fa external-link >}}](https://nf-co.re/rnaseq){target="_blank"}
-  workflow [@ewels2020]
+  workflow [@ewels2020].
+  We'll use a count table from a run on the full FASTQ files,
+  rather than on the subset files that you used in week 11.
 
 ```{r, eval=FALSE}
 # We'll save the paths to our input files for later use
 counts_file <- "/fs/ess/PAS3493/share/week15/salmon.merged.gene_counts_length_scaled.tsv"
 metadata_file <- here("garrigos/meta/metadata.tsv")
+```
+
+At the end of the analysis, we'll save the DE results table and the DESeq2 object.
+As [recommended in week 14](../week14/w14a_quarto.qmd#file-paths-at-the-top),
+we define the paths to these output files here too, right below the input files:
+
+```{r, eval=FALSE}
+outdir <- here("week15/results/DE")
+res_file <- here("week15/results/DE/res_rc24.tsv")
+dds_file <- here("week15/results/DE/dds.rds")
 ```
 
 ```{r, echo=FALSE}
@@ -196,7 +200,7 @@ and a Differential Expression (DE) analysis using the popular
 DESeq2 has its own "object type" and we need to start by creating a DESeq2 object
 from three components:
 
-1. **Metadata** --- containing the independent variables,
+1. **Metadata** --- A table with the independent variables,
    allowing DESeq2 to compare groups of samples.
 2. **Count table** --- A matrix (table) with one row per gene and one column per sample.
 3. **A statistical design** --- A formula that tells DESeq2 which groups to compare.
@@ -405,7 +409,10 @@ head(count_df)
 
 Again, we have to make several modifications
 before we can include the count table in the DESeq2 object.
-DESeq2 expects counts as whole numbers (integers) and gene IDs as row names:
+DESeq2 expects gene IDs as row names, and counts as whole numbers (integers).
+Our counts have decimals because Salmon *estimates* them:
+for example, a read that matches two genes can be split between them.
+So, we will round the counts:
 
 ```{r}
 count_mat <- count_df |>
@@ -454,9 +461,9 @@ and `all()` checks whether all of these comparisons are `TRUE`.
 Now, we can create the DESeq2 object using the function `DESeqDataSetFromMatrix()`,
 to which we will pass three arguments corresponding to the components discussed above:
 
-- Argument `colData` for the **metadata**
-- Argument `countData` for the **count data**
-- Argument `design` for the **statistical design** for the DE analysis with
+- Argument `colData` for the **metadata**.
+- Argument `countData` for the **count data**.
+- Argument `design` for the **statistical design** for the DE analysis.
   We will use `~group` (the symbol before `group` is a tilde, <kbd>~</kbd>),
   to make DESeq2 compare samples between the groups created by the `group` variable.
 
@@ -509,7 +516,8 @@ helping us answer questions like:
 
 - Do the samples **cluster** by treatment (infection status) and/or time point?
 - Which of these two variables has a greater effect on overall patterns of gene expression?
-- Is there an overall *interaction* between these two variables?
+- Is there an overall *interaction* between these two variables,
+  i.e., does the effect of treatment differ between the time points?
 
 First, normalize the count data to account for differences in library size
 among samples and "stabilize" the variance among genes[^4]:
@@ -521,23 +529,23 @@ among samples and "stabilize" the variance among genes[^4]:
 dds_vst <- varianceStabilizingTransformation(dds)
 ```
 
-The authors of the study did this as well, they mention:
+The authors of the study did this as well:
 
 > *We carried out a Variance Stabilizing Transformation (VST) of the counts to represent*
 > *the samples on a PCA plot.*
 
-Next, run and plot the PCA with a single call to the DESeq2's `plotPCA()` function,
+Next, run and plot the PCA with a single call to DESeq2's `plotPCA()` function,
 where `intgroup` specifies the variables (columns) to color samples by:
 
 ```{r, eval=FALSE}
 plotPCA(dds_vst, intgroup = c("time", "treatment"))
 ```
 
-```bash-out
+```r-out
 using ntop=500 top features by variance
 ```
 
-![](/img/PCA.png){fig-align="center" .no-border width="90%" fig-alt="PCA plot of the RNA-seq samples, colored by time and shaped by treatment."}
+![](/img/PCA.png){fig-align="center" .no-border width="90%" fig-alt="PCA plot of the RNA-seq samples, colored by each combination of time and treatment."}
 
 This plot isn't as clear as it could be,
 but it gives us a first impression of the overall patterns in the data.
@@ -552,7 +560,7 @@ you'll make an improved plot with ggplot2.
 
 - Based on your PCA plot,
   try to answer the three questions asked at the beginning of this PCA section.
-- How does this plot compare to the PCA plot in the paper (Figure 1),
+- How does this plot compare to the paper's PCA plot (Figure 1),
   in terms of the conclusions you just drew?
 
 <details><summary> {{< fa info-circle >}} Click to see the paper's Figure 1 </summary>
@@ -570,6 +578,9 @@ Do our PCA results support this choice?
 
 <details class="details-quiz">
 <summary>Given the PCA results, would it have been OK to ignore the `time` variable?</summary>
+
+_The answer will be added after class._
+
 <!----
 No: the time variable clearly has a large effect on overall patterns of gene expression,
 in fact more so than the treatment.
@@ -585,24 +596,23 @@ actually running the DE analysis is very simple:
 dds <- DESeq(dds)
 ```
 
-Note that we assign the output back to the same `dds` object:
-the DE results are added to it.
-The `DESeq()` function is a wrapper that performs three steps (functions) consecutively:
+We assigned the output back to the same `dds` object: the DE results are *added* to it.
+The `DESeq()` function is a wrapper that performs three steps consecutively:
 
-- `estimateSizeFactors()` --- "Normalization" by library size and composition
-- `estimateDispersions()` --- Estimate gene-wise dispersion (variance in counts)
-- `nbinomWaldTest(ddsObj)` --- Fit the negative binomial GLM and calculate test statistics
+1. "Normalization" by library size and composition
+2. Estimating gene-wise dispersion (variance in counts)
+3. Fitting the negative binomial GLM and calculating test statistics
 
-DESeq2 automatically performed **pairwise** comparisons between
-**each of the (6) levels** of the `group` variable.
-This means that for any individual gene,
-it tested whether the gene is differentially expressed
-separately for each of these pairwise comparisons.
+For each gene, DESeq2 estimated its expression level in each of the 6 groups
+of the `group` variable.
+From this, we can now get the results for any **pairwise comparison** between two groups:
+for each gene, a test of whether it is differentially expressed between them.
 
 ## Extracting the DE results
 
-DESeq2 stores the results as a separate table for each pairwise comparison,
-and now, we'll extract **one** of these.
+With 6 groups, there are 15 possible pairwise comparisons,
+of which we're interested in 6.
+We'll get the results for **one** of these, for further exploration and visualization.
 
 ### The results table
 
@@ -632,16 +642,17 @@ head(res_rc24)
 
 What do the columns in this table contain?
 
-- `baseMean`: Mean expression level across all samples
+- `baseMean`: Mean normalized count across all samples
+  (not just the two groups being compared)
 - `log2FoldChange`: The log~2~-fold change of gene counts between the compared levels
 - `lfcSE`: The uncertainty in terms of the standard error (SE) of the log~2~-fold
   change estimate
 - `stat`: The value for the Wald test's test statistic
-- `pvalue`: The *uncorrected* p-value from the Wald test
+- `pvalue`: The uncorrected p-value from the Wald test
 - `padj`: The multiple-testing corrected p-value (i.e., adjusted p-value)
 
 ::: {.callout-note collapse="true"}
-### `NA` values in the DESeq2 results table _(Click to expand)_
+#### `NA` values in the DESeq2 results table _(Click to expand)_
 
 Some values in the DESeq2 results table can be set to `NA` for one of the following reasons:
 
@@ -718,32 +729,31 @@ symmetrically:
 ::: exercise
 #### {{< fa user-edit >}} Exercise 3: Log-fold changes
 
-Based on the above, or your knowledge of log-transformations,
-what do you expect the following to return:
+1.  In `res_rc24`, a gene has a log~2~-fold change of `-3`.
+    Is this gene more highly expressed in `relictum_24hpi` or in `control_24hpi`,
+    and how many times more highly?
 
-```{r, eval=FALSE}
-# In the context of a LFC, these 2 numbers would be mean expression levels in 2 groups
-log2(8 / 2)
-log2(2 / 8)
-```
+    <!----
+    <details><summary>*Click to see the solution*</summary>
 
-<!----
-<details><summary>*Click to see the solution*</summary>
+    It is 8 times (2^3^) more highly expressed in `control_24hpi`.
+    The LFC is negative, so expression is lower in the focal level (`relictum_24hpi`)
+    than in the reference level (`control_24hpi`).
 
-- A fold-change of 4 (8/2) is a LFC of 2:
+    </details>
+    ---->
 
-```{r}
-log2(8 / 2)
-```
+2.  What would this gene's log~2~-fold change be if you had instead extracted the results with
+    `contrast = c("group", "control_24hpi", "relictum_24hpi")`?
 
-- A fold-change of 0.25 (2/8) is a LFC of -2:
+    <!----
+    <details><summary>*Click to see the solution*</summary>
 
-```{r}
-log2(2 / 8)
-```
+    It would be `3`: swapping the focal and reference levels flips the sign of every LFC
+    (but doesn't change the p-values).
 
-</details>
----->
+    </details>
+    ---->
 :::
 
 ### Numbers of Differentially Expressed Genes (DEGs)
@@ -756,21 +766,25 @@ How many adjusted p-values were less than 0.05 (i.e., significant)?
 sum(res_rc24$padj < 0.05, na.rm = TRUE)
 ```
 
-So, we have `r sum(res_rc24$padj < 0.05, na.rm = TRUE)` Differentially Expressed Genes
+So, we found `r sum(res_rc24$padj < 0.05, na.rm = TRUE)` Differentially Expressed Genes
 (**DEG**s) for this specific pairwise comparison.
 
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Self-study exercise 4: DEGs
+#### {{< fa user-edit >}} Self-study exercise: DEGs
 
-The paper's Table 1 ([shown above](#planning-the-de-analysis))
-reports the number of DEGs for a variety of comparisons.
+The paper's Table 1 reports the number of DEGs for a variety of comparisons.
+
+<details><summary> {{< fa info-circle >}} Click to see the paper's Table 1 </summary>
+
+![](/img/paper_table1.png){fig-align="center" width="80%"}
+
+</details>
 
 How does the number of DEGs we just got compare to what they found in the paper for
 this comparison?
 
-<!----
 <details><summary>*Click to see the solution*</summary>
 
 We found `r sum(res_rc24$padj < 0.05, na.rm = TRUE)` DEGs,
@@ -783,17 +797,13 @@ Other differences in the analysis, like software versions and settings,
 can also lead to slightly different results.
 
 </details>
----->
-
 :::
 
 ## Volcano plot
 
 A "volcano plot" gives a nice overview of the DE results for one comparison.
 We'll make one for the `relictum_24hpi` vs. `control_24hpi` comparison
-we extracted above.
-
-A volcano plot has one point per gene, with the:
+we extracted above. A volcano plot has one point per gene, with the:
 
 - log~2~-fold change (effect size) along the x-axis
 - adjusted p-value (significance) along the y-axis
@@ -812,11 +822,13 @@ res_df <- res_rc24 |>
   mutate(DEG = padj < 0.05)
 ```
 
-Now, create the plot.
-Along the y-axis, we plot `-log10(padj)` rather than `padj` itself,
-which turns small p-values into large numbers:
+Now, create the plot:
+
+::: {.callout-tip appearance="simple"}
+We plot `-log10(padj)` to turn small p-values into large numbers:
 for example, `-log10(0.05)` is 1.3 and `-log10(1e-10)` is 10.
-That way, the most significant genes end up at the top of the plot.
+That way, the **most significant genes end up at the top** of the plot.
+:::
 
 ```{r}
 res_df |>
@@ -847,7 +859,7 @@ First, we'll create a results directory for the DE results,
 if it doesn't already exist:
 
 ```{r, eval=FALSE}
-dir.create(here("week15/results/DE"), recursive = TRUE, showWarnings = FALSE)
+dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
 ```
 
 Prior to saving the results table, we need to move the gene IDs from the row names
@@ -857,14 +869,14 @@ into a column, because `write_tsv()` doesn't save row names:
 res_rc24 |>
   as.data.frame() |>
   rownames_to_column("gene_id") |>
-  write_tsv(here("week15/results/DE/res_rc24.tsv"))
+  write_tsv(res_file)
 ```
 
 Finally, because this week's exercises build on this DESeq2 object,
 we'll also save that object to a file:
 
 ```{r, eval=FALSE}
-saveRDS(dds, here("week15/results/DE/dds.rds"))
+saveRDS(dds, dds_file)
 ```
 
 ## In Closing

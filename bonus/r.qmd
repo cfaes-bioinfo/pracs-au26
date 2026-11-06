@@ -137,15 +137,81 @@ diet_fct <- factor(c("high", "medium", "low"), levels = c("low", "medium", "high
 typeof(diet_fct)
 ```
 
-## Plotting with _ggplot2_
+## Data wrangling
 
-These sections build on the [week 13 data visualization lecture](../week13/w13b_data-viz.qmd),
+These sections build on the [week 13 data wrangling lecture](../week13/w13a_data-wrangling.qmd),
 and use the same package and data set:
 
 ```{r}
 #| message: false
 library(tidyverse)
+penguins <- as_tibble(penguins)
 ```
+
+### Reshaping from long to wide with `pivot_wider()`
+
+In the [week 13 data visualization lecture](../week13/w13b_data-viz.qmd#reshaping-data-for-plotting),
+you used `pivot_longer()` to reshape data from a wide to a long format.
+The `pivot_wider()` function does the opposite,
+which is useful to make compact summary tables.
+For example, say you computed the mean body mass for each species on each island:
+
+```{r}
+mass_summary <- penguins |>
+  group_by(species, island) |>
+  summarize(mean_mass = mean(body_mass, na.rm = TRUE), .groups = "drop")
+mass_summary
+```
+
+To give each island its own column:
+
+```{r}
+mass_summary |>
+  pivot_wider(
+    names_from = island, # column whose values become the new column names
+    values_from = mean_mass # column whose values fill the new columns
+  )
+```
+
+Species that don't occur on an island get an `NA`.
+For more about pivoting, see
+[chapter 5 of R for Data Science](https://r4ds.hadley.nz/data-tidy.html#sec-pivoting).
+
+### Combining data frames with `left_join()`
+
+Related information is often spread across multiple data frames
+that share one or more columns ---
+for example, a gene count table and a sample metadata table that both have a sample ID column.
+To combine these, use one of _dplyr_'s `*_join()` functions.
+
+For example, here is a small data frame with the scientific name of each penguin species:
+
+```{r}
+species_info <- tibble(
+  species = c("Adelie", "Chinstrap", "Gentoo"),
+  scientific_name = c("Pygoscelis adeliae", "Pygoscelis antarcticus", "Pygoscelis papua")
+)
+```
+
+`left_join()` keeps all rows of the first ("left") data frame,
+and adds the columns of the second data frame,
+matching rows by the column(s) you specify with `by`:
+
+```{r}
+penguins |>
+  left_join(species_info, by = join_by(species)) |>
+  select(species, scientific_name, body_mass)
+```
+
+Other join functions differ in which rows they keep:
+`inner_join()` keeps only rows with a match in both data frames,
+and `full_join()` keeps all rows of both.
+For more, see [chapter 19 of R for Data Science](https://r4ds.hadley.nz/joins.html).
+
+## Plotting with _ggplot2_
+
+These sections build on the [week 13 data visualization lecture](../week13/w13b_data-viz.qmd),
+and use the same _tidyverse_ package and `penguins` data set loaded above.
 
 ### Color palettes
 
