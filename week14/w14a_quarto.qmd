@@ -50,31 +50,32 @@ In this session, you will learn:
 -   What happens when Quarto renders a document
 -   More about **YAML** syntax and useful options in the YAML header
 -   How to use **chunk options**, including for figures, and how to set them for a whole document
--   How to label chunks and include R output in your Markdown text
+-   How to include R output in your Markdown text
 -   How to record the versions of R and R packages that you used
 -   How to render a document to Markdown that displays well on GitHub
 -   How to run R scripts and render Quarto documents in a Slurm batch job
 
-## Setting up
+### Setting up
 
-Create a new folder `week14` in your personal dir,
-[open it in Positron](../week12/w12b_r-basics.qmd#working-directory-and-opening-a-folder),
-and in it, [create a new Quarto document](../week12/w12b_r-basics.qmd#creating-a-quarto-document) `week14a.qmd`.
+- Create a new folder `week14` in your personal dir,
+  and [open it in Positron](../week12/w12b_r-basics.qmd#working-directory-and-opening-a-folder).
+- Create a new Quarto document `week14/week14a.qmd` and open it.
 
-## How rendering works
+## Rendering Quarto documents
 
-When you render a Quarto document, two programs do the work:
+### How rendering works
 
-1. **knitr** runs all code chunks, in a new R session,
-   and creates a plain Markdown file with your text, code, and the code's output.
-2. **Pandoc** converts that Markdown file to the final output format.
+When you render a Quarto document, a two-step process occurs:
+
+1. **All code is run** by *knitr* to produce a plain Markdown file with your text
+   code, and the code's output.
+2. The Markdown file is then **converted** to the final output format by *Pandoc*.
 
 This two-step process means that the same `.qmd` file can be rendered to many output formats,
 like HTML, PDF, Word, and even slide decks and websites^[
 This website and its slides were made with Quarto, too!],
 and that Quarto isn't limited to R:
 it can also run code in other languages like Python.
-Quarto is the next-generation version of R Markdown, in case you have heard of that.
 
 ### Rendering from the terminal
 
@@ -85,46 +86,69 @@ using the `quarto render` command:
 quarto render week14a.qmd
 ```
 
-This does a **one-time render**:
-just like `Preview`, it runs all code in a new R session
-and creates `week14a.html` next to `week14a.qmd`.
-But unlike `Preview`, it does not show the result in the Viewer pane.
-To look at the output, open the HTML file yourself.
+This is similar to the "Preview" button in Positron,
+but it does a **one-time render** and does not show the result in the Viewer pane.
 
-So, `Preview` is handy while you are writing and editing a document,
-whereas `quarto render` is handy to simply produce the final output file.
+This is a good command to include in your project's **protocol** or README Markdown file:
+this is clearer and more reproducible than adding comments about which Quarto document
+to open and which button to click.
 
-### The working directory when rendering
+::: {.callout-tip}
+#### Output for GitHub
+
+GitHub shows HTML files as raw code, not as web pages.
+To share a rendered document in a GitHub repository, like for your final project,
+you can _also_ render it to GitHub-Flavored Markdown (`gfm`), which GitHub displays nicely:
+
+```yaml
+format:
+  html:
+    embed-resources: true
+  gfm: default
+```
+
+With two formats, the `Preview` button only renders the first one.
+To render both formats,
+use `quarto render` in the terminal, as shown above.
+This creates a `.md` file, plus a `_files` folder with the figures:
+commit both to your repository.
+You'll try this out in the [week 15 exercises](../week15/w15_exercises.qmd#exercise-8-output-for-github).
+:::
+
+### The working directory when rendering, and the `here` package
 
 Because rendering runs your code in a new R session,
 its working directory can differ from that of your Console:
 
-- When you **run code interactively**, it is executed in the Console,
-  whose working dir is the folder you opened (`week14`).
-- When you **render** the document,
-  the working dir is the folder that contains the document.
+- When you **run code interactively**, the working dir is the folder you opened.
+- When you **render**, the working dir is the folder that contains the document.
 
 So far, your documents have been directly inside the folder you opened,
-so these were the same, and relative paths like `../garrigos` worked either way.
-
-::: {.callout-note collapse="true"}
-#### Documents in a subfolder: the _here_ package _(Click to expand)_
-In larger projects, you may want to keep your Quarto documents in a subfolder,
-like `scripts`.
-Then, the working dir is the folder you opened when you run code interactively,
-but `scripts` when you render,
-so a relative path may work in one case but not the other.
+so these were the same.
+But in larger projects, you'll want to keep your **Quarto documents in a subfolder**,
+like `scripts` or `reports`,
+and then a relative path may work in one case but not the other.
 
 The [_here_ package](https://here.r-lib.org/) solves this problem:
 its `here()` function creates file paths that start at your project's top-level folder,
 no matter what your working directory is.
-For example, `here("data/counts.tsv")` refers to the file `counts.tsv`
-in the `data` folder of your project.
+It finds that folder by looking for a `.git` folder (or an empty file called `.here`)
+in your working dir and its parent folders.
 
-To find your project's top-level folder,
-_here_ looks for a marker like a `.git` folder,
-first in the working dir and then in the folders above it.
-So, in a project that is a Git repository, `here()` works without any setup.
+For example, say that your final project's Git repository `FP` is open in Positron,
+and a Quarto document `FP/scripts/analysis.qmd` reads the file `FP/data/meta.tsv`:
+
+| | Working dir | `read_tsv("data/meta.tsv")` | `read_tsv(here("data/meta.tsv"))` |
+|---|---|---|---|
+| Run interactively | `FP` | Works | Works |
+| Render | `FP/scripts` | Fails | Works |
+
+: {.striped .hover}
+
+::: {.callout-tip appearance="simple"}
+To use `here()`, install it with `install.packages("here")`,
+and load it with `library(here)`.
+You'll try this out in the [week 15 exercises](../week15/w15_exercises.qmd#exercise-7-rendering-from-a-subfolder).
 :::
 
 ## Components of Quarto documents
@@ -167,36 +191,28 @@ format:
   which change the fonts, colors, etc.
 - There are many more [options for HTML output](https://quarto.org/docs/output-formats/html-basics.html).
 
-::: callout-tip
-#### Project-level YAML
-You can also set YAML options for all Quarto documents in a project
-in a file called `_quarto.yml` in the project's root directory
-(see the [Quarto docs on projects](https://quarto.org/docs/projects/project-configuration.html)).
-Options in a document's own YAML header override these.
-:::
-
-#### Quotes
-
-In YAML, strings usually don't need quotes,
-but they do when they contain special characters like `:` or `#`.
-For example, the title in the example above, `"Week 14: Quarto"`, needs quotes because of the colon.
-To be safe, you can always quote strings.
-
 ::: {.callout-note collapse="true"}
-#### More YAML syntax: lists and comments _(Click to expand)_
-Some keys take a list of values, which can be written in two ways:
+#### More YAML syntax _(Click to expand)_
 
-```yaml
-# Block syntax: each item on a new line, preceded by a dash and a space
-author:
-  - Jane Doe
-  - John Smith
+- In YAML, strings usually don't need quotes,
+  but they do when they contain special characters like `:` or `#`.
+  For example, the title in the example above, `"Week 14: Quarto"`,
+  needs quotes because of the colon.
+  To be safe, you can simply always quote strings.
 
-# Inline syntax: comma-separated values inside square brackets
-keywords: [RNA-seq, mosquito, Plasmodium]
-```
+- Some keys take a **list of values,** which can be written in two ways:
 
-As in R and the shell, a `#` starts a comment.
+  ```yaml
+  # Block syntax: each item on a new line, preceded by a dash and a space
+  author:
+    - Jane Doe
+    - John Smith
+
+  # Inline syntax: comma-separated values inside square brackets
+  keywords: [RNA-seq, mosquito, Plasmodium]
+  ```
+
+- As in R and the shell, a `#` starts a **comment**.
 :::
 
 ::: exercise
@@ -228,7 +244,7 @@ As in R and the shell, a `#` starts a comment.
    </details>
 ---->
 
-2. **Predict** what will happen in each of the following cases,
+2. Predict what will happen in each of the following cases,
    then try them one by one (and undo each change afterwards):
    - You remove the space after the colon in `toc: true`.
    - You remove the quotes around a title that contains a colon.
@@ -246,23 +262,6 @@ As in R and the shell, a `#` starts a comment.
 
 ### Code chunks
 
-::: {.callout-note collapse="true"}
-#### Showing the output below each chunk _(Click to expand)_
-Positron can optionally show the output of each chunk right below it in the editor,
-as RStudio does by default.
-To turn this on, open the Settings and enable `quarto.inlineOutput.enabled`.
-
-With this setting turned on,
-Positron runs the code of each Quarto document in a separate R session,
-whose working directory is the document's folder,
-and whose Console is not shown by default
-(to show it, enable `console.showNotebookConsoles`).
-Because your document is directly inside the folder you opened,
-that is also the working directory of your Console
-(see [above](#the-working-directory-when-rendering)),
-so your code works the same either way.
-:::
-
 #### Chunk options
 
 You can change how a chunk behaves with **chunk options**:
@@ -276,7 +275,7 @@ For example, this chunk would be shown in the rendered document, but not run:
 install.packages("tidyverse")
 ```
 
-A few useful chunk options:
+A few useful chunk options (more in the [Quarto documentation {{< fa external-link >}}](https://quarto.org/docs/computations/execution-options.html){target="_blank"}):
 
 - `#| eval: false` --- Show the code but don't run it.
 - `#| echo: false` --- Run the code and show its output, but hide the code itself.
@@ -284,43 +283,41 @@ A few useful chunk options:
 - `#| include: false` --- Run the code, but show neither the code nor its output.
 - `#| warning: false` and `#| message: false` --- Hide warnings and messages,
   such as the ones printed when loading some packages.
-- `#| fig-show: hide` --- Hide figures.
-
-::: {.callout-tip appearance="simple"}
-Install packages in the console rather than in a chunk.
-Otherwise, they will be installed again every time you render the document.
-:::
-
-Chunk options can also be written inside the curly braces,
-as in ```` ```{r, echo=FALSE} ````,
-but the `#|` syntax is preferred.
-More chunk options can be found
-[here](https://quarto.org/docs/computations/execution-options.html).
 
 #### Figure options
 
 When you render a document, any plots made in code chunks are included in the output.
 Several chunk options control how plots are shown --- for example:
 
+- `fig-cap` --- Add a figure caption below the plot.
+- `fig-width` and `fig-height` --- Set the size of the plot (in inches).
+
 ```{r}
 #| include: false
-library(ggplot2)
+library(tidyverse)
+meta <- read_tsv("../assets/week13/metadata.tsv", show_col_types = FALSE)
+# Only the rows for the plotted gene, which is enough for this example:
+counts_long <- read_tsv(
+  "../assets/week13/salmon.merged.gene_counts_length_scaled.tsv",
+  show_col_types = FALSE
+) |>
+  filter(gene_id == "LOC120423767") |>
+  select(!gene_name) |>
+  pivot_longer(cols = !gene_id, names_to = "sample_id", values_to = "count") |>
+  left_join(meta, by = "sample_id") |>
+  mutate(time = factor(time, levels = c("24hpi", "10dpi")))
 ```
 
 ```{r}
 #| echo: fenced
-#| fig-cap: "Body mass of penguins on different islands"
+#| fig-cap: "Counts of the chymotrypsin gene LOC120423767"
 #| fig-width: 6
 #| fig-height: 4
-#| fig-align: center
-penguins |>
-  ggplot(aes(x = island, y = body_mass)) +
+counts_long |>
+  filter(gene_id == "LOC120423767") |>
+  ggplot(aes(x = treatment, y = count, fill = time)) +
   geom_boxplot()
 ```
-
-- `fig-cap` --- Add a figure caption below the plot.
-- `fig-width` and `fig-height` --- Set the size of the plot (in inches).
-- `fig-align` --- Align the plot to the `left`, `right`, or `center`.
 
 #### Global vs. chunk-specific options
 
@@ -345,29 +342,6 @@ execute:
 ```
 
 Note that `execute:` is a top-level key, not nested under `format:`.
-
-#### Chunk labels
-
-You can give a chunk a **label** with `#| label: <label-name>`.
-Labels must be unique within a document and cannot contain spaces.
-They show up in messages during rendering,
-which makes it easier to find the chunk that caused a problem:
-
-```{r}
-#| label: my-first-chunk
-#| echo: fenced
-2 + 3
-```
-
-::: {.callout-tip appearance="simple"}
-Besides `Run Cell`, which runs the current chunk,
-the line above each chunk has a `Run Above` button,
-which runs all code chunks _above_ the current chunk.
-This is useful when you've restarted R or opened a document in a new session,
-and want to get back to where you were.
-:::
-
-<!---- TODO: Add a Positron screenshot of the Run Cell / Run Above buttons above a chunk ---->
 
 #### File paths at the top
 
@@ -396,7 +370,7 @@ This has two advantages:
 - When a path changes, you only need to change it in one place.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 2: Chunk options and self-contained documents
+#### {{< fa user-edit >}} Exercise 2: Chunk options
 
 Add code chunks to your document to do the following:
 
@@ -437,33 +411,24 @@ Add code chunks to your document to do the following:
 
    </details>
 ---->
-
-3. Temporarily **remove** `embed-resources: true` from your YAML header and render.
-   In the Explorer, what was created besides the HTML file?
-   Download only the HTML file and open it on your computer: what's missing, and why?
-   Then put `embed-resources: true` back.
-
-<!----
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
-
-   Without `embed-resources: true`, rendering also creates a folder `week14a_files`,
-   which contains, among other things, the figure.
-   The downloaded HTML file on its own therefore doesn't show the figure,
-   because it refers to an image file in that folder.
-
-   </details>
----->
 :::
 
-### Markdown text
+::: {.callout-tip}
+#### Miscellaneous tips
 
-The "default text" in Quarto documents is Markdown, unlike in R scripts,
-where everything is considered code until commented out by `#`.
-Quarto text syntax is based on Pandoc Markdown which is similar to
-the original Markdown syntax we discussed in
-[week 2](../week02/w2d_markdown.qmd).
+- Besides `Run Cell`, which runs the current chunk,
+  the line above each chunk has a `Run Above` button,
+  which runs all code chunks _above_ the current chunk.
+  This is useful when you've restarted R or opened a document in a new session,
+  and want to get back to where you were.
 
-#### Inline code
+  <!---- TODO: Add a Positron screenshot of the Run Cell / Run Above buttons above a chunk ---->
+
+- Install packages in the console rather than in a chunk.
+  Otherwise, they will be installed again every time you render the document.
+:::
+
+## Inline code in Markdown text
 
 You can include the output of R code directly in your Markdown text with **inline code**:
 a backtick, the letter `r` and a space, your code, and a closing backtick.
@@ -503,29 +468,6 @@ so they always match your data and code --- no more copy-pasting numbers.
    </details>
 :::
 
-::: {.callout-note collapse="true"}
-#### The visual editor _(Click to expand)_
-
-So far, you've edited Quarto documents in the default **source editor**,
-where you type everything yourself:
-the text, the code chunks, and the YAML header.
-This gives you full control, but requires knowing some Markdown and Quarto syntax.
-
-Positron also has a **visual editor** for Quarto documents,
-which is the same one you may have used for Markdown files in VS Code in
-[week 7](../week07/w7b_scripts2.qmd#markdown-setup),
-since both use the Quarto extension.
-In the visual editor, you can format text and add elements like tables and images
-with toolbar buttons, and see roughly how your document will look as you write,
-much like in Word or Google Docs.
-
-To switch between the two editors,
-click the `...` button in the top-right of the editor,
-and select "**Edit in Visual Mode**" or "**Edit in Source Mode**".
-
-<!---- TODO: Add a Positron screenshot of a Quarto document in the visual editor ---->
-:::
-
 ## Recording R and package versions
 
 For reproducibility, it's good practice to record which versions of R and R packages you used.
@@ -537,29 +479,16 @@ and the versions of all loaded packages:
 sessionInfo()
 ```
 
-`sessionInfo()` only _records_ package versions.
-To also be able to _restore_ them,
-you can give each project its own package library with **renv** ---
+`sessionInfo()` only _records_ package versions, though.
+By default, all your projects share one set of installed packages,
+so updating a package for one project also changes it for all others.
+And reinstalling the exact versions from a `sessionInfo()` list,
+say on another computer, is tedious.
+The **renv** package solves both problems:
+it gives each project its own packages,
+and records their versions in a file that lets you (or anyone else)
+reinstall those exact versions with a single command ---
 see the [optional self-study page on renv](../bonus/renv.qmd).
-
-## Output for GitHub
-
-GitHub shows HTML files as raw code, not as web pages.
-To share a rendered document in a GitHub repository, like for your final project,
-you can _also_ render it to GitHub-Flavored Markdown (`gfm`), which GitHub displays nicely:
-
-```yaml
-format:
-  html:
-    embed-resources: true
-  gfm: default
-```
-
-With two formats, the `Preview` button only renders the first one.
-To render both formats,
-use `quarto render` in the terminal, as shown [above](#rendering-from-the-terminal).
-This creates a `.md` file, plus a `_files` folder with the figures:
-commit both to your repository.
 
 ## Running R in a Slurm batch job
 
@@ -578,6 +507,10 @@ There are two commands to run R code from the shell:
   [week 12](../week12/w12b_r-basics.qmd#rendering)).
 - `quarto render my-doc.qmd` renders a Quarto document,
   like you did in the terminal [above](#rendering-from-the-terminal).
+
+(If only a few chunks in a document are slow,
+you can also [cache their results](../bonus/quarto.qmd#avoiding-slow-re-renders-with-caching),
+so they don't have to run again every time you render.)
 
 Here is a shell script that renders a Quarto document in a batch job:
 
@@ -646,11 +579,13 @@ sbatch scripts/render.sh week14a.qmd
 ---->
 :::
 
-## Before next week: install packages for week 15
+<hr style="height:1pt; visibility:hidden;" />
+
+::: callout-note
+##### Install packages for week 15
 
 Installing the R packages for next week's RNA-seq analysis takes a few minutes,
-so let's get that started now.
-Run the following code in the R console ---
+so let's get that started now. Run the following code in the R console ---
 we'll go over what these commands do next week:
 
 ```{r, eval=FALSE}
@@ -662,9 +597,6 @@ BiocManager::install("DESeq2")
 Let the installation keep running until it's done,
 even if that's after the end of class.
 
-<!----
-TODO: Proposed new sections for this session (not yet written):
+:::
 
-- Avoiding slow re-renders: `cache: true` / `freeze`
-- Turning an R script into a Quarto document
----->
+<hr style="height:1pt; visibility:hidden;" />

@@ -17,9 +17,9 @@ other-links:
   - text: "Week 13 overview"
     icon: check2-all
     href: w13_overview.html
-  - text: "w12b: Intro to R, Positron, and Quarto"
+  - text: "w13b: Data visualization"
     icon: book
-    href: ../week12/w12b_r-basics.html
+    href: w13b_data-viz.html
   - text: "Week 13 exercises"
     icon: pencil
     href: w13_exercises.html
@@ -54,10 +54,14 @@ R stores tabular data in a data structure called a "**data frame**".
 
 In this lecture, you will learn:
 
-- The vector data structure, R's main data types, and comparisons
-- Data frames and different functions to reorganize and modify data frames
-- How to look at data frames in Positron's Data Explorer
-- How to read and write files with tabular data
+- The vector data structure, R's main data types, and comparisons (_not tabular data_)
+- How to read files with tabular data, and look at them in Positron's Data Explorer
+- How to subset, sort, modify, and summarize data frames with _dplyr_ functions
+- How to reshape and join data frames
+- How to write data frames to files
+
+You'll learn most of this by exploring the gene count table
+from the RNA-seq data set that you've been working with.
 
 ### Setting up
 
@@ -69,17 +73,14 @@ In this lecture, you will learn:
 
 ## Vectors and data types
 
-Before turning to tabular data, you'll learn about two of R's nuts and bolts:
-
-- **Data structures** are the kinds of objects that R can store data in:
-  - Here, you'll learn about the simplest one, the **vector**.
-  - Later in this lecture, you'll learn about the data structure for tabular data: the _data frame_.
-- **Data types** are how R distinguishes between different kinds of data,
-  like numbers versus character strings.
+Before turning to tabular data, we'll cover two of R's nuts and bolts:
+the **vector**, which is R's simplest *data structure*,
+and **data types**, which are how R distinguishes between different kinds of data,
+like numbers versus character strings.
 
 ### Vectors
 
-A vector in R is a collection of one or more items,
+A vector in R is a **collection of one or more items**,
 which we'll call **elements**.
 A common way to make a vector is with the `c()` (combine) function ---
 for example, to store the number of RNA-seq reads for three genes:
@@ -130,7 +131,7 @@ Consider the output of this command:
 read_counts / 1000
 ```
 
-Above, **every individual element in `read_counts` was divided by 1000**.
+Above, **every individual element** in `read_counts` was divided by 1000.
 This behavior,
 where an operation is automatically applied to every element of a vector,
 is called "vectorization" --- a key feature of the R language.
@@ -144,11 +145,12 @@ log2(read_counts)
 
 Other functions instead _summarize_ a vector,
 like `length()` to get the number of elements,
-and `mean()` to compute the mean:
+and `mean()` and `sum()` to compute the mean and sum:
 
 ```{r}
 length(read_counts)
 mean(read_counts)
+sum(read_counts)
 ```
 
 For more functions like these, see the [optional R self-study page](../bonus/r.qmd#exploring-vectors).
@@ -165,75 +167,79 @@ of the three genes in `read_counts`:
 gene_lengths_kb <- c(2, 4, 1.5)
 ```
 
-1. What do you think the following code will return?
-   We didn't cover this kind of scenario, but go ahead and test your intuition!
+What do you think the following code will return?
+We didn't cover this kind of scenario, but go ahead and test your intuition!
 
-   ```{r, eval=FALSE}
-   read_counts / gene_lengths_kb
-   ```
+```{r, eval=FALSE}
+read_counts / gene_lengths_kb
+```
 
-   a) `250 300 200`
-   b) `266.6667` (a single number)
-   c) Nine numbers: each count divided by each gene length
-   d) An error, because you can't divide a vector by another vector
+a) `250 300 200`
+b) `266.6667` (a single number)
+c) Nine numbers: each count divided by each gene length
+d) An error, because you can't divide a vector by another vector
 
-   After you've decided, run the code and check if you were correct.
+After you've decided, run the code and check if you were correct.
 
-   <!----
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+<!----
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-   **a)** is correct:
+**a)** is correct:
 
-   ```{r}
-   read_counts / gene_lengths_kb
-   ```
+```{r}
+read_counts / gene_lengths_kb
+```
 
-   Both vectors have 3 elements, which leads to "element-wise matching":
-   the first element of the first vector is divided by the first element of the second vector,
-   the second element by the second element, and so on.
+Both vectors have 3 elements, which leads to "element-wise matching":
+the first element of the first vector is divided by the first element of the second vector,
+the second element by the second element, and so on.
 
-   </details>
-   ---->
-
-2. Now say that you have gene lengths in base pairs instead:
-
-   ```{r}
-   gene_lengths_bp <- c(2000, 4000, 1500)
-   ```
-
-   Which of these computes the number of reads per kilobase for each gene,
-   giving the same result as above?
-
-   a) `read_counts / gene_lengths_bp`
-   b) `read_counts / gene_lengths_bp / 1000`
-   c) `read_counts / (gene_lengths_bp / 1000)`
-
-   After you've decided, run all three lines and check if you were correct.
-
-   <!----
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
-
-   **c)** is correct:
-
-   ```{r}
-   read_counts / (gene_lengths_bp / 1000)
-   ```
-
-   Option a) computes the number of reads per base pair instead.
-
-   Option c) combines both kinds of vectorization:
-   `gene_lengths_bp / 1000` divides each length by the single number 1000,
-   and the counts are then divided element-wise by the resulting lengths.
-
-   The parentheses matter: option b) is calculated from left to right,
-   so it divides by 1000 instead of multiplying by it.
-   (`read_counts / gene_lengths_bp * 1000` does work.)
-
-   </details>
-   ---->
+</details>
+---->
 :::
 
-### Extracting elements from vectors
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise: Gene lengths in base pairs
+
+Now say that you have gene lengths in base pairs instead:
+
+```{r}
+gene_lengths_bp <- c(2000, 4000, 1500)
+```
+
+Which of these computes the number of reads per kilobase for each gene,
+giving the same result as `read_counts / gene_lengths_kb`?
+
+a) `read_counts / gene_lengths_bp`
+b) `read_counts / gene_lengths_bp / 1000`
+c) `read_counts / (gene_lengths_bp / 1000)`
+
+After you've decided, run all three lines and check if you were correct.
+
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+**c)** is correct:
+
+```{r}
+read_counts / (gene_lengths_bp / 1000)
+```
+
+Option a) computes the number of reads per base pair instead.
+
+Option c) combines two kinds of vectorization:
+`gene_lengths_bp / 1000` divides each length by the single number 1000,
+and the counts are then divided element-wise by the resulting lengths
+(the first count by the first length, and so on).
+
+The parentheses matter: option b) is calculated from left to right,
+so it divides by 1000 instead of multiplying by it.
+(`read_counts / gene_lengths_bp * 1000` does work.)
+
+</details>
+:::
+
+::: {.callout-note collapse="true"}
+#### Extracting elements from vectors _(Click to expand)_
 
 Extracting elements from objects like vectors is often called **"indexing"**.
 In R, you can do this with square brackets `[ ]`.
@@ -255,36 +261,32 @@ In R, you can do this with square brackets `[ ]`.
 In other words, you extract elements from a vector by using _another vector_,
 whose values are the positions of the elements in the original vector.
 
+<hr style="height:1pt; visibility:hidden;" />
+:::
+
 ### Data types
 
-R distinguishes between different kinds of data, such as character strings and numbers,
-using several pre-defined "data types".
-R's behavior depends heavily on the data type.
-For example, R refuses to perform mathematical operations on character strings,
-so the code below returns an error:
+R distinguishes between different kinds of data using several pre-defined "data types",
+and its behavior depends heavily on the data type.
+For example, R refuses to perform mathematical operations on character strings:
 
 ```{r, error=TRUE}
 gene_ids * 2
 ```
 
-You can ask what type of data something is with the `typeof()` function:
+You can ask what type of data something is with the `typeof()` function ---
+keep in mind that vectors can only contain **one data type**,
+so this is the type of all elements in the vector:
 
 ```{r}
 typeof(gene_ids)
 typeof(read_counts)
 ```
 
-R set the data type of `gene_ids` to `character`, i.e. (character) strings,
-and that of `read_counts` to `double`, i.e. numbers.
-**Anything** that is placed between quotes is a `character` --- even plain numbers:
-
-```{r}
-typeof("300")
-```
-
-Besides `character`, there are three other **common data types**.
-Here is an overview,
-including the abbreviations you'll often see in R output:
+Here is an overview of R's four **common data types**,
+including the abbreviations you'll often see in R output
+(note that *anything* placed between quotes is a `character` ---
+even plain numbers like `"5"`):
 
 | Data type            | Abbreviation  | Explanation                          | Example          |
 |----------------------|---------------|--------------------------------------|------------------|
@@ -321,63 +323,25 @@ typeof(5L)
 <hr style="height:1pt; visibility:hidden;" />
 :::
 
-### Comparing things
+::: {.callout-note collapse="true"}
+#### What happens when you combine data types in one vector? _(Click to expand)_
 
-R returns `logical`s when you **compare** things.
-Comparisons are vectorized too,
-so you get a `TRUE` or `FALSE` for each element ---
-for example, to check which genes have more than 400 reads:
-
-```{r}
-read_counts > 400
-```
-
-To test whether things are equal,
-don't forget to use **two** equals signs `==`:
+Because a vector can only contain **a single data type**,
+R silently converts mixed data to the same type --- for example, numbers to strings:
 
 ```{r}
-gene_ids == "geneB"
+mixed <- c(500, 1200, "300")
+mixed
+
+typeof(mixed)
 ```
 
-Logicals can be used as if they were numbers,
-where `TRUE` represents 1 and `FALSE` represents 0.
-This provides an easy way to _count_ how many elements meet a condition,
-like the number of genes with more than 400 reads:
-
-```{r}
-sum(read_counts > 400)
-```
-
-You'll use this in week 15, for example to count the number of genes
-that are significantly differentially expressed.
-
-Here are the most common comparison operators in R:
-
-| **Operator** | **Description**          | **Example**              |
-|--------------|--------------------------|--------------------------|
-| `>`          | Greater than             | 5 \> 6 returns `FALSE`   |
-| `<`          | Less than                | 5 \< 6 returns `TRUE`    |
-| `==`         | Equal to                 | 10 == 10 returns `TRUE`  |
-| `!=`         | Not equal to             | 10 != 10 returns `FALSE` |
-| `>=`         | Greater than or equal to | 5 \>= 6 returns `FALSE`  |
-| `<=`         | Less than or equal to    | 6 \<= 6 returns `TRUE`   |
-
-: {.striped .hover}
-
-### A vector can only contain one data type
-
-A vector can only be composed of **a single data type**.
-So when you combine different data types into one vector,
-R silently converts them all to the same type ---
-for example, numbers to strings:
-
-```{r}
-c(500, 1200, "300")
-```
-
-This **type coercion** can be the source of surprises:
+This so-called **type coercion** can be the source of surprises:
 for example, if a single value in a column of numbers in a file is not a number,
 R will read the whole column as `character`.
+
+<hr style="height:1pt; visibility:hidden;" />
+:::
 
 ::: exercise
 #### {{< fa user-edit >}} Self-study exercise: Data types
@@ -426,14 +390,63 @@ Try it out and see if you were right.
    </details>
 :::
 
+### Comparing things
+
+R returns `logical`s when you **compare** things:
+
+```{r}
+10 > 6
+```
+
+Comparisons are vectorized too,
+so you get a `TRUE` or `FALSE` for each element ---
+for example, to check which genes have more than 400 reads:
+
+```{r}
+read_counts > 400
+```
+
+Logicals can be used as if they were numbers,
+where `TRUE` represents 1 and `FALSE` represents 0.
+This provides an easy way to **count** how many elements meet a condition,
+like the number of genes with more than 400 reads:
+
+```{r}
+sum(read_counts > 400)
+```
+
+Here are the most common comparison operators in R:
+
+::: {.columns}
+::: {.column width="15%"}
+
+
+:::
+::: {.column width="70%"}
+
+| **Operator** | **Description**          | **Example**              |
+|--------------|--------------------------|--------------------------|
+| `>`          | Greater than             | `5 > 6` returns `FALSE`   |
+| `<`          | Less than                | `5 < 6` returns `TRUE`    |
+| `==`         | Equal to                 | `10 == 10` returns `TRUE`  |
+| `!=`         | Not equal to             | `10 != 10` returns `FALSE` |
+| `>=`         | Greater than or equal to | `5 >= 6` returns `FALSE`  |
+| `<=`         | Less than or equal to    | `6 <= 6` returns `TRUE`   |
+
+: {.striped .hover}
+
+:::
+::: {.column width="15%"}
+
+:::
+:::
+
 ### Missing values (`NA`)
 
 R uses `NA` to represent **missing data**,
 which is important in statistical computing,
 as not all measurements are always available.
-For example, in week 15, you'll see that some genes get `NA` as their p-value.
-`NA` is not a character string, so it is not quoted
-(just like `TRUE` and `FALSE`):
+`NA` is not a character string, so it is not quoted (just like `TRUE` and `FALSE`):
 
 ```{r}
 pvals <- c(0.001, NA, 0.2, 0.04)
@@ -453,7 +466,7 @@ You can get around this by setting `na.rm = TRUE` ("remove `NA`s") in such funct
 sum(pvals < 0.05, na.rm = TRUE)
 ```
 
-To check which elements are `NA`, use the `is.na()` function:
+To check **which** elements are `NA`, use the `is.na()` function:
 
 ```{r}
 is.na(pvals)
@@ -461,11 +474,13 @@ is.na(pvals)
 
 ## Data frames
 
+### What is a data frame?
+
 Data frames are another R data structure,
-which can be thought of as vectors pasted side-by-side:
+which can be thought of as **vectors pasted side-by-side**:
 each column is a vector, and can therefore only contain one data type.
-This also means that rows and columns aren't equivalent:
-each column is a variable, and each row an observation.
+This also means that rows and columns are **not** equivalent:
+each column is a *variable*, and each row an *observation*.
 
 For example, you can combine the gene vectors from above into a data frame
 with the `data.frame()` function,
@@ -480,100 +495,15 @@ gene_df <- data.frame(
 gene_df
 ```
 
-Each row is now a gene, and each column a variable,
-with a `character` vector in the first column and `double`s in the other two.
+Each row is now a gene, and each column a variable.
 
-### The penguins data set
+### The tidyverse
 
-To explore data frames, and to visualize data in the next lecture,
-we'll use the `penguins` data set, which comes with R.
-It contains measurements on 3 species of penguins collected on 3 islands in Antarctica.
-It has 344 observations (rows) and 8 variables (columns):
-
-- `species`: Species of penguin (Adelie, Chinstrap, Gentoo)
-- `island`: Island where the penguin was found (Biscoe, Dream, Torgersen)
-- `bill_len`: Length of the penguin's bill in millimeters
-- `bill_dep`: Depth of the penguin's bill in millimeters
-- `flipper_len`: Length of the penguin's flipper in millimeters
-- `body_mass`: Body mass of the penguin in grams
-- `sex`: Sex of the penguin
-- `year`: Year of data collection
-
-Because `penguins` has 344 rows, let's use `head()` to print only its first few rows:
-
-```{r}
-head(penguins)
-```
-
-### Looking at a data frame in the Data Explorer
-
-To look at a data frame in a spreadsheet-like view,
-run the `View()` function to open it in Positron's **Data Explorer**.
-
-```{r, eval=FALSE}
-View(penguins)
-# (Should open the data frame in a new editor tab)
-```
-
-The Data Explorer also includes a **summary panel** that shows, for each column,
-its data type, the percentage of missing values, and a small plot of its distribution.
-
-<!---- TODO: Add a screenshot of penguins in the Data Explorer ---->
-
-::: {.callout-tip appearance="minimal"}
-For data frames that are listed in the Variables pane (any that you create yourself),
-you can also click the table icon next to them.
-:::
-
-::: {.callout-note collapse="true"}
-#### Sorting and filtering in the Data Explorer _(Click to expand)_
-
-You can also sort and filter rows in the Data Explorer,
-similar to the `arrange()` and `filter()` functions that you'll learn about below:
-
-- To **sort**, click the three dots in a column header,
-  and select `Sort Ascending` or `Sort Descending`.
-- To **filter**, click `+ Add Filter` in the filter bar at the top,
-  pick a column, and choose a condition.
-  You can add multiple filters.
-
-Like Filter functionality in Excel, this only changes what you _see_:
-the data frame itself is not modified.
-Steps that are part of your analysis should be in your code,
-so that they are reproducible.
-Here, the Data Explorer can help: after sorting and/or filtering,
-click the **Convert to Code** button to get the R code that
-does the same sorting and filtering, which you can copy into your document.
-:::
-
-### Working with data frames
-
-To get only a data frame's dimensions, use `nrow()` for the number of rows,
-`ncol()` for the number of columns, or `dim()` for both:
-
-```{r}
-dim(penguins)
-```
-
-You can extract individual columns from a data frame using the `$` operator.
-This returns a vector, so we'll use `head()` again to show only its first elements:
-
-```{r}
-head(penguins$body_mass)
-```
-
-Like any vector, it can be indexed with `[ ]`:
-
-```{r}
-penguins$body_mass[2]
-```
-
-## The tidyverse
-
-We'll start working with a family of R packages designed for "dataframe-centric"
+To work with data frames,
+we'll use a family of R packages designed for "dataframe-centric"
 data science called the ["tidyverse"](https://www.tidyverse.org).
 Dataframe-centric refers to doing most if not all data analysis while keeping
-the data in R's data frame data structure.
+the data in a data frame.
 
 All core tidyverse packages can be installed and loaded with a single command.
 You installed the tidyverse
@@ -614,6 +544,336 @@ it will use the _dplyr_ function and not the _stats_ function.
 You _can_ use a "masked" function,
 by prefacing it with its package name as follows: `stats::filter()`.
 :::
+
+### Today's key tidyverse functions
+
+The _dplyr_ and _tidyr_ packages, both part of the tidyverse,
+provide functions to **manipulate** data in data frames, such as for "**data wrangling**":
+cleaning and transforming your data to make it easier to visualize and analyze.
+In this lecture, we'll cover some of the most commonly used _dplyr_ functions:
+
+- Subsetting:
+  - `select()` to pick columns (variables)
+  - `filter()` to pick rows (observations)
+- Other modifying:
+  - `arrange()` to change the order of rows (i.e., to sort a data frame)
+  - `mutate()` to modify values in columns and create new columns
+  - `summarize()` to compute across-row summaries
+  - `pivot_longer()` to reshape a data frame from wide to long format
+- Combining:
+  - `left_join()` to combine two data frames based on one or more shared columns
+
+All these functions have the same straightforward input/output behavior:
+
+- Their input is a data frame
+- Their output is a **new, modified** data frame
+
+Finally, we'll see how to read and write data frames to and from TSV files
+with `read_tsv()` and `write_tsv()` from the _readr_ package.
+
+## The gene count table
+
+Below, you'll explore the gene count table of the
+@garrigós2025 RNA-seq data set we've been working with.
+This is the same type of Salmon output table we produced and looked at in week 11,
+but from a run on the **full** FASTQ files.
+
+### Reading a TSV file
+
+We'll use _readr_'s  `read_tsv()` function to read a TSV (tab-separated) file:
+
+```{r eval=FALSE}
+counts <- read_tsv(
+  file = "/fs/ess/PAS3493/share/week13/salmon.merged.gene_counts_length_scaled.tsv"
+)
+```
+
+```{r echo=FALSE}
+counts <- read_tsv(
+  file = "../assets/week13/salmon.merged.gene_counts_length_scaled.tsv"
+)
+```
+
+Note that this function is rather chatty,
+telling you how many rows and columns it read, and what their data types are.
+Let's check the resulting object:
+
+```{r}
+counts
+```
+
+`read_tsv()` returns a **tibble**, the tidyverse's variant of a data frame.
+Tibbles print more compactly than regular data frames:
+they show the data type of each column,
+and only as many rows and columns as fit on your screen.
+
+The table has one row per gene and, after the `gene_id` and `gene_name` columns,
+one column per sample.
+(The counts have decimals because Salmon _estimates_ them, as you saw in week 11.)
+
+### Looking at a data frame in the Data Explorer
+
+To look at a data frame in a spreadsheet-like view,
+run the `View()` function to open it in Positron's **Data Explorer**.
+
+```{r, eval=FALSE}
+View(counts)
+# (Should open the data frame in a new editor tab)
+```
+
+The Data Explorer also includes a **summary panel** that shows, for each column,
+its data type, the percentage of missing values, and a small plot of its distribution.
+
+<!---- TODO: Add a screenshot of counts in the Data Explorer ---->
+
+::: {.callout-note collapse="true"}
+#### Sorting and filtering in the Data Explorer _(Click to expand)_
+
+You can also sort and filter rows in the Data Explorer,
+similar to the `arrange()` and `filter()` functions that you'll learn about below:
+
+- To **sort**, click the three dots in a column header,
+  and select `Sort Ascending` or `Sort Descending`.
+- To **filter**, click `+ Add Filter` in the filter bar at the top,
+  pick a column, and choose a condition.
+  You can add multiple filters.
+
+Like Filter functionality in Excel, this only changes what you _see_:
+the data frame itself is not modified.
+Steps that are part of your analysis should be in your code,
+so that they are reproducible.
+Here, the Data Explorer can help: after sorting and/or filtering,
+click the **Convert to Code** button to get the R code that
+does the same sorting and filtering, which you can copy into your document.
+
+Finally, for data frames that are listed in the Variables pane
+(any that you create yourself),
+you can also click the table icon next to them to open them in the Data Explorer.
+:::
+
+### Columns are vectors
+
+To get a data frame's dimensions, use `nrow()` for the number of rows,
+`ncol()` for the number of columns, or `dim()` for both:
+
+```{r}
+dim(counts)
+```
+
+You can extract individual columns from a data frame using the `$` operator.
+This returns a vector, so let's use `head()` to show only its first elements:
+
+```{r}
+head(counts$S63)
+```
+
+Like any vector, you can compute with it ---
+for example, to get the total number of counts for sample `S63`:
+
+```{r}
+sum(counts$S63)
+```
+
+This total is called the **library size** of a sample.
+You could compute it like this for each of the 22 samples,
+but below, you'll learn a better way.
+
+## Subsetting data frames
+
+### `select()` to pick columns (variables)
+
+The `select()` function subsets a data frame by including/excluding certain columns.
+By default, it only **includes the columns you specify** ---
+for example, to get the gene IDs and the counts for two samples:
+
+```{r}
+select(.data = counts, gene_id, S64, S63)
+```
+
+Output columns appear in the order in which you listed them within `select()`,
+so this function allows you to also **reorder** columns.
+
+Two other things are worth noting about this command,
+which are true for most other _dplyr_ functions:
+
+- Each column name is a **separate**, unnamed argument to `select()`,
+  so you don't combine them with `c()`.
+- Column names are **not quoted**,
+  even though you learned that R treats unquoted names as objects.
+  This is meant as a convenience, but can be confusing at first.
+
+You can also specify columns that should be **excluded**,
+by prefacing their name with a `!`.
+In this file, the `gene_name` column is identical to `gene_id`,
+so let's remove it, and assign the result back to `counts`:
+
+```{r}
+counts <- select(.data = counts, !gene_name)
+```
+
+### `filter()` to pick rows (observations)
+
+The `filter()` function outputs only those rows that satisfy one or more conditions ---
+for example, to get the counts for the mitochondrial gene _ATP6_:
+
+```{r}
+filter(.data = counts, gene_id == "ATP6")
+```
+
+The condition `gene_id == "ATP6"` is checked for each row,
+and only rows for which it is `TRUE` are kept.
+Remember to use **two** equals signs `==` to test for equality!
+
+::: {.callout-note collapse="true"}
+#### Combining multiple conditions _(Click to expand)_
+
+If you separate multiple conditions with a comma,
+they are combined using a Boolean ***AND***:
+in a given row, _each_ condition must be met to output the row.
+
+```{r}
+# Keep rows for genes with more than 100,000 counts in both sample S63 AND S64:
+filter(.data = counts, S63 > 100000, S64 > 100000)
+```
+
+If you want to combine conditions using a Boolean ***OR***,
+where only one of the conditions needs to be met,
+use a `|` (vertical bar) between the conditions:
+
+```{r}
+# Keep rows for genes with more than 100,000 counts in either sample S63 OR S64:
+filter(.data = counts, S63 > 100000 | S64 > 100000)
+```
+
+To keep rows whose value matches any one of several values,
+use the `%in%` operator with a vector of those values ---
+for example, to keep two mitochondrial genes:
+
+```{r}
+filter(.data = counts, gene_id %in% c("ATP6", "COX1"))
+```
+
+:::
+
+### The pipe (`|>`)
+
+It's common to use several **consecutive** _dplyr_ functions to wrangle a data frame
+into the format you want.
+For example, you may want to first `filter()` rows,
+and _then_ `select()` columns. You could do that as follows:
+
+```{r}
+counts_atp6 <- filter(.data = counts, gene_id == "ATP6")
+
+select(.data = counts_atp6, gene_id, S63, S64)
+```
+
+You could go on like this, with a separate command for each step,
+and successively creating new, intermediate objects.
+In the Unix shell, we used the [pipe](../week04/w4c_shell-files2.qmd#the-pipe)
+`|` to shorten code and avoid writing intermediate files.
+Since a few years, R also has a **pipe operator**, `|>`.
+So in R, the vertical bar <kbd>|</kbd> is followed by a greater-than sign <kbd>></kbd>.
+
+Let's start by seeing a rephrasing of the code above, now using pipes:
+
+```{r}
+counts |>
+  filter(gene_id == "ATP6") |>
+  select(gene_id, S63, S64)
+```
+
+Above, we took the `counts` data frame,
+sent ("piped") it into the `filter()` function,
+whose output in turn was piped into `select()`.
+Just like in the Unix shell, you can think of the pipe as **"then"**:
+take `counts`, _then_ filter, _then_ select.
+
+Also like in the Unix shell, when using the pipe,
+you no longer specify an input argument for the function,
+because it now gets its **input data via the pipe**^[
+Specifically, the input goes to the function's first argument by default.].
+Using pipes involves less typing and is more readable than successive assignments.
+
+::: {.callout-tip}
+#### Pipe tips
+
+- In R (unlike in the shell),
+  it's good practice to **start a new line** after a pipe `|>`,
+  and to keep the subsequent line(s) _indented_.
+- You can also insert a pipe with the **keyboard shortcut**
+  <kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>M</kbd>.
+- In code online, you may also often see an **older pipe symbol**, `%>%`,
+  which works the same in most cases^[
+  But only when you have one of the tidyverse packages loaded.].
+:::
+
+::: {.callout-note collapse="true"}
+#### Side-by-side: the pipe in the shell and in R _(Click to expand)_
+
+In both languages, the input moves from inside the command to the left of the pipe
+with vs. without the pipe:
+
+::: {.columns}
+::: {.column width="48%"}
+**Shell**
+
+```bash
+# Without: the file is an argument
+wc -l metadata.tsv
+```
+
+```bash
+# With: wc gets its input via the pipe
+cat metadata.tsv | wc -l
+```
+
+:::
+::: {.column width="2%"}
+:::
+::: {.column width="50%"}
+**R**
+
+```r
+# Without: the data frame is an argument
+filter(.data = counts, gene_id == "ATP6")
+```
+
+```r
+# With: filter() gets its input via the pipe
+counts |> filter(gene_id == "ATP6")
+```
+
+:::
+:::
+
+:::
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 2: Pipes
+
+The two pipelines below both try to output the counts of samples `S77` and `S78`
+for the gene `COX1`, and differ only in the order of `filter()` and `select()`.
+**Predict** whether each of them will work, and why. Then run them to check.
+
+```r
+counts |> filter(gene_id == "COX1") |> select(S77, S78)
+counts |> select(S77, S78) |> filter(gene_id == "COX1")
+```
+
+<!----
+<details><summary>Click for the solution</summary>
+
+The first works, but the second fails with an error that the `gene_id` column/object can't be found:
+in a pipeline, each function only "sees" the output of the previous step,
+and `select()` already removed the `gene_id` column before `filter()` got the data.
+
+</details>
+---->
+
+:::
+
+## Reshaping data frames
 
 ### Tidy data
 
@@ -672,287 +932,168 @@ with separate columns for the time point and the height:
 
 <hr style="height:1pt; visibility:hidden;" />
 
-The `penguins` data set is an example of tidy data, with one row for each penguin.
+Our **count table** is not tidy either: each sample is in a separate column.
+One observation is a gene count across one sample,
+so right now we have many observations per gene in a single row.
 
-::: callout-tip
-#### Organizing your spreadsheet data
+This "**wide**" format is the standard way to store count tables,
+and it is what we'll need for the differential expression analysis in week 15.
+But because tidyverse functions are designed to work with tidy data,
+it is often easier to reshape data into a "**long**", tidy format first.
 
-Tidyverse functions are designed to work with tidy data,
-so organizing your data this way from the start
+::: {.callout-tip collapse="true"}
+#### Organizing your spreadsheet data: tidy or not? _(Click to expand)_
+
+Organizing your own data in tidy form from the start
 will make your analyses easier.
 That said, a wide format can be more convenient for entering data,
 for example when you add a column after each measurement round.
-That is fine, since you can reshape data in R with
-`pivot_longer()` and `pivot_wider()`,
-as you'll see in [Wednesday's lecture](w13b_data-viz.qmd#reshaping-data-for-plotting).
+That is fine, since you can reshape data in R, as you'll see next.
 :::
 
-### Tibbles
+### `pivot_longer()` to go from wide to long
 
-The tidyverse has its own variant of a data frame, called a **tibble**.
-The main difference is the nicer default printing behavior of tibbles:
-e.g. the data types of columns are shown,
-and only a limited number of rows are printed.
-
-To turn a regular data frame into a tibble, use the `as_tibble()` function.
-Let's do that for `penguins`, and assign the result back to the same name:
+The `pivot_longer()` function from the tidyverse's _tidyr_ package
+turns a wide data frame into a long one:
 
 ```{r}
-penguins <- as_tibble(penguins)
-penguins
+counts_long <- counts |>
+  pivot_longer(
+    cols = !gene_id, # the columns to combine: all but gene_id
+    names_to = "sample_id", # new column with the old column names
+    values_to = "count" # new column with the values
+  )
+
+counts_long
 ```
 
-The `fct` in the output stands for **factor**, a data type for categorical data
-(more on factors [below](#setting-a-custom-order-with-factors)).
+The long data frame has one row for each combination of gene and sample:
+18,855 genes x 22 samples = 414,810 rows.
 
-## Subsetting and sorting with _dplyr_
+## Transforming data frames
 
-The _dplyr_ package provides useful functions for
-**manipulating data in data frames**, such as for "data wrangling":
-cleaning and transforming your data to make it easier to visualize and analyze.
-In this lecture, we'll cover some of the most commonly used _dplyr_ functions:
+With the long data frame format,
+it is easy to answer questions about samples or genes
+--- we'll focus on the library size of each sample here.
 
-- `select()` to pick columns (variables)
-- `filter()` to pick rows (observations)
-- `arrange()` to change the order of rows (i.e., to sort a data frame)
-- `mutate()` to modify values in columns and create new columns
-- `summarize()` to compute across-row summaries
+### `summarize()` to compute summary stats
 
-All these functions have the same input/output behavior:
-
-- Their input is a data frame
-- Their output is a **new, modified** data frame
-
-### `select()` to pick columns (variables)
-
-The first `dplyr` function you'll learn about is `select()`,
-which subsets a data frame by including/excluding certain columns.
-By default, it only **includes the columns you specify**:
+The `summarize()` function computes **summaries across rows**.
+For example, to compute the sum of all counts:
 
 ```{r}
-select(.data = penguins, body_mass, species, island)
+# The syntax is: <new-column> = <operation>
+counts_long |>
+  summarize(total_count = sum(count))
 ```
 
-Above, the first argument was the data frame,
-whereas the other arguments were the names of columns to be included
-in the output data frame.
-Note that each column is a separate argument:
-you don't combine the column names into a vector with `c()`.
-Other _dplyr_ functions that take multiple columns work the same way.
+Unlike the previous _dplyr_ functions,
+`summarize()` "**collapses**" the data down,
+here to a single row.
 
-::: callout-tip
-#### Why aren't the column names quoted?
-Above, the column names were not quoted, which may seems strange:
-you learned that R interprets anything that is not quoted as an object,
-and there are no objects called `body_mass` and so on.
-But _dplyr_ functions first look for such names among the columns of the data frame,
-so _inside these functions_,
-you can think of each column as an object (a vector) whose name is the column name.
-:::
-
-The **column order** in the output is exactly as you list them in `select()`,
-and doesn't need to be the same as in the input data frame.
-In other words, `select()` is also one way to reorder columns:
-in the example above, we made `body_mass` appear first,
-even though it is the sixth column of `penguins`.
-
-You can also specify columns that should be **excluded**,
-by prefacing their name with a `!`:
+This is more useful when computed for **groups of rows**.
+With the `.by` argument, the summary is computed separately for groups of rows ---
+here, the across-gene counts sum for *each sample*:
 
 ```{r}
-select(.data = penguins, !year)
+lib_sizes <- counts_long |>
+  summarize(lib_size = sum(count), .by = sample_id)
+
+lib_sizes
 ```
 
-### `filter()` to pick rows (observations)
+:::exercise
+#### {{< fa user-edit >}} Self-study exercise: `summarize()`
 
-The `filter()` function outputs only those rows that satisfy one or more conditions.
+Compute the number of genes with zero counts for each sample.
+(Hint: recall how you [counted elements that meet a condition](#comparing-things).)
 
-#### Filter based on one condition
-
-This first `filter()` example outputs only rows (penguins) from the island Dream:
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
 ```{r}
-filter(.data = penguins, island == "Dream")
+counts_long |>
+  summarize(n_zero = sum(count == 0), .by = sample_id)
 ```
-
-<details class="details-quiz">
-<summary>How many rows were output?</summary>
-
-124 rows were output, as shown in the first line above: `124 x 8` (rows x columns).
 
 </details>
-
-::: {.callout-warning appearance='simple'}
-Remember to use **two** equals signs `==` to test for equality!
 :::
 
-#### Filter based on multiple conditions
+:::{.callout-note collapse="true"}
+#### The `group_by()` function _(Click to expand)_
 
-It's also possible to filter based on multiple conditions.
-For example, you may want to see Gentoo penguins with a body mass above 5,000 g:
-
-```{r}
-filter(.data = penguins, species == "Gentoo", body_mass > 5000)
-```
-
-As in the example above, multiple conditions are by default combined
-using a Boolean ***AND***.
-In other words, in a given row, _each_ condition must be met to output the row.
-
-::: {.callout-note collapse="true"}
-#### Other ways to combine conditions _(Click to expand)_
-
-If you want to combine conditions using a Boolean ***OR***,
-where only one of the conditions needs to be met,
-use a `|` (vertical bar) between the conditions:
+In tutorials and other people's code,
+you'll often see groupwise operations written with a separate `group_by()` step
+instead of `.by`:
 
 ```{r}
-# Keep penguins that are either from Dream OR have a body mass above 5,000 g:
-filter(.data = penguins, island == "Dream" | body_mass > 5000)
+counts_long |>
+  group_by(sample_id) |>
+  summarize(lib_size = sum(count))
 ```
 
-To keep rows whose value matches any one of several values,
-use the `%in%` operator with a vector of those values ---
-for example, to keep penguins from two of the three islands:
+Unlike `.by`, `group_by()` creates a grouped data frame,
+and that grouping can stick around after `summarize()`.
+For example, when you group by two columns,
+`summarize()` only removes the _last_ grouping column,
+and prints a message that it "has regrouped the output":
 
 ```{r}
-filter(.data = penguins, island %in% c("Dream", "Biscoe"))
+counts_long |>
+  mutate(zero = count == 0) |>
+  group_by(sample_id, zero) |>
+  summarize(n_genes = n())
 ```
 
+The output is still grouped by `sample_id` (see the `# Groups:` line),
+which can affect later steps like `mutate()` or `filter()`.
+You can remove the grouping by adding `ungroup()` to the pipeline.
+With `.by`, the grouping only applies to that single operation,
+so you don't have to worry about this.
+
+Another difference is that `group_by()` sorts the output by the grouping columns,
+while `.by` keeps the groups in the order they first appear in the data.
 :::
 
-### The pipe (`|>`)
+### `mutate()` to modify columns and create new ones
 
-Examples so far applied a single _dplyr_ function to a data frame,
-simply printing the output (a new data frame) to screen.
-But in practice, it's common to use several consecutive _dplyr_ functions to
-wrangle a data frame into the format you want.
-
-For example, you may want to first `filter()` rows,
-and _then_ `select()` columns.
-You could do that as follows:
+Library sizes are easier to read in millions.
+The `mutate()` function can add a column based on a **computation** with existing columns:
 
 ```{r}
-penguins_filt <- filter(.data = penguins, island == "Dream")
+# The syntax is: <new-column> = <operation>
+lib_sizes <- lib_sizes |>
+  mutate(lib_size_M = lib_size / 1e6) # 1e6 is 1 million
 
-select(.data = penguins_filt, species, body_mass)
+lib_sizes
 ```
 
-And you could go on like this,
-successively creating new objects you use for the next step.
-But this should remind you of [the shell pipe](../week04/w4c_shell-files2.qmd#the-pipe):
-there, we used `|` to avoid writing intermediate files,
-and R has a pipe that avoids creating intermediate objects like `penguins_filt`.
-
-The R **pipe operator** `|>`,
-which is a vertical bar <kbd>|</kbd> followed by a greater-than sign <kbd>></kbd>,
-directly sends ("pipes") the output of one function into the next function.
-Let's start by seeing a rephrasing of the code above, now using pipes:
-
-```{r}
-penguins |>
-  filter(island == "Dream") |>
-  select(species, body_mass)
-```
-
-What happened here? We took the `penguins` data frame,
-sent ("piped") it into the `filter()` function,
-whose output in turn was piped into the `select()` function.
-You can think of the pipe as **"then"**:
-take `penguins`, _then_ filter, _then_ select.
-
-When using the pipe,
-you no longer specify the input data frame with the `.data` argument,
-because the function now gets its input data via the pipe^[
-Specifically, the input goes to the function's first argument by default.] ---
-just like `wc` in the shell no longer needed a file name argument
-when it got its input via the pipe.
-
-::: {.callout-tip appearance='minimal'}
-Using pipes involves less typing and, above all, is more readable than using
-successive assignments.
-
-For code readability,
-it is good practice to always start a new line after a pipe `|>`,
-and to keep the subsequent line(s) _indented_ as Positron will automatically do.
-Positron can also [tidy up your code formatting](../bonus/r.qmd#formatting-code-with-air) for you.
-:::
-
-::: callout-note
-#### Using the pipe keyboard shortcut
-
-In Positron, you can insert a pipe with the keyboard shortcut
-<kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>M</kbd>.
-
-In code online, you will also often see an older pipe symbol, `%>%`,
-which works the same in most cases,
-but only when you have one of the tidyverse packages loaded.
-:::
-
-::: exercise
-#### {{< fa user-edit >}} Exercise 2: Pipes
-
-1. Use a "pipeline" like above to output a data frame with two
-   columns (`island` and `body_mass`) only for Chinstrap penguins.
-   How many rows does your output data frame have?
-
-<!----
-   <details><summary>Click for the solution</summary>
-
-   ```{r}
-   penguins |>
-     filter(species == "Chinstrap") |>
-     select(island, body_mass)
-   ```
-
-   The output data frame has 68 rows and 2 columns.
-
-   </details>
----->
-
-2. The two pipelines below differ only in the order of `filter()` and `select()`.
-   **Predict** whether each of them will work, and why. Then run them to check.
-
-   ```r
-   penguins |> filter(island == "Dream") |> select(species, body_mass)
-   penguins |> select(species, body_mass) |> filter(island == "Dream")
-   ```
-
-<!----
-   <details><summary>Click for the solution</summary>
-
-   The first works, but the second fails with an error that the `island` column/object can't be found:
-   in a pipeline, each function only "sees" the output of the previous step,
-   and `select()` already removed the `island` column before `filter()` got the data.
-
-   </details>
----->
-
-:::
+Like operations on vectors,
+the division was applied to every element of the `lib_size` column.
+To **modify** an existing column rather than adding a new one,
+simply use the existing column name on the left-hand side,
+as you'll do in [Wednesday's lecture](w13b_data-viz.qmd#box-plots).
 
 ### `arrange()` to sort data frames
 
-The `arrange()` function is like sorting functionality in Excel:
-it changes the order of rows based on the values in one or more columns^[
+The `arrange()` function changes the order of rows based on the values in one or more columns^[
 Entire rows are always moved together:
 it never reorders the values within a single column on its own,
 because that would scramble the data.].
-Among other things, sorting can help you find observations with the smallest or
-largest values for a certain column.
-
-For example, to see the lightest penguins first, sort by `body_mass`:
+For example, to see which samples have the smallest library sizes:
 
 ```{r}
-penguins |>
-  arrange(body_mass)
+lib_sizes |>
+  arrange(lib_size_M)
 ```
+
+Most samples have 15--30 million counts, but sample `S77` has fewer than 10 million.
 
 Default sorting is from small to large for numbers, and alphabetical for character strings.
 To sort in reverse order, use the `desc()` (descending) helper function:
 
 ```{r}
-penguins |>
-  arrange(desc(body_mass))
+lib_sizes |>
+  arrange(desc(lib_size_M))
 ```
 
 ::: {.callout-note collapse="true"}
@@ -963,280 +1104,171 @@ where ties in the first column are broken by a second column (and so on),
 simply list the columns in the appropriate order:
 
 ```{r}
-# Sort first by species, then from heaviest to lightest within each species:
-penguins |>
-  arrange(species, desc(body_mass))
+# Sort first by sample, then from highest to lowest count within each sample:
+counts_long |>
+  arrange(sample_id, desc(count))
 ```
 :::
 
-## Modifying and summarizing data
+## Joining data frames
 
-### `mutate()` to modify columns and create new ones
+Do library sizes differ between treatments?
+To answer this, you need the metadata, to get the treatment for each sample.
 
-So far, we've focused on functions that subset and reorganize data frames.
-But you haven't yet seen how to make **changes to the values** in the dataframe
-or add columns based on **computations** of existing columns.
-All of this can be done with the `mutate()` function.
+### Reading the metadata
 
-For example, to add a column with the body mass in kilograms:
-
-```{r}
-# The syntax is: <new-column> = <operation>
-penguins |>
-  select(species, body_mass) |>
-  mutate(body_mass_kg = body_mass / 1000)
-```
-
-Like operations on vectors,
-the division was applied to every element of the `body_mass` column.
-(We used `select()` first only so that the new column, which is added at the end,
-fits on the screen.)
-
-The above example added a new column to the data frame.
-To **modify** an existing column rather than adding a new one,
-simply "assign back to the same name".
-For example, to convert the `body_mass` column itself to kilograms:
-
-```{r}
-penguins |>
-  select(species, body_mass) |>
-  mutate(body_mass = body_mass / 1000)
-```
-
-### `summarize()` to compute summary stats
-
-The final _dplyr_ function we'll cover is `summarize()`,
-which computes **summaries** of your data **across rows**.
-For example, to compute the mean body mass across all penguins:
-
-```{r}
-# The syntax is similar to 'mutate': <new-column> = <operation>
-penguins |>
-  summarize(mean_mass = mean(body_mass))
-```
-
-The result is `NA`, because two penguins have a missing value for `body_mass`.
-Just like with vectors, you can get around this with `na.rm = TRUE`:
-
-```{r}
-penguins |>
-  summarize(mean_mass = mean(body_mass, na.rm = TRUE))
-```
-
-The output is still a data frame, but unlike with the previous _dplyr_ functions,
-its rows are not the rows of the input:
-`summarize()` "**collapses**" the data down, here to a single number.
-
-`summarize()` becomes really powerful in combination with its `.by` argument,
-which lets you compute **groupwise** stats.
-For example, to get the mean body mass for each species,
-along with the number of penguins, using the helper function `n()`, which simply counts rows:
-
-```{r}
-penguins |>
-  summarize(
-    mean_mass = mean(body_mass, na.rm = TRUE),
-    n_penguins = n(),
-    .by = species
-  )
-```
-
-`.by` splits a data frame into groups of rows:
-here, one group for observations from each species.
-The operations in `summarize()` then happen separately for each group,
-which is how we ended up with per-species means and counts.
-
-:::exercise
-#### {{< fa user-edit >}} Self-study exercise: `summarize()`
-
-Count the number of penguins for each _combination_ of species and island
-(hint: to group by multiple columns, use `.by = c(<column1>, <column2>)`).
-Before running your code, **predict** how many rows the output will have.
-
-<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
-
-The output has 5 rows, not 3 species × 3 islands = 9:
-Adelie penguins were found on all three islands,
-but Chinstrap penguins only on Dream, and Gentoo penguins only on Biscoe.
-`summarize()` only outputs combinations that occur in the data.
-
-```{r}
-penguins |>
-  summarize(n_penguins = n(), .by = c(species, island))
-```
-
-</details>
-:::
-
-Counting rows per group is so common that _dplyr_ has a shortcut for it, `count()`,
-which does the grouping and counting in one step:
-
-```{r}
-penguins |>
-  count(species, island)
-```
-
-This gives the same counts as the exercise solution,
-with the count column named `n`.
-
-:::{.callout-note collapse="true"}
-#### The `group_by()` function _(Click to expand)_
-
-In tutorials and other people's code,
-you'll often see groupwise operations written with a separate `group_by()` step
-instead of `.by`:
-
-```{r}
-penguins |>
-  group_by(species) |>
-  summarize(n_penguins = n())
-```
-
-Unlike `.by`, `group_by()` creates a grouped data frame,
-and that grouping can stick around after `summarize()`.
-For example, when you group by two columns,
-`summarize()` only removes the _last_ grouping column,
-and prints a message that it "has regrouped the output":
-
-```{r}
-penguins |>
-  group_by(species, island) |>
-  summarize(n_penguins = n())
-```
-
-The output is still grouped by `species` (see the `# Groups:` line),
-which can affect later steps like `mutate()` or `filter()`.
-You can remove the grouping by adding `ungroup()` to the pipeline.
-With `.by`, the grouping only applies to that single operation,
-so you don't have to worry about this.
-
-Another difference is that `group_by()` sorts the output by the grouping columns,
-while `.by` keeps the groups in the order they first appear in the data.
-:::
-
-## Reading and writing files
-
-So far, you've worked with a data set that comes with R,
-but your own data will usually be in files.
-As an example, we'll read, modify, and write the metadata of the RNA-seq data set
-that you've been working with.
-
-### Reading a TSV file
-
-_readr_  is one of the packages that is loaded as part of the core tidyverse,
-and has functions for reading and writing tabular data to and from plain-text
-files like CSV (comma-separated) and TSV (tab-separated) files.
-
-The `read_tsv()` function will read TSV files^[
-  And `read_csv()` reads CSV files.
-] --- for example:
-
-```{r eval= FALSE}
+```{r eval=FALSE}
 meta <- read_tsv(file = "../garrigos/meta/metadata.tsv")
 ```
 
-```{r echo= FALSE}
+```{r echo=FALSE}
 meta <- read_tsv(file = "../assets/week13/metadata.tsv")
 ```
-
-Note that this function is rather chatty,
-telling you how many rows and columns it read, and what their data types are.
-Let's check the resulting object, which is a tibble:
 
 ```{r}
 meta
 ```
 
-### Modifying the metadata
-
-Let's make two changes to the metadata with `mutate()`.
-First, we'll shorten the sample IDs
-by removing the shared `S` prefix with the `sub()` function,
-which does a character-based search-and-replace.
-It takes three arguments: the pattern to search for, what to replace the pattern
-with, and the subject vector:
+How many samples are there for each combination of treatment and time point?
+Counting rows per group is so common that _dplyr_ has a shortcut for it, `count()`:
 
 ```{r}
 meta |>
-  mutate(
-    sample_id = sub(pattern = "S", replacement = "", x = sample_id)
-  )
+  count(treatment, time)
 ```
 
-#### Setting a custom order with factors
+### `left_join()` to combine data frames
 
-Because character strings are sorted alphabetically,
-sorting the metadata table by `time` puts `10dpi` before `24hpi` ---
-but 24 hpi is the earlier time point!
-
-To fix this, you can turn the column into a **factor**,
-R's way of storing categorical data with a set order of categories ("levels").
-(The `species`, `island`, and `sex` columns in `penguins` are already factors.)
+The `left_join()` function adds the columns of a second data frame to the first one,
+by matching rows on the values of a shared column, which you specify with `by`:
 
 ```{r}
-meta |>
-  mutate(time = factor(time, levels = c("24hpi", "10dpi"))) |>
-  arrange(time)
+lib_sizes |>
+  left_join(meta, by = "sample_id")
 ```
 
-This order is also respected in plots and statistical analyses,
-and you'll use factors like this for the RNA-seq analysis in week 15.
-
-Finally, let's make both changes in a single `mutate()` call,
-and assign the result to a new object:
+Each sample now has its treatment and time point.
+Then, you can compute the mean library size for each treatment:
 
 ```{r}
-meta_clean <- meta |>
-  mutate(
-    sample_id = sub(pattern = "S", replacement = "", x = sample_id),
-    time = factor(time, levels = c("24hpi", "10dpi"))
-  )
+lib_sizes |>
+  left_join(meta, by = "sample_id") |>
+  summarize(mean_lib_size_M = mean(lib_size_M), .by = treatment)
 ```
 
-### Writing to files
+The library sizes differ somewhat between treatments ---
+differences like these are one reason that counts need to be _normalized_
+before comparing them between samples, as you'll do in week 15.
 
-To write a data frame to a TSV file, you can use the `write_tsv()` function,
-with argument `x` for the R object and argument `file` for the file path:
+::: {.callout-note collapse="true"}
+#### Which genes are most highly expressed? _(Click to expand)_
+
+Let's compute the mean count for each gene across all samples,
+and sort genes from highest to lowest mean count:
+
+```{r}
+gene_means <- counts_long |>
+  summarize(mean_count = mean(count), .by = gene_id) |>
+  arrange(desc(mean_count))
+
+gene_means
+```
+
+But what are these genes?
+The gene IDs alone don't tell you,
+so let's add information from the genome annotation (GTF) file.
+To make things easier, we've extracted a table from this file
+with one row per gene and these columns:
+
+- `gene_id`: Gene ID, as in the count table
+- `chromosome`: Chromosome (`chr1`--`chr3` and `MT` for the mitochondrial genome),
+  or `NA` for genes on smaller pieces of the genome assembly that have not been placed on a chromosome
+- `biotype`: Type of gene, such as `protein_coding` or `lncRNA`
+- `description`: Description of the gene product
+- `transcript_length`: Length (bp) of the gene's longest transcript
 
 ```{r eval=FALSE}
-write_tsv(x = meta_clean, file = "metadata_clean.tsv")
+genes <- read_tsv(file = "/fs/ess/PAS3493/share/week13/genes.tsv")
 ```
 
-A plain-text file like this can't store the order of factor levels,
-so if you read the file back in, `time` will be a character column again.
+```{r echo=FALSE}
+genes <- read_tsv(file = "../assets/week13/genes.tsv")
+```
+
+Let's join this table with the mean counts:
+
+```{r}
+gene_means <- gene_means |>
+  left_join(genes, by = "gene_id")
+
+gene_means
+```
+
+Several of the most highly expressed genes are vitellogenins,
+which are yolk proteins that female mosquitoes produce after a blood meal.
+
+Note the `NA`s for `unassigned_gene_22`:
+"unassigned genes" are not in the annotation,
+and `left_join()` keeps all rows of the first data frame,
+filling in `NA` when there is no match in the second one.
+
+Now you can combine information from both tables ---
+for example, are there highly expressed long noncoding RNA genes (lncRNAs)?
+
+```{r}
+gene_means |>
+  filter(biotype == "lncRNA", mean_count > 1000)
+```
+
+Finally, what kinds of genes are not expressed at all?
+
+```{r}
+gene_means |>
+  filter(mean_count == 0) |>
+  count(biotype)
+```
+
+Most of these are tRNA and rRNA genes,
+which is expected for typical RNA-seq data:
+library prep usually selects for polyadenylated RNA (mostly mRNA),
+which excludes these RNAs.
+
+:::
+
+## Writing to files
+
+To write a data frame to a TSV file, you can use the `write_tsv()` function,
+with argument `x` for the R object and argument `file` for the file path ---
+for example, to save the library sizes:
+
+```{r eval=FALSE}
+write_tsv(x = lib_sizes, file = "lib_sizes.tsv")
+```
 
 If you want to take a look at the file you just created,
 find it in the **Explorer** and click on it.
 Positron opens CSV and TSV (and even Excel) files in the Data Explorer,
 just like a data frame:
 
-<!-- TODO: screenshot of metadata_clean.tsv in the Data Explorer -->
+<!-- TODO: screenshot of lib_sizes.tsv in the Data Explorer -->
 
 This is a quick way to look at any data file without reading it into R,
 for example to check its column names before you read it.
 To see the plain text instead,
 click the "Open as Plain Text File" button at the top of the Data Explorer.
 
-## Recap and looking forward
+## Recap
 
 - A vector is a collection of elements of a single data type
   (`character`, `double`, `integer`, or `logical`).
-  Operations on vectors are vectorized: they happen for each element.
+- Operations on vectors are vectorized: they happen for each element.
 - Comparisons return logicals, and `sum()` on these counts the `TRUE`s.
 - Missing values are coded as `NA`;
   use `na.rm = TRUE` to ignore them in functions like `sum()` and `mean()`.
-- Each column of a data frame is a vector,
-  so different columns can contain different types of data.
-- _dplyr_ functions like `select()`, `filter()`, `arrange()`,
-  `mutate()`, and `summarize()` manipulate data frames,
-  and the pipe `|>` chains them together.
 - `read_tsv()` and `write_tsv()` read and write TSV files.
-- Factors store categorical data with a set order of categories.
+- _dplyr_ functions like `filter()` and `summarize()`,
+  manipulate data frames, and the pipe `|>` chains them together.
+- `pivot_longer()` reshapes a wide data frame into a long one,
+  and `left_join()` combines data frames.
 
-::: callout-note
-### Learn more
-
-Two more useful data wrangling skills,
-[reshaping with `pivot_wider()` and joining data frames](../bonus/r.qmd#data-wrangling),
-are covered on the optional R self-study page.
-:::
+<hr style="height:1pt; visibility:hidden;" />

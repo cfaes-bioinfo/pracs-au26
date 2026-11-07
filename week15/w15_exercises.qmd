@@ -19,9 +19,6 @@ other-links:
   - text: "w15a: RNA-seq count data analysis in R"
     icon: book
     href: w15a_rnaseq.html
-  - text: "Optional self-study: Bioconductor"
-    icon: book
-    href: ../bonus/r-omics.html
 language:
   title-block-published: "Week starts on"
   title-block-modified: "Page last modified"
@@ -37,9 +34,10 @@ number-sections: false
 
 ### Overview
 
-In Exercises 1--6, you'll continue exploring the RNA-seq results from
+In Exercises 1--5, you'll continue exploring the RNA-seq results from
 [this week's lecture](w15a_rnaseq.qmd).
-In Exercise 7, you'll turn your analysis into a polished Quarto report,
+In Exercises 6--8, you'll turn your analysis into a polished Quarto report,
+render it from a subfolder, and render it for GitHub,
 practicing with the Quarto material from
 [week 14](../week14/w14a_quarto.qmd).
 
@@ -76,7 +74,6 @@ dds <- readRDS("results/DE/dds.rds")
 
 # Recreate some other objects from the lecture
 meta <- as.data.frame(colData(dds))
-count_mat <- counts(dds)
 dds_vst <- varianceStabilizingTransformation(dds)
 res_rc24 <- results(
   dds,
@@ -100,7 +97,6 @@ library(tidyverse)
 dds <- readRDS(here::here("assets/week15/dds_full_but-old.rds"))
 colnames(dds) <- sub("^ERR108028", "S", colnames(dds))
 meta <- as.data.frame(colData(dds))
-count_mat <- counts(dds)
 dds_vst <- varianceStabilizingTransformation(dds)
 res_rc24 <- results(
   dds,
@@ -113,44 +109,7 @@ res_df <- res_rc24 |>
   mutate(DEG = padj < 0.05)
 ```
 
-## Exercise 1: Gene counts and library sizes
-
-1. How many genes have *mean* counts (across all samples) of at least 10?
-
-2. In the lecture, we computed the "library sizes" (summed gene counts per sample)
-   with `colSums(count_mat)`.
-   That output is not so easy to read or interpret.
-   Instead, get these numbers in millions, rounded to whole numbers,
-   and sorted from low to high.
-
-3. Make a bar plot of the library sizes with _ggplot2_.
-   To plot the counts, you first need a data frame in long format,
-   with one row per gene per sample
-   (as in [week 13](../week13/w13b_data-viz.qmd#reshaping-data-for-plotting)).
-   You can create one from `count_mat` as follows:
-
-   ```{r}
-   count_long <- count_mat |>
-     as.data.frame() |>
-     rownames_to_column("gene_id") |>
-     pivot_longer(
-       cols = !gene_id, # All columns except 'gene_id'
-       names_to = "sample_id",
-       values_to = "count"
-     )
-   ```
-
-   Then, compute the library size of each sample with `summarize()` and its `.by` argument,
-   and pipe the result into `ggplot()`.
-
-4. Make a histogram of the `count` column of `count_long`.
-   Why is this plot hard to interpret?
-
-5. Plot `log10(count + 1)` instead.
-   What does the distribution look like now?
-   And why do you think we add 1 to the counts?
-
-## Exercise 2: Volcano plots and outliers
+## Exercise 1: Volcano plots and outliers
 
 In the lecture's volcano plot, one gene stands out with a very high log~2~-fold change.
 
@@ -212,7 +171,7 @@ In the lecture's volcano plot, one gene stands out with a very high log~2~-fold 
    Do they have similar expression patterns across treatments and time points
    as the top DEG?
 
-## Exercise 3: A customized PCA plot
+## Exercise 2: A customized PCA plot
 
 1. Compare the PCA plot with different numbers of included genes.
    (Hint: figure out how to do so by looking at the help by running `?plotPCA`.)
@@ -250,7 +209,7 @@ of ggplot2.
 
 </details>
 
-## Exercise 4: More DEGs
+## Exercise 3: More DEGs
 
 1. The paper's Table 1 reports the numbers of **up- and downregulated** DEGs separately.
    Find these numbers for the `relictum_24hpi` vs. `control_24hpi` comparison.
@@ -262,7 +221,7 @@ of ggplot2.
 3. Extract the results for one or more **other contrasts** in the paper's Table 1,
    and compare the numbers of DEGs with those in the table.
 
-## Exercise 5: Heatmaps
+## Exercise 4: Heatmaps
 
 Rather than plotting expression levels for many individual genes,
 you can create "heatmap" plots to plot dozens (possibly even hundreds) of genes at once.
@@ -336,41 +295,26 @@ top25_hi <- names(sort(rowMeans(norm_mat), decreasing = TRUE)[1:25])
 
 </details>
 
-## Exercise 6: Adding gene descriptions to the DE results
+## Exercise 5: Adding gene information to the DE results
 
 The gene IDs in the results table, like `LOC120423768`, don't tell you much about the genes.
-The GTF file with the genome annotation, which you explored in [week 4](../week04/w4_exercises.qmd),
-contains a description for each gene.
-The following code extracts these into a data frame with one row per gene,
-and columns `gene_id` and `description`:
+In week 13, you used the gene annotation table `genes.tsv`,
+which has a description and biotype for each gene.
+Here, you'll add this information to the DEGs.
 
-```{r, eval=FALSE}
-gene_descr <- read_tsv(
-  "../garrigos/ref/annot.gtf.gz",
-  col_names = FALSE,
-  comment = "#",
-  quote = "",
-  show_col_types = FALSE
-) |>
-  filter(X3 == "gene") |>
-  mutate(
-    gene_id = str_extract(X9, 'gene_id "([^"]+)"', group = 1),
-    description = str_extract(X9, 'description "([^"]+)"', group = 1)
-  ) |>
-  select(gene_id, description)
-```
-
-1. Run the code above, and take a look at `gene_descr`.
+1. Read the file `/fs/ess/PAS3493/share/week13/genes.tsv` into a data frame `genes`.
 
 2. Convert `res_rc24` to a data frame,
    and move its row names (the gene IDs) into a column called `gene_id`
    (hint: `rownames_to_column()`).
 
-3. Add the gene descriptions to this data frame with `left_join()`
-   (see [chapter 19 of R for Data Science](https://r4ds.hadley.nz/joins.html)),
+3. Add the gene information to this data frame with `left_join()`,
    and look at the descriptions of the top-10 DEGs.
 
-## Exercise 7: A polished Quarto report
+4. How many of the DEGs (adjusted p-value below 0.05) are protein-coding genes,
+   and how many are lncRNAs?
+
+## Exercise 6: A polished Quarto report
 
 Use the Quarto material from [week 14](../week14/w14a_quarto.qmd) to turn
 your `w15_exercises.qmd` into a nicely formatted report.
@@ -385,7 +329,7 @@ your `w15_exercises.qmd` into a nicely formatted report.
 3. Hide the code (but not the output) of the setup chunk at the top of your document
    with a chunk option.
 
-4. Give your volcano plot from Exercise 2 a figure caption and a custom width and height
+4. Give your volcano plot from Exercise 1 a figure caption and a custom width and height
    (see the [figure options](../week14/w14a_quarto.qmd#figure-options) from week 14).
 
 5. In your text, report the number of DEGs for the `relictum_24hpi` vs. `control_24hpi`
@@ -393,78 +337,52 @@ your `w15_exercises.qmd` into a nicely formatted report.
 
 6. Render the document and check that everything looks the way you intended.
 
+## Exercise 7: Rendering from a subfolder
+
+Here, you'll run into the
+[working directory issue](../week14/w14a_quarto.qmd#the-working-directory-when-rendering-and-the-here-package)
+from week 14, and fix it with the `here()` function.
+
+1. In the terminal, create a folder `reports` inside your `week15` folder,
+   and move your `w15_exercises.qmd` into it.
+   Then, render the document.
+   Why does this fail?
+
+2. In the terminal, create an empty file `.here` in your `week15` folder,
+   so that `here()` will treat `week15` as the top-level folder.
+
+3. Install and load the _here_ package,
+   and change the `readRDS()` line in your setup chunk to use `here()`.
+   Then, render the document again,
+   and check that the setup chunk also still works when you run it interactively.
+
+## Exercise 8: Output for GitHub
+
+Here, you'll render your report to GitHub-Flavored Markdown
+and view it on GitHub, like you can do for your final project
+(see the "Output for GitHub" tip in the [week 14 section on rendering from the terminal](../week14/w14a_quarto.qmd#rendering-from-the-terminal)).
+
+1. Add `gfm` as a second output format in your YAML header.
+
+2. Render the document to both formats in the terminal.
+   Which new files and folders were created?
+
+3. Open the `.md` file in Positron, and look at it with the Markdown preview.
+   How are the plots included in the document?
+
+4. Turn your `reports` folder into a Git repository,
+   and commit the `.qmd`, `.md`, and `.html` files, and the `_files` folder.
+
+5. Create a new repository on GitHub,
+   connect your local repository to it, and push,
+   like in the [week 6 exercises](../week06/w6_exercises.qmd#exercise-1-github).
+
+6. On GitHub, click on the `.md` file and then on the `.html` file.
+   How do they look?
+
 ## Solutions
 
 ### Exercise 1
-
-<details><summary>**1.** Genes with mean counts of at least 10</summary>
-
-We need to divide the row sums by the number of samples, which is the number of columns,
-which we can get with `ncol()`:
-
-```{r}
-sum(rowSums(count_mat) / ncol(count_mat) >= 10)
-```
-
-Alternatively, you can use the `rowMeans()` function:
-
-```{r}
-sum(rowMeans(count_mat) >= 10)
-```
-
-</details>
-
-<details><summary>**2.** Library sizes in millions</summary>
-
-```{r}
-sort(round(colSums(count_mat) / 1000000))
-```
-
-</details>
-
-<details><summary>**3.** A bar plot of the library sizes</summary>
-
-```{r}
-count_long |>
-  summarize(lib_size = sum(count) / 1e6, .by = sample_id) |> # 1e6 = 1 million
-  ggplot(aes(x = sample_id, y = lib_size)) +
-  geom_col() +
-  labs(x = "Sample", y = "Library size (millions of counts)") +
-  theme_classic()
-```
-
-</details>
-
-<details><summary>**4.** A histogram of the gene counts</summary>
-
-```{r}
-count_long |>
-  ggplot(aes(x = count)) +
-  geom_histogram()
-```
-
-Nearly all counts end up in the first bar,
-because most genes have low counts while a few have counts in the millions,
-which stretches the x-axis.
-
-</details>
-
-<details><summary>**5.** A histogram of the log-transformed gene counts</summary>
-
-```{r}
-count_long |>
-  ggplot(aes(x = log10(count + 1))) +
-  geom_histogram(binwidth = 0.1)
-```
-
-There is a tall peak at 0 (genes with zero counts in a sample),
-and among the remaining genes, most have between 10 and 10,000 counts.
-We add 1 because `log10(0)` is `-Inf`,
-so genes with zero counts couldn't be plotted.
-
-</details>
-
-### Exercise 2
 
 <details><summary>**1.** The identity of the log~2~-fold change outlier</summary>
 
@@ -567,7 +485,7 @@ plotCounts(
 
 </details>
 
-### Exercise 3
+### Exercise 2
 
 <details><summary>**1.** PCA with different numbers of genes</summary>
 
@@ -620,7 +538,7 @@ pca_df |>
 
 </details>
 
-### Exercise 4
+### Exercise 3
 
 <details><summary>**1.** Up- and downregulated DEGs</summary>
 
@@ -686,7 +604,7 @@ sum(res_cc24$padj < 0.05, na.rm = TRUE)
 
 </details>
 
-### Exercise 5
+### Exercise 4
 
 Part 1 is a worked example, with the code in the exercise itself.
 
@@ -713,23 +631,51 @@ pheatmap(
 
 </details>
 
-### Exercise 6
+### Exercise 5
 
-<details><summary>**2.--3.** Adding the gene descriptions</summary>
+<details><summary>**1.** Read the gene annotation table</summary>
 
 ```{r, eval=FALSE}
-res_rc24 |>
+genes <- read_tsv("/fs/ess/PAS3493/share/week13/genes.tsv")
+```
+
+```{r, echo=FALSE, message=FALSE}
+genes <- read_tsv(here::here("assets/week13/genes.tsv"))
+```
+
+</details>
+
+<details><summary>**2.--3.** Adding the gene information</summary>
+
+```{r}
+res_genes <- res_rc24 |>
   as.data.frame() |>
   rownames_to_column("gene_id") |>
-  left_join(gene_descr, by = "gene_id") |>
+  left_join(genes, by = "gene_id")
+
+res_genes |>
   arrange(padj) |>
   select(gene_id, description, log2FoldChange, padj) |>
   head(n = 10)
 ```
 
+The two top DEGs are chymotrypsins,
+including `LOC120423767`, the gene plotted on the
+[optional R self-study page](../bonus/r.qmd#box-plots-of-gene-counts).
+
 </details>
 
-### Exercise 7
+<details><summary>**4.** Biotypes of the DEGs</summary>
+
+```{r}
+res_genes |>
+  filter(padj < 0.05) |>
+  count(biotype)
+```
+
+</details>
+
+### Exercise 6
 
 <details><summary>**1--5.** An example of the different elements of the report</summary>
 
@@ -780,5 +726,131 @@ res_rc24 |>
   We found `r "\x60r sum(res_rc24$padj < 0.05, na.rm = TRUE)\x60"` DEGs
   for the relictum vs. control comparison at 24 hpi.
   ```
+
+</details>
+
+### Exercise 7
+
+<details><summary>**1.** Moving the document and rendering it</summary>
+
+With `week15` as your working directory in the terminal:
+
+```bash
+mkdir reports
+mv w15_exercises.qmd reports/
+```
+
+Rendering fails at the `readRDS()` line, with an error that the file can't be opened.
+The working directory when rendering is now `week15/reports`,
+so the relative path `results/DE/dds.rds` points to `week15/reports/results/DE/dds.rds`,
+which doesn't exist.
+
+</details>
+
+<details><summary>**2.** Creating the `.here` file</summary>
+
+```bash
+touch .here
+```
+
+</details>
+
+<details><summary>**3.** Using `here()`</summary>
+
+Install the package in the Console:
+
+```{r, eval=FALSE}
+install.packages("here")
+```
+
+Then, in the setup chunk:
+
+```{r, eval=FALSE}
+library(here)
+# [...]
+dds <- readRDS(here("results/DE/dds.rds"))
+```
+
+`here("results/DE/dds.rds")` now always points to `week15/results/DE/dds.rds`,
+both when rendering (working dir `week15/reports`)
+and when running code interactively (working dir `week15`).
+
+</details>
+
+### Exercise 8
+
+<details><summary>**1.** Adding the `gfm` format</summary>
+
+```yaml
+format:
+  html:
+    embed-resources: true
+    toc: true
+    theme: cosmo
+  gfm: default
+```
+
+</details>
+
+<details><summary>**2.** Rendering to both formats</summary>
+
+With `week15` as your working directory in the terminal:
+
+```bash
+quarto render reports/w15_exercises.qmd
+```
+
+Besides the HTML file, this creates a Markdown file `reports/w15_exercises.md`,
+and a folder `reports/w15_exercises_files` with the plots as PNG files.
+
+</details>
+
+<details><summary>**3.** The plots in the `.md` file</summary>
+
+Unlike the self-contained HTML file,
+the `.md` file doesn't contain the plots themselves.
+Instead, it links to the PNG files in the `_files` folder,
+for example:
+
+```markdown
+![](w15_exercises_files/figure-commonmark/unnamed-chunk-3-1.png)
+```
+
+That's why you need to commit both the `.md` file and the `_files` folder
+to your GitHub repository.
+
+</details>
+
+<details><summary>**4.** Creating a Git repository and committing the files</summary>
+
+```bash
+cd reports
+git init
+git add w15_exercises.qmd w15_exercises.md w15_exercises.html w15_exercises_files
+git commit -m "Add week 15 exercises report"
+```
+
+</details>
+
+<details><summary>**5.** Connecting to GitHub and pushing</summary>
+
+After creating an empty repository on GitHub
+(without a README or any other files):
+
+```bash
+# (replace <SSH-URL-to-repo> with your repo's SSH URL,
+#  which looks like 'git@github.com:<github-username>/<repo-name>.git')
+git remote add origin <SSH-URL-to-repo>
+git push -u origin main
+```
+
+</details>
+
+<details><summary>**6.** The `.md` and `.html` files on GitHub</summary>
+
+GitHub displays the `.md` file as a formatted document, including the plots.
+The `.html` file, on the other hand, is shown as raw HTML code
+(or, because the embedded plots make it a large file,
+GitHub may only offer to show the raw file or download it).
 
 </details>

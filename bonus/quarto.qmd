@@ -1,0 +1,378 @@
+---
+title: "Additional Quarto material"
+subtitle: "Optional self-study content for week 14"
+pagetitle: "Bonus: Quarto"
+date: 2026-11-23
+date-modified: last-modified
+author:
+  - name: Jelmer Poelstra
+    orcid: 0000-0002-3514-7462
+    email: poelstra.1@osu.edu
+    affiliation:
+      - name: CFAES Bioinformatics Core, Ohio State University
+        url: https://go.osu.edu/bioinformatics-core
+      - name: Dept. of Plant Pathology, Ohio State University
+        url: https://plantpath.osu.edu
+other-links:
+  - text: "Week 14 overview"
+    icon: check2-all
+    href: ../week14/w14_overview.html
+  - text: "w14a: Quarto and reproducible R workflows"
+    icon: book
+    href: ../week14/w14a_quarto.html
+language:
+  title-block-published: "Published on"
+  title-block-modified: "Page last modified"
+bibliography: ../references.bib
+---
+
+--------------------------------------------------------------------------------
+
+<hr style="height:10pt; visibility:hidden;" />
+
+## Introduction
+
+This page contains additional Quarto material that builds on
+the [w14a lecture](../week14/w14a_quarto.qmd).
+You'll learn about chunk labels and two optional Positron features for Quarto documents,
+how to cite papers and software,
+how to avoid re-running slow code every time you render a document,
+and how to turn an existing R script into a Quarto document.
+
+## Chunk labels
+
+You can give a chunk a **label** with `#| label: <label-name>`.
+Labels must be unique within a document and cannot contain spaces.
+They show up in messages during rendering,
+which makes it easier to find the chunk that caused a problem:
+
+```{r}
+#| label: my-first-chunk
+#| echo: fenced
+2 + 3
+```
+
+## Positron features for Quarto documents
+
+### Showing the output below each chunk
+
+Positron can optionally show the output of each chunk right below it in the editor,
+as RStudio does by default.
+To turn this on, open the Settings and enable `quarto.inlineOutput.enabled`.
+
+With this setting turned on,
+Positron runs the code of each Quarto document in a separate R session,
+whose Console is not shown by default
+(to show it, enable `console.showNotebookConsoles`).
+The working directory of that R session is the document's folder,
+just like [when you render](../week14/w14a_quarto.qmd#the-working-directory-when-rendering).
+So, if your document is directly inside the folder you opened,
+your code works the same as in your regular Console.
+
+### The visual editor
+
+So far, you've edited Quarto documents in the default **source editor**,
+where you type everything yourself:
+the text, the code chunks, and the YAML header.
+This gives you full control, but requires knowing some Markdown and Quarto syntax.
+
+Positron also has a **visual editor** for Quarto documents,
+which is the same one you may have used for Markdown files in VS Code in
+[week 7](../week07/w7b_scripts2.qmd#markdown-setup),
+since both use the Quarto extension.
+In the visual editor, you can format text and add elements like tables and images
+with toolbar buttons, and see roughly how your document will look as you write,
+much like in Word or Google Docs.
+
+To switch between the two editors,
+click the `...` button in the top-right of the editor,
+and select "**Edit in Visual Mode**" or "**Edit in Source Mode**".
+
+<!---- TODO: Add a Positron screenshot of a Quarto document in the visual editor ---->
+
+## Citations and references
+
+Quarto can add citations and a reference list to your document,
+which is useful in reports, thesis chapters, and papers.
+This works in three steps:
+
+1. Store your references in a **bibliography file**.
+2. Point to that file in the YAML header.
+3. Cite references by their key in the text.
+
+### The bibliography file
+
+The most common bibliography format is **BibTeX**,
+whose files have the extension `.bib`.
+Each entry in a BibTeX file describes one reference,
+and starts with a **citation key** that you use to cite it ---
+`love2014` in this example:
+
+```{.bibtex .file filename="references.bib"}
+@article{love2014,
+  title = {Moderated estimation of fold change and dispersion for {RNA}-seq data with {DESeq2}},
+  author = {Love, Michael I. and Huber, Wolfgang and Anders, Simon},
+  year = {2014},
+  journal = {Genome Biology},
+  volume = {15},
+  pages = {550},
+  doi = {10.1186/s13059-014-0550-8}
+}
+```
+
+You rarely have to type these entries yourself:
+
+- Most journal websites have an "Export citation" or "Cite" button
+  with a BibTeX option.
+- Reference managers like [Zotero](https://www.zotero.org) can export your library,
+  or part of it, to a `.bib` file.
+- For R packages, run `citation("<package-name>")` in the R console,
+  which prints the package's preferred citation, including a BibTeX entry.
+- In Positron's visual editor, you can use "**Insert**" > "**Citation**"
+  to look up a reference by its DOI, or search for it,
+  and Quarto will add its entry to your bibliography file.
+
+### Pointing to the bibliography file
+
+Add the `bibliography` key to your YAML header,
+with the path to your `.bib` file
+(relative to the Quarto document, like other paths in the YAML header):
+
+```yaml
+---
+title: "My report"
+bibliography: references.bib
+---
+```
+
+### Citing references
+
+To cite a reference in your text, use `@` followed by its citation key,
+usually inside square brackets:
+
+| Markdown                          | Rendered output                 |
+|-----------------------------------|---------------------------------|
+| `DESeq2 [@love2014] is used...`   | DESeq2 [@love2014] is used...   |
+| `As shown by @love2014, ...`      | As shown by @love2014, ...      |
+| `[@love2014; @markowetz2015]`     | [@love2014; @markowetz2015]     |
+| `[see @love2014, p. 3]`           | [see @love2014, p. 3]           |
+
+When you render the document, Quarto formats each citation,
+and adds a reference list with all cited references at the end of the document ---
+as you can see at the bottom of this page.
+To put the reference list elsewhere,
+for example before an appendix,
+add an empty `refs` div in that spot:
+
+```markdown
+## References
+
+::: {#refs}
+:::
+```
+
+### Citation styles
+
+By default, Quarto uses the Chicago author-date style.
+To use a different style, such as that of the journal you are submitting to,
+download its `.csl` file from the [Zotero Style Repository](https://www.zotero.org/styles),
+and point to it with the `csl` key in the YAML header:
+
+```yaml
+---
+title: "My report"
+bibliography: references.bib
+csl: genome-biology.csl
+---
+```
+
+## Avoiding slow re-renders with caching
+
+### Why caching?
+
+Every time you render a Quarto document,
+_all_ of its code is run again, in a new R session
+(see [how rendering works](../week14/w14a_quarto.qmd#how-rendering-works)).
+That is what makes rendering reproducible,
+but it gets tedious when one chunk takes minutes to run ---
+like running `DESeq()` for a differential expression analysis next week ---
+while you're only editing the text.
+
+With **caching**, Quarto saves the results of a chunk the first time it runs,
+and loads those saved results in later renders instead of running the code again.
+
+### Turning on caching
+
+You can turn on caching for a single chunk with the `cache` chunk option:
+
+```{{r}}
+#| cache: true
+dds <- DESeq(dds)
+```
+
+Or for all chunks in the document, under `execute:` in the YAML header:
+
+```yaml
+---
+title: "My report"
+execute:
+  cache: true
+---
+```
+
+The saved results go in a folder next to your document:
+for `report.qmd`, that is `report_cache`.
+Don't commit this folder to Git ---
+instead, [add it to your `.gitignore` file](../week05/w5b_git.qmd#ignoring-files-and-directories),
+for example with the pattern `*_cache/`.
+
+Caching only affects rendering:
+when you run a chunk interactively, it always runs.
+
+### When cached results get outdated
+
+A cached chunk is run again only when **its own code** (or its chunk options) changes.
+Quarto does _not_ check whether anything else that the chunk uses has changed,
+such as an object made in an earlier chunk, or an input file.
+In those cases, the rendered document will show outdated results.
+
+For that reason:
+
+- Only cache the slow chunks, rather than turning on caching for the whole document.
+- When an earlier chunk or an input file has changed,
+  re-run all cached chunks with the `--cache-refresh` option:
+
+  ```bash
+  quarto render report.qmd --cache-refresh
+  ```
+
+- Before you share final results,
+  render the document once with `--cache-refresh`, or with caching turned off.
+
+::: {.callout-note collapse="true"}
+#### What about `freeze`? _(Click to expand)_
+
+When you search for ways to speed up rendering,
+you'll also come across the `freeze` option.
+This option only applies to Quarto **projects**:
+folders with a `_quarto.yml` file, such as websites (like this one!) and books.
+With `freeze`, documents in a project are only re-run when their source file changes,
+rather than every time the whole project is rendered.
+
+`freeze` is not used when you render a single document,
+so for your own Quarto documents, use `cache` instead.
+:::
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Caching
+
+1. Create a new Quarto document with a chunk that takes 5 seconds to run,
+   and prints the current time:
+
+   ```r
+   Sys.sleep(5)
+   Sys.time()
+   ```
+
+   Render the document twice: does it take equally long both times?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Yes: without caching, the chunk is run in each render,
+   so each render takes at least 5 seconds,
+   and the printed time changes.
+
+   </details>
+
+2. Add `#| cache: true` to the chunk, and render the document twice again.
+   What has changed, and what has been created in the Explorer?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   The first render still takes 5 seconds,
+   but the second one is quick,
+   and shows the same time as the first one,
+   because the saved results are used instead of running the code.
+   A new folder with the same name as your document plus `_cache` has been created.
+
+   </details>
+
+3. Render the document from the terminal with the `--cache-refresh` option.
+   Is the printed time updated?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Yes: with `--cache-refresh`, the cached chunk is run again,
+   so the render takes 5 seconds and the time is updated.
+
+   </details>
+:::
+
+## Turning an R script into a Quarto document
+
+If you have R code in an R script (a `.R` file),
+you may want to turn it into a Quarto document,
+so you can add explanations and render a report with its results.
+
+### By hand
+
+The most straightforward way is to do it by hand:
+
+1. Create a new Quarto document, and add a YAML header.
+2. Paste the code into code chunks,
+   starting a new chunk at each logical step of your analysis,
+   like loading the data or making a plot.
+3. Turn comments that explain the code into Markdown text between the chunks,
+   and turn section comments into Markdown headers.
+4. Render the document to check that it works,
+   keeping in mind that the
+   [working directory may differ](../week14/w14a_quarto.qmd#the-working-directory-when-rendering)
+   from the one you ran the script in.
+
+### Using special comments
+
+Alternatively, you can mark up the script itself with special comments:
+
+- Lines starting with `#'` (a `#`, a single quote, and a space)
+  are Markdown text, including the YAML header.
+- Lines starting with `#|` are chunk options, just like in a Quarto document.
+- Lines starting with `#+` start a new chunk.
+  A new chunk is also started after each block of `#'` lines.
+
+For example:
+
+```{.r .file filename="analysis.R"}
+#' ---
+#' title: "My analysis"
+#' format:
+#'   html:
+#'     embed-resources: true
+#' ---
+
+#' ## Load the data
+#| message: false
+library(tidyverse)
+meta <- read_tsv("metadata.tsv")
+
+#' ## Count the samples
+#' The number of samples per treatment:
+meta |> count(treatment)
+```
+
+Because these lines start with `#`, the file is still a valid R script,
+which you can run as usual.
+But you can now also do one of two things with it:
+
+- **Render the script directly** to a report,
+  with `quarto render analysis.R`.
+- **Convert it to a Quarto document**,
+  by running the following in the R console,
+  which creates the file `analysis.qmd`:
+
+  ```r
+  knitr::spin("analysis.R", knit = FALSE, format = "qmd")
+  ```
+
+  You can then continue working in the Quarto document,
+  though you may want to tidy it up a bit,
+  for example to remove empty lines at the end of chunks.

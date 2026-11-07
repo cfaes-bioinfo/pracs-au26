@@ -36,7 +36,8 @@ Data visualization is a critical step in data analysis,
 both to explore your data and to communicate your findings:
 plots can reveal patterns and trends that are hard to see in raw data.
 In this lecture, you will learn how to create informative,
-publication-ready plots with the [_ggplot2_](https://ggplot2.tidyverse.org/) package.
+publication-ready plots with the [_ggplot2_](https://ggplot2.tidyverse.org/) package,
+while you keep exploring the RNA-seq gene count table from Monday.
 
 _ggplot2_ is based on the **"Grammar of Graphics"**,
 a set of rules to describe plots,
@@ -52,11 +53,9 @@ plots are fully customizable.
 In this lecture, you will learn:
 
 - Basic syntax of the `ggplot()` function, including aesthetic mappings with `aes()`
-- How to create scatter plots, bar graphs, box plots, and histograms
+- How to create scatter plots, bar graphs, and box plots
 - How to change colors, add titles and labels with `labs()`, and apply themes like `theme_bw()`
 - How to change the order of categories in a plot
-- How to facet plots using `facet_wrap()` and `facet_grid()`
-- How to reshape data from wide to long format with `pivot_longer()` for plotting
 - How to export plots in different formats
 
 ## Setting up
@@ -76,89 +75,135 @@ For this lecture, we will use the _tidyverse_, which includes _ggplot2_:
 library(tidyverse)
 ```
 
-We'll keep working with the `penguins` data set from
-[Monday's lecture](w13a_data-wrangling.qmd#the-penguins-data-set),
-which comes with R.
+### The data
+
+We'll use the gene count table and the metadata from Monday:
+
+```{r eval=FALSE}
+counts <- read_tsv(
+  "/fs/ess/PAS3493/share/week13/salmon.merged.gene_counts_length_scaled.tsv"
+)
+meta <- read_tsv("../garrigos/meta/metadata.tsv")
+```
+
+```{r echo=FALSE}
+#| message: false
+counts <- read_tsv(
+  "../assets/week13/salmon.merged.gene_counts_length_scaled.tsv"
+)
+meta <- read_tsv("../assets/week13/metadata.tsv")
+```
+
+As on Monday, we'll reshape the count table to long format,
+and then add the treatment and time point of each sample with a join:
+
+```{r}
+counts_long <- counts |>
+  select(!gene_name) |>
+  pivot_longer(cols = !gene_id, names_to = "sample_id", values_to = "count") |>
+  left_join(meta, by = "sample_id")
+
+counts_long
+```
+
+Finally, let's compute two summaries for each sample:
+its library size in millions of reads,
+and the number of genes that are "detected" (i.e., have at least one read):
+
+```{r}
+sample_stats <- counts_long |>
+  summarize(
+    lib_size_M = sum(count) / 1e6,
+    n_detected = sum(count > 0),
+    .by = c(sample_id, treatment, time)
+  )
+
+sample_stats
+```
+
+Because each sample has a single treatment and time point,
+adding these columns to `.by` still gives one row per sample,
+but keeps the `treatment` and `time` columns in the output.
 
 ## Creating a ggplot
 
-To create a plot with the _ggplot2_ package,
-you start with the function `ggplot()`
-(note: the package is called _ggplot2_, but the function `ggplot()`).
 A basic ggplot has three components:
 
-1. **Data**: the data frame with the variables to be plotted ---
-   here, the `penguins` data set.
-2. **Aesthetic mappings**: how variables in the data are mapped to visual properties
-   of the plot, such as the x and y axes, colors, shapes, and sizes.
-3. **Geometries ("geoms")**: layers that represent the data,
-   e.g. as points (scatter plot), bars, or boxes.
-
-::: {.callout-tip appearance="simple"}
-The [ggplot2 cheat sheet](https://rstudio.github.io/cheatsheets/data-visualization.pdf)
-gives an overview of the many types of plots you can create with _ggplot2_.
-:::
+| Component                | Description                                                                       | Example                                                    |
+|--------------------------|-----------------------------------------------------------------------------------|------------------------------------------------------------|
+| **Data**                 | The data frame with the data to be plotted                                        | ---                    |
+| **Aesthetic mappings**   | Which data frame columns are "mapped to"<br> which plot properties      | -- Library size along the x-axis <br> -- Number of genes along the y-axis |
+| **Geometries ("geoms")** | Data layers representing a type of plot                                                          | -- Points to make a scatter plot <br> -- Bars to make a bar plot           |
 
 ### Data
 
-The first argument of `ggplot()` is your data frame,
-which you can provide inside the function, or by piping it into the function:
+To create a plot, start with the function `ggplot()`^[
+  Note: the package is called _ggplot2_, but the function is `ggplot()`.].
+Its first argument `ggplot()` is your data frame,
+so we can use either of these two ways to start a plot:
+
+```{r, eval=FALSE}
+ggplot(data = sample_stats)
+```
 
 ```{r}
-# Two ways of passing the data frame to ggplot():
-ggplot(data = penguins)
-
-# We will use this style throughout the lecture:
-penguins |>
+sample_stats |>
   ggplot()
 ```
 
-We get a blank plot because we haven't told `ggplot()` _what_ to plot yet:
+Either way, we get a **blank plot**.
+That's because we haven't told `ggplot()` _what_ to plot:
 we only specified the data frame.
 Next, we will map variables to the x and y axes with the aesthetics function `aes()`.
 
-### Aesthetic mappings (aes)
+### Aesthetic mappings (`aes`)
 
 **Aesthetic mappings** define how variables in the data are mapped to visual
-properties of the plot.
-The `x` and `y` arguments of the `aes()` function define the variables
-to be plotted on the x-axis and y-axis, respectively.
-Let's say we want to create a scatter plot with
-`bill_len` on the x-axis and `bill_dep` on the y-axis:
+properties of the plot, and are specified with the `aes()` function.
+For example, its `x` argument defines the **variable (column)**
+to be plotted along the x-axis.
+
+Let's create a scatter plot with the library size on the x-axis and
+the number of detected genes on the y-axis:
 
 ```{r}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep))
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected))
 ```
 
 Now the axes are there, but there are still no data points,
-because we haven't told `ggplot()` _how_ to represent the data.
-For that, we need to add a geometry (**geom**) layer,
-such as `geom_point()` for a scatter plot, `geom_bar()` for a bar graph,
-or `geom_boxplot()` for a box plot.
-Because both of our variables are continuous,
-a scatter plot is a good choice:
-we'll add a `geom_point()` layer using the `+` operator.
+because we haven't told ggplot2 _how_ to represent the data.
 
 ### Geoms
 
+For that, we need to add a geometry (**geom**) layer,
+such as `geom_point()` for a scatter plot or `geom_boxplot()` for a box plot.
+Because both of our variables are **continuous**, a scatter plot is a good choice:
+
 ```{r}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep)) +
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected)) +
   geom_point()
 ```
 
-Finally, we can see the scatter plot!
+Finally, we have a plot!
 
-::: {.callout-note appearance="simple"}
-You'll see a warning that 2 rows were removed:
-two penguins have missing values (`NA`) for bill length and depth,
-and can't be plotted.
-This is expected, and you'll see the same warning for many plots below.
-:::
+Note that we use `+` rather than the pipe `|>` to add the geom:
+the pipe sends the data frame into ggplot,
+and from then on, we are **adding layers to the plot with** `+`.
 
-::: {.callout-tip collapse="true"}
-#### The Plots pane _(Click to expand)_
+<details class="details-quiz"><summary>What does this plot tell you about the relationship between these variables? How do you interpret that?</summary>
+
+_The answer will be added after the lecture._
+<!----
+Samples with more reads have more detected genes:
+the more reads you sequence,
+the more likely it is that lowly expressed genes get at least one read.
+----->
+</details>
+
+::: {.callout-note collapse="true"}
+#### More about Positron's Plots pane _(Click to expand)_
 When you run plotting code interactively,
 the plot appears in the **Plots** pane in the Secondary Side Bar.
 A few useful features of this pane:
@@ -173,100 +218,63 @@ A few useful features of this pane:
   not how they look when you render or save them.
 :::
 
-## More aesthetics
+## Mapping more variables
 
 Besides `x` and `y`, there are other aesthetics, such as `color`, `shape`, and `size`.
-Let's add a third variable to the scatter plot by coloring the points by penguin `species`.
-To do so, we map the `species` variable to `color` inside the `aes()` function.
-When a categorical variable is mapped to color,
-_ggplot2_ automatically assigns a color to each category,
-and adds a legend that shows which color corresponds to which category:
+Let's add a third variable to the scatter plot by coloring the points by `treatment`:
 
 ```{r}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep, color = species)) +
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected, color = treatment)) +
   geom_point()
 ```
 
-Now, each point is colored by the species of the penguin.
+Now, each point is colored by the treatment of the sample.
+When a categorical variable is mapped to color,
+_ggplot2_ **automatically assigns** a color to each category,
+and adds a **legend** that shows which color corresponds to which category.
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise 1: Mapping versus setting colors
-- What do you think will happen if you keep `color = species` outside of `aes()`?
-  There are actually three different ways to do this -- try each one and see what happens:
 
-  a. `ggplot(aes(x = ..., y = ...), color = species)` -- still inside `ggplot()`, but outside `aes()`
-  b. `geom_point(color = species)` -- inside `geom_point()`, outside `aes()`
-  c. `geom_point(color = "red")` -- inside `geom_point()`, outside `aes()`, but with a fixed value instead of a variable
+- Remove `color = treatment` from the code above,
+  and try each of the following two versions of the `geom_point()` line.
+  Compare the resulting plots: what happens to the colors and the legend?
 
-  And what do you think will happen if you put a fixed value _inside_ `aes()`?
-
-  d. `geom_point(aes(color = "red"))`
+  a. `geom_point(color = "red")` --- a fixed value _outside_ `aes()`
+  b. `geom_point(aes(color = "red"))` --- a fixed value _inside_ `aes()`
 
 <!----
 <details>
 
 <summary>Click for the solution</summary>
 
-a. Inside `ggplot()` but outside `aes()`, `color = species` is silently ignored,
-   so all points are colored black (the default) and no legend is added:
-
-```{r}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep), color = species) +
-  geom_point()
-```
-
-b. Inside `geom_point()`, outside `aes()`, the same `color = species` instead
-   produces an error:
-
-```{r, eval=FALSE}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep)) +
-  geom_point(color = species)
-```
-```{r, echo=FALSE, error=TRUE}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep)) +
-  geom_point(color = species)
-```
-
-c. But with a fixed value instead of a variable name, it works fine
+a. Outside `aes()`, all points are red, and there is no legend
    (more on this below):
 
 ```{r}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep)) +
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected)) +
   geom_point(color = "red")
 ```
 
-d. Inside `aes()`, the points are not red, but ggplot's default first color (salmon),
+b. Inside `aes()`, the points are not red, but ggplot's default first color (salmon),
    and a legend appears with a single entry: "red".
    Inside `aes()`, `"red"` is treated as _data_:
    a variable with the value "red" for every point,
    which is mapped to the first color of ggplot's default color palette.
 
 ```{r}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep)) +
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected)) +
   geom_point(aes(color = "red"))
 ```
-
-**Why does (b) fail while (c) works, given that both are outside `aes()`?**
-Anything outside `aes()` is treated as a **fixed setting** rather than a mapping,
-so it must be given a literal value (like `"red"`) that `geom_point()` can use
-directly to color every point. `species` isn't a variable that exists outside
-of the `penguins` data frame, so outside of `aes()`, R has no idea what it
-refers to and throws an error.
-In (a), by contrast, `ggplot()` simply ignores the `color` argument entirely
-because it's outside `aes()` and not a recognized argument of `ggplot()`
-itself, so `color = species` has no effect at all.
 
 </details>
 ---->
 
-- Create a scatter plot with `bill_len` on the x-axis and `bill_dep` on the y-axis.
-  Color the points by `species`, and map `island` to the shape of the points.
+- Create a scatter plot with `lib_size_M` on the x-axis and `n_detected` on the y-axis.
+  Color the points by `treatment`, and map `time` to the shape of the points.
 
 <!----
 <details>
@@ -274,12 +282,12 @@ itself, so `color = species` has no effect at all.
 <summary>Click for the solution</summary>
 
 ```{r}
-penguins |>
+sample_stats |>
   ggplot(aes(
-    x = bill_len,
-    y = bill_dep,
-    color = species,
-    shape = island
+    x = lib_size_M,
+    y = n_detected,
+    color = treatment,
+    shape = time
   )) +
   geom_point()
 ```
@@ -292,42 +300,54 @@ for other aesthetics that you can map variables to.
 
 :::
 
-### Mapping vs. setting
+::: {.callout-note collapse="true"}
+#### More on mapping vs. setting _(Click to expand)_
 
 Sometimes you want to give all points the same color or size.
 To **map** a variable to an aesthetic, put it inside `aes()`;
 to **set** an aesthetic to a fixed value, put it outside `aes()`,
 like with `geom_point(color = "red")` in the previous exercise.
 
+Below, `color` is _mapped_ to the `treatment` variable inside `aes()`,
+so it differs between points and gets a legend.
+By contrast, `size` is _set_ to a fixed value outside `aes()`,
+so all points are equally large and there is no legend for size:
+
+```{r}
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected, color = treatment)) +
+  geom_point(size = 4)
+```
+:::
+
 ### Global and local mappings
 
-In the examples above, we mapped aesthetics like `color = species` inside `ggplot()`,
-which is the **global level**: these mappings are passed down to all geom layers.
-Alternatively, each geom layer can have its own aesthetic mappings at the **local level**.
+Mappings inside `ggplot()` are **global** and apply to all geom layers,
+whereas mappings inside a geom are **local** to that layer.
 To see the difference, let's add a second geom, `geom_smooth()`, which adds a trend line:
 
 ```{r}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep, color = species)) +
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected, color = treatment)) +
   geom_point() +
   geom_smooth(method = "lm")
 ```
 
-Above, we mapped `color = species` at the global level inside `ggplot()`,
-so both the points and the lines are colored by species,
-and `geom_smooth()` fits a separate line for each species.
+Above, we mapped `color = treatment` at the **global** level inside `ggplot()`,
+so both the points and the lines are colored by treatment,
+and `geom_smooth()` fits a separate line for each treatment.
 
+Now, we'll map `color = treatment` at the **local** level inside `geom_point()` ---
+only the points are colored by treatment,
+while `geom_smooth()` fits a single line across all samples,
+in the default color (blue):
 
 ```{r}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep)) +
-  geom_point(aes(color = species)) +
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected)) +
+  geom_point(aes(color = treatment)) +
   geom_smooth(method = "lm")
 ```
-
-Here, we mapped `color = species` at the local level inside `geom_point()`.
-Therefore, only the points are colored by species,
-while `geom_smooth()` fits a single line across all species, in the default color (blue).
 
 ## Customizing plots
 
@@ -335,207 +355,264 @@ Next, we'll change the look of our plot:
 its colors, titles and labels, and overall theme.
 These functions work the same way for any type of plot.
 
-### Manually changing the colors
-
-So far, we've used ggplot's default colors.
-To pick the colors yourself, use the `scale_color_manual()` function:
-
-```{r}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep)) +
-  geom_point(aes(color = species)) +
-  scale_color_manual(values = c("grey55", "orange", "skyblue")) +
-  geom_smooth(method = "lm")
-```
-
-The colors are assigned in the order of the species in the legend.
-Run `colors()` to see the names of all colors that R knows.
-
-::: {.callout-tip appearance="simple"}
-For ready-made color palettes, see the [optional R self-study page](../bonus/r.qmd#color-palettes).
-:::
-
-
 ### Adding titles and labels
 
 To add a title and change the axis labels, use the `labs()` function,
 with arguments `title`, `x`, and `y`:
 
 ```{r}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep)) +
-  geom_point(aes(color = species)) +
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected)) +
+  geom_point(aes(color = treatment)) +
   geom_smooth(method = "lm") +
   labs(
-    title = "Scatter plot of bill length vs bill depth",
-    x = "Bill length (mm)",
-    y = "Bill depth (mm)"
+    title = "More genes are detected when the library size is larger",
+    x = "Library size (millions of reads)",
+    y = "Number of detected genes"
   )
 ```
 
 ### Adjusting themes
 
-You can change the overall look of a plot by applying a pre-defined **theme**.
-_ggplot2_ has [several of these](https://ggplot2.tidyverse.org/reference/ggtheme.html),
-such as `theme_minimal()`, `theme_classic()`, `theme_bw()`, and `theme_light()`.
-Let's apply `theme_bw()` to our previous plot:
+You can change the overall look of a plot by applying a pre-defined
+[**theme** {{< fa external-link >}}](https://ggplot2.tidyverse.org/reference/ggtheme.html){target="_blank"},
+such as `theme_minimal()`, `theme_classic()`, and `theme_bw()`.
+Let's apply `theme_bw()`:
 
 ```{r}
-penguins |>
-  ggplot(aes(x = bill_len, y = bill_dep)) +
-  geom_point(aes(color = species)) +
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected)) +
+  geom_point(aes(color = treatment)) +
   geom_smooth(method = "lm") +
   labs(
-    title = "Scatter plot of bill length vs bill depth",
-    x = "Bill length (mm)",
-    y = "Bill depth (mm)"
+    title = "More genes are detected when the library size is larger",
+    x = "Library size (millions of reads)",
+    y = "Number of detected genes"
   ) +
   theme_bw()
 ```
 
-::: {.callout-tip appearance="simple"}
-You can also customize individual theme elements like font sizes and the legend position
-with the `theme()` function:
-see the [optional R self-study page](../bonus/r.qmd#customizing-themes).
+::: {.callout-note collapse="true"}
+#### Customizing individual theme elements _(Click to expand)_
+
+You can also customize individual theme elements like font sizes and the legend
+position with the `theme()` function.
+
+There are _many_ options
+(see the [optional R self-study page](../bonus/r.qmd#customizing-themes)),
+but as one quick example, let's move the legend to the top and get rid of the
+so-called minor grid lines (the grid lines between those that mark the axis ticks):
+
+```{r}
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected)) +
+  geom_point(aes(color = treatment)) +
+  geom_smooth(method = "lm") +
+  labs(
+    title = "More genes are detected when the library size is larger",
+    x = "Library size (millions of reads)",
+    y = "Number of detected genes"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+```
+
+:::
+
+::: {.callout-note collapse="true"}
+#### Manually changing the colors _(Click to expand)_
+
+So far, we've used ggplot's default colors.
+To pick the colors yourself, use the `scale_color_manual()` function:
+
+```{r}
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected)) +
+  geom_point(aes(color = treatment)) +
+  scale_color_manual(values = c("orange", "grey55", "skyblue")) +
+  geom_smooth(method = "lm")
+```
+
+The colors are assigned in the order of the treatments in the legend.
+Run `colors()` to see the names of all colors that R knows.
+For ready-made color palettes, see the [optional R self-study page](../bonus/r.qmd#color-palettes).
 :::
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 2: Build a plot from scratch
+#### {{< fa user-edit >}} Exercise 2: Predict and fix
 
-Create a scatter plot of flipper length (x-axis) versus body mass (y-axis), with:
+1. Which plot do you think the code below will produce?
+   Decide first, and then run the code to check.
 
-- Points colored by species
-- A separate linear trend line for each species
-- Axis labels that include the units (millimeters and grams)
-- A theme of your choice other than `theme_bw()`
+   ```{r, eval=FALSE}
+   sample_stats |>
+     ggplot(aes(x = lib_size_M, y = n_detected)) +
+     geom_point() +
+     geom_smooth(aes(color = treatment), method = "lm")
+   ```
 
-Is the relationship between flipper length and body mass similar for the three species?
+   a) Points and trend lines are both colored by treatment
+   b) Black points, and a separate colored trend line for each treatment
+   c) Black points, and a single blue trend line
 
 <!----
-<details>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-<summary>Click for the solution</summary>
+   **b)** is correct:
+   `color = treatment` is a local mapping in `geom_smooth()`,
+   so only the trend lines are colored by treatment,
+   and `geom_point()` uses the default color (black).
 
-```{r}
-penguins |>
-  ggplot(aes(x = flipper_len, y = body_mass, color = species)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  labs(
-    x = "Flipper length (mm)",
-    y = "Body mass (g)"
-  ) +
-  theme_classic()
-```
+   ```{r}
+   sample_stats |>
+     ggplot(aes(x = lib_size_M, y = n_detected)) +
+     geom_point() +
+     geom_smooth(aes(color = treatment), method = "lm")
+   ```
 
-To get a separate trend line for each species,
-`color = species` has to be a global mapping inside `ggplot()`.
-For all three species, heavier penguins tend to have longer flippers,
-and the trend lines have fairly similar slopes.
-
-</details>
+   </details>
 ---->
+
+2. The code below should produce a scatter plot with red points,
+   a title, and the `theme_bw()` theme, but it contains three mistakes.
+   Find and fix them.
+
+   ```{r, eval=FALSE}
+   sample_stats |>
+     ggplot(aes(x = lib_size_M, y = n_detected)) |>
+     geom_point(color = red) +
+     labs(title = "Library size versus detected genes")
+     theme_bw()
+   ```
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   sample_stats |>
+     ggplot(aes(x = lib_size_M, y = n_detected)) +
+     geom_point(color = "red") +
+     labs(title = "Library size versus detected genes") +
+     theme_bw()
+   ```
+
+   - The layers are added with `+`, not with the pipe `|>`
+     (ggplot2's error message even suggests this fix).
+   - `red` needs quotes: without them, R looks for an object called `red`.
+   - The `+` after `labs()` is missing.
+     This mistake doesn't cause an error:
+     R makes the plot without the theme,
+     and then runs `theme_bw()` as a separate command,
+     which prints a long list of theme settings in the console.
+
+   </details>
+---->
+
 :::
 
 ## Other geoms
 
 So far, we've only made scatter plots with `geom_point()`,
-but there are many other geoms to create different types of plots.
+but there are many other geoms to create different plot types.
 
-### Bar graphs
+### Bar graphs with `geom_col()`
 
-Bar graphs are commonly used to show a numeric summary, like a mean, or a count, per group.
-First, let's plot the mean body mass of penguins on each island.
-To do so, we first compute the means with `summarize()` and its `.by` argument,
-which you learned about on Monday:
+Bar graphs are commonly used to show a single number, like a mean or a count, per group.
+Let's plot the library size of each sample with `geom_col()`:
 
 ```{r}
-## Before plotting, compute the mean
-island_means <- penguins |>
-  summarize(
-    mean_body_mass = mean(body_mass, na.rm = TRUE), # remove missing values
-    .by = island
-  )
-```
-
-Then, we use `geom_col()` to plot these means:
-
-```{r}
-island_means |>
-  ggplot(aes(x = island, y = mean_body_mass)) +
-  geom_col()
-```
-
-The islands are shown in alphabetical order,
-because `island` is a factor whose levels (categories) are in that order.
-To change the order, you can redefine the factor levels with `mutate()` before plotting
-(like you did with the [metadata](w13a_data-wrangling.qmd#setting-a-custom-order-with-factors) on Monday):
-
-```{r}
-island_means |>
-  mutate(island = factor(island, levels = c("Dream", "Biscoe", "Torgersen"))) |>
-  ggplot(aes(x = island, y = mean_body_mass)) +
+sample_stats |>
+  ggplot(aes(x = sample_id, y = lib_size_M)) +
   geom_col()
 ```
 
 ::: {.callout-note collapse="true"}
-#### Ordering bars by their values with `fct_reorder()` _(Click to expand)_
-To order the bars from low to high values automatically,
+#### Sorting bars by value _(Click to expand)_
+The samples are shown in alphabetical order.
+To sort the bars from low to high instead,
 you can use the `fct_reorder()` function,
-which reorders the levels of a factor (here, `island`) by the values of another column:
+which turns a column (here, `sample_id`) into a factor
+whose levels (categories) are ordered by the values of another column (here, `lib_size_M`).
+(Factors are explained in more detail [below](#box-plots).)
+You do this with `mutate()` before plotting:
 
 ```{r}
-island_means |>
-  mutate(island = fct_reorder(island, mean_body_mass)) |>
-  ggplot(aes(x = island, y = mean_body_mass)) +
+sample_stats |>
+  mutate(sample_id = fct_reorder(sample_id, lib_size_M)) |>
+  ggplot(aes(x = sample_id, y = lib_size_M)) +
   geom_col()
 ```
+
+(Note the switch from `|>` between data frame steps, and `+` between plot layers.)
+
 :::
-
-To plot the _number of penguins_ per island instead,
-you can use `geom_bar()` directly on the full data set,
-which counts the rows for each value of the `x` variable:
-
-```{r}
-penguins |>
-  ggplot(aes(x = island)) +
-  geom_bar()
-```
-
 
 ### Box plots
 
-Box plots show the distribution of a numeric variable for each category of a categorical variable.
-Let's create a box plot of the distribution of `body_mass` on each `island`.
-This time, we'll save the plot as an object, `box_plot_body_mass_and_island`,
-so we can reuse it later:
+Is library size related to treatment?
+A box plot is a good way to answer this,
+because it shows the distribution of a numeric variable for each category of a categorical variable:
 
 ```{r}
-box_plot_body_mass_and_island <- penguins |>
-  ggplot(aes(x = island, y = body_mass)) +
-  geom_boxplot()
-
-box_plot_body_mass_and_island
-```
-
-To color the boxes by species, we can map `species` to an aesthetic as before.
-But for "filled" shapes like boxes and bars,
-`color` only changes the outline,
-while `fill` changes the inside:
-
-```{r}
-penguins |>
-  ggplot(aes(x = island, y = body_mass, fill = species)) +
+sample_stats |>
+  ggplot(aes(x = treatment, y = lib_size_M)) +
   geom_boxplot()
 ```
 
-To pick fill colors yourself, use `scale_fill_manual()` instead of `scale_color_manual()`.
+The _relictum_ samples have slightly larger libraries,
+and library sizes vary a lot among the control samples.
+But each box contains samples from both time points:
+to split the boxes by time point, we can map `time` to an aesthetic as before.
+
+We'll use the `fill` aesthetic to color the boxes by time point
+(For "filled" shapes like boxes and bars, `color` only changes the outline,
+while `fill` changes the inside):
+
+```{r}
+sample_stats |>
+  ggplot(aes(x = treatment, y = lib_size_M, fill = time)) +
+  geom_boxplot()
+```
+
+Above, the later time point (10 dpi) comes first,
+because `time` is a character column whose values are sorted alphabetically.
+
+To fix this, you can turn the column into a **factor**,
+R's way of storing categorical data with a set order of categories ("levels").
+This order is respected in plots, sorting, and statistical analyses,
+and you'll use factors like this for the RNA-seq analysis in week 15.
+
+We'll turn `time` into a factor with the earlier time point (24 hpi) first,
+by modifying the column with `mutate()`.
+Because we'll make more plots with this column,
+we modify `sample_stats` itself:
+
+```{r}
+sample_stats <- sample_stats |>
+  mutate(time = factor(time, levels = c("24hpi", "10dpi")))
+```
+
+Now, the time points are shown in the correct order:
+
+```{r}
+sample_stats |>
+  ggplot(aes(x = treatment, y = lib_size_M, fill = time)) +
+  geom_boxplot()
+```
+
+Library sizes are similar across treatments and time points,
+except that the control samples at 10 dpi have smaller libraries.
+
+(To pick fill colors yourself, use `scale_fill_manual()` instead of `scale_color_manual()`.)
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise 3: `color` versus `fill`
 
-What do you think will happen if you map `species` to `color` instead of `fill` in the box plot above?
-Predict first, then run the code to check.
+Map `time` to `color` instead of `fill` in the box plot above,
+and see what happens.
 
 <!----
 <details>
@@ -543,13 +620,12 @@ Predict first, then run the code to check.
 <summary>Click for the solution</summary>
 
 ```{r}
-penguins |>
-  ggplot(aes(x = island, y = body_mass, color = species)) +
+sample_stats |>
+  ggplot(aes(x = treatment, y = lib_size_M, color = time)) +
   geom_boxplot()
 ```
 
-The boxes are still split by species,
-but only their outlines (and the outlier points) are colored,
+Only the outlines of the boxes are colored,
 while the insides stay white.
 
 </details>
@@ -559,294 +635,68 @@ while the insides stay white.
 ::: exercise
 #### {{< fa user-edit >}} Self-study exercise: Adding data points to a box plot
 
-1. Add the individual data points to the box plot above,
+1. Add the individual data points to the first box plot above (without the `fill`),
    using the `geom_jitter()` function.
 
-<details>
+   <details><summary> {{< fa check-circle >}} _Click for the solution_</summary>
 
-<summary>Click for the solution</summary>
+   ```{r}
+   sample_stats |>
+     ggplot(aes(x = treatment, y = lib_size_M)) +
+     geom_boxplot(outlier.shape = NA) +
+     geom_jitter()
+   ```
 
-```{r}
-penguins |>
-  ggplot(aes(x = island, y = body_mass)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter()
-```
+   Note that without `outlier.shape = NA`, the boxplot's outliers would be shown twice:
+   by `geom_boxplot()` _and_ by `geom_jitter()`.
 
-Note that without `outlier.shape = NA`, the boxplot's outliers would be shown twice:
-by `geom_boxplot()` _and_ by `geom_jitter()`.
+   With only 3 or 4 samples per box, showing the individual data points is especially useful.
 
-</details>
+   </details>
 
-2. Color these points by penguin species.
+2. Color these points by time point.
 
-<details>
+   <details><summary> {{< fa check-circle >}} _Click for the solution_</summary>
 
-<summary>Click for the solution</summary>
+   ```{r}
+   sample_stats |>
+     ggplot(aes(x = treatment, y = lib_size_M)) +
+     geom_boxplot(outlier.shape = NA) +
+     geom_jitter(aes(color = time))
+   ```
 
-```{r}
-penguins |>
-  ggplot(aes(x = island, y = body_mass)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(aes(color = species))
-```
-</details>
+   </details>
+
 :::
 
-### Histograms
-
-To see the distribution of a single numeric variable, use a histogram.
-Like `geom_bar()`, `geom_histogram()` counts rows,
-but it first groups the values of a continuous variable into "bins":
-
-```{r}
-penguins |>
-  ggplot(aes(x = body_mass)) +
-  geom_histogram()
-```
-
-_ggplot2_ uses 30 bins by default, and prints a message suggesting you choose a better value.
-You can set the width of the bins with `binwidth`
-(here in grams, the unit of `body_mass`):
-
-```{r}
-penguins |>
-  ggplot(aes(x = body_mass)) +
-  geom_histogram(binwidth = 200)
-```
-
-::: exercise
-#### {{< fa user-edit >}} Self-study exercise: Histograms
-
-1. Try a much smaller and a much larger `binwidth`, like 20 and 1,000.
-   What happens to the histogram?
-
-   <details>
-
-   <summary>Click for the solution</summary>
-
-   ```{r}
-   penguins |>
-     ggplot(aes(x = body_mass)) +
-     geom_histogram(binwidth = 20)
-
-   penguins |>
-     ggplot(aes(x = body_mass)) +
-     geom_histogram(binwidth = 1000)
-   ```
-
-   With very narrow bins, the histogram gets spiky and noisy,
-   while with very wide bins, you lose the shape of the distribution.
-   There is no single correct binwidth, so it's worth trying a few.
-
-   </details>
-
-2. Fill the histogram (with `binwidth = 200`) by `species`.
-   How are the bars of the different species arranged?
-
-   <details>
-
-   <summary>Click for the solution</summary>
-
-   ```{r}
-   penguins |>
-     ggplot(aes(x = body_mass, fill = species)) +
-     geom_histogram(binwidth = 200)
-   ```
-
-   The bars of the different species are stacked on top of each other,
-   so the total height of each bar is still the count across all species.
-
-   </details>
-
-3. Now, add `position = "identity"` and `alpha = 0.5` inside `geom_histogram()`.
-   What does each of these two options do?
-
-   <details>
-
-   <summary>Click for the solution</summary>
-
-   ```{r}
-   penguins |>
-     ggplot(aes(x = body_mass, fill = species)) +
-     geom_histogram(binwidth = 200, position = "identity", alpha = 0.5)
-   ```
-
-   - `position = "identity"` stops the stacking:
-     each species' bars start at zero, so they overlap.
-   - `alpha = 0.5` makes the bars semi-transparent
-     (`alpha` ranges from 0, fully transparent, to 1, opaque),
-     so you can see the overlapping bars.
-
-   </details>
-:::
+::: {.callout-tip}
+#### Other plot types
 
 There are many other geoms, e.g. for violin plots and line graphs:
-see the [ggplot2 cheat sheet](https://rstudio.github.io/cheatsheets/data-visualization.pdf)
+see the
+[ggplot2 cheat sheet {{< fa external-link >}}](https://rstudio.github.io/cheatsheets/data-visualization.pdf){target="_blank"}
 for an overview.
-
-## Multi-panel figures: faceting
-
-When you map many variables in a single plot, it can get cluttered.
-An alternative is **faceting**: creating multiple panels ("facets"),
-one for each value of a categorical variable.
-There are two faceting functions:
-
-- `facet_wrap()` --- Facet by a single categorical variable,
-  with the panels "wrapped" into a rectangular layout.
-- `facet_grid()` --- Facet by one or two categorical variables,
-  with the panels laid out in a grid of rows and columns.
-
-For example, to facet the box plot from above by species:
-
-```{r}
-penguins |>
-  ggplot(aes(x = island, y = body_mass)) +
-  geom_boxplot() +
-  facet_wrap(vars(species))
-```
-
-And to facet by both species (columns) and sex (rows):
-
-```{r}
-penguins |>
-  ggplot(aes(x = island, y = body_mass)) +
-  geom_boxplot() +
-  facet_grid(rows = vars(sex), cols = vars(species))
-```
-
-Notice the third row of panels for penguins whose sex is unknown (`NA`).
-To remove these, we can filter the data frame before plotting,
-by inserting a `filter()` step in the pipeline before `ggplot()`:
-
-```{r}
-penguins |>
-  filter(!is.na(sex)) |>
-  ggplot(aes(x = island, y = body_mass)) +
-  geom_boxplot() +
-  facet_grid(rows = vars(sex), cols = vars(species))
-```
-
-Here, `is.na(sex)` is `TRUE` for penguins with a missing value for `sex`,
-and the `!` reverses this,
-so we keep only the penguins whose sex is known.
-Note that we use the pipe `|>` between data frame steps,
-but `+` to add layers to the plot.
-
-::: exercise
-#### {{< fa user-edit >}} Self-study exercise: Faceting a scatter plot
-
-1. Take your scatter plot from Exercise 2,
-   and facet it by `island` with `facet_wrap()`.
-   Which species are found on which island?
-
-   <details>
-
-   <summary>Click for the solution</summary>
-
-   ```{r}
-   penguins |>
-     ggplot(aes(x = flipper_len, y = body_mass, color = species)) +
-     geom_point() +
-     geom_smooth(method = "lm") +
-     labs(
-       x = "Flipper length (mm)",
-       y = "Body mass (g)"
-     ) +
-     theme_classic() +
-     facet_wrap(vars(island))
-   ```
-
-   Adelie penguins are found on all three islands,
-   Chinstrap penguins only on Dream,
-   and Gentoo penguins only on Biscoe.
-
-   </details>
-
-2. Now, facet the plot by `species` instead, and remove the color mapping.
-   Do you find this plot or the one with colors easier to read?
-   What is a disadvantage of each?
-
-   <details>
-
-   <summary>Click for the solution</summary>
-
-   ```{r}
-   penguins |>
-     ggplot(aes(x = flipper_len, y = body_mass)) +
-     geom_point() +
-     geom_smooth(method = "lm") +
-     labs(
-       x = "Flipper length (mm)",
-       y = "Body mass (g)"
-     ) +
-     theme_classic() +
-     facet_wrap(vars(species))
-   ```
-
-   With facets, points of different species no longer overlap,
-   but it's harder to compare the species directly.
-   With colors in a single panel, comparing species is easy,
-   but the plot can get crowded.
-
-   </details>
+To learn how to make [bar graphs that count rows with `geom_bar()`](../bonus/r.qmd#bar-graphs-with-geom_bar),
+[histograms](../bonus/r.qmd#histograms),
+and [box plots of gene counts](../bonus/r.qmd#box-plots-of-gene-counts),
+how to split a plot into multiple panels, one for each value of a categorical variable ("faceting"),
+or how to combine different plots into one multi-panel figure,
+see the [optional R self-study page](../bonus/r.qmd#plotting-with-ggplot2).
 :::
 
-::: {.callout-tip appearance="simple"}
-All facets show the same type of plot.
-To combine _different_ plots into one multi-panel figure,
-see the [optional R self-study page](../bonus/r.qmd#combining-plots-into-one-figure).
-:::
-
-## Reshaping data for plotting
-
-Say we want to see histograms of all three length measurements
-(bill length, bill depth, and flipper length) side by side.
-With facets, we could put each in its own panel ---
-but we can only facet by a _column_,
-and these measurements are spread across three columns.
-Recall the [Tidy data](w13a_data-wrangling.qmd#tidy-data) section from Monday:
-in this case, it's as if the measurement type is a variable
-that is hiding in the column names.
-
-The `pivot_longer()` function reshapes data from this "wide" format to a "long" format:
-
-```{r}
-penguins_long <- penguins |>
-  pivot_longer(
-    cols = c(bill_len, bill_dep, flipper_len), # the columns to combine
-    names_to = "measurement", # new column with the old column names
-    values_to = "mm" # new column with the values
-  )
-
-penguins_long |>
-  select(species, measurement, mm) |>
-  head()
-```
-
-Each penguin now has three rows, one per measurement.
-Now, we can facet by the new `measurement` column:
-
-```{r}
-penguins_long |>
-  ggplot(aes(x = mm, fill = species)) +
-  geom_histogram() +
-  facet_wrap(vars(measurement), scales = "free")
-```
-
-`scales = "free"` lets each panel have its own axis ranges,
-because flipper lengths are much larger than bill lengths and depths.
-
-::: {.callout-tip appearance="simple"}
-Many omics data sets, such as gene count tables with one column per sample,
-are in wide format,
-so you'll often need `pivot_longer()` before plotting them with _ggplot2_.
-:::
-
-## Exporting plots
+## Exporting plots to files
 
 To save a plot to a file, in formats like PNG, JPEG, or PDF,
 use the [`ggsave()`](https://ggplot2.tidyverse.org/reference/ggsave.html) function.
+First, save the plot that you want to export as an object ---
+for example, the box plot with time points from above:
+
+```{r}
+lib_size_plot <- sample_stats |>
+  ggplot(aes(x = treatment, y = lib_size_M, fill = time)) +
+  geom_boxplot()
+```
+
 By default, `ggsave()` won't create a folder that doesn't exist,
 so first create a `results` folder in your `week13` folder, if it doesn't exist yet:
 
@@ -858,31 +708,21 @@ Then, save the plot:
 
 ```{r eval=FALSE}
 ggsave(
-  filename = "results/boxplot.png", # file path and name
-  plot = box_plot_body_mass_and_island, # what to save
-  width = 18,
-  height = 12,
+  filename = "results/lib_size_plot.png", # file path and name
+  plot = lib_size_plot, # what to save
+  width = 7,
+  height = 5,
   dpi = 300, # dots per inch, i.e. resolution
-  units = "cm" # units for width and height
 )
 ```
-
-::: {.callout-tip appearance="simple"}
-For plots that you made in the console,
-you can also click the save button in Positron's Plots pane,
-but `ggsave()` gives you more control and is reproducible.
-:::
 
 ## Recap
 
 In this lecture, you learned:
 
 - The basic syntax of _ggplot2_, which builds plots layer by layer
-- How to map variables to aesthetics like `color` and `fill` with `aes()`,
-  and set aesthetics to fixed values outside of it
+- How to map variables to aesthetics like `color` and `fill` with `aes()`
 - How to make different types of plots with `geom_*()` functions
 - How to change the order of categories by changing factor levels
-- How to facet plots with `facet_wrap()` and `facet_grid()`
-- How to reshape data with `pivot_longer()`,
-  and combine data wrangling and plotting in one pipeline
+- How to combine data wrangling and plotting in one pipeline
 - How to save plots to files with `ggsave()`

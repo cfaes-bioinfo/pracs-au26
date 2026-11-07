@@ -23,9 +23,6 @@ other-links:
   - text: "Week 15 exercises"
     icon: pencil
     href: w15_exercises.html
-  - text: "Optional self-study: Bioconductor"
-    icon: book
-    href: ../bonus/r-omics.html
 language:
   title-block-published: "Presented on"
   title-block-modified: "Page last modified"
@@ -96,12 +93,6 @@ BiocManager::install("DESeq2")
 ```
 :::
 
-::: {.callout-tip appearance="simple"}
-For more about Bioconductor, including how to find packages,
-its specialized data structures, and examples of working with DNA sequences,
-see the [optional self-study page on Bioconductor](/bonus/r-omics.qmd).
-:::
-
 ### Load the packages
 
 Now, load the packages we'll use today:
@@ -158,7 +149,7 @@ For the differential expression analysis, we have the following input files:
 
 ```{r, eval=FALSE}
 # We'll save the paths to our input files for later use
-counts_file <- "/fs/ess/PAS3493/share/week15/salmon.merged.gene_counts_length_scaled.tsv"
+counts_file <- "/fs/ess/PAS3493/share/week13/salmon.merged.gene_counts_length_scaled.tsv"
 metadata_file <- "../garrigos/meta/metadata.tsv"
 ```
 
@@ -174,7 +165,7 @@ dds_file <- "results/DE/dds.rds"
 
 ```{r, echo=FALSE}
 counts_file <- here::here(
-  "assets/week15/salmon.merged.gene_counts_length_scaled.tsv"
+  "assets/week13/salmon.merged.gene_counts_length_scaled.tsv"
 )
 metadata_file <- here::here("assets/week13/metadata.tsv")
 ```
@@ -200,39 +191,29 @@ We'll first figure out how, exactly, we want to do the DE analysis,
 so we can specify the statistical design formula
 and prepare the metadata.
 
-::: exercise
-#### {{< fa user-edit >}} Exercise 1: Independent variables
+<details class="details-quiz"><summary>How many independent variables does the experiment have?</summary>
 
-1.  How many **independent variables** does the experiment have?
+_The answer will be added after class._
 
-    a) 1: treatment
-    b) 2: time and treatment
-    c) 3: control, *P. cathemerium*, and *P. relictum*
-    d) 6: one for each combination of time and treatment
+<!----
+Two: time and treatment.
+Note that control, *P. cathemerium*, and *P. relictum* are the 3 *levels* of the treatment variable,
+and combining the levels of both variables gives 6 *groups*.
+---->
+</details>
 
-    <!----
-    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
+<details class="details-quiz"><summary>Given that answer, can you think of two alternative ways to analyze the data?</summary>
 
-    **b**: The experiment has two independent variables: time and treatment.
-    Option c lists the 3 *levels* of the treatment variable,
-    and option d lists the 6 *groups* that you get by combining the levels of both variables.
+_The answer will be added after class._
 
-    </details>
-    ---->
+<!----
+You could **ignore time** and only compare the treatments,
+or you could **control for time**,
+for example by comparing the treatments separately for each time point.
+---->
+</details>
 
-2.  Based on your answer to question 1,
-    can you think of two alternative ways to analyze the data?
-
-    <!----
-    <details><summary> {{< fa check-circle >}} _Click for the solution._ </summary>
-
-    You could **ignore time** and only compare the treatments,
-    or you could **control for time**,
-    for example by comparing the treatments separately for each time point.
-
-    </details>
-    ---->
-:::
+<hr style="height:1pt; visibility:hidden;" />
 
 The paper says that the authors compared each of the two infection treatments
 with the controls, and the two infection treatments with each other.
@@ -474,33 +455,6 @@ we'll do some exploratory data analysis using our `dds` object.
 
 ## Exploratory Data Analysis
 
-### The count matrix
-
-What are the numbers of rows (= number of genes) and columns (= number of samples)
-of our count matrix?
-
-```{r}
-dim(count_mat)
-```
-
-How many genes have total (= across all samples) counts that are non-zero?
-The `rowSums()` function computes the sum of each row (gene) of a matrix:
-
-```{r}
-sum(rowSums(count_mat) > 0)
-```
-
-How do the "library sizes",
-i.e. the summed per-sample gene counts, compare across samples?
-
-```{r}
-sort(colSums(count_mat) / 1e6)
-```
-
-Most samples have 15--30 million counts, but sample S77 has fewer than 10 million.
-Differences like these are why we have to normalize the counts, as we'll do below.
-(In this week's exercises, you'll plot these library sizes.)
-
 ### Principal Component Analysis (PCA)
 
 We will run a PCA to examine overall patterns of (dis)similarity among samples,
@@ -511,8 +465,10 @@ helping us answer questions like:
 - Is there an overall *interaction* between these two variables,
   i.e., does the effect of treatment differ between the time points?
 
-First, normalize the count data to account for differences in library size
-among samples and "stabilize" the variance among genes[^4]:
+First, normalize the count data to account for the
+[differences in library size among samples](../week13/w13a_data-wrangling.qmd#arrange-to-sort-data-frames)
+that you saw in week 13,
+and "stabilize" the variance among genes[^4]:
 
 [^4]: Specifically, the point is to remove the dependence of the variance in expression
       level on its mean, among genes.
@@ -548,7 +504,7 @@ you'll make an improved plot with ggplot2.
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 2: PCA interpretation
+#### {{< fa user-edit >}} Exercise 1: PCA interpretation
 
 - Based on your PCA plot,
   try to answer the three questions asked at the beginning of this PCA section.
@@ -719,7 +675,7 @@ symmetrically:
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 3: Log-fold changes
+#### {{< fa user-edit >}} Exercise 2: Log-fold changes
 
 1.  In `res_rc24`, a gene has a log~2~-fold change of `-3`.
     Is this gene more highly expressed in `relictum_24hpi` or in `control_24hpi`,
@@ -838,34 +794,28 @@ res_df |>
 ::: callout-warning
 #### Outliers!
 The volcano plot above shows a gene with a very high log~2~-fold change (\> 20).
-In [Exercise 2 in this week's exercises](w15_exercises.qmd#exercise-2-volcano-plots-and-outliers)
+In [Exercise 1 in this week's exercises](w15_exercises.qmd#exercise-1-volcano-plots-and-outliers)
 you'll see why it's important to plot the expression levels of individual genes.
 :::
 
 ## Exporting the results
 
-To save the DE results tables, you can for example use the `write_tsv()` function.
-You could open the resulting file in Excel for further exploration.
-
-First, we'll create a results directory for the DE results,
-if it doesn't already exist:
+After creating the output dir,
+save the results table with `write_tsv()`, e.g. to explore it further in Excel.
+Like for the volcano plot, first move the gene IDs from the row names into a column,
+because `write_tsv()` doesn't save row names:
 
 ```{r, eval=FALSE}
 dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
-```
 
-Prior to saving the results table, we need to move the gene IDs from the row names
-into a column, because `write_tsv()` doesn't save row names:
-
-```{r, eval=FALSE}
 res_rc24 |>
   as.data.frame() |>
   rownames_to_column("gene_id") |>
   write_tsv(res_file)
 ```
 
-Finally, because this week's exercises build on this DESeq2 object,
-we'll also save that object to a file:
+Because this week's exercises build on the DESeq2 object,
+also save that object to a file:
 
 ```{r, eval=FALSE}
 saveRDS(dds, dds_file)
@@ -881,7 +831,8 @@ from a typical RNA-seq workflow. Specifically, you have:
 - Run a Differential Expression (DE) analysis with DESeq2
 - Extracted, interpreted, and visualized the DE results with a volcano plot
 
-#### Next steps
+::: callout-note
+#### What are some next steps in a DE analysis?
 
 Typical next steps in such an analysis include:
 
@@ -891,3 +842,7 @@ Typical next steps in such an analysis include:
 - **Functional enrichment analysis** with Gene Ontology (GO) terms,
    as done in the paper,
    and/or with KEGG pathways and other functional gene grouping systems.
+
+:::
+
+<hr style="height:1pt; visibility:hidden;" />
