@@ -53,8 +53,9 @@ go over those again.
 
 ### Setting up
 
-1. Open Positron and connect to OSC with your personal dir open,
-   [like in week 12](../week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc).
+1. Open Positron and connect to OSC
+   [like in week 12](../week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc),
+   and open your `week15` folder.
 
 2. [Create a new Quarto document](../week12/w12b_r-basics.qmd#creating-a-quarto-document) `w15_exercises.qmd` in your `week15` folder,
    with a YAML header with a title, your name, the date, and `embed-resources: true`.
@@ -68,11 +69,10 @@ go over those again.
 ```{r, eval=FALSE}
 library(DESeq2)
 library(pheatmap)
-library(here)
 library(tidyverse) # Load last (see the lecture)
 
 # Load the DESeq2 object that you saved in the lecture
-dds <- readRDS(here("week15/results/DE/dds.rds"))
+dds <- readRDS("results/DE/dds.rds")
 
 # Recreate some other objects from the lecture
 meta <- as.data.frame(colData(dds))
@@ -140,7 +140,7 @@ res_df <- res_rc24 |>
      )
    ```
 
-   Then, compute the library size of each sample with `group_by()` and `summarize()`,
+   Then, compute the library size of each sample with `summarize()` and its `.by` argument,
    and pipe the result into `ggplot()`.
 
 4. Make a histogram of the `count` column of `count_long`.
@@ -346,7 +346,7 @@ and columns `gene_id` and `description`:
 
 ```{r, eval=FALSE}
 gene_descr <- read_tsv(
-  here("garrigos/ref/annot.gtf.gz"),
+  "../garrigos/ref/annot.gtf.gz",
   col_names = FALSE,
   comment = "#",
   quote = "",
@@ -426,8 +426,7 @@ sort(round(colSums(count_mat) / 1000000))
 
 ```{r}
 count_long |>
-  group_by(sample_id) |>
-  summarize(lib_size = sum(count) / 1e6) |> # 1e6 = 1 million
+  summarize(lib_size = sum(count) / 1e6, .by = sample_id) |> # 1e6 = 1 million
   ggplot(aes(x = sample_id, y = lib_size)) +
   geom_col() +
   labs(x = "Sample", y = "Library size (millions of counts)") +

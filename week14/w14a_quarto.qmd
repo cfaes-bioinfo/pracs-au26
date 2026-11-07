@@ -57,7 +57,8 @@ In this session, you will learn:
 
 ## Setting up
 
-Create a new folder `week14`,
+Create a new folder `week14` in your personal dir,
+[open it in Positron](../week12/w12b_r-basics.qmd#working-directory-and-opening-a-folder),
 and in it, [create a new Quarto document](../week12/w12b_r-basics.qmd#creating-a-quarto-document) `week14a.qmd`.
 
 ## How rendering works
@@ -81,7 +82,7 @@ You can also render a Quarto document from the terminal,
 using the `quarto render` command:
 
 ```bash
-quarto render week14/week14a.qmd
+quarto render week14a.qmd
 ```
 
 This does a **one-time render**:
@@ -92,6 +93,39 @@ To look at the output, open the HTML file yourself.
 
 So, `Preview` is handy while you are writing and editing a document,
 whereas `quarto render` is handy to simply produce the final output file.
+
+### The working directory when rendering
+
+Because rendering runs your code in a new R session,
+its working directory can differ from that of your Console:
+
+- When you **run code interactively**, it is executed in the Console,
+  whose working dir is the folder you opened (`week14`).
+- When you **render** the document,
+  the working dir is the folder that contains the document.
+
+So far, your documents have been directly inside the folder you opened,
+so these were the same, and relative paths like `../garrigos` worked either way.
+
+::: {.callout-note collapse="true"}
+#### Documents in a subfolder: the _here_ package _(Click to expand)_
+In larger projects, you may want to keep your Quarto documents in a subfolder,
+like `scripts`.
+Then, the working dir is the folder you opened when you run code interactively,
+but `scripts` when you render,
+so a relative path may work in one case but not the other.
+
+The [_here_ package](https://here.r-lib.org/) solves this problem:
+its `here()` function creates file paths that start at your project's top-level folder,
+no matter what your working directory is.
+For example, `here("data/counts.tsv")` refers to the file `counts.tsv`
+in the `data` folder of your project.
+
+To find your project's top-level folder,
+_here_ looks for a marker like a `.git` folder,
+first in the working dir and then in the folders above it.
+So, in a project that is a Git repository, `here()` works without any setup.
+:::
 
 ## Components of Quarto documents
 
@@ -223,9 +257,10 @@ Positron runs the code of each Quarto document in a separate R session,
 whose working directory is the document's folder,
 and whose Console is not shown by default
 (to show it, enable `console.showNotebookConsoles`).
-Because you use `here()` for file paths
-([week 13](../week13/w13a_data-wrangling.qmd#file-paths-in-quarto-documents)),
-your code works the same either way.
+Because your document is directly inside the folder you opened,
+that is also the working directory of your Console
+(see [above](#the-working-directory-when-rendering)),
+so your code works the same either way.
 :::
 
 #### Chunk options
@@ -346,11 +381,11 @@ For example:
 ```{r}
 #| eval: false
 # Input files
-metadata_file <- here("garrigos/meta/metadata.tsv")
+metadata_file <- "../garrigos/meta/metadata.tsv"
 
 # Output files
-outdir <- here("week14/results")
-plot_file <- here("week14/results/boxplot.png")
+outdir <- "results"
+plot_file <- "results/boxplot.png"
 ```
 
 In the rest of the document, you then only use these variables,
@@ -588,13 +623,13 @@ If it works fine, remove the second bullet point below and use the usual order.
 You would submit this script as follows:
 
 ```bash
-sbatch scripts/render.sh week14/week14a.qmd
+sbatch scripts/render.sh week14a.qmd
 ```
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise 3: Render a document in a batch job
 
-1. Create the script above as `scripts/render.sh` in your personal dir,
+1. Create the script above as `scripts/render.sh` in your `week14` folder,
    and submit it to render your `week14a.qmd`.
 
 2. When the job has finished, check the Slurm log file and the rendered HTML file.
@@ -605,7 +640,7 @@ sbatch scripts/render.sh week14/week14a.qmd
 
    The Slurm log file `slurm-render-<job-id>.out` should contain the same
    rendering messages you see when you render in the terminal,
-   and `ls -l week14` should show that `week14a.html` was just modified.
+   and `ls -l` should show that `week14a.html` was just modified.
 
    </details>
 ---->

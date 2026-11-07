@@ -63,18 +63,17 @@ In this lecture, you will learn:
 
 ### A new Quarto document
 
-[Create a new Quarto document](../week12/w12b_r-basics.qmd#creating-a-quarto-document)
-and save it as `week13b.qmd` in your `week13` folder, and add a YAML header.
+With your `week13` folder open in Positron,
+[create a new Quarto document](../week12/w12b_r-basics.qmd#creating-a-quarto-document)
+`week13b.qmd`, and add a YAML header.
 
 ### Loading packages
 
-For this lecture, we will use the _tidyverse_, which includes _ggplot2_,
-and _here_ for [file paths](w13a_data-wrangling.qmd#file-paths-in-quarto-documents):
+For this lecture, we will use the _tidyverse_, which includes _ggplot2_:
 
 ```{r}
 #| message: false
 library(tidyverse)
-library(here)
 ```
 
 We'll keep working with the `penguins` data set from
@@ -447,14 +446,16 @@ but there are many other geoms to create different types of plots.
 
 Bar graphs are commonly used to show a numeric summary, like a mean, or a count, per group.
 First, let's plot the mean body mass of penguins on each island.
-To do so, we first compute the means with `group_by()` and `summarize()`,
+To do so, we first compute the means with `summarize()` and its `.by` argument,
 which you learned about on Monday:
 
 ```{r}
 ## Before plotting, compute the mean
 island_means <- penguins |>
-  group_by(island) |>
-  summarize(mean_body_mass = mean(body_mass, na.rm = TRUE)) # remove missing values
+  summarize(
+    mean_body_mass = mean(body_mass, na.rm = TRUE), # remove missing values
+    .by = island
+  )
 ```
 
 Then, we use `geom_col()` to plot these means:
@@ -468,7 +469,7 @@ island_means |>
 The islands are shown in alphabetical order,
 because `island` is a factor whose levels (categories) are in that order.
 To change the order, you can redefine the factor levels with `mutate()` before plotting
-(like you did when [sorting](w13a_data-wrangling.qmd#arrange-to-sort-data-frames) on Monday):
+(like you did with the [metadata](w13a_data-wrangling.qmd#setting-a-custom-order-with-factors) on Monday):
 
 ```{r}
 island_means |>
@@ -850,14 +851,14 @@ By default, `ggsave()` won't create a folder that doesn't exist,
 so first create a `results` folder in your `week13` folder, if it doesn't exist yet:
 
 ```{r eval=FALSE}
-dir.create(here("week13/results"), showWarnings = FALSE)
+dir.create("results", showWarnings = FALSE)
 ```
 
 Then, save the plot:
 
 ```{r eval=FALSE}
 ggsave(
-  filename = here("week13/results/boxplot.png"), # file path and name
+  filename = "results/boxplot.png", # file path and name
   plot = box_plot_body_mass_and_island, # what to save
   width = 18,
   height = 12,
