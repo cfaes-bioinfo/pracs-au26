@@ -117,12 +117,6 @@ Therefore, the code below doesn't work, because there is no _object_ called `gen
 c(geneA, geneB, geneC)
 ```
 
-To make a vector with a **series of whole numbers**, you can use the `:` operator:
-
-```{r}
-1:10
-```
-
 ### Vectorization
 
 Consider the output of this command:
@@ -291,7 +285,7 @@ even plain numbers like `"5"`):
 | Data type            | Abbreviation  | Explanation                          | Example          |
 |----------------------|---------------|--------------------------------------|------------------|
 | `double` / `numeric` | `dbl` / `num` | Numbers that can have decimal points | `3.14`           |
-| `integer`            | `int`         | Whole numbers                        | `1:3`            |
+| `integer`            | `int`         | Whole numbers                        | `5L`             |
 | `character`          | `chr`         | Character strings                    | `"geneA"`, `"5"` |
 | `logical`            | `lgl`         | `TRUE` or `FALSE` (unquoted!)        | `TRUE`           |
 
@@ -308,16 +302,18 @@ For example:
 typeof(5)
 ```
 
-But numbers are stored as integers when you create them with `:`:
-
-```{r}
-typeof(1:3)
-```
-
 To force R to store a number as an integer, you can add an `L` after it:
 
 ```{r}
 typeof(5L)
+```
+
+Numbers are also stored as integers when you create a series of whole numbers
+with the `:` operator:
+
+```{r}
+1:3
+typeof(1:3)
 ```
 
 <hr style="height:1pt; visibility:hidden;" />
@@ -441,37 +437,6 @@ Here are the most common comparison operators in R:
 :::
 :::
 
-### Missing values (`NA`)
-
-R uses `NA` to represent **missing data**,
-which is important in statistical computing,
-as not all measurements are always available.
-`NA` is not a character string, so it is not quoted (just like `TRUE` and `FALSE`):
-
-```{r}
-pvals <- c(0.001, NA, 0.2, 0.04)
-pvals
-```
-
-Many functions that operate on vectors will return `NA` if **any** element is `NA`,
-so you can't directly count the number of p-values below 0.05:
-
-```{r}
-sum(pvals < 0.05)
-```
-
-You can get around this by setting `na.rm = TRUE` ("remove `NA`s") in such functions:
-
-```{r}
-sum(pvals < 0.05, na.rm = TRUE)
-```
-
-To check **which** elements are `NA`, use the `is.na()` function:
-
-```{r}
-is.na(pvals)
-```
-
 ## Data frames
 
 ### What is a data frame?
@@ -481,21 +446,6 @@ which can be thought of as **vectors pasted side-by-side**:
 each column is a vector, and can therefore only contain one data type.
 This also means that rows and columns are **not** equivalent:
 each column is a *variable*, and each row an *observation*.
-
-For example, you can combine the gene vectors from above into a data frame
-with the `data.frame()` function,
-where each argument creates a column (`<column-name> = <vector>`):
-
-```{r}
-gene_df <- data.frame(
-  gene_id = gene_ids,
-  count = read_counts,
-  length_kb = gene_lengths_kb
-)
-gene_df
-```
-
-Each row is now a gene, and each column a variable.
 
 ### The tidyverse
 
@@ -745,6 +695,8 @@ in a given row, _each_ condition must be met to output the row.
 filter(.data = counts, S63 > 100000, S64 > 100000)
 ```
 
+<hr style="height:1pt; visibility:hidden;" />
+
 If you want to combine conditions using a Boolean ***OR***,
 where only one of the conditions needs to be met,
 use a `|` (vertical bar) between the conditions:
@@ -753,6 +705,11 @@ use a `|` (vertical bar) between the conditions:
 # Keep rows for genes with more than 100,000 counts in either sample S63 OR S64:
 filter(.data = counts, S63 > 100000 | S64 > 100000)
 ```
+
+:::
+
+::: {.callout-note collapse="true"}
+#### The `%in%` operator will match any of several values _(Click to expand)_
 
 To keep rows whose value matches any one of several values,
 use the `%in%` operator with a vector of those values ---
@@ -1161,6 +1118,8 @@ lib_sizes |>
 ```
 
 Each sample now has its treatment and time point.
+(Rows in the first data frame without a match in the second one would get `NA`,
+which is how R represents **missing data**.)
 Then, you can compute the mean library size for each treatment:
 
 ```{r}
@@ -1267,81 +1226,6 @@ Here, you'll practice with code that uses today's functions.
    </details>
 :::
 
-::: {.callout-note collapse="true"}
-#### Which genes are most highly expressed? _(Click to expand)_
-
-Let's compute the mean count for each gene across all samples,
-and sort genes from highest to lowest mean count:
-
-```{r}
-gene_means <- counts_long |>
-  summarize(mean_count = mean(count), .by = gene_id) |>
-  arrange(desc(mean_count))
-
-gene_means
-```
-
-But what are these genes?
-The gene IDs alone don't tell you,
-so let's add information from the genome annotation (GTF) file.
-To make things easier, we've extracted a table from this file
-with one row per gene and these columns:
-
-- `gene_id`: Gene ID, as in the count table
-- `chromosome`: Chromosome (`chr1`--`chr3` and `MT` for the mitochondrial genome),
-  or `NA` for genes on smaller pieces of the genome assembly that have not been placed on a chromosome
-- `biotype`: Type of gene, such as `protein_coding` or `lncRNA`
-- `description`: Description of the gene product
-- `transcript_length`: Length (bp) of the gene's longest transcript
-
-```{r eval=FALSE}
-genes <- read_tsv("/fs/ess/PAS3493/share/week13/genes.tsv")
-```
-
-```{r echo=FALSE}
-genes <- read_tsv("../assets/week13/genes.tsv")
-```
-
-Let's join this table with the mean counts:
-
-```{r}
-gene_means <- gene_means |>
-  left_join(genes, by = "gene_id")
-
-gene_means
-```
-
-Several of the most highly expressed genes are vitellogenins,
-which are yolk proteins that female mosquitoes produce after a blood meal.
-
-Note the `NA`s for `unassigned_gene_22`:
-"unassigned genes" are not in the annotation,
-and `left_join()` keeps all rows of the first data frame,
-filling in `NA` when there is no match in the second one.
-
-Now you can combine information from both tables ---
-for example, are there highly expressed long noncoding RNA genes (lncRNAs)?
-
-```{r}
-gene_means |>
-  filter(biotype == "lncRNA", mean_count > 1000)
-```
-
-Finally, what kinds of genes are not expressed at all?
-
-```{r}
-gene_means |>
-  filter(mean_count == 0) |>
-  count(biotype)
-```
-
-Most of these are tRNA and rRNA genes,
-which is expected for typical RNA-seq data:
-library prep usually selects for polyadenylated RNA (mostly mRNA),
-which excludes these RNAs.
-
-:::
-
 ## Writing to files
 
 To write a data frame to a TSV file, you can use the `write_tsv()` function,
@@ -1370,8 +1254,6 @@ click the "Open as Plain Text File" button at the top of the Data Explorer.
   (`character`, `double`, `integer`, or `logical`).
 - Operations on vectors are vectorized: they happen for each element.
 - Comparisons return logicals, and `sum()` on these counts the `TRUE`s.
-- Missing values are coded as `NA`;
-  use `na.rm = TRUE` to ignore them in functions like `sum()` and `mean()`.
 - `read_tsv()` and `write_tsv()` read and write TSV files.
 - _dplyr_ functions like `filter()` and `summarize()`
   manipulate data frames, and the pipe `|>` chains them together.

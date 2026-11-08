@@ -1,6 +1,6 @@
 ---
 title: "Additional R material"
-subtitle: "Optional self-study content for weeks 12-15"
+subtitle: "Optional self-study content for weeks 12--15"
 pagetitle: "Bonus: R"
 date: 2026-11-09
 date-modified: last-modified
@@ -48,20 +48,16 @@ the [week 13 lectures](../week13/w13_overview.qmd)
 on vectors, data types, and data wrangling,
 and on the R and Quarto workflows from [weeks 12](../week12/w12_overview.qmd),
 [14](../week14/w14_overview.qmd), and [15](../week15/w15_overview.qmd).
-Everything here is optional, and the sections are mostly independent of each other,
-so you can pick the topics that are most useful to you.
-(For additional plotting material, see the
+(For optional plotting material, see the
 [additional plotting with _ggplot2_](r-plotting.qmd) page.)
 
 The page covers the following topics:
 
-- **[Vectors](#vectors)** --- Number sequences, exploring vectors, and changing elements
-- **[Factors](#factors)** --- Levels, changing the level order, and common pitfalls
-- **[Data wrangling](#data-wrangling)** --- `sub()`, `pivot_wider()`, and other joins
-- **[Formatting code with Air](#formatting-code-with-air)** --- Auto-formatting R code in Positron
-- **[Running R in a Slurm batch job](#running-r-in-a-slurm-batch-job)** --- Using `Rscript` and `quarto render` in batch jobs, and having Claude set this up
-
-Several sections include exercises, with solutions that you can reveal.
+- **[Vectors](#vectors)** --- Number sequences, exploring vectors, and extracting and changing elements.
+- **[Factors](#factors)** --- Levels, changing the level order, and common pitfalls.
+- **[Data wrangling](#data-wrangling)** --- `sub()`, `pivot_wider()`, and other joins.
+- **[Formatting code with Air](#formatting-code-with-air)** --- Auto-formatting R code in Positron.
+- **[Running R in a Slurm batch job](#running-r-in-a-slurm-batch-job)** --- Moving slow code into R scripts that you run with `Rscript`.
 
 ### Setting up
 
@@ -69,24 +65,23 @@ Several sections include exercises, with solutions that you can reveal.
    like in the [w12b lecture](/week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc).
 2. Open your `week13` folder in Positron,
    and create a new Quarto document `bonus_r.qmd` in it, with a YAML header.
-3. Run the examples and exercises in code chunks in this document.
+3. Add a code chunk at the top of the document that loads the tidyverse,
+   which you'll need for the factor and data wrangling sections:
 
-The section on [data wrangling](#data-wrangling)
-uses the same packages and data as in week 13,
-and starts with the code to load them.
-The sections on vectors and factors don't use any data.
+   ```{r}
+   #| message: false
+   library(tidyverse)
+   ```
 
-The last section, on [running R in a Slurm batch job](#running-r-in-a-slurm-batch-job),
-works with files and the terminal rather than a Quarto document.
-Run its commands in the Positron terminal, in a folder that contains your R scripts
-(for example, an R project folder from week 14 or 15).
+4. Run the examples and exercises in code chunks in this document.
 
 ## Vectors
 
 ### Sequences of numbers with `seq()`
 
-The `:` operator makes series of whole numbers with steps of 1.
-For finer control, use the `seq()` function and its arguments `from` (start value),
+You've seen that the `:` operator makes series of whole numbers with steps of 1.
+To create sequences with finer control,
+use the `seq()` function and its arguments `from` (start value),
 `to` (end value), and `by` (step size):
 
 ```{r}
@@ -136,50 +131,86 @@ read_counts[2] <- 0
 read_counts
 ```
 
-You can use functions both inside the brackets and on the right side of the assignment arrow.
-For example, to change the last element of `stepwise_vec` to the mean of the vector:
+### Extracting and changing elements with a condition
+
+Instead of positions, you can also put a **logical vector** inside the brackets,
+which extracts the elements for which it is `TRUE`.
+Because comparisons return logicals,
+this is a way to extract the elements that meet a condition:
 
 ```{r}
-stepwise_vec[length(stepwise_vec)] <- mean(stepwise_vec)
-stepwise_vec
+read_counts > 400
+read_counts[read_counts > 400]
+```
+
+(This is the vector equivalent of `filter()` for data frames.)
+
+This also works on the left side of the assignment arrow ---
+for example, to set counts below 400 to 0:
+
+```{r}
+read_counts[read_counts < 400] <- 0
+read_counts
 ```
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise: Vectors
 
 1. Use `seq()` to make a vector `x` with the numbers 0 to 100 in steps of 5.
-   How many elements does it have?
+   **Predict** how many elements it will have, then check with `length()`.
 
-   <details><summary>*Click to see the solution*</summary>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
    ```{r}
    x <- seq(from = 0, to = 100, by = 5)
    length(x)
    ```
 
+   21, not 20: both the start value (0) and the end value (100) are included.
+
    </details>
 
-2. Change the first element of `x` to `-10`,
-   and check the result by printing only the first few elements.
+2. Set all elements of `x` that are larger than 50 to 50,
+   and check the result with `tail()`.
 
-   <details><summary>*Click to see the solution*</summary>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
    ```{r}
-   x[1] <- -10
-   head(x)
+   x[x > 50] <- 50
+   tail(x)
    ```
+
+   </details>
+
+3. `x` has 21 elements.
+   Predict what happens when you run `x[25] <- 1`,
+   then run it and print `x` to check.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   x[25] <- 1
+   x
+   ```
+
+   R doesn't give an error:
+   it extends the vector to 25 elements,
+   and fills the new positions 22--24 with `NA`.
 
    </details>
 :::
 
 ## Factors
 
+Factors are useful to set a **custom order** of categories when making plots, tables,
+and performing statistical analyses:
+the order of a factor's categories ("**levels**") is respected in these contexts.
+
 In [week 13](../week13/w13b_data-viz.qmd#box-plots),
-you used `factor()` to set the order of the time points in a plot,
+you used `factor()` to set a custom order for the time points in a plot,
 and in [week 15](../week15/w15a_rnaseq.qmd#metadata),
 you'll do the same for the treatments and time points in the RNA-seq metadata.
-The order of a factor's categories ("levels") is used in plots, sorting, and tables,
-and in statistical models, the first level is by default the reference level
+In statistical models, the first level is by default the **reference level**
 that the other levels are compared to.
 
 ### Levels
@@ -213,15 +244,13 @@ sort(treatment_fct)
 
 To change the order of the levels of an existing factor,
 you can use `factor()` again and list all levels.
-But when you only want to move one or a few levels to the front,
+But when you only want to **move one or a few levels** to the front,
 it's easier to use `fct_relevel()` from the _forcats_ package,
 which is part of the _tidyverse_ (like `fct_reorder()`, which you saw in week 13).
+
 For example, to make `relictum` the first level:
 
 ```{r}
-#| message: false
-library(tidyverse)
-
 fct_relevel(treatment_fct, "relictum")
 ```
 
@@ -230,8 +259,8 @@ Like other functions, you can also use it inside `mutate()` to modify a column o
 ### Factors are stored as integers
 
 For most intents and purposes, it makes sense to think of factors as another data type.
-Technically, though, R stores a factor as integers (one for each level),
-with the levels as labels:
+Technically, though, factors are a data structure in R,
+and R **stores a factor as integers** (one for each level), with the levels as labels:
 
 ```{r}
 typeof(treatment_fct)
@@ -256,15 +285,19 @@ as.numeric(as.character(dose_fct))
 ::: exercise
 #### {{< fa user-edit >}} Exercise: Factors
 
-1. Make a factor from `treatment` with the levels in the order
-   `relictum`, `cathemerium`, `control`, and check the order with `levels()`.
+1. Predict the order of the levels of `factor(c("24hpi", "3dpi", "10dpi"))`,
+   then run it to check.
 
-   <details><summary>*Click to see the solution*</summary>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
    ```{r}
-   treatment_fct2 <- factor(treatment, levels = c("relictum", "cathemerium", "control"))
-   levels(treatment_fct2)
+   factor(c("24hpi", "3dpi", "10dpi"))
    ```
+
+   The levels are `10dpi`, `24hpi`, `3dpi`:
+   character strings are sorted character by character,
+   so `"1"` comes before `"2"` and `"3"`, regardless of the numbers' values.
+   This is why you'll usually want to set the levels of time points yourself.
 
    </details>
 
@@ -275,7 +308,7 @@ as.numeric(as.character(dose_fct))
    factor(treatment, levels = c("Control", "cathemerium", "relictum"))
    ```
 
-   <details><summary>*Click to see the solution*</summary>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
    ```{r}
    factor(treatment, levels = c("Control", "cathemerium", "relictum"))
@@ -294,12 +327,7 @@ as.numeric(as.character(dose_fct))
 ## Data wrangling
 
 These sections build on the [week 13 data wrangling lecture](../week13/w13a_data-wrangling.qmd),
-and use the same package and data:
-
-```{r}
-#| message: false
-library(tidyverse)
-```
+and use the same data:
 
 ```{r eval=FALSE}
 counts <- read_tsv(
@@ -319,6 +347,7 @@ genes <- read_tsv("../assets/week13/genes.tsv")
 ```
 
 ```{r}
+# Create a long data frame of counts, with metadata columns added:
 counts_long <- counts |>
   select(!gene_name) |>
   pivot_longer(cols = !gene_id, names_to = "sample_id", values_to = "count") |>
@@ -328,10 +357,11 @@ counts_long <- counts |>
 
 ### Search-and-replace with `sub()`
 
-The `sub()` function does a character-based search-and-replace.
+The `sub()` function does a character-based **search-and-replace**.
 It takes three arguments: the pattern to search for,
 what to replace the pattern with, and the subject vector.
 Like other functions, you can use it inside `mutate()` to modify a column.
+
 For example, to remove the `S` prefix from the sample IDs:
 
 ```{r}
@@ -339,8 +369,13 @@ meta |>
   mutate(sample_id = sub(pattern = "S", replacement = "", x = sample_id))
 ```
 
-`sub()` only replaces the first match in each element:
-to replace all matches, use `gsub()`, which takes the same arguments.
+`sub()` only replaces the **first match** in each element:
+to replace **all** matches, use `gsub()`, which takes the same arguments.
+
+Note that `pattern` is a so-called _regular expression_,
+in which some characters have a special meaning:
+for example, `.` matches any character.
+To search for the literal text instead, add `fixed = TRUE`.
 
 ### Reshaping from long to wide with `pivot_wider()`
 
@@ -348,6 +383,7 @@ In the [week 13 data wrangling lecture](../week13/w13a_data-wrangling.qmd#pivot_
 you used `pivot_longer()` to reshape data from a wide to a long format.
 The `pivot_wider()` function does the opposite,
 which is useful to make compact summary tables.
+
 For example, say you computed the mean count of a gene for each treatment and time point:
 
 ```{r}
@@ -358,7 +394,7 @@ gene_summary <- counts_long |>
 gene_summary
 ```
 
-To give each time point its own column:
+Then, to give each time point its own column:
 
 ```{r}
 gene_summary |>
@@ -378,15 +414,17 @@ For more about pivoting, see
 ### Other types of joins
 
 In week 13, you used `left_join()`,
-which keeps all rows of the first ("left") data frame.
+which keeps **all rows of the first** ("left") data frame.
 Other join functions differ in which rows they keep:
-`inner_join()` keeps only rows with a match in both data frames,
-and `full_join()` keeps all rows of both.
+
+- `inner_join()` keeps **only matching rows**, i.e. those with a match in both data frames
+- `full_join()` keeps **all rows of both** data frames
 
 `anti_join()` is different: it doesn't add any columns,
-but keeps only the rows of the first data frame _without_ a match in the second.
-This is useful to check which rows didn't match ---
-for example, which genes in the count table are not in the annotation table:
+but keeps only the rows of the first data frame _without_ a match in the second
+(it's a so-called "**filtering**" join).
+For example, you can use it to check which genes in the count table are **not**
+in the annotation table:
 
 ```{r}
 counts |>
@@ -394,7 +432,57 @@ counts |>
   anti_join(genes, by = "gene_id")
 ```
 
-These are the "unassigned genes" that got `NA`s in the join in week 13.
+These are the "unassigned genes" that got `NA`s when you added the gene information in
+[Exercise 3 of the week 13 exercises](../week13/w13_exercises.qmd#exercise-3-data-wrangling-to-explore-vitellogenin-genes).
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Joins
+
+1. First, check how many rows `counts` and `genes` have.
+   Then, predict how many rows each of the following two joins will return:
+
+   ```{r, eval=FALSE}
+   counts |> left_join(genes, by = "gene_id")
+   genes |> left_join(counts, by = "gene_id")
+   ```
+
+   a) Both return the number of rows in `counts`
+   b) Both return the number of rows in `genes`
+   c) The first returns the number of rows in `counts`, and the second the number of rows in `genes`
+   d) The first returns the number of rows in `genes`, and the second the number of rows in `counts`
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   **c)** is correct:
+
+   ```{r}
+   nrow(counts)
+   nrow(genes)
+
+   counts |> left_join(genes, by = "gene_id") |> nrow()
+   genes |> left_join(counts, by = "gene_id") |> nrow()
+   ```
+
+   `left_join()` keeps all rows of the first ("left") data frame,
+   adding `NA`s where there is no match in the second one.
+   So the order of the two data frames matters.
+
+   </details>
+
+2. Use `anti_join()` to find out what kind of genes are in `genes` but not in `counts`.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   They are all pseudogenes:
+
+   ```{r}
+   genes |>
+     anti_join(counts, by = "gene_id") |>
+     count(biotype)
+   ```
+
+   </details>
+:::
 
 ::: {.callout-note appearance="simple"}
 For more about joins, see
@@ -406,9 +494,9 @@ For more about joins, see
 ### R code style
 
 R itself is very flexible about spacing and line breaks,
-so how your code is laid out is mostly up to you.
+so the layout and style of your code is mostly up to you.
 But code is much easier to read, for others and for your future self,
-when it follows consistent conventions.
+when it follows consistent **conventions**.
 The most widely used set of conventions is the
 [tidyverse style guide {{< fa external-link >}}](https://style.tidyverse.org){target="_blank"},
 which recommends, among other things:
@@ -423,38 +511,29 @@ which recommends, among other things:
 ### Formatting with Air
 
 Positron's formatter Air follows the tidyverse style guide,
-so you don't have to apply most of these rules by hand.
-In [week 12](../week12/w12b_r-basics.qmd#formatting-your-r-code),
-you saw how to format a Quarto code chunk with Air,
-using _Quarto: Format Cell_.
+so you don't have to apply the layout rules (spacing, line length, and indentation) by hand.
+The other rules, like naming objects, are still up to you.
+To format a Quarto code chunk with Air,
+put your cursor in it and run _Quarto: Format Cell_ from the Command Palette.
 (In an R script, use _Format Document_ instead.)
 
 Besides fixing spacing and indentation,
-Air breaks up lines that are longer than 80 characters.
-For example, it would turn this 90-character line:
+Air breaks up lines that are **longer than 80 characters**.
+For example, it would turn this 85-character line:
 
 ```r
-dds <- DESeqDataSetFromMatrix(countData = counts, colData = metadata, design = ~treatment)
+dds <- DESeqDataSetFromMatrix(colData = meta, countData = count_mat, design = ~group)
 ```
 
 into this, with one argument per line:
 
 ```r
 dds <- DESeqDataSetFromMatrix(
-  countData = counts,
-  colData = metadata,
-  design = ~treatment
+  colData = meta,
+  countData = count_mat,
+  design = ~group
 )
 ```
-
-You can also get this layout for shorter function calls,
-which can make them easier to read:
-if you add a line break right after the opening parenthesis,
-Air will put each argument on its own line.
-
-Air only changes the _layout_ of your code, though
-(plus a few small things like replacing `=` with `<-` for assignment):
-choosing good object names, for example, is still up to you.
 
 ### Formatting on save
 
@@ -463,7 +542,7 @@ open your settings file with _Preferences: Open User Settings (JSON)_
 and add the following inside its outer curly braces
 (add a comma after the preceding setting, if needed):
 
-```json
+```{.file .json filename="settings.json"}
 "[r]": {
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "Posit.air-vscode"
@@ -475,32 +554,30 @@ and add the following inside its outer curly braces
 ```
 
 To see where the 80-character limit is while you type,
-you can also add a [vertical ruler](/bonus/vscode.qmd) to the editor
+you can also add a [vertical ruler](/bonus/vscode.qmd#settings) to the editor
 with `"editor.rulers": [80]`.
 
 ## Running R in a Slurm batch job
 
-So far, you've run all your R code interactively, in Positron.
-But some analyses take a long time to run,
-like differential expression analyses of large data sets.
-Instead of keeping Positron open (your compute job ends after a few hours),
-you can run such code in a **Slurm batch job**, like you did with shell scripts in
-[week 10](/week10/w10b_slurm2.qmd).
+So far, you've run all your R code interactively from Quarto documents.
+But some analyses can take a long time to run.
+It can be more convenient to use **R scripts** for such code,
+and run them in **Slurm batch jobs**, like you've been doing with shell scripts.
 
 ### Put slow code in R scripts, not in Quarto documents
 
-You can render a Quarto document in a batch job,
-but it's usually not a good idea to have a Quarto document with slow code in the first place.
-Every small edit to your text or a plot then means a long wait for the whole document to render,
-and a failed render can mean starting over.
-A Quarto document should render in at most a couple of minutes.
+In Quarto documents in particular, slow-running code can be an annoyance
+because every small edit to your text or a plot means a long wait for the whole
+document to render, and a failed render can mean starting over.
+
+Ideally, a Quarto document therefore renders in at most a couple of minutes.
 (If only a few chunks are somewhat slow,
 you can [cache their results](/bonus/quarto.qmd#avoiding-slow-re-renders-with-caching).)
 
-Instead, the recommended strategy is to separate the work into two parts:
+When you have slow-running code,
+the recommended strategy is to separate the work into two parts:
 
-1. **[R scripts](../week12/w12b_r-basics.qmd#rendering)** (`.R` files)
-   that perform the heavy processing steps,
+1. **R scripts** (`.R` files) that perform the heavy processing steps,
    and save their results to files.
 2. A **Quarto document** that loads these results
    and does the quick part: making tables and plots, and writing the text.
@@ -520,17 +597,23 @@ dds_file <- "results/dds.rds"
 # The slow step
 dds <- DESeq(dds)
 
-# Save the result
+# Save the result (after creating the output folder, if needed)
+dir.create("results", showWarnings = FALSE)
 saveRDS(dds, dds_file)
 ```
 
 In your Quarto document, you would then load the results with `readRDS()`
-instead of running `DESeq()`:
+instead of running `DESeq()`.
+Because the document is in a subfolder,
+use [`here()`](../week14/w14a_quarto.qmd#the-working-directory-when-rendering-and-the-here-package)
+so that the path also works when you render:
 
-```{r}
-#| eval: false
-dds <- readRDS("results/dds.rds")
+````{.quarto .file filename="scripts/analysis.qmd (excerpt)"}
+```{{r}}
+library(here)
+dds <- readRDS(here("results/dds.rds"))
 ```
+````
 
 ### Running an R script with `Rscript`
 
@@ -542,14 +625,8 @@ Rscript scripts/run_deseq.R
 ```
 
 To run it as a Slurm batch job, put that command in a shell script.
-Because you installed all your R packages for the R installation provided by an OSC module
-(rather than a container), the script needs to load that module first:
-
-<!----
-TODO: Check whether `module load` actually fails after `set -euo pipefail` at OSC
-(a known Lmod issue in some setups, not confirmed at OSC).
-If it works fine, remove the second bullet point below and use the usual order.
----->
+This script should first load R with the same `module load` command
+that is in your `~/.bashrc`.
 
 ```{.bash .file filename="scripts/run_rscript.sh"}
 #!/bin/bash
@@ -557,11 +634,10 @@ If it works fine, remove the second bullet point below and use the usual order.
 #SBATCH --time=60
 #SBATCH --mail-type=FAIL
 #SBATCH --output=slurm-rscript-%j.out
+set -euo pipefail
 
 # Load R (this is the same module as in your ~/.bashrc)
 module load gcc/12.3.0 R/4.6.1
-
-set -euo pipefail
 
 # Copy the placeholder variables
 r_script=$1
@@ -569,12 +645,6 @@ r_script=$1
 # Run the R script
 Rscript "$r_script"
 ```
-
-- The `module load` line comes before `set -euo pipefail`,
-  because the `module` command can fail with the strict settings of `set -u`.
-- Relative file paths in your script (like `results/dds.rds`) are relative to the folder
-  that you submit the job from.
-  So, submit from the same folder that you would otherwise run the script from.
 
 You would submit this script as follows:
 
@@ -587,7 +657,7 @@ sbatch scripts/run_rscript.sh scripts/run_deseq.R
 Splitting an existing Quarto document into an R script and a lighter document
 is a good task for Claude, for example:
 
-> ***In analysis.qmd, the DESeq() step is slow. Move the code up to and including***
+> ***In scripts/analysis.qmd, the DESeq() step is slow. Move the code up to and including***
 > ***that step into an R script scripts/run_deseq.R that saves the DESeq2 object***
 > ***to results/dds.rds, and load that file in analysis.qmd instead.***
 > ***Also write a shell script to run the R script as a Slurm batch job.***

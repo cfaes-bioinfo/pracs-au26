@@ -359,37 +359,20 @@ Next, we'll change the look of our plot:
 its colors, titles and labels, and overall theme.
 These functions work the same way for any type of plot.
 
-### Adding titles and labels
+### Adding labels and a theme
 
 To add a title and change the axis labels, use the `labs()` function,
-with arguments `title`, `x`, and `y`:
-
-```{r}
-#| message: false
-sample_stats |>
-  ggplot(aes(x = lib_size_M, y = n_detected)) +
-  geom_point(aes(color = treatment)) +
-  geom_smooth(method = "lm") +
-  labs(
-    title = "More genes are detected when the library size is larger",
-    x = "Library size (millions of reads)",
-    y = "Number of detected genes"
-  )
-```
-
-### Adjusting themes
-
-You can change the overall look of a plot by applying a pre-defined
+with arguments `title`, `x`, and `y`.
+And to change the overall look of a plot,
+you can apply a pre-defined
 [**theme** {{< fa external-link >}}](https://ggplot2.tidyverse.org/reference/ggtheme.html){target="_blank"},
-such as `theme_minimal()`, `theme_classic()`, and `theme_bw()`.
-Let's apply `theme_bw()`:
+such as `theme_minimal()`, `theme_classic()`, or `theme_bw()`.
+Let's do both, and apply `theme_bw()`:
 
 ```{r}
-#| message: false
 sample_stats |>
-  ggplot(aes(x = lib_size_M, y = n_detected)) +
-  geom_point(aes(color = treatment)) +
-  geom_smooth(method = "lm") +
+  ggplot(aes(x = lib_size_M, y = n_detected, color = treatment)) +
+  geom_point() +
   labs(
     title = "More genes are detected when the library size is larger",
     x = "Library size (millions of reads)",
@@ -410,11 +393,9 @@ but as one quick example, let's move the legend to the top and get rid of the
 so-called minor grid lines (the grid lines between those that mark the axis ticks):
 
 ```{r}
-#| message: false
 sample_stats |>
-  ggplot(aes(x = lib_size_M, y = n_detected)) +
-  geom_point(aes(color = treatment)) +
-  geom_smooth(method = "lm") +
+  ggplot(aes(x = lib_size_M, y = n_detected, color = treatment)) +
+  geom_point() +
   labs(
     title = "More genes are detected when the library size is larger",
     x = "Library size (millions of reads)",
@@ -436,11 +417,9 @@ So far, we've used ggplot's default colors.
 To pick the colors yourself, use the `scale_color_manual()` function:
 
 ```{r}
-#| message: false
 sample_stats |>
-  ggplot(aes(x = lib_size_M, y = n_detected)) +
-  geom_point(aes(color = treatment)) +
-  geom_smooth(method = "lm") +
+  ggplot(aes(x = lib_size_M, y = n_detected, color = treatment)) +
+  geom_point() +
   scale_color_manual(values = c("orange", "grey55", "skyblue"))
 ```
 
@@ -453,75 +432,43 @@ For ready-made color palettes, see the [optional plotting self-study page](/bonu
 :::
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 2: Predict and fix
+#### {{< fa user-edit >}} Exercise 2: Find and fix
 
-1. Which plot do you think the code below will produce?
-   Decide first, and then run the code to check.
+The code below should produce a scatter plot with red points,
+a title, and the `theme_bw()` theme, but it contains three mistakes.
+Find and fix them.
 
-   ```{r, eval=FALSE}
-   sample_stats |>
-     ggplot(aes(x = lib_size_M, y = n_detected)) +
-     geom_point() +
-     geom_smooth(aes(color = treatment), method = "lm")
-   ```
-
-   a) Points and trend lines are both colored by treatment
-   b) Black points, and a separate colored trend line for each treatment
-   c) Black points, and a single blue trend line
+```{r, eval=FALSE}
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected)) |>
+  geom_point(color = red) +
+  labs(title = "Library size versus detected genes")
+  theme_bw()
+```
 
 <!----
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-   **b)** is correct:
-   `color = treatment` is a local mapping in `geom_smooth()`,
-   so only the trend lines are colored by treatment,
-   and `geom_point()` uses the default color (black).
+```{r}
+sample_stats |>
+  ggplot(aes(x = lib_size_M, y = n_detected)) +
+  geom_point(color = "red") +
+  labs(title = "Library size versus detected genes") +
+  theme_bw()
+```
 
-   ```{r}
-   #| message: false
-   sample_stats |>
-     ggplot(aes(x = lib_size_M, y = n_detected)) +
-     geom_point() +
-     geom_smooth(aes(color = treatment), method = "lm")
-   ```
+- The layers are added with `+`, not with the pipe `|>`
+  (ggplot2's error message even suggests this fix).
+- `red` needs quotes: without them, R looks for an object called `red`.
+- The `+` after `labs()` is missing.
+  This mistake doesn't cause an error:
+  R makes the plot without the theme,
+  and then runs `theme_bw()` as a separate command,
+  which prints a long list of theme settings in the console.
 
-   </details>
+</details>
 ---->
 
-2. The code below should produce a scatter plot with red points,
-   a title, and the `theme_bw()` theme, but it contains three mistakes.
-   Find and fix them.
-
-   ```{r, eval=FALSE}
-   sample_stats |>
-     ggplot(aes(x = lib_size_M, y = n_detected)) |>
-     geom_point(color = red) +
-     labs(title = "Library size versus detected genes")
-     theme_bw()
-   ```
-
-<!----
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
-
-   ```{r}
-   sample_stats |>
-     ggplot(aes(x = lib_size_M, y = n_detected)) +
-     geom_point(color = "red") +
-     labs(title = "Library size versus detected genes") +
-     theme_bw()
-   ```
-
-   - The layers are added with `+`, not with the pipe `|>`
-     (ggplot2's error message even suggests this fix).
-   - `red` needs quotes: without them, R looks for an object called `red`.
-   - The `+` after `labs()` is missing.
-     This mistake doesn't cause an error:
-     R makes the plot without the theme,
-     and then runs `theme_bw()` as a separate command,
-     which prints a long list of theme settings in the console.
-
-   </details>
----->
 
 :::
 
@@ -529,6 +476,17 @@ For ready-made color palettes, see the [optional plotting self-study page](/bonu
 
 So far, we've only made scatter plots with `geom_point()`,
 but there are many other geoms to create different plot types.
+Here, we'll explore two additional ones, bar graphs and box plots.
+
+[This week's exercises](./w13_exercises.qmd) will also cover violin plots,
+while the [bonus page on plotting in R](/bonus/r-plotting.qmd)
+also covers histograms and a different way to make bar graphs.
+For more examples, see the
+[ggplot2 cheat sheet {{< fa external-link >}}](https://rstudio.github.io/cheatsheets/data-visualization.pdf){target="_blank"}.
+
+One general observation is that once you know the basic syntax of *ggplot*,
+it is relatively easy to make many different types of plots because of the package's
+consistent grammar.
 
 ### Bar graphs with `geom_col()`
 
@@ -589,18 +547,19 @@ sample_stats |>
   geom_boxplot()
 ```
 
-Above, the later time point (10 dpi) comes first,
-because `time` is a character column whose values are sorted alphabetically.
+### Side note: custom order with factors
 
+Above, the later time point (10 dpi) came first,
+because `time` is a character column whose values are **sorted alphabetically**.
 To fix this, you can turn the column into a **factor**,
-R's way of storing categorical data with a set order of categories ("levels").
-This order is respected in plots, sorting, and statistical analyses,
-and you'll use factors like this for the RNA-seq analysis in week 15.
+R's way of storing categorical data that allows to set of **custom order** of
+categories ("levels").
+This order is respected in plots, sorting, and statistical analyses.
 
 We'll turn `time` into a factor with the earlier time point (24 hpi) first,
-by modifying the column with `mutate()`.
-Because we'll make more plots with this column,
-we modify `sample_stats` itself:
+by modifying the column with `mutate()`^[
+  Because we'll make more plots with this column,
+  we modify `sample_stats` itself.]:
 
 ```{r}
 sample_stats <- sample_stats |>
@@ -615,40 +574,30 @@ sample_stats |>
   geom_boxplot()
 ```
 
-Now you can see that the large variation among the control samples
-is mostly due to the control samples at 10 dpi, which have smaller libraries.
-
-(To pick fill colors yourself, use `scale_fill_manual()` instead of `scale_color_manual()`.)
+(This clarifies that the large variation among the control samples
+is mostly due to the control samples at 10 dpi, which have smaller libraries.)
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 3: Coloring bars
+#### {{< fa user-edit >}} Self-study exercises: Bar graphs and box plots
 
-Make the bar graph of library sizes per sample from above again,
-but with the bars colored by treatment.
-Should you use `color` or `fill` for this?
+1. Make the bar graph of library sizes per sample from above again,
+   but with the bars colored by treatment.
+   Should you use `color` or `fill` for this?
 
-<!----
-<details>
+   <details><summary> {{< fa check-circle >}} _Click for the solution_</summary>
 
-<summary>Click for the solution</summary>
+   Use `fill`: like boxes, bars are filled shapes,
+   so `color` would only change their outlines:
 
-Use `fill`: like boxes, bars are filled shapes,
-so `color` would only change their outlines:
+   ```{r}
+   sample_stats |>
+     ggplot(aes(x = sample_id, y = lib_size_M, fill = treatment)) +
+     geom_col()
+   ```
 
-```{r}
-sample_stats |>
-  ggplot(aes(x = sample_id, y = lib_size_M, fill = treatment)) +
-  geom_col()
-```
+   </details>
 
-</details>
----->
-:::
-
-::: exercise
-#### {{< fa user-edit >}} Self-study exercise: Adding data points to a box plot
-
-1. Add the individual data points to the first box plot above (without the `fill`),
+2. Add the individual data points to the first box plot above (without the `fill`),
    using the `geom_jitter()` function.
 
    <details><summary> {{< fa check-circle >}} _Click for the solution_</summary>
@@ -667,7 +616,7 @@ sample_stats |>
 
    </details>
 
-2. Color these points by time point.
+3. Color these points by time point.
 
    <details><summary> {{< fa check-circle >}} _Click for the solution_</summary>
 
@@ -680,23 +629,6 @@ sample_stats |>
 
    </details>
 
-:::
-
-::: {.callout-tip}
-#### Other plot types
-
-There are many other geoms, e.g. for violin plots and line graphs:
-see the
-[ggplot2 cheat sheet {{< fa external-link >}}](https://rstudio.github.io/cheatsheets/data-visualization.pdf){target="_blank"}
-for an overview.
-To learn how to make [bar graphs that count rows with `geom_bar()`](/bonus/r-plotting.qmd#bar-graphs-with-geom_bar),
-[histograms](/bonus/r-plotting.qmd#histograms),
-and [box plots of gene counts](/bonus/r-plotting.qmd#box-plots-of-gene-counts),
-how to split a plot into multiple panels, one for each value of a categorical variable ("faceting"),
-or how to combine different plots into one multi-panel figure,
-see the [optional plotting self-study page](/bonus/r-plotting.qmd).
-You can also ask Claude how to make a type of plot,
-as you'll do in the [exercises](w13_exercises.qmd#exercise-6-working-with-claude).
 :::
 
 ## Exporting plots to files

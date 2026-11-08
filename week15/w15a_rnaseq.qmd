@@ -270,7 +270,7 @@ infection status as an independent variable, i.e. the design `~treatment`.
 If we take a look at Table 1 with the DE results,
 it will become clearer how they did their analysis:
 
-![](/img/paper_table1.png){fig-align="center" width="80%"}
+![](/img/paper_table1.png){fig-alt="Table 1 of the paper: numbers of differentially expressed genes for each comparison (P. relictum vs. controls, P. cathemerium vs. controls, and P. relictum vs. P. cathemerium) at 24 hpi, 10 dpi, and 21 dpi, split into up- and down-regulated genes" fig-align="center" width="80%"}
 
 <details class="details-quiz">
 <summary>How do you interpret this: did they run pairwise comparisons or a two-factor model?</summary>
@@ -556,7 +556,7 @@ you'll make an improved plot with ggplot2.
 
 <details><summary> {{< fa info-circle >}} Click to see the paper's Figure 1 </summary>
 
-![](/img/garrigo_PCA.jpeg)
+![](/img/garrigo_PCA.jpeg){fig-alt="PCA plot of the samples, with PC1 explaining 85% and PC2 3% of variance. Samples from 24 hpi are spread out along PC1, while those from 10 and 21 dpi cluster tightly together; colors show infection status and shapes show time point"}
 
 </details>
 :::
@@ -642,6 +642,45 @@ What do the columns in this table contain?
 - `pvalue`: The uncorrected p-value from the Wald test
 - `padj`: The multiple-testing corrected p-value (i.e., adjusted p-value)
 
+::: callout-tip
+#### Multiple testing correction
+Because we are testing significance for *many* genes, we need to correct for multiple
+testing. DESeq2 uses the Benjamini-Hochberg False Discovery Rate (FDR) correction. For
+more info, see this
+[StatQuest video {{< fa external-link >}}](https://www.youtube.com/watch?v=K8LQSvtjcEo){target="_blank"}.
+:::
+
+### Missing values (`NA`)
+
+Some p-values in the results table are `NA`,
+which is how R represents **missing data**.
+`NA` is not a character string, so it is not quoted (just like `TRUE` and `FALSE`).
+Let's see how R handles `NA`s with a small vector of p-values:
+
+```{r}
+pvals <- c(0.001, NA, 0.2, 0.04)
+pvals
+```
+
+Many functions that operate on vectors will return `NA` if **any** element is `NA`,
+so you can't directly count the number of p-values below 0.05:
+
+```{r}
+sum(pvals < 0.05)
+```
+
+You can get around this by setting `na.rm = TRUE` ("remove `NA`s") in such functions:
+
+```{r}
+sum(pvals < 0.05, na.rm = TRUE)
+```
+
+To check **which** elements are `NA`, use the `is.na()` function:
+
+```{r}
+is.na(pvals)
+```
+
 ::: {.callout-note collapse="true"}
 #### `NA` values in the DESeq2 results table _(Click to expand)_
 
@@ -682,14 +721,6 @@ sum(is.na(res_rc24$padj))
 # As a proportion of the total number of genes in the test:
 sum(is.na(res_rc24$padj)) / nrow(res_rc24)
 ```
-:::
-
-::: callout-tip
-#### Multiple testing correction
-Because we are testing significance for *many* genes, we need to correct for multiple
-testing. DESeq2 uses the Benjamini-Hochberg False Discovery Rate (FDR) correction. For
-more info, see this
-[StatQuest video {{< fa external-link >}}](https://www.youtube.com/watch?v=K8LQSvtjcEo){target="_blank"}.
 :::
 
 ### Log2-fold changes
@@ -752,8 +783,7 @@ symmetrically:
 How many adjusted p-values were less than 0.05 (i.e., significant)?
 
 ```{r}
-# (We need 'na.rm = TRUE' because some p-values are 'NA')
-# (If we don't remove NAs from the calculation, sum() will just return NA)
+# (We need 'na.rm = TRUE' because some adjusted p-values are 'NA')
 sum(res_rc24$padj < 0.05, na.rm = TRUE)
 ```
 
@@ -769,7 +799,7 @@ The paper's Table 1 reports the number of DEGs for a variety of comparisons.
 
 <details><summary> {{< fa info-circle >}} Click to see the paper's Table 1 </summary>
 
-![](/img/paper_table1.png){fig-align="center" width="80%"}
+![](/img/paper_table1.png){fig-alt="Table 1 of the paper: numbers of differentially expressed genes for each comparison (P. relictum vs. controls, P. cathemerium vs. controls, and P. relictum vs. P. cathemerium) at 24 hpi, 10 dpi, and 21 dpi, split into up- and down-regulated genes" fig-align="center" width="80%"}
 
 </details>
 
