@@ -1,6 +1,6 @@
 ---
 title: "Additional R material"
-subtitle: "Optional self-study content for weeks 12-13"
+subtitle: "Optional self-study content for weeks 12-14"
 pagetitle: "Bonus: R"
 date: 2026-11-09
 date-modified: last-modified
@@ -26,6 +26,9 @@ other-links:
   - text: "w13b: Data visualization in R"
     icon: book
     href: ../week13/w13b_data-viz.html
+  - text: "w14a: Quarto and reproducible R workflows"
+    icon: book
+    href: ../week14/w14a_quarto.html
 language:
   title-block-published: "Published on"
   title-block-modified: "Page last modified"
@@ -39,7 +42,8 @@ language:
 
 This page contains additional R material that builds on
 the [week 13 lectures](../week13/w13_overview.qmd)
-on vectors and data types, data wrangling, and visualization.
+on vectors and data types, data wrangling, and visualization,
+and on the [week 14 lecture](../week14/w14_overview.qmd) on Quarto.
 
 ## Vectors
 
@@ -659,4 +663,143 @@ and add the following:
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "quarto.quarto"
 }
+```
+
+## Running R in a Slurm batch job
+
+So far, you've run all your R code interactively, in Positron.
+But some analyses take a long time to run,
+like differential expression analyses of large data sets.
+Instead of keeping Positron open (your compute job ends after a few hours),
+you can run such code in a **Slurm batch job**, like you did with shell scripts in
+[week 10](/week10/w10b_slurm2.qmd).
+
+### Put slow code in R scripts, not in Quarto documents
+
+You can render a Quarto document in a batch job,
+but it's usually not a good idea to have a Quarto document with slow code in the first place.
+Every small edit to your text or a plot then means a long wait for the whole document to render,
+and a failed render can mean starting over.
+A Quarto document should render in at most a couple of minutes.
+(If only a few chunks are somewhat slow,
+you can [cache their results](/bonus/quarto.qmd#avoiding-slow-re-renders-with-caching).)
+
+Instead, the recommended strategy is to separate the work into two parts:
+
+1. **R scripts** (`.R` files) that perform the heavy processing steps,
+   and save their results to files.
+   Unlike a Quarto document, an R script contains only code and no text, chunks, or output.
+2. A **Quarto document** that loads these results
+   and does the quick part: making tables and plots, and writing the text.
+
+For example, the following script performs the slow `DESeq()` step
+from the [week 15](/week15/w15a_rnaseq.qmd) RNA-seq analysis,
+and saves the resulting DESeq2 object with `saveRDS()`:
+
+```{.r .file filename="scripts/run_deseq.R"}
+library(DESeq2)
+
+# Output file
+dds_file <- "results/dds.rds"
+
+# (Code to read the input files and create the `dds` object goes here)
+
+# The slow step
+dds <- DESeq(dds)
+
+# Save the result
+saveRDS(dds, dds_file)
+```
+
+In your Quarto document, you would then load the results with `readRDS()`
+instead of running `DESeq()`:
+
+```{r}
+#| eval: false
+dds <- readRDS("results/dds.rds")
+```
+
+### Running an R script with `Rscript`
+
+You can run an R script from the shell with the `Rscript` command,
+which runs the script from start to finish:
+
+```bash
+Rscript scripts/run_deseq.R
+```
+
+To run it as a Slurm batch job, put that command in a shell script.
+Because you installed all your R packages for the R installation provided by an OSC module
+(rather than a container), the script needs to load that module first:
+
+<!----
+TODO: Check whether `module load` actually fails after `set -euo pipefail` at OSC
+(a known Lmod issue in some setups, not confirmed at OSC).
+If it works fine, remove the second bullet point below and use the usual order.
+---->
+
+```{.bash .file filename="scripts/run_rscript.sh"}
+#!/bin/bash
+#SBATCH --account=PAS3493
+#SBATCH --time=60
+#SBATCH --mail-type=FAIL
+#SBATCH --output=slurm-rscript-%j.out
+
+# Load R (this is the same module as in your ~/.bashrc)
+module load gcc/12.3.0 R/4.6.1
+
+set -euo pipefail
+
+# Copy the placeholder variables
+r_script=$1
+
+# Run the R script
+Rscript "$r_script"
+```
+
+- The `module load` line comes before `set -euo pipefail`,
+  because the `module` command can fail with the strict settings of `set -u`.
+- Relative file paths in your script (like `results/dds.rds`) are relative to the folder
+  that you submit the job from.
+  So, submit from the same folder that you would otherwise run the script from.
+
+You would submit this script as follows:
+
+```bash
+sbatch scripts/run_rscript.sh scripts/run_deseq.R
+```
+
+### Rendering a Quarto document in a batch job
+
+If you do need to render a Quarto document in a batch job,
+the only change is to run `quarto render` instead of `Rscript`:
+
+<!----
+TODO: Test at OSC whether `quarto` is available in a batch job.
+Positron bundles Quarto, and batch jobs inherit the environment of the shell they're submitted from,
+so it should work when submitted from Positron's terminal: check `which quarto` there, and submit the script once.
+If it doesn't work, use the full path to Positron's bundled `quarto` in the script.
+---->
+
+```{.bash .file filename="scripts/render.sh"}
+#!/bin/bash
+#SBATCH --account=PAS3493
+#SBATCH --time=60
+#SBATCH --mail-type=FAIL
+#SBATCH --output=slurm-render-%j.out
+
+# Load R (this is the same module as in your ~/.bashrc)
+module load gcc/12.3.0 R/4.6.1
+
+set -euo pipefail
+
+# Copy the placeholder variables
+qmd_file=$1
+
+# Render the Quarto document
+quarto render "$qmd_file"
+```
+
+```bash
+sbatch scripts/render.sh my-doc.qmd
 ```

@@ -34,14 +34,12 @@ editor:
 
 ### Overview
 
-Since [week 12](../week12/w12b_r-basics.qmd#quarto-documents),
+Since [week 12](/week12/w12b_r-basics.qmd#quarto-documents),
 you've been writing your R code in Quarto documents,
 using a basic YAML header, code chunks, and Markdown text.
 In this session, we'll take a closer look at each of these components,
 and at what happens when you render a document.
-We'll also see how to record the R and package versions you used,
-and how to run R code and render Quarto documents in Slurm batch jobs at OSC,
-which is useful for longer-running analyses.
+We'll also see how to record the R and package versions you used.
 
 ### Learning goals
 
@@ -53,12 +51,11 @@ In this session, you will learn:
 -   How to include R output in your Markdown text
 -   How to record the versions of R and R packages that you used
 -   How to render a document to Markdown that displays well on GitHub
--   How to run R scripts and render Quarto documents in a Slurm batch job
 
 ### Setting up
 
 - Create a new folder `week14` in your personal dir,
-  and [open it in Positron](../week12/w12b_r-basics.qmd#working-directory-and-opening-a-folder).
+  and [open it in Positron](/week12/w12b_r-basics.qmd#working-directory-and-opening-a-folder).
 - Create a new Quarto document `week14/week14a.qmd` and open it.
 
 ## Rendering Quarto documents
@@ -93,77 +90,13 @@ This is a good command to include in your project's **protocol** or README Markd
 this is clearer and more reproducible than adding comments about which Quarto document
 to open and which button to click.
 
-::: {.callout-tip}
-#### Output for GitHub
-
-GitHub shows HTML files as raw code, not as web pages.
-To share a rendered document in a GitHub repository, like for your final project,
-you can _also_ render it to GitHub-Flavored Markdown (`gfm`), which GitHub displays nicely:
-
-```yaml
-format:
-  html:
-    embed-resources: true
-  gfm: default
-```
-
-With two formats, the `Preview` button only renders the first one.
-To render both formats,
-use `quarto render` in the terminal, as shown above.
-This creates a `.md` file, plus a `_files` folder with the figures:
-commit both to your repository.
-You'll try this out in the [week 15 exercises](../week15/w15_exercises.qmd#exercise-8-output-for-github).
-:::
-
-### The working directory when rendering, and the `here` package
-
-Because rendering runs your code in a new R session,
-its working directory can differ from that of your Console:
-
-- When you **run code interactively**, the working dir is the folder you opened.
-- When you **render**, the working dir is the folder that contains the document.
-
-So far, your documents have been directly inside the folder you opened,
-so these were the same.
-But in larger projects, you'll want to keep your **Quarto documents in a subfolder**,
-like `scripts` or `reports`,
-and then a relative path may work in one case but not the other.
-
-The [_here_ package](https://here.r-lib.org/) solves this problem:
-its `here()` function creates file paths that start at your project's top-level folder,
-no matter what your working directory is.
-It finds that folder by looking for a `.git` folder (or an empty file called `.here`)
-in your working dir and its parent folders.
-
-For example, say that your final project's Git repository `FP` is open in Positron,
-and a Quarto document `FP/scripts/analysis.qmd` reads the file `FP/data/meta.tsv`:
-
-| | Working dir | `read_tsv("data/meta.tsv")` | `read_tsv(here("data/meta.tsv"))` |
-|---|---|---|---|
-| Run interactively | `FP` | Works | Works |
-| Render | `FP/scripts` | Fails | Works |
-
-: {.striped .hover}
-
-::: {.callout-tip appearance="simple"}
-To use `here()`, install it with `install.packages("here")`,
-and load it with `library(here)`.
-You'll try this out in the [week 15 exercises](../week15/w15_exercises.qmd#exercise-7-rendering-from-a-subfolder).
-:::
-
-## Components of Quarto documents
-
-As you saw in week 12, a Quarto document has three main components:
-the YAML header, code chunks, and Markdown text.
-We'll take a closer look at each of these now.
-
-### YAML header
+## The YAML header revisited
 
 The YAML header contains settings for the document:
-metadata like the title and author,
-and options for the output format.
+metadata like the title and author, and options for the output format.
 Recall from week 12 that each line contains a `key: value` pair (with a space after the colon).
-Here is an example with a few more options:
+Here is an example with a few more options
+(for more, see [these Quarto docs {{< fa external-link >}}](https://quarto.org/docs/output-formats/html-basics.html){target="_blank"}):
 
 ```yaml
 ---
@@ -173,23 +106,51 @@ author: "Jane Doe"
 date: 2026-11-23
 format:
   html:
-    embed-resources: true
     toc: true
     theme: cosmo
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
 ---
 ```
 
-- Keys can be nested by indenting them with two spaces:
-  above, `html` is nested under `format`,
-  and `embed-resources`, `toc`, and `theme` are options for the `html` output format.
+- Keys can be **nested** by indenting them with two spaces:
+  above, `html` is nested under `format`, and `toc` is nested under `html`.
+- `toc: true` adds a **table of contents**.
+- `theme` picks one of Quarto's
+  [25 built-in **themes** {{< fa external-link >}}](https://quarto.org/docs/output-formats/html-themes.html){target="_blank"},
+  which change the fonts, colors, etc.
 - `embed-resources: true` makes Quarto put everything,
   including any figures, into a single HTML file,
-  so you can download that one file from OSC and open or share it.
-- `toc: true` adds a table of contents.
-- `theme` picks one of Quarto's
-  [25 built-in themes](https://quarto.org/docs/output-formats/html-themes.html),
-  which change the fonts, colors, etc.
-- There are many more [options for HTML output](https://quarto.org/docs/output-formats/html-basics.html).
+  so you can download that one file from OSC and open or share it^[
+    When you don't embed resources, Quarto creates a separate folder with the figures.
+  ].
+- `execute:` sets **default options for all code chunks** in the document.
+  Above, `echo: false` hides all R code by default (showing only the output),
+  and `warning: false` hides warnings.
+  Note that `execute:` is a top-level key, not nested under `format:`.
+  Below, you'll see how to override these defaults for individual chunks.
+
+::: {.callout-tip collapse="true"}
+#### Want to show your rendered output on GitHub? _(Click to expand)_
+
+GitHub shows HTML files as raw code, not as web pages.
+To share a rendered document in a GitHub repository, like for your final project,
+you can _also_ render it to GitHub-Flavored Markdown (`gfm`), which GitHub displays nicely,
+as follows:
+
+```yaml
+format:
+  html:
+    embed-resources: true
+  gfm: default
+```
+
+With two formats, the `Preview` button only renders the first one.
+To render both formats, run `quarto render`.
+You'll try this out in the [week 15 exercises](/week15/w15_exercises.qmd#exercise-8-output-for-github).
+:::
 
 ::: {.callout-note collapse="true"}
 #### More YAML syntax _(Click to expand)_
@@ -260,9 +221,17 @@ format:
 ---->
 :::
 
-### Code chunks
+## Running R code
 
-#### Chunk options
+Besides `Run Cell`, which runs the current chunk,
+the line above each chunk has a `Run Above` button,
+which runs all code chunks _above_ the current chunk.
+This is useful when you've restarted R or opened a document in a new session,
+and want to get back to where you were.
+
+<!---- TODO: Add a Positron screenshot of the Run Cell / Run Above buttons above a chunk ---->
+
+### Chunk options
 
 You can change how a chunk behaves with **chunk options**:
 lines at the top of a chunk that start with `#|`,
@@ -284,69 +253,187 @@ A few useful chunk options (more in the [Quarto documentation {{< fa external-li
 - `#| warning: false` and `#| message: false` --- Hide warnings and messages,
   such as the ones printed when loading some packages.
 
-#### Figure options
+Chunk options override the document-wide defaults set under `execute:` in the YAML header.
+For example, if the YAML has `echo: false`,
+you can still show the code of one specific chunk by adding `#| echo: true` to it.
+
+### Figure options
 
 When you render a document, any plots made in code chunks are included in the output.
 Several chunk options control how plots are shown --- for example:
 
 - `fig-cap` --- Add a figure caption below the plot.
 - `fig-width` and `fig-height` --- Set the size of the plot (in inches).
+- `out-width` --- Set the size of the plot _as shown in the document_,
+  e.g. `"50%"` for half the page width.
+
+The difference between `fig-width` and `out-width` can be confusing:
+
+- `fig-width` and `fig-height` set the size of the "canvas" that R draws the plot on.
+  Importantly, the size of the text and points is fixed,
+  so on a larger canvas, they look **smaller** (!).
+  This behavior is the same as when you save a plot to a file with `ggsave()`.
+- `out-width` simply makes the finished plot bigger or smaller in the document.
+
+Before we can make a plot,
+we need to load the _tidyverse_ and read the gene count table from week 13:
+
+```{r}
+#| eval: false
+library(tidyverse)
+counts <- read_tsv(
+  "/fs/ess/PAS3493/share/week13/salmon.merged.gene_counts_length_scaled.tsv"
+)
+```
 
 ```{r}
 #| include: false
 library(tidyverse)
-meta <- read_tsv("../assets/week13/metadata.tsv", show_col_types = FALSE)
-# Only the rows for the plotted gene, which is enough for this example:
-counts_long <- read_tsv(
-  "../assets/week13/salmon.merged.gene_counts_length_scaled.tsv",
-  show_col_types = FALSE
-) |>
-  filter(gene_id == "LOC120423767") |>
-  select(!gene_name) |>
-  pivot_longer(cols = !gene_id, names_to = "sample_id", values_to = "count") |>
-  left_join(meta, by = "sample_id") |>
-  mutate(time = factor(time, levels = c("24hpi", "10dpi")))
+counts <- read_tsv(
+  "../assets/week13/salmon.merged.gene_counts_length_scaled.tsv"
+)
 ```
+
+Then, add a chunk with a scatter plot that compares the gene counts of two samples:
 
 ```{r}
 #| echo: fenced
-#| fig-cap: "Counts of the chymotrypsin gene LOC120423767"
-#| fig-width: 6
+#| fig-cap: "Gene counts in samples S63 and S64"
+#| fig-width: 5
 #| fig-height: 4
-counts_long |>
-  filter(gene_id == "LOC120423767") |>
-  ggplot(aes(x = treatment, y = count, fill = time)) +
-  geom_boxplot()
+#| out-width: "70%"
+counts |>
+  ggplot(aes(x = S63, y = S64)) +
+  geom_point()
 ```
 
-#### Global vs. chunk-specific options
+Now, change `fig-width` and `fig-height` to twice their size, and render again.
+Thanks to `out-width`, the plot is shown at the same size as before,
+but the text and points now look much smaller:
 
-If the default code chunk settings don’t fit your needs, you can change
-them for the whole document in the YAML section under `execute:`. For
-example, if you don’t want to show your R code to your readers, you can
-set `echo: false` which hides all code by default. If you later want to
-show the code for a specific chunk, you can turn it back on just for
-that chunk using `echo: true`.
+```{r}
+#| echo: fenced
+#| fig-cap: "Gene counts in samples S63 and S64"
+#| fig-width: 10
+#| fig-height: 8
+#| out-width: "70%"
+counts |>
+  ggplot(aes(x = S63, y = S64)) +
+  geom_point()
+```
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 2: Chunk options
+
+1. Render your document, and note the messages printed by the chunk
+   that loads the _tidyverse_ and reads the count table.
+   Then, use a chunk option to **hide these messages**, and render again.
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ````{.markdown}
+   ```{{r}}
+   #| message: false
+   library(tidyverse)
+   counts <- read_tsv(
+     "/fs/ess/PAS3493/share/week13/salmon.merged.gene_counts_length_scaled.tsv"
+   )
+   ```
+   ````
+
+   </details>
+---->
+
+2. In the chunk with the scatter plot, hide the code,
+   and change `out-width` to `"50%"`.
+   Render and compare the plot to the earlier version.
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ````{.markdown}
+   ```{{r}}
+   #| echo: false
+   #| fig-cap: "Gene counts in samples S63 and S64"
+   #| fig-width: 6
+   #| fig-height: 4
+   #| out-width: "50%"
+   counts |>
+     ggplot(aes(x = S63, y = S64)) +
+     geom_point()
+   ```
+   ````
+
+   The whole plot, including the text and points, is shrunk to half the page width,
+   so it looks the same as before, only smaller.
+
+   </details>
+---->
+:::
+
+### Inline code in Markdown text
+
+You can include the output of R code directly in your Markdown text with **inline code**:
+a backtick, the letter `r` and a space, your code, and a closing backtick.
+For example, this text:
+
+```markdown
+The gene count table contains `r "\x60r nrow(counts)\x60"` genes.
+```
+
+Renders as:
+
+> The gene count table contains `r nrow(counts)` genes.
+
+This way, numbers in your text are computed when you render the document,
+so they always match your data and code --- no more copy-pasting numbers.
+
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise: Inline code
+
+1. Add a sentence to your document that reports, with inline code,
+   the number of genes with a count of zero in sample `S63`, and render.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   For example:
+   In sample S63, `r "\x60r nrow(filter(counts, S63 == 0))\x60"` genes have a count of zero.
+
+   </details>
+
+2. Predict what the rendered document will show if you leave out the `r` and the space,
+   i.e. `` `nrow(counts)` ``? Then, render to check.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Without the `r`, it is regular Markdown inline code formatting:
+   the text `nrow(counts)` is shown in a code font, and the code is not run.
+
+   </details>
+:::
+
+## Structuring your Quarto document
+
+### Load packages at the top
+
+Load all packages that your document uses in a chunk at the top of the document.
+That way, you (and others) can see at a glance which packages are needed.
 For example:
 
-```yaml
----
-title: "My report"
-format:
-  html:
-    embed-resources: true
-execute:
-  echo: false
-  warning: false
----
+```{r}
+#| eval: false
+library(tidyverse)
+library(here)
 ```
 
-Note that `execute:` is a top-level key, not nested under `format:`.
+Install packages in the console, though, rather than in a chunk.
+Otherwise, they will be installed again every time you render the document.
 
-#### File paths at the top
+### State file paths at the top
 
 As with the variables in your
-[FastQC shell script in week 7](../week07/w7a_scripts1.qmd#using-variables-in-your-fastqc-script),
+[FastQC shell script in week 7](/week07/w7a_scripts1.qmd#using-variables-in-your-fastqc-script),
 it's good practice to define all file paths in one place:
 in a chunk near the top of your document, first for the input files,
 and then for the output files.
@@ -369,106 +456,47 @@ This has two advantages:
 - You (and others) can see at a glance which files the document reads and writes.
 - When a path changes, you only need to change it in one place.
 
-::: exercise
-#### {{< fa user-edit >}} Exercise 2: Chunk options
+### The working directory when rendering, and the `here` package
 
-Add code chunks to your document to do the following:
+Because rendering runs your code in a new R session,
+its working directory can differ from that of your Console:
 
-1. Load the _tidyverse_, using a chunk option to hide its messages.
+- When you **run code interactively**, the working dir is the **folder you opened**.
+- When you **render**, the working dir is the folder **that contains the document**.
 
-<!----
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+So far, your Quarto documents have been directly inside the folder you opened,
+so these two working directories were the same.
+But in larger projects,
+when you'll want to keep your **Quarto documents in a subfolder**,
+like `scripts`, they will differ,
+and a relative path may work in one case but not the other.
 
-   ````{.markdown}
-   ```{{r}}
-   #| message: false
-   library(tidyverse)
-   ```
-   ````
+The [_here_ package {{< fa external-link >}}](https://here.r-lib.org/){target="_blank"} solves this problem:
+its `here()` function creates absolute file paths from relative ones that start
+at your **project's top-level folder**, no matter what your working directory is.
+(It finds that folder by looking for a `.git` folder^[
+  Or an empty placeholder file called `.here`.]
+in your working dir and its parent folders.)
 
-   </details>
----->
+For example, say that your final project's Git repository `FP` is open in Positron,
+and a Quarto document `FP/scripts/analysis.qmd` reads the file `FP/data/meta.tsv`:
 
-2. Add a chunk that creates a scatter plot of the `diamonds` data set
-   (which comes with _ggplot2_), with `carat` on the x-axis and `price` on the y-axis.
-   Use chunk options to hide the code, add a figure caption,
-   and make the figure 5 inches wide and 4 inches tall.
+|                   | Working dir  | `read_tsv("data/meta.tsv")` | `read_tsv(here("data/meta.tsv"))` |
+| ----------------- | ------------ | :-------------------------: | :-------------------------------: |
+| **Run interactively** | `FP`     | [{{< fa check title="Works" >}}]{.text-success} | [{{< fa check title="Works" >}}]{.text-success} |
+| **Render**            | `FP/scripts` | [{{< fa xmark title="Fails" >}}]{.text-danger} | [{{< fa check title="Works" >}}]{.text-success} |
 
-<!----
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+: {.striped .hover}
 
-   ````{.markdown}
-   ```{{r}}
-   #| echo: false
-   #| fig-cap: "Price versus carat of diamonds"
-   #| fig-width: 5
-   #| fig-height: 4
-   diamonds |>
-     ggplot(aes(x = carat, y = price)) +
-     geom_point()
-   ```
-   ````
+<hr style="height:1pt; visibility:hidden;" />
 
-   </details>
----->
+::: {.callout-tip appearance="simple"}
+To use `here()`, install it with `install.packages("here")`,
+and load it with `library(here)`.
+You'll try this out in the [week 15 exercises](/week15/w15_exercises.qmd#exercise-7-rendering-from-a-subfolder).
 :::
 
-::: {.callout-tip}
-#### Miscellaneous tips
-
-- Besides `Run Cell`, which runs the current chunk,
-  the line above each chunk has a `Run Above` button,
-  which runs all code chunks _above_ the current chunk.
-  This is useful when you've restarted R or opened a document in a new session,
-  and want to get back to where you were.
-
-  <!---- TODO: Add a Positron screenshot of the Run Cell / Run Above buttons above a chunk ---->
-
-- Install packages in the console rather than in a chunk.
-  Otherwise, they will be installed again every time you render the document.
-:::
-
-## Inline code in Markdown text
-
-You can include the output of R code directly in your Markdown text with **inline code**:
-a backtick, the letter `r` and a space, your code, and a closing backtick.
-For example, this text:
-
-```markdown
-The iris data set contains `r "\x60r nrow(iris)\x60"` flowers.
-```
-
-Renders as:
-
-> The iris data set contains `r nrow(iris)` flowers.
-
-This way, numbers in your text are computed when you render the document,
-so they always match your data and code --- no more copy-pasting numbers.
-
-::: exercise
-#### {{< fa user-edit >}} Self-study exercise: Inline code
-
-1. Add a sentence to your document that reports the number of rows of the `diamonds`
-   data set with inline code, and render.
-
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
-
-   For example: The diamonds data set has `r "\x60r nrow(diamonds)\x60"` rows.
-
-   </details>
-
-2. **Predict**: what will the rendered document show if you leave out the `r` and the space,
-   i.e. `` `nrow(diamonds)` ``? Render to check.
-
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
-
-   Without the `r`, it is regular Markdown inline code formatting:
-   the text `nrow(diamonds)` is shown in a code font, and the code is not run.
-
-   </details>
-:::
-
-## Recording R and package versions
+### Record R and package versions at the end
 
 For reproducibility, it's good practice to record which versions of R and R packages you used.
 An easy way to do so is to end each Quarto document with a chunk that runs `sessionInfo()`.
@@ -479,109 +507,63 @@ and the versions of all loaded packages:
 sessionInfo()
 ```
 
-`sessionInfo()` only _records_ package versions, though.
+::: {.callout-note collapse="true"}
+#### Project-specific packages with **renv** _(Click to expand)_
+
 By default, all your projects share one set of installed packages,
 so updating a package for one project also changes it for all others.
-And reinstalling the exact versions from a `sessionInfo()` list,
+This isn't great for reproducibility.
+Moreover, reinstalling the exact versions from a `sessionInfo()` list,
 say on another computer, is tedious.
+
 The **renv** package solves both problems:
 it gives each project its own packages,
 and records their versions in a file that lets you (or anyone else)
 reinstall those exact versions with a single command ---
-see the [optional self-study page on renv](../bonus/renv.qmd).
-
-## Running R in a Slurm batch job
-
-So far, you've run all your R code interactively, in Positron.
-But some analyses take a long time to run,
-like differential expression analyses of large data sets,
-or simply rendering a document whose code takes an hour.
-Instead of keeping Positron open (your compute job ends after a few hours),
-you can run such code in a **Slurm batch job**, like you did with shell scripts in
-[week 10](../week10/w10b_slurm2.qmd).
-
-There are two commands to run R code from the shell:
-
-- `Rscript my-script.R` runs an R script (`.R` file) from start to finish
-  (see the box on R scripts in
-  [week 12](../week12/w12b_r-basics.qmd#rendering)).
-- `quarto render my-doc.qmd` renders a Quarto document,
-  like you did in the terminal [above](#rendering-from-the-terminal).
-
-(If only a few chunks in a document are slow,
-you can also [cache their results](../bonus/quarto.qmd#avoiding-slow-re-renders-with-caching),
-so they don't have to run again every time you render.)
-
-Here is a shell script that renders a Quarto document in a batch job:
-
-<!----
-TODO: Test at OSC whether `quarto` is available in a batch job.
-Positron bundles Quarto, and batch jobs inherit the environment of the shell they're submitted from,
-so it should work when submitted from Positron's terminal: check `which quarto` there, and submit the script once.
-If it doesn't work, use the full path to Positron's bundled `quarto` in the script.
----->
-
-```{.bash .file filename="scripts/render.sh"}
-#!/bin/bash
-#SBATCH --account=PAS3493
-#SBATCH --time=60
-#SBATCH --mail-type=FAIL
-#SBATCH --output=slurm-render-%j.out
-
-# Load R (this is the same module as in your ~/.bashrc)
-module load gcc/12.3.0 R/4.6.1
-
-set -euo pipefail
-
-# Copy the placeholder variables
-qmd_file=$1
-
-# Render the Quarto document
-quarto render "$qmd_file"
-```
-
-<!----
-TODO: Check whether `module load` actually fails after `set -euo pipefail` at OSC
-(a known Lmod issue in some setups, not confirmed at OSC).
-If it works fine, remove the second bullet point below and use the usual order.
----->
-
-- Unlike most software in this course, we load R with an OSC module rather than a container,
-  because that's the R installation that you installed all your packages for.
-- The `module load` line comes before `set -euo pipefail`,
-  because the `module` command can fail with the strict settings of `set -u`.
-- To run an R script instead, replace `quarto render` with `Rscript`,
-  and pass the script an R script instead of a Quarto document.
-
-You would submit this script as follows:
-
-```bash
-sbatch scripts/render.sh week14a.qmd
-```
-
-::: exercise
-#### {{< fa user-edit >}} Exercise 3: Render a document in a batch job
-
-1. Create the script above as `scripts/render.sh` in your `week14` folder,
-   and submit it to render your `week14a.qmd`.
-
-2. When the job has finished, check the Slurm log file and the rendered HTML file.
-   Was the HTML file updated? (Hint: `ls -l` shows when a file was last modified.)
-
-<!----
-   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
-
-   The Slurm log file `slurm-render-<job-id>.out` should contain the same
-   rendering messages you see when you render in the terminal,
-   and `ls -l` should show that `week14a.html` was just modified.
-
-   </details>
----->
+see the [optional self-study page on renv](/bonus/renv.qmd).
 :::
+
+::: {.callout-tip collapse="true"}
+##### Use an R _script_ for long-running code _(Click to expand)_
+
+Quarto documents are best kept quick to render, ideally within a couple of minutes.
+If your analysis includes slow steps, such as a large differential expression analysis,
+the recommended strategy is to put them in separate R scripts,
+which you can run in a Slurm batch job.
+See the [optional self-study page on R](/bonus/r.qmd#running-r-in-a-slurm-batch-job)
+for how to do this.
+:::
+
+## Recap and self-study
+
+### Recap
+
+- Rendering first runs all code, and then converts the result to the output format;
+  `quarto render` renders a document from the terminal.
+- The YAML header sets document metadata, output format options,
+  and, under `execute:`, default options for all chunks.
+- Chunk options (`#|` lines) control whether a chunk's code is run and shown,
+  and how its figures are shown.
+- Inline code puts R output directly in your Markdown text.
+- Load packages and define file paths at the top of a document,
+  and end it with `sessionInfo()`.
+- When rendering, the working directory is the document's folder;
+  `here()` makes file paths work both interactively and when rendering.
+
+### Optional self-study material
+
+The [optional Quarto self-study page](/bonus/quarto.qmd) covers:
+
+- Naming chunks with chunk labels
+- Two Positron features for Quarto documents:
+  showing the output below each chunk, and the visual editor
+- Citing papers and software with a bibliography file
+- Avoiding slow re-renders with caching
+- Turning an existing R script into a Quarto document
 
 <hr style="height:1pt; visibility:hidden;" />
 
-::: callout-note
+::: {.callout-note #install-packages-for-week-15}
 ##### Install packages for week 15
 
 Installing the R packages for next week's RNA-seq analysis takes a few minutes,
@@ -590,12 +572,10 @@ we'll go over what these commands do next week:
 
 ```{r, eval=FALSE}
 install.packages("BiocManager")
-install.packages("pheatmap")
 BiocManager::install("DESeq2")
 ```
 
-Let the installation keep running until it's done,
-even if that's after the end of class.
+Keep the installation process running until it's done!
 
 :::
 
