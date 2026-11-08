@@ -308,7 +308,7 @@ For example:
 typeof(5)
 ```
 
-While numbers are stored as integers when you create them with `:`:
+But numbers are stored as integers when you create them with `:`:
 
 ```{r}
 typeof(1:3)
@@ -507,7 +507,7 @@ the data in a data frame.
 
 All core tidyverse packages can be installed and loaded with a single command.
 You installed the tidyverse
-[at the end of last week's lecture](/week12/w12b_r-basics.qmd#before-next-week-install-packages-for-week-13),
+[at the end of last week's lecture](/week12/w12b_r-basics.qmd#recap-and-looking-forward),
 so you only need to **load** it now:
 
 ```{r}
@@ -550,23 +550,26 @@ by prefacing it with its package name as follows: `stats::filter()`.
 The _dplyr_ and _tidyr_ packages, both part of the tidyverse,
 provide functions to **manipulate** data in data frames, such as for "**data wrangling**":
 cleaning and transforming your data to make it easier to visualize and analyze.
-In this lecture, we'll cover some of the most commonly used _dplyr_ functions:
+In this lecture, we'll cover some of the most commonly used functions from these packages:
 
 - Subsetting:
   - `select()` to pick columns (variables)
   - `filter()` to pick rows (observations)
-- Other modifying:
-  - `arrange()` to change the order of rows (i.e., to sort a data frame)
-  - `mutate()` to modify values in columns and create new columns
-  - `summarize()` to compute across-row summaries
+- Reshaping:
   - `pivot_longer()` to reshape a data frame from wide to long format
+- Transforming:
+  - `summarize()` to compute across-row summaries
+  - `mutate()` to modify values in columns and create new columns
+  - `arrange()` to change the order of rows (i.e., to sort a data frame)
 - Combining:
   - `left_join()` to combine two data frames based on one or more shared columns
 
 All these functions have the same straightforward input/output behavior:
 
-- Their input is a data frame
-- Their output is a **new, modified** data frame
+- Their input is a data frame.
+- Their output is a **new, modified** data frame.
+  The input data frame itself is not changed,
+  unless you assign the output back to it.
 
 Finally, we'll see how to read and write data frames to and from TSV files
 with `read_tsv()` and `write_tsv()` from the _readr_ package.
@@ -584,18 +587,24 @@ We'll use _readr_'s  `read_tsv()` function to read a TSV (tab-separated) file:
 
 ```{r eval=FALSE}
 counts <- read_tsv(
-  file = "/fs/ess/PAS3493/share/week13/salmon.merged.gene_counts_length_scaled.tsv"
+  "/fs/ess/PAS3493/share/week13/salmon.merged.gene_counts_length_scaled.tsv"
 )
 ```
 
 ```{r echo=FALSE}
 counts <- read_tsv(
-  file = "../assets/week13/salmon.merged.gene_counts_length_scaled.tsv"
+  "../assets/week13/salmon.merged.gene_counts_length_scaled.tsv"
 )
 ```
 
 Note that this function is rather chatty,
 telling you how many rows and columns it read, and what their data types are.
+
+For other file formats, _readr_ has similar functions,
+like `read_csv()` for CSV (comma-separated) files.
+To read Excel files, use `read_excel()` from the _readxl_ package,
+which is installed along with the tidyverse
+(but you have to load it separately with `library(readxl)`).
 Let's check the resulting object:
 
 ```{r}
@@ -605,7 +614,7 @@ counts
 `read_tsv()` returns a **tibble**, the tidyverse's variant of a data frame.
 Tibbles print more compactly than regular data frames:
 they show the data type of each column,
-and only as many rows and columns as fit on your screen.
+and only the first 10 rows and as many columns as fit on your screen.
 
 The table has one row per gene and, after the `gene_id` and `gene_name` columns,
 one column per sample.
@@ -772,7 +781,7 @@ You could go on like this, with a separate command for each step,
 and successively creating new, intermediate objects.
 In the Unix shell, we used the [pipe](/week04/w4c_shell-files2.qmd#the-pipe)
 `|` to shorten code and avoid writing intermediate files.
-Since a few years, R also has a **pipe operator**, `|>`.
+Since 2021, R also has a **pipe operator**, `|>`.
 So in R, the vertical bar <kbd>|</kbd> is followed by a greater-than sign <kbd>></kbd>.
 
 Let's start by seeing a rephrasing of the code above, now using pipes:
@@ -933,7 +942,7 @@ with separate columns for the time point and the height:
 <hr style="height:1pt; visibility:hidden;" />
 
 Our **count table** is not tidy either: each sample is in a separate column.
-One observation is a gene count across one sample,
+One observation is the count of one gene in one sample,
 so right now we have many observations per gene in a single row.
 
 This "**wide**" format is the standard way to store count tables,
@@ -1039,8 +1048,10 @@ and prints a message that it "has regrouped the output":
 
 ```{r}
 counts_long |>
+  # Add a column 'zero' that is TRUE for zero counts (see mutate() below):
   mutate(zero = count == 0) |>
   group_by(sample_id, zero) |>
+  # n() counts the number of rows in each group:
   summarize(n_genes = n())
 ```
 
@@ -1086,7 +1097,9 @@ lib_sizes |>
   arrange(lib_size_M)
 ```
 
-Most samples have 15--30 million counts, but sample `S77` has fewer than 10 million.
+Most samples have about 15--30 million counts, but sample `S77` has fewer than 10 million.
+Differences like these are why counts need to be _normalized_
+before comparing them between samples, as you'll do in week 15.
 
 Default sorting is from small to large for numbers, and alphabetical for character strings.
 To sort in reverse order, use the `desc()` (descending) helper function:
@@ -1118,11 +1131,11 @@ To answer this, you need the metadata, to get the treatment for each sample.
 ### Reading the metadata
 
 ```{r eval=FALSE}
-meta <- read_tsv(file = "../garrigos/meta/metadata.tsv")
+meta <- read_tsv("../garrigos/meta/metadata.tsv")
 ```
 
 ```{r echo=FALSE}
-meta <- read_tsv(file = "../assets/week13/metadata.tsv")
+meta <- read_tsv("../assets/week13/metadata.tsv")
 ```
 
 ```{r}
@@ -1156,9 +1169,34 @@ lib_sizes |>
   summarize(mean_lib_size_M = mean(lib_size_M), .by = treatment)
 ```
 
-The library sizes differ somewhat between treatments ---
-differences like these are one reason that counts need to be _normalized_
-before comparing them between samples, as you'll do in week 15.
+The _relictum_ samples have somewhat larger libraries on average.
+
+::: exercise
+#### {{< fa user-edit >}} Exercise 3: Summarizing by two variables
+
+Each treatment includes samples from two time points.
+Modify the code above to compute the mean library size
+for each combination of treatment and time point.
+Do the library sizes of the control samples look the same at both time points?
+
+(Hint: recall how you combine multiple values into a vector.)
+
+<!----
+<details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+```{r}
+lib_sizes |>
+  left_join(meta, by = "sample_id") |>
+  summarize(mean_lib_size_M = mean(lib_size_M), .by = c(treatment, time))
+```
+
+No: the control samples have the largest libraries at 24 hpi (25.1 million)
+but the smallest at 10 dpi (15.3 million).
+So the low mean for the control treatment is entirely due to the 10 dpi samples.
+
+</details>
+---->
+:::
 
 ::: {.callout-note collapse="true"}
 #### Which genes are most highly expressed? _(Click to expand)_
@@ -1188,11 +1226,11 @@ with one row per gene and these columns:
 - `transcript_length`: Length (bp) of the gene's longest transcript
 
 ```{r eval=FALSE}
-genes <- read_tsv(file = "/fs/ess/PAS3493/share/week13/genes.tsv")
+genes <- read_tsv("/fs/ess/PAS3493/share/week13/genes.tsv")
 ```
 
 ```{r echo=FALSE}
-genes <- read_tsv(file = "../assets/week13/genes.tsv")
+genes <- read_tsv("../assets/week13/genes.tsv")
 ```
 
 Let's join this table with the mean counts:
@@ -1266,7 +1304,7 @@ click the "Open as Plain Text File" button at the top of the Data Explorer.
 - Missing values are coded as `NA`;
   use `na.rm = TRUE` to ignore them in functions like `sum()` and `mean()`.
 - `read_tsv()` and `write_tsv()` read and write TSV files.
-- _dplyr_ functions like `filter()` and `summarize()`,
+- _dplyr_ functions like `filter()` and `summarize()`
   manipulate data frames, and the pipe `|>` chains them together.
 - `pivot_longer()` reshapes a wide data frame into a long one,
   and `left_join()` combines data frames.

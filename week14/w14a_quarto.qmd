@@ -64,7 +64,7 @@ In this session, you will learn:
 
 When you render a Quarto document, a two-step process occurs:
 
-1. **All code is run** by *knitr* to produce a plain Markdown file with your text
+1. **All code is run** by *knitr* to produce a plain Markdown file with your text,
    code, and the code's output.
 2. The Markdown file is then **converted** to the final output format by *Pandoc*.
 
@@ -86,8 +86,8 @@ quarto render week14a.qmd
 This is similar to the "Preview" button in Positron,
 but it does a **one-time render** and does not show the result in the Viewer pane.
 
-This is a good command to include in your project's **protocol** or README Markdown file:
-this is clearer and more reproducible than adding comments about which Quarto document
+It's a good idea to include this command in your project's **protocol** or README file:
+that is clearer and more reproducible than notes about which Quarto document
 to open and which button to click.
 
 ## The YAML header revisited
@@ -196,7 +196,6 @@ You'll try this out in the [week 15 exercises](/week15/w15_exercises.qmd#exercis
    date: 2026-11-23
    format:
      html:
-       embed-resources: true
        toc: true
        theme: darkly
    ---
@@ -208,20 +207,25 @@ You'll try this out in the [week 15 exercises](/week15/w15_exercises.qmd#exercis
 2. Predict what will happen in each of the following cases,
    then try them one by one (and undo each change afterwards):
    - You remove the space after the colon in `toc: true`.
-   - You remove the quotes around a title that contains a colon.
+   - You change your title to one with a colon, like `Week 14: Quarto`, without quotes.
+   - You indent `toc: true` by two spaces instead of four.
 
 <!----
    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-   In both cases, the document won't render,
+   In all three cases, the document won't render,
    and Quarto shows an error message about the YAML header,
-   with the line number where the problem is.
+   with the line number near the problem.
+   In the last case, `toc` is no longer an option of the `html` format:
+   Quarto now reads it as an option of `format`, which isn't valid.
 
    </details>
 ---->
 :::
 
-## Running R code
+## R code in Quarto documents
+
+### Running chunks
 
 Besides `Run Cell`, which runs the current chunk,
 the line above each chunk has a `Run Above` button,
@@ -267,14 +271,6 @@ Several chunk options control how plots are shown --- for example:
 - `out-width` --- Set the size of the plot _as shown in the document_,
   e.g. `"50%"` for half the page width.
 
-The difference between `fig-width` and `out-width` can be confusing:
-
-- `fig-width` and `fig-height` set the size of the "canvas" that R draws the plot on.
-  Importantly, the size of the text and points is fixed,
-  so on a larger canvas, they look **smaller** (!).
-  This behavior is the same as when you save a plot to a file with `ggsave()`.
-- `out-width` simply makes the finished plot bigger or smaller in the document.
-
 Before we can make a plot,
 we need to load the _tidyverse_ and read the gene count table from week 13:
 
@@ -307,9 +303,19 @@ counts |>
   geom_point()
 ```
 
-Now, change `fig-width` and `fig-height` to twice their size, and render again.
-Thanks to `out-width`, the plot is shown at the same size as before,
-but the text and points now look much smaller:
+<details class="details-quiz">
+<summary>What do you think will happen if you double `fig-width` and `fig-height`, but keep `out-width` the same?</summary>
+
+_The answer will be added after class._
+
+<!----
+The plot is shown at the same size, but the text and points look much smaller ---
+see the plot and explanation below.
+---->
+
+</details>
+
+Change `fig-width` and `fig-height` to twice their size, and render again:
 
 ```{r}
 #| echo: fenced
@@ -321,6 +327,17 @@ counts |>
   ggplot(aes(x = S63, y = S64)) +
   geom_point()
 ```
+
+The plot is shown at the same size as before,
+but the text and points now look much smaller.
+That's because of the difference between `fig-width` and `out-width`:
+
+- `fig-width` and `fig-height` set the size of the "canvas" that R draws the plot on.
+  The size of the text and points is fixed,
+  so on a larger canvas, they look **smaller** (!).
+  This behavior is the same as when you
+  [save a plot to a file with `ggsave()`](/week13/w13b_data-viz.qmd#exporting-plots-to-files).
+- `out-width` simply makes the finished plot bigger or smaller in the document.
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise 2: Chunk options
@@ -345,28 +362,43 @@ counts |>
    </details>
 ---->
 
-2. In the chunk with the scatter plot, hide the code,
-   and change `out-width` to `"50%"`.
-   Render and compare the plot to the earlier version.
+2. How would you hide the messages of _all_ chunks in a document,
+   _except_ those of one chunk?
 
 <!----
    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Set `message: false` under `execute:` in the YAML header,
+   and add `#| message: true` to the one chunk whose messages you want to show.
+
+   </details>
+---->
+
+3. In the chunk with the scatter plot, hide the code.
+   Then, make the text and points look _larger_ than in the very first version of the plot,
+   **without** changing `out-width`.
+   Which option(s) do you change, and how?
+
+<!----
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Make `fig-width` and `fig-height` _smaller_ (keeping their ratio), for example:
 
    ````{.markdown}
    ```{{r}}
    #| echo: false
    #| fig-cap: "Gene counts in samples S63 and S64"
-   #| fig-width: 6
-   #| fig-height: 4
-   #| out-width: "50%"
+   #| fig-width: 3
+   #| fig-height: 2.4
+   #| out-width: "70%"
    counts |>
      ggplot(aes(x = S63, y = S64)) +
      geom_point()
    ```
    ````
 
-   The whole plot, including the text and points, is shrunk to half the page width,
-   so it looks the same as before, only smaller.
+   On this smaller canvas, the text and points take up a larger part of the plot,
+   while `out-width` still shows the plot at the same size in the document.
 
    </details>
 ---->
@@ -398,12 +430,15 @@ so they always match your data and code --- no more copy-pasting numbers.
    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
    For example:
+
+   ```markdown
    In sample S63, `r "\x60r nrow(filter(counts, S63 == 0))\x60"` genes have a count of zero.
+   ```
 
    </details>
 
-2. Predict what the rendered document will show if you leave out the `r` and the space,
-   i.e. `` `nrow(counts)` ``? Then, render to check.
+2. What will the rendered document show if you leave out the `r` and the space,
+   i.e. `` `nrow(counts)` ``? Predict, then render to check.
 
    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
@@ -411,6 +446,26 @@ so they always match your data and code --- no more copy-pasting numbers.
    the text `nrow(counts)` is shown in a code font, and the code is not run.
 
    </details>
+:::
+
+::: {.callout-note #install-packages-for-week-15}
+#### Install packages for week 15
+
+Installing the R packages for next week's RNA-seq analysis takes a while,
+so let's start it now and let it run during the rest of this lecture,
+which has no code you need to run.
+Run the following code in the R console ---
+we'll go over what these commands do next week:
+
+```{r, eval=FALSE}
+install.packages("BiocManager")
+BiocManager::install("DESeq2")
+```
+
+Then, keep Positron open until the installation has finished,
+which is when you see the `>` prompt again in the console.
+If it doesn't finish before the end of class,
+please make sure to run it before next week's class.
 :::
 
 ## Structuring your Quarto document
@@ -424,7 +479,7 @@ For example:
 ```{r}
 #| eval: false
 library(tidyverse)
-library(here)
+library(here)    # You'll learn about this package below
 ```
 
 Install packages in the console, though, rather than in a chunk.
@@ -450,7 +505,8 @@ plot_file <- "results/boxplot.png"
 ```
 
 In the rest of the document, you then only use these variables,
-like `read_tsv(metadata_file)` and `ggsave(filename = plot_file, ...)`.
+like `read_tsv(metadata_file)`, `dir.create(outdir, showWarnings = FALSE)`,
+and `ggsave(filename = plot_file, ...)`.
 This has two advantages:
 
 - You (and others) can see at a glance which files the document reads and writes.
@@ -458,8 +514,8 @@ This has two advantages:
 
 ### The working directory when rendering, and the `here` package
 
-Because rendering runs your code in a new R session,
-its working directory can differ from that of your Console:
+When you render, your code runs in a new R session,
+and that session's working directory can differ from that of your Console:
 
 - When you **run code interactively**, the working dir is the **folder you opened**.
 - When you **render**, the working dir is the folder **that contains the document**.
@@ -467,7 +523,7 @@ its working directory can differ from that of your Console:
 So far, your Quarto documents have been directly inside the folder you opened,
 so these two working directories were the same.
 But in larger projects,
-when you'll want to keep your **Quarto documents in a subfolder**,
+where you'll want to keep your **Quarto documents in a subfolder**,
 like `scripts`, they will differ,
 and a relative path may work in one case but not the other.
 
@@ -496,12 +552,23 @@ and load it with `library(here)`.
 You'll try this out in the [week 15 exercises](/week15/w15_exercises.qmd#exercise-7-rendering-from-a-subfolder).
 :::
 
+::: {.callout-warning collapse="true"}
+#### Why not use `setwd()`? _(Click to expand)_
+
+You may come across code that solves this problem with `setwd()`,
+which changes the working directory.
+Avoid it: `setwd()` usually needs the full path to your project folder,
+so the code breaks as soon as the project is moved or someone else runs it.
+:::
+
 ### Record R and package versions at the end
 
 For reproducibility, it's good practice to record which versions of R and R packages you used.
 An easy way to do so is to end each Quarto document with a chunk that runs `sessionInfo()`.
 Its output lists your R version, your operating system,
-and the versions of all loaded packages:
+and the versions of all loaded packages.
+Here is the output from when I rendered this page on my laptop
+(on OSC, yours will show Linux and different versions):
 
 ```{r}
 sessionInfo()
@@ -524,7 +591,7 @@ see the [optional self-study page on renv](/bonus/renv.qmd).
 :::
 
 ::: {.callout-tip collapse="true"}
-##### Use an R _script_ for long-running code _(Click to expand)_
+#### Use an R _script_ for long-running code _(Click to expand)_
 
 Quarto documents are best kept quick to render, ideally within a couple of minutes.
 If your analysis includes slow steps, such as a large differential expression analysis,
@@ -560,23 +627,5 @@ The [optional Quarto self-study page](/bonus/quarto.qmd) covers:
 - Citing papers and software with a bibliography file
 - Avoiding slow re-renders with caching
 - Turning an existing R script into a Quarto document
-
-<hr style="height:1pt; visibility:hidden;" />
-
-::: {.callout-note #install-packages-for-week-15}
-##### Install packages for week 15
-
-Installing the R packages for next week's RNA-seq analysis takes a few minutes,
-so let's get that started now. Run the following code in the R console ---
-we'll go over what these commands do next week:
-
-```{r, eval=FALSE}
-install.packages("BiocManager")
-BiocManager::install("DESeq2")
-```
-
-Keep the installation process running until it's done!
-
-:::
 
 <hr style="height:1pt; visibility:hidden;" />

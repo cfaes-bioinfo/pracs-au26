@@ -139,7 +139,7 @@ A basic ggplot has three components:
 
 To create a plot, start with the function `ggplot()`^[
   Note: the package is called _ggplot2_, but the function is `ggplot()`.].
-Its first argument `ggplot()` is your data frame,
+The first argument of `ggplot()` is your data frame,
 so we can use either of these two ways to start a plot:
 
 ```{r, eval=FALSE}
@@ -191,6 +191,7 @@ Finally, we have a plot!
 Note that we use `+` rather than the pipe `|>` to add the geom:
 the pipe sends the data frame into ggplot,
 and from then on, we are **adding layers to the plot with** `+`.
+The `+` should always go at the end of a line, not at the start of the next one.
 
 <details class="details-quiz"><summary>What does this plot tell you about the relationship between these variables? How do you interpret that?</summary>
 
@@ -333,6 +334,11 @@ sample_stats |>
   geom_smooth(method = "lm")
 ```
 
+With `method = "lm"`, the trend line is a straight line from a linear model
+(the default is a curved line).
+The message about the `formula` just tells you how the line was fitted,
+and you can ignore it.
+
 Above, we mapped `color = treatment` at the **global** level inside `ggplot()`,
 so both the points and the lines are colored by treatment,
 and `geom_smooth()` fits a separate line for each treatment.
@@ -343,6 +349,7 @@ while `geom_smooth()` fits a single line across all samples,
 in the default color (blue):
 
 ```{r}
+#| message: false
 sample_stats |>
   ggplot(aes(x = lib_size_M, y = n_detected)) +
   geom_point(aes(color = treatment)) +
@@ -361,6 +368,7 @@ To add a title and change the axis labels, use the `labs()` function,
 with arguments `title`, `x`, and `y`:
 
 ```{r}
+#| message: false
 sample_stats |>
   ggplot(aes(x = lib_size_M, y = n_detected)) +
   geom_point(aes(color = treatment)) +
@@ -380,6 +388,7 @@ such as `theme_minimal()`, `theme_classic()`, and `theme_bw()`.
 Let's apply `theme_bw()`:
 
 ```{r}
+#| message: false
 sample_stats |>
   ggplot(aes(x = lib_size_M, y = n_detected)) +
   geom_point(aes(color = treatment)) +
@@ -404,6 +413,7 @@ but as one quick example, let's move the legend to the top and get rid of the
 so-called minor grid lines (the grid lines between those that mark the axis ticks):
 
 ```{r}
+#| message: false
 sample_stats |>
   ggplot(aes(x = lib_size_M, y = n_detected)) +
   geom_point(aes(color = treatment)) +
@@ -429,14 +439,18 @@ So far, we've used ggplot's default colors.
 To pick the colors yourself, use the `scale_color_manual()` function:
 
 ```{r}
+#| message: false
 sample_stats |>
   ggplot(aes(x = lib_size_M, y = n_detected)) +
   geom_point(aes(color = treatment)) +
-  scale_color_manual(values = c("orange", "grey55", "skyblue")) +
-  geom_smooth(method = "lm")
+  geom_smooth(method = "lm") +
+  scale_color_manual(values = c("orange", "grey55", "skyblue"))
 ```
 
 The colors are assigned in the order of the treatments in the legend.
+To make sure that each treatment gets the color you want,
+you can also name the colors:
+`values = c(cathemerium = "orange", control = "grey55", relictum = "skyblue")`.
 Run `colors()` to see the names of all colors that R knows.
 For ready-made color palettes, see the [optional R self-study page](/bonus/r.qmd#color-palettes).
 :::
@@ -467,6 +481,7 @@ For ready-made color palettes, see the [optional R self-study page](/bonus/r.qmd
    and `geom_point()` uses the default color (black).
 
    ```{r}
+   #| message: false
    sample_stats |>
      ggplot(aes(x = lib_size_M, y = n_detected)) +
      geom_point() +
@@ -567,9 +582,9 @@ and library sizes vary a lot among the control samples.
 But each box contains samples from both time points:
 to split the boxes by time point, we can map `time` to an aesthetic as before.
 
-We'll use the `fill` aesthetic to color the boxes by time point
-(For "filled" shapes like boxes and bars, `color` only changes the outline,
-while `fill` changes the inside):
+We'll use the `fill` aesthetic to color the boxes by time point.
+For "filled" shapes like boxes, `color` only changes the outline,
+while `fill` changes the inside:
 
 ```{r}
 sample_stats |>
@@ -603,30 +618,31 @@ sample_stats |>
   geom_boxplot()
 ```
 
-Library sizes are similar across treatments and time points,
-except that the control samples at 10 dpi have smaller libraries.
+Now you can see that the large variation among the control samples
+is mostly due to the control samples at 10 dpi, which have smaller libraries.
 
 (To pick fill colors yourself, use `scale_fill_manual()` instead of `scale_color_manual()`.)
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 3: `color` versus `fill`
+#### {{< fa user-edit >}} Exercise 3: Coloring bars
 
-Map `time` to `color` instead of `fill` in the box plot above,
-and see what happens.
+Make the bar graph of library sizes per sample from above again,
+but with the bars colored by treatment.
+Should you use `color` or `fill` for this?
 
 <!----
 <details>
 
 <summary>Click for the solution</summary>
 
+Use `fill`: like boxes, bars are filled shapes,
+so `color` would only change their outlines:
+
 ```{r}
 sample_stats |>
-  ggplot(aes(x = treatment, y = lib_size_M, color = time)) +
-  geom_boxplot()
+  ggplot(aes(x = sample_id, y = lib_size_M, fill = treatment)) +
+  geom_col()
 ```
-
-Only the outlines of the boxes are colored,
-while the insides stay white.
 
 </details>
 ---->
@@ -710,9 +726,9 @@ Then, save the plot:
 ggsave(
   filename = "results/lib_size_plot.png", # file path and name
   plot = lib_size_plot, # what to save
-  width = 7,
+  width = 7, # in inches (default unit)
   height = 5,
-  dpi = 300, # dots per inch, i.e. resolution
+  dpi = 300 # dots per inch, i.e. resolution
 )
 ```
 
@@ -720,9 +736,11 @@ ggsave(
 
 In this lecture, you learned:
 
-- The basic syntax of _ggplot2_, which builds plots layer by layer
-- How to map variables to aesthetics like `color` and `fill` with `aes()`
-- How to make different types of plots with `geom_*()` functions
+- The basic syntax of _ggplot2_, which builds plots layer by layer with `+`
+- How to map variables to aesthetics like `color` and `fill` with `aes()`,
+  for all geoms or for a single one
+- How to make scatter plots, bar graphs, and box plots with `geom_*()` functions
+- How to customize plots with labels, themes, and colors
 - How to change the order of categories by changing factor levels
 - How to combine data wrangling and plotting in one pipeline
 - How to save plots to files with `ggsave()`
