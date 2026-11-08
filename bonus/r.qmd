@@ -17,18 +17,21 @@ other-links:
   - text: "Week 12 overview"
     icon: check2-all
     href: ../week12/w12_overview.html
-  - text: "w12a: Intro to R, RStudio, and Quarto"
+  - text: "w12b: Intro to R, Positron, and Quarto"
     icon: book
     href: ../week12/w12b_r-basics.html
   - text: "w13a: Working with tabular data in R"
     icon: book
     href: ../week13/w13a_data-wrangling.html
-  - text: "w13b: Data visualization in R"
+  - text: "Additional plotting with ggplot2"
     icon: book
-    href: ../week13/w13b_data-viz.html
+    href: r-plotting.html
   - text: "w14a: Quarto and reproducible R workflows"
     icon: book
     href: ../week14/w14a_quarto.html
+  - text: "w15a: RNA-seq count data analysis"
+    icon: book
+    href: ../week15/w15a_rnaseq.html
 language:
   title-block-published: "Published on"
   title-block-modified: "Page last modified"
@@ -36,14 +39,47 @@ language:
 
 --------------------------------------------------------------------------------
 
-<br>
+<hr style="height:10pt; visibility:hidden;" />
 
 ## Introduction
 
 This page contains additional R material that builds on
 the [week 13 lectures](../week13/w13_overview.qmd)
-on vectors and data types, data wrangling, and visualization,
-and on the [week 14 lecture](../week14/w14_overview.qmd) on Quarto.
+on vectors, data types, and data wrangling,
+and on the R and Quarto workflows from [weeks 12](../week12/w12_overview.qmd),
+[14](../week14/w14_overview.qmd), and [15](../week15/w15_overview.qmd).
+Everything here is optional, and the sections are mostly independent of each other,
+so you can pick the topics that are most useful to you.
+(For additional plotting material, see the
+[additional plotting with _ggplot2_](r-plotting.qmd) page.)
+
+The page covers the following topics:
+
+- **[Vectors](#vectors)** --- Number sequences, exploring vectors, and changing elements
+- **[Factors](#factors)** --- Levels, changing the level order, and common pitfalls
+- **[Data wrangling](#data-wrangling)** --- `sub()`, `pivot_wider()`, and other joins
+- **[Formatting code with Air](#formatting-code-with-air)** --- Auto-formatting R code in Positron
+- **[Running R in a Slurm batch job](#running-r-in-a-slurm-batch-job)** --- Using `Rscript` and `quarto render` in batch jobs, and having Claude set this up
+
+Several sections include exercises, with solutions that you can reveal.
+
+### Setting up
+
+1. Open Positron and connect to OSC with your personal dir open,
+   like in the [w12b lecture](/week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc).
+2. Open your `week13` folder in Positron,
+   and create a new Quarto document `bonus_r.qmd` in it, with a YAML header.
+3. Run the examples and exercises in code chunks in this document.
+
+The section on [data wrangling](#data-wrangling)
+uses the same packages and data as in week 13,
+and starts with the code to load them.
+The sections on vectors and factors don't use any data.
+
+The last section, on [running R in a Slurm batch job](#running-r-in-a-slurm-batch-job),
+works with files and the terminal rather than a Quarto document.
+Run its commands in the Positron terminal, in a folder that contains your R scripts
+(for example, an R project folder from week 14 or 15).
 
 ## Vectors
 
@@ -60,86 +96,200 @@ stepwise_vec
 
 ### Exploring vectors
 
-R has many functions that provide information about vectors and other
-types of objects, such as:
+Besides `length()`, `mean()`, and `sum()`, which you saw in
+[week 13](../week13/w13a_data-wrangling.qmd#vectorization),
+R has many other functions that provide information about vectors, such as:
 
-- Get the **number of elements** with `length()`:
-
-  ```{r}
-  length(stepwise_vec)
-  ```
-
-- See the **first and last few elements**, respectively, with `head()` and `tail()`:
+- See the **first and last few elements** with `head()` and `tail()`, respectively.
+  Like with data frames, the argument `n` sets the number of elements (default: 6):
 
   ```{r}
-  # Print the first 6 elements:
   head(stepwise_vec)
-
-  # Print the last 6 elements:
-  tail(stepwise_vec)
-
-  # Both head and tail have argument `n` to specify the number of elements:
   tail(stepwise_vec, n = 2)
   ```
 
-- Get **arithmetic summaries** like `mean()` for vectors with numbers:
+- Get the **smallest and largest** values with `min()` and `max()`,
+  or both at once with `range()`:
 
   ```{r}
-  # mean() will compute the mean (average) across all elements
-  mean(stepwise_vec)
+  range(stepwise_vec)
   ```
 
-### Changing vector elements: more examples
-
-You can use functions inside the brackets and on the right side of the assignment arrow:
-
-- Change the last element to `0`:
+- Get several **summary statistics** at once with `summary()`:
 
   ```{r}
-  stepwise_vec[length(stepwise_vec)] <- 0
-  stepwise_vec
+  summary(stepwise_vec)
   ```
 
-- Change the second element to the mean value of the vector:
+### Changing vector elements
 
-  ```{r}
-  stepwise_vec[2] <- mean(stepwise_vec)
-  stepwise_vec
-  ```
+In week 13, you saw how to
+[extract elements from a vector](../week13/w13a_data-wrangling.qmd#vectorization)
+with square brackets, like `vec[2]`.
+You can also use the brackets on the left side of the assignment arrow,
+to **change** those elements.
+For example, to change the second element:
+
+```{r}
+read_counts <- c(500, 1200, 300)
+read_counts[2] <- 0
+read_counts
+```
+
+You can use functions both inside the brackets and on the right side of the assignment arrow.
+For example, to change the last element of `stepwise_vec` to the mean of the vector:
+
+```{r}
+stepwise_vec[length(stepwise_vec)] <- mean(stepwise_vec)
+stepwise_vec
+```
 
 ::: exercise
 #### {{< fa user-edit >}} Exercise: Vectors
 
-Make a vector `x` with the whole numbers 1 through 26.
-Then, subtract 0.5 from each element in `x` and save the result in vector `y`.
-Check your results by printing both vectors.
+1. Use `seq()` to make a vector `x` with the numbers 0 to 100 in steps of 5.
+   How many elements does it have?
 
-<details><summary>*Click to see the solution*</summary>
+   <details><summary>*Click to see the solution*</summary>
 
-```{r}
-x <- 1:26
-x
+   ```{r}
+   x <- seq(from = 0, to = 100, by = 5)
+   length(x)
+   ```
 
-y <- x - 0.5
-y
-```
+   </details>
 
-</details>
+2. Change the first element of `x` to `-10`,
+   and check the result by printing only the first few elements.
+
+   <details><summary>*Click to see the solution*</summary>
+
+   ```{r}
+   x[1] <- -10
+   head(x)
+   ```
+
+   </details>
 :::
 
 ## Factors
 
-### Oddly, factors are technically not a data type
-
 In [week 13](../week13/w13b_data-viz.qmd#box-plots),
-you saw how to use factors to store categorical data with a custom order.
-For most intents and purposes, it makes sense to think of factors as another data type,
-even though technically, they are a kind of data structure built on the `integer` data type:
+you used `factor()` to set the order of the time points in a plot,
+and in [week 15](../week15/w15a_rnaseq.qmd#metadata),
+you'll do the same for the treatments and time points in the RNA-seq metadata.
+The order of a factor's categories ("levels") is used in plots, sorting, and tables,
+and in statistical models, the first level is by default the reference level
+that the other levels are compared to.
+
+### Levels
+
+When you create a factor without specifying the levels,
+they are sorted alphabetically:
 
 ```{r}
-diet_fct <- factor(c("high", "medium", "low"), levels = c("low", "medium", "high"))
-typeof(diet_fct)
+treatment <- c("control", "relictum", "cathemerium", "control", "relictum")
+factor(treatment)
 ```
+
+You can set the order with the `levels` argument,
+and check the levels of a factor with the `levels()` function:
+
+```{r}
+treatment_fct <- factor(
+  treatment,
+  levels = c("control", "cathemerium", "relictum")
+)
+levels(treatment_fct)
+```
+
+Sorting a factor uses the order of the levels rather than the alphabetical order:
+
+```{r}
+sort(treatment_fct)
+```
+
+### Changing the level order with `fct_relevel()`
+
+To change the order of the levels of an existing factor,
+you can use `factor()` again and list all levels.
+But when you only want to move one or a few levels to the front,
+it's easier to use `fct_relevel()` from the _forcats_ package,
+which is part of the _tidyverse_ (like `fct_reorder()`, which you saw in week 13).
+For example, to make `relictum` the first level:
+
+```{r}
+#| message: false
+library(tidyverse)
+
+fct_relevel(treatment_fct, "relictum")
+```
+
+Like other functions, you can also use it inside `mutate()` to modify a column of a data frame.
+
+### Factors are stored as integers
+
+For most intents and purposes, it makes sense to think of factors as another data type.
+Technically, though, R stores a factor as integers (one for each level),
+with the levels as labels:
+
+```{r}
+typeof(treatment_fct)
+as.integer(treatment_fct)
+```
+
+You'll rarely need to think about this,
+except when a factor's levels look like numbers.
+In that case, `as.numeric()` returns the level positions, not the numbers you see:
+
+```{r}
+dose_fct <- factor(c("10", "5", "20"))
+as.numeric(dose_fct)
+```
+
+To get the actual numbers, first convert the factor to a character vector:
+
+```{r}
+as.numeric(as.character(dose_fct))
+```
+
+::: exercise
+#### {{< fa user-edit >}} Exercise: Factors
+
+1. Make a factor from `treatment` with the levels in the order
+   `relictum`, `cathemerium`, `control`, and check the order with `levels()`.
+
+   <details><summary>*Click to see the solution*</summary>
+
+   ```{r}
+   treatment_fct2 <- factor(treatment, levels = c("relictum", "cathemerium", "control"))
+   levels(treatment_fct2)
+   ```
+
+   </details>
+
+2. Predict what the code below will return, then run it to check.
+   Which problem would this cause in an analysis?
+
+   ```{r, eval=FALSE}
+   factor(treatment, levels = c("Control", "cathemerium", "relictum"))
+   ```
+
+   <details><summary>*Click to see the solution*</summary>
+
+   ```{r}
+   factor(treatment, levels = c("Control", "cathemerium", "relictum"))
+   ```
+
+   Because of the capital "C" in `"Control"`,
+   none of the `control` values match a level, and they become `NA`.
+   R doesn't give an error or a warning when this happens,
+   so the control samples would silently be missing from your analysis.
+   It's therefore a good idea to check a new factor for `NA`s,
+   for example by printing it, or with `is.na()`.
+
+   </details>
+:::
 
 ## Data wrangling
 
@@ -152,14 +302,18 @@ library(tidyverse)
 ```
 
 ```{r eval=FALSE}
-counts <- read_tsv("/fs/ess/PAS3493/share/week13/salmon.merged.gene_counts_length_scaled.tsv")
+counts <- read_tsv(
+  "/fs/ess/PAS3493/share/week13/salmon.merged.gene_counts_length_scaled.tsv"
+)
 meta <- read_tsv("../garrigos/meta/metadata.tsv")
 genes <- read_tsv("/fs/ess/PAS3493/share/week13/genes.tsv")
 ```
 
 ```{r echo=FALSE}
 #| message: false
-counts <- read_tsv("../assets/week13/salmon.merged.gene_counts_length_scaled.tsv")
+counts <- read_tsv(
+  "../assets/week13/salmon.merged.gene_counts_length_scaled.tsv"
+)
 meta <- read_tsv("../assets/week13/metadata.tsv")
 genes <- read_tsv("../assets/week13/genes.tsv")
 ```
@@ -215,8 +369,11 @@ gene_summary |>
 ```
 
 If a combination of values is missing from the long data frame, you would get an `NA`.
+
+::: {.callout-note appearance="simple"}
 For more about pivoting, see
-[chapter 5 of R for Data Science](https://r4ds.hadley.nz/data-tidy.html#sec-pivoting).
+[chapter 5 of R for Data Science {{< fa external-link >}}](https://r4ds.hadley.nz/data-tidy.html#sec-pivoting){target="_blank"}.
+:::
 
 ### Other types of joins
 
@@ -239,420 +396,72 @@ counts |>
 
 These are the "unassigned genes" that got `NA`s in the join in week 13.
 
-For more, see [chapter 19 of R for Data Science](https://r4ds.hadley.nz/joins.html).
-
-## Plotting with _ggplot2_
-
-These sections build on the [week 13 data visualization lecture](../week13/w13b_data-viz.qmd),
-and use the same data, including the per-sample summaries:
-
-```{r}
-sample_stats <- counts_long |>
-  summarize(
-    lib_size_M = sum(count) / 1e6,
-    n_detected = sum(count > 0),
-    .by = c(sample_id, treatment, time)
-  )
-```
-
-### Color palettes
-
-What if you have 10 treatments that you want to color?
-Picking all colors manually with `scale_color_manual()` requires a lot of typing.
-Instead, you can use ready-made **color palettes**, such as those from the _RColorBrewer_ package,
-which is installed along with _ggplot2_:
-
-![](../img/color_palette.png){width="50%" fig-align="center"}
-
-For example, to use the `Dark2` palette for a scatter plot,
-use the function `scale_color_brewer()`:
-
-```{r}
-sample_stats |>
-  ggplot(aes(x = lib_size_M, y = n_detected)) +
-  geom_point(aes(color = treatment)) +
-  scale_color_brewer(palette = "Dark2") +
-  geom_smooth(method = "lm")
-```
-
-### Customizing themes
-
-Besides applying a pre-defined theme like `theme_bw()`,
-you can change individual theme elements with the `theme()` function.
-For example, to change the text size of the plot title and axes,
-and the position of the legend:
-
-```{r}
-sample_stats |>
-  ggplot(aes(x = lib_size_M, y = n_detected)) +
-  geom_point(aes(color = treatment)) +
-  geom_smooth(method = "lm") +
-  labs(
-    title = "Detected genes vs. library size",
-    x = "Library size (millions of reads)",
-    y = "Number of detected genes"
-  ) +
-  theme_bw() +
-  theme(
-    plot.title = element_text(size = 16, face = "bold"),
-    axis.title = element_text(size = 14),
-    axis.text = element_text(size = 12),
-    legend.position = "top"
-  )
-```
-
-### Gene length and expression
-
-Are longer genes more highly expressed?
-To find out, first compute the mean count of each gene,
-and add the information from the gene annotation table
-from the [data wrangling lecture](../week13/w13a_data-wrangling.qmd):
-
-```{r}
-gene_stats <- counts_long |>
-  summarize(mean_count = mean(count), .by = gene_id) |>
-  left_join(genes, by = "gene_id") |>
-  # Only keep expressed protein-coding and lncRNA genes:
-  filter(biotype %in% c("protein_coding", "lncRNA"), mean_count > 0)
-```
-
-The `%in%` operator checks whether each value on its left
-matches any of the values in the vector on its right.
-So, `biotype %in% c("protein_coding", "lncRNA")` keeps
-the rows whose biotype is either "protein_coding" or "lncRNA".
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: Build a plot from scratch
-
-Create a scatter plot of transcript length (x-axis) versus mean count (y-axis), with:
-
-- Both axes on a log scale, by adding `scale_x_log10()` and `scale_y_log10()` layers
-- Points colored by biotype
-- A separate linear trend line for each biotype
-
-Do longer genes have higher counts?
-And which of the two biotypes tends to be more highly expressed?
-
-<details><summary>*Click to see the solution*</summary>
-
-```{r}
-gene_stats |>
-  ggplot(aes(x = transcript_length, y = mean_count, color = biotype)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  scale_x_log10() +
-  scale_y_log10()
-```
-
-To get a separate trend line for each biotype,
-`color = biotype` has to be a global mapping inside `ggplot()`.
-
-Longer genes tend to have somewhat higher counts,
-because each RNA molecule of a longer transcript produces more sequenced fragments.
-lncRNA genes tend to have much lower counts than protein-coding genes.
-
-</details>
+::: {.callout-note appearance="simple"}
+For more about joins, see
+[chapter 19 of R for Data Science {{< fa external-link >}}](https://r4ds.hadley.nz/joins.html){target="_blank"}.
 :::
-
-### Bar graphs with `geom_bar()`
-
-In the lecture, you made bar graphs with `geom_col()`,
-where the bar heights are values that are already in your data:
-you map one variable to `x` and one to `y`,
-and each row becomes one bar.
-
-A closely related geom is `geom_bar()`,
-which instead _counts the number of rows_ for each category.
-You only map a single variable (to `x` or `y`),
-and `geom_bar()` computes the bar heights for you.
-For example, to plot the number of genes of each biotype,
-you can use `geom_bar()` on the annotation table, which has one row per gene:
-
-```{r}
-genes |>
-  ggplot(aes(y = biotype)) +
-  geom_bar()
-```
-
-We put `biotype` on the y-axis here, which gives horizontal bars,
-so the long category names don't overlap.
-To make the same plot with `geom_col()`,
-you would first have to compute the counts yourself with `count()`.
-
-So, in short:
-
-- Use `geom_col()` when your data frame already contains the numbers to plot.
-- Use `geom_bar()` when you want to plot the number of rows per category.
-
-### Histograms
-
-To see the distribution of a single numeric variable, use a histogram.
-Like `geom_bar()`, `geom_histogram()` counts rows,
-but it first groups the values of a continuous variable into "bins".
-Let's look at the distribution of gene counts in sample `S63`:
-
-```{r}
-counts_long |>
-  filter(sample_id == "S63") |>
-  ggplot(aes(x = count)) +
-  geom_histogram()
-```
-
-This plot is not very informative:
-because a few genes have extremely high counts,
-nearly all genes end up in the first bin.
-For counts like these, a log scale works much better.
-Because `log10(0)` is `-Inf`, a common trick is to add 1 to the counts first,
-which you can do right inside `aes()`.
-
-_ggplot2_ uses 30 bins by default, and prints a message suggesting you choose a better value.
-You can set the width of the bins with `binwidth`
-(here in units of `log10(count + 1)`):
-
-```{r}
-counts_long |>
-  filter(sample_id == "S63") |>
-  ggplot(aes(x = log10(count + 1))) +
-  geom_histogram(binwidth = 0.1)
-```
-
-The bar at 0 shows the genes without any reads,
-and most other genes have between 10 (`1` on the x-axis) and 10,000 (`4` on the x-axis) reads.
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: Histograms
-
-1. Try a much smaller and a much larger `binwidth`, like 0.01 and 1.
-   What happens to the histogram?
-
-   <details><summary>*Click to see the solution*</summary>
-
-   ```{r}
-   counts_long |>
-     filter(sample_id == "S63") |>
-     ggplot(aes(x = log10(count + 1))) +
-     geom_histogram(binwidth = 0.01)
-
-   counts_long |>
-     filter(sample_id == "S63") |>
-     ggplot(aes(x = log10(count + 1))) +
-     geom_histogram(binwidth = 1)
-   ```
-
-   With very narrow bins, the histogram gets spiky and noisy,
-   while with very wide bins, you lose the shape of the distribution.
-   There is no single correct binwidth, so it's worth trying a few.
-
-   </details>
-
-2. Plot the histogram (with `binwidth = 0.1`) for both sample `S63` and sample `S77`,
-   which has the smallest library,
-   and fill the bars by `sample_id`.
-   How are the bars of the two samples arranged?
-
-   <details><summary>*Click to see the solution*</summary>
-
-   ```{r}
-   counts_long |>
-     # Keep the rows for either of the two samples:
-     filter(sample_id %in% c("S63", "S77")) |>
-     ggplot(aes(x = log10(count + 1), fill = sample_id)) +
-     geom_histogram(binwidth = 0.1)
-   ```
-
-   The bars of the two samples are stacked on top of each other,
-   so the total height of each bar is the count across both samples.
-
-   </details>
-
-3. Now, add `position = "identity"` and `alpha = 0.5` inside `geom_histogram()`.
-   What does each of these two options do?
-   And how do the distributions of the two samples differ?
-
-   <details><summary>*Click to see the solution*</summary>
-
-   ```{r}
-   counts_long |>
-     filter(sample_id %in% c("S63", "S77")) |>
-     ggplot(aes(x = log10(count + 1), fill = sample_id)) +
-     geom_histogram(binwidth = 0.1, position = "identity", alpha = 0.5)
-   ```
-
-   - `position = "identity"` stops the stacking:
-     each sample's bars start at zero, so they overlap.
-   - `alpha = 0.5` makes the bars semi-transparent
-     (`alpha` ranges from 0, fully transparent, to 1, opaque),
-     so you can see the overlapping bars.
-
-   The distribution of `S77` is shifted to the left,
-   and it has more genes with zero counts:
-   with fewer reads in total, each gene tends to get fewer reads.
-
-   </details>
-:::
-
-### Box plots of gene counts
-
-Box plots are also a great way to look at the counts of a single gene across sample groups.
-For example, the counts of a chymotrypsin gene (a digestive enzyme), `LOC120423767`,
-for each treatment and time point:
-
-```{r}
-counts_long |>
-  filter(gene_id == "LOC120423767") |>
-  ggplot(aes(x = treatment, y = count, fill = time)) +
-  geom_boxplot()
-```
-
-This gene is highly expressed at 24 hpi,
-except in the _relictum_ samples,
-and expression is low in all treatments at 10 dpi.
-
-### Faceting
-
-When you map many variables in a single plot, it can get cluttered.
-An alternative is **faceting**: creating multiple panels ("facets"),
-one for each value of a categorical variable.
-There are two faceting functions:
-
-- `facet_wrap()` --- Facet by a single categorical variable,
-  with the panels "wrapped" into a rectangular layout.
-- `facet_grid()` --- Facet by one or two categorical variables,
-  with the panels laid out in a grid of rows and columns.
-
-For example, to make the count histogram from above for every sample:
-
-```{r}
-counts_long |>
-  ggplot(aes(x = log10(count + 1))) +
-  geom_histogram(binwidth = 0.1) +
-  facet_wrap(vars(sample_id))
-```
-
-The distributions are similar for all samples,
-which is what you would expect.
-
-Facets are also an alternative to the `fill` in the gene box plot above:
-
-```{r}
-counts_long |>
-  filter(gene_id == "LOC120423767") |>
-  ggplot(aes(x = treatment, y = count)) +
-  geom_boxplot() +
-  facet_wrap(vars(time))
-```
-
-::: exercise
-#### {{< fa user-edit >}} Exercise: Faceting
-
-1. Take the scatter plot from the [gene length exercise above](#gene-length-and-expression),
-   and facet it by `biotype` instead of coloring the points.
-   Do you find this plot or the one with colors easier to read?
-   What is a disadvantage of each?
-
-   <details><summary>*Click to see the solution*</summary>
-
-   ```{r}
-   gene_stats |>
-     ggplot(aes(x = transcript_length, y = mean_count)) +
-     geom_point() +
-     geom_smooth(method = "lm") +
-     scale_x_log10() +
-     scale_y_log10() +
-     labs(
-       x = "Transcript length (bp)",
-       y = "Mean count"
-     ) +
-     theme_classic() +
-     facet_wrap(vars(biotype))
-   ```
-
-   With facets, points of different biotypes no longer overlap,
-   but it's harder to compare the biotypes directly.
-   With colors in a single panel, comparing biotypes is easy,
-   but the plot can get crowded.
-
-   </details>
-
-2. Make a box plot of the counts of two genes:
-   the chymotrypsin gene from above, and the cathepsin gene `LOC120419697`.
-   Use `facet_grid()` with the genes in rows and the time points in columns.
-   Hint: check the `scales` argument in the help for `facet_grid()`.
-   How do the expression patterns of the two genes differ?
-
-   <details><summary>*Click to see the solution*</summary>
-
-   ```{r}
-   counts_long |>
-     filter(gene_id %in% c("LOC120423767", "LOC120419697")) |>
-     ggplot(aes(x = treatment, y = count)) +
-     geom_boxplot() +
-     facet_grid(rows = vars(gene_id), cols = vars(time), scales = "free_y")
-   ```
-
-   `scales = "free_y"` lets each row of panels have its own y-axis range,
-   which is needed here because the cathepsin gene has far higher counts.
-
-   The cathepsin gene is very highly expressed at 24 hpi in all treatments,
-   and barely at all at 10 dpi,
-   while the chymotrypsin gene is barely expressed in the _relictum_ samples at 24 hpi.
-
-   </details>
-:::
-
-### Combining plots into one figure
-
-Figures in papers often combine different plots as panels A, B, and so on.
-Faceting can't do this, because all facets show the same type of plot and variables.
-Instead, you can use the [_patchwork_](https://patchwork.data-imaginist.com/) package,
-which is not part of the _tidyverse_:
-
-```{r}
-library(patchwork)
-```
-
-First, save each plot as an object:
-
-```{r}
-scatter_plot <- sample_stats |>
-  ggplot(aes(x = lib_size_M, y = n_detected, color = treatment)) +
-  geom_point()
-
-box_plot <- counts_long |>
-  filter(gene_id == "LOC120423767") |>
-  ggplot(aes(x = treatment, y = count)) +
-  geom_boxplot() +
-  facet_wrap(vars(time))
-```
-
-Then, combine them with `|` to put plots side by side
-(or `/` to put them on top of each other),
-and add panel labels with `plot_annotation()`:
-
-```{r}
-#| fig-width: 10
-#| fig-height: 4
-(scatter_plot | box_plot) +
-  plot_annotation(tag_levels = "A")
-```
-
-The result is a single plot object,
-which you can save to a file with `ggsave()` like any other plot.
 
 ## Formatting code with Air
 
-Positron comes with [Air](https://posit-dev.github.io/air/),
-a "formatter" that tidies up R code for you.
-For example, it adds spaces around operators like `<-` and `==`
-and after commas, and fixes indentation.
+### R code style
 
-To format the code in a Quarto code chunk,
-put your cursor in the chunk and run _Quarto: Format Cell_ from the Command Palette.
+R itself is very flexible about spacing and line breaks,
+so how your code is laid out is mostly up to you.
+But code is much easier to read, for others and for your future self,
+when it follows consistent conventions.
+The most widely used set of conventions is the
+[tidyverse style guide {{< fa external-link >}}](https://style.tidyverse.org){target="_blank"},
+which recommends, among other things:
+
+- Spaces around operators like `<-`, `=`, and `+`, and after commas
+- Lines of at most 80 characters
+- Indentation by 2 spaces
+- `<-` rather than `=` for assignment
+- Snake case for object names (`gene_counts` rather than `geneCounts`)
+- `TRUE` and `FALSE` rather than `T` and `F`
+
+### Formatting with Air
+
+Positron's formatter Air follows the tidyverse style guide,
+so you don't have to apply most of these rules by hand.
+In [week 12](../week12/w12b_r-basics.qmd#formatting-your-r-code),
+you saw how to format a Quarto code chunk with Air,
+using _Quarto: Format Cell_.
 (In an R script, use _Format Document_ instead.)
+
+Besides fixing spacing and indentation,
+Air breaks up lines that are longer than 80 characters.
+For example, it would turn this 90-character line:
+
+```r
+dds <- DESeqDataSetFromMatrix(countData = counts, colData = metadata, design = ~treatment)
+```
+
+into this, with one argument per line:
+
+```r
+dds <- DESeqDataSetFromMatrix(
+  countData = counts,
+  colData = metadata,
+  design = ~treatment
+)
+```
+
+You can also get this layout for shorter function calls,
+which can make them easier to read:
+if you add a line break right after the opening parenthesis,
+Air will put each argument on its own line.
+
+Air only changes the _layout_ of your code, though
+(plus a few small things like replacing `=` with `<-` for assignment):
+choosing good object names, for example, is still up to you.
+
+### Formatting on save
 
 To format your code automatically every time you save a file,
 open your settings file with _Preferences: Open User Settings (JSON)_
-and add the following:
+and add the following inside its outer curly braces
+(add a comma after the preceding setting, if needed):
 
 ```json
 "[r]": {
@@ -664,6 +473,10 @@ and add the following:
   "editor.defaultFormatter": "quarto.quarto"
 }
 ```
+
+To see where the 80-character limit is while you type,
+you can also add a [vertical ruler](/bonus/vscode.qmd) to the editor
+with `"editor.rulers": [80]`.
 
 ## Running R in a Slurm batch job
 
@@ -686,9 +499,9 @@ you can [cache their results](/bonus/quarto.qmd#avoiding-slow-re-renders-with-ca
 
 Instead, the recommended strategy is to separate the work into two parts:
 
-1. **R scripts** (`.R` files) that perform the heavy processing steps,
+1. **[R scripts](../week12/w12b_r-basics.qmd#rendering)** (`.R` files)
+   that perform the heavy processing steps,
    and save their results to files.
-   Unlike a Quarto document, an R script contains only code and no text, chunks, or output.
 2. A **Quarto document** that loads these results
    and does the quick part: making tables and plots, and writing the text.
 
@@ -769,37 +582,24 @@ You would submit this script as follows:
 sbatch scripts/run_rscript.sh scripts/run_deseq.R
 ```
 
-### Rendering a Quarto document in a batch job
+### Asking Claude to split off the slow code
 
-If you do need to render a Quarto document in a batch job,
-the only change is to run `quarto render` instead of `Rscript`:
+Splitting an existing Quarto document into an R script and a lighter document
+is a good task for Claude, for example:
 
-<!----
-TODO: Test at OSC whether `quarto` is available in a batch job.
-Positron bundles Quarto, and batch jobs inherit the environment of the shell they're submitted from,
-so it should work when submitted from Positron's terminal: check `which quarto` there, and submit the script once.
-If it doesn't work, use the full path to Positron's bundled `quarto` in the script.
----->
+> ***In analysis.qmd, the DESeq() step is slow. Move the code up to and including***
+> ***that step into an R script scripts/run_deseq.R that saves the DESeq2 object***
+> ***to results/dds.rds, and load that file in analysis.qmd instead.***
+> ***Also write a shell script to run the R script as a Slurm batch job.***
 
-```{.bash .file filename="scripts/render.sh"}
-#!/bin/bash
-#SBATCH --account=PAS3493
-#SBATCH --time=60
-#SBATCH --mail-type=FAIL
-#SBATCH --output=slurm-render-%j.out
+Before you submit the job, check that the shell script:
 
-# Load R (this is the same module as in your ~/.bashrc)
-module load gcc/12.3.0 R/4.6.1
+- Uses the `PAS3493` project (or your lab's project) with `#SBATCH --account`.
+- Loads the same R module as your `~/.bashrc`,
+  so that the job uses the R installation that has your packages.
+- Uses file paths that work from the folder you submit the job from.
 
-set -euo pipefail
+After the job finishes, check its Slurm log file for errors,
+and render your Quarto document to check that it now works with the saved object.
 
-# Copy the placeholder variables
-qmd_file=$1
-
-# Render the Quarto document
-quarto render "$qmd_file"
-```
-
-```bash
-sbatch scripts/render.sh my-doc.qmd
-```
+<hr style="height:1pt; visibility:hidden;" />

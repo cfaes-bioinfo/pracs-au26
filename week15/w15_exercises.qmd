@@ -40,6 +40,8 @@ In Exercises 6--8, you'll turn your analysis into a polished Quarto report,
 render it from a subfolder, and render it for GitHub,
 practicing with the Quarto material from
 [week 14](/week14/w14a_quarto.qmd).
+In Exercise 9, you'll use Claude to extend your analysis to all pairwise comparisons,
+and to review your report.
 
 ::: callout-tip
 #### Lecture page exercises
@@ -62,7 +64,7 @@ go over those again.
    install.packages("pheatmap")
    ```
 
-3. [Create a new Quarto document](/week12/w12b_r-basics.qmd#creating-a-quarto-document) `w15_exercises.qmd` in your `week15` folder,
+3. Create a new Quarto document `week15/w15_exercises.qmd`,
    with a YAML header with a title, your name, the date, and `embed-resources: true`.
 
 4. These exercises build on the DESeq2 object that you saved
@@ -122,10 +124,46 @@ In the lecture's volcano plot, one gene stands out with a very high log~2~-fold 
 
 1. Figure out the identity of this gene by filtering `res_df`.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   res_df |> filter(log2FoldChange > 20)
+   ```
+
+   (Interestingly, `res_rc24` contains a second gene with a LFC \> 20,
+   which is not in `res_df` because its `pvalue` and `padj` are `NA`:
+
+   ```{r}
+   as.data.frame(res_rc24) |> filter(log2FoldChange > 20)
+   ```
+
+   See the collapsed box "`NA` values in the DESeq2 results table" in the lecture
+   for why p-values can be set to `NA`.)
+
+   </details>
+
 2. Label this gene in the volcano plot.
    To do so, add a `geom_text()` layer to the plot from the lecture,
    with its own `data` argument: a data frame with only this gene.
    You'll also need to map the `label` aesthetic to the gene ID column.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   outlier <- res_df |> filter(log2FoldChange > 20)
+
+   res_df |>
+     ggplot(aes(x = log2FoldChange, y = -log10(padj), color = DEG)) +
+     geom_point() +
+     geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
+     # Add the label, in black, and a bit above the point (vjust):
+     geom_text(data = outlier, aes(label = gene_id), color = "black", vjust = -1) +
+     scale_color_manual(values = c("grey60", "firebrick")) +
+     labs(title = "relictum vs. control at 24 hpi") +
+     theme_bw()
+   ```
+
+   </details>
 
 3. Next, you'll plot the expression levels of individual genes,
    starting with the most highly significant DEG.
@@ -174,59 +212,237 @@ In the lecture's volcano plot, one gene stands out with a very high log~2~-fold 
 4. Make the same plot for the gene with the very high log~2~-fold change.
    How would you interpret this?
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   focal_gene_counts <- plotCounts(
+     dds,
+     gene = "LOC120431476",
+     intgroup = c("time", "treatment"),
+     returnData = TRUE
+   )
+
+   focal_gene_counts |>
+     ggplot(aes(x = treatment, y = count, fill = treatment)) +
+     geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+     geom_point(size = 4, shape = 21, position = position_jitter(w = 0.1, h = 0)) +
+     facet_wrap(vars(time)) +
+     theme_bw() +
+     theme(legend.position = "none")
+   ```
+
+   Wow! It looks like in every single time + treatment combination, all but one (or in one
+   case, two) of the samples have zero expression, but there are several extreme outliers.
+
+   For our focal comparison at `24hpi` (left panel/facet), comparing `control` vs `relictum`,
+   it looks like the difference between these two groups is solely due to the one outlier
+   in `relictum`. Nevertheless, even the multiple-testing corrected p-value (`padj`) is
+   significant for this gene:
+
+   ```{r}
+   as.data.frame(res_rc24) |>
+     rownames_to_column("gene") |>
+     filter(gene == "LOC120431476")
+   ```
+
+   So, we have to be careful with taking our statistical results at face value, and need to
+   visualize important genes!
+
+   </details>
+
 5. Plot one or two more of the most highly significant DEGs.
    Do they have similar expression patterns across treatments and time points
    as the top DEG?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   For example, for the second most highly significant DEG:
+
+   ```{r}
+   top_genes <- res_df |>
+     arrange(padj) |>
+     head(n = 3)
+
+   plotCounts(
+     dds,
+     gene = top_genes$gene_id[2],
+     intgroup = c("time", "treatment"),
+     returnData = TRUE
+   ) |>
+     ggplot(aes(x = treatment, y = count, fill = treatment)) +
+     facet_wrap(vars(time)) +
+     geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+     geom_point(size = 4, shape = 21, position = position_jitter(w = 0.1, h = 0)) +
+     theme_bw() +
+     theme(legend.position = "none")
+   ```
+
+   </details>
 
 ## Exercise 2: A customized PCA plot
 
 1. Compare the PCA plot with different numbers of included genes.
    (Hint: figure out how to do so by looking at the help by running `?plotPCA`.)
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   The `ntop` argument sets the number of genes (with the highest variance) to use,
+   which is 500 by default:
+
+   ```{r, eval=FALSE}
+   plotPCA(dds_vst, ntop = 100, intgroup = c("time", "treatment"))
+   plotPCA(dds_vst, ntop = 5000, intgroup = c("time", "treatment"))
+   ```
+
+   </details>
+
 2. Customize the PCA plot: can you "separate" treatment and time point
    (different shapes for one variable, and different colors for the other),
    like in Fig. 1 of the paper?
 
-<details><summary>{{< fa lightbulb >}} _Click here for some hints for PCA plot customization_</summary>
+   <details><summary>{{< fa lightbulb >}} _Click here for some hints for PCA plot customization_</summary>
 
-In the plot we made in the lecture, each combination of
-time point and treatment has a distinct color --- it would be better to use **point
-color** only to distinguish one of the variables, and **point shape** to distinguish the
-other variable (as was also done in the paper's Fig. 1).
+   In the plot we made in the lecture, each combination of
+   time point and treatment has a distinct color --- it would be better to use **point
+   color** only to distinguish one of the variables, and **point shape** to distinguish the
+   other variable (as was also done in the paper's Fig. 1).
 
-To be able to customize the plot properly, we best build it from scratch ourselves, rather
-than using the `plotPCA` function. But then how do we get the input data in the right
-shape?
+   To be able to customize the plot properly, we best build it from scratch ourselves, rather
+   than using the `plotPCA` function. But then how do we get the input data in the right
+   shape?
 
-A nice trick is that we can use `returnData = TRUE` in the `plotPCA` function, to get
-plot-ready formatted data instead of an actual plot:
+   A nice trick is that we can use `returnData = TRUE` in the `plotPCA` function, to get
+   plot-ready formatted data instead of an actual plot:
 
-```{r, eval=FALSE}
-pca_df <- plotPCA(
-  dds_vst,
-  ntop = 500,
-  intgroup = c("time", "treatment"),
-  returnData = TRUE
-)
-```
+   ```{r, eval=FALSE}
+   pca_df <- plotPCA(
+     dds_vst,
+     ntop = 500,
+     intgroup = c("time", "treatment"),
+     returnData = TRUE
+   )
+   ```
 
-With that `pca_df` dataframe in hand,
-it will be relatively straightforward to customize the plot using your knowledge
-of ggplot2.
+   With that `pca_df` dataframe in hand,
+   it will be relatively straightforward to customize the plot using your knowledge
+   of ggplot2.
 
-</details>
+   </details>
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   First, get the data in the right format, as explained in the hint:
+
+   ```{r}
+   pca_df <- plotPCA(
+     dds_vst,
+     ntop = 500,
+     intgroup = c("time", "treatment"),
+     returnData = TRUE
+   )
+   ```
+
+   Second, extract and store the percentage of variance explained by different
+   principal components, so you can later add this information to the plot:
+
+   ```{r}
+   pct_var <- round(100 * attr(pca_df, "percentVar"), 1)
+   pct_var
+   ```
+
+   Now we can make the plot:
+
+   ```{r}
+   pca_df |>
+     ggplot(aes(x = PC1, y = PC2, color = treatment, shape = time)) +
+     geom_point(size = 5) +
+     labs(
+       x = paste0("PC1 (", pct_var[1], "%)"),
+       y = paste0("PC2 (", pct_var[2], "%)")
+     ) +
+     scale_color_brewer(palette = "Dark2", name = "Infection status") +
+     scale_shape(name = "Time points") +
+     theme_bw() +
+     theme(panel.grid.minor = element_blank())
+   ```
+
+   </details>
 
 ## Exercise 3: More DEGs
 
 1. The paper's Table 1 reports the numbers of **up- and downregulated** DEGs separately.
    Find these numbers for the `relictum_24hpi` vs. `control_24hpi` comparison.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - **Solution using tidyverse/dplyr:**
+
+   ```{r}
+   # First we need to convert the results table into a regular data frame
+   as.data.frame(res_rc24) |>
+     # Then we only select the rows/genes that are significant
+     filter(padj < 0.05) |>
+     # If we run count() on a logical test, we get the nrs. that are FALSE v. TRUE
+     dplyr::count(log2FoldChange > 0)
+   ```
+
+   - **Solution using base R:**
+
+   ```{r}
+   # Down-regulated (relictum < control):
+   sum(res_rc24$log2FoldChange < 0 & res_rc24$padj < 0.05, na.rm = TRUE)
+
+   # Up-regulated (relictum > control):
+   sum(res_rc24$log2FoldChange > 0 & res_rc24$padj < 0.05, na.rm = TRUE)
+   ```
+
+   </details>
+
 2. The paper's Table 1 also reports the number of DEGs with an **absolute LFC \> 1**.
    Find out how many up- and downregulated DEGs with an absolute LFC \> 1
    we have for the `relictum_24hpi` vs. `control_24hpi` comparison.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - **Solution using tidyverse/dplyr:**
+
+   ```{r}
+   # First we need to convert the results table into a regular data frame
+   as.data.frame(res_rc24) |>
+     # Then we only select the rows/genes that are significant
+     filter(padj < 0.05, abs(log2FoldChange) > 1) |>
+     # If we run count() on a logical test, we get the nrs. that are FALSE v. TRUE
+     dplyr::count(log2FoldChange > 0)
+   ```
+
+   - **Solution using base R:**
+
+   ```{r}
+   # Down-regulated (relictum < control):
+   sum(res_rc24$log2FoldChange < -1 & res_rc24$padj < 0.05, na.rm = TRUE)
+
+   # Up-regulated (relictum > control):
+   sum(res_rc24$log2FoldChange > 1 & res_rc24$padj < 0.05, na.rm = TRUE)
+   ```
+
+   </details>
+
 3. Extract the results for one or more **other contrasts** in the paper's Table 1,
    and compare the numbers of DEGs with those in the table.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   For example, for `cathemerium` vs. `control` at 24 hpi:
+
+   ```{r}
+   res_cc24 <- results(
+     dds,
+     contrast = c("group", "cathemerium_24hpi", "control_24hpi")
+   )
+   sum(res_cc24$padj < 0.05, na.rm = TRUE)
+   ```
+
+   </details>
 
 ## Exercise 4: Heatmaps
 
@@ -293,14 +509,37 @@ you can create "heatmap" plots to plot dozens (possibly even hundreds) of genes 
 2. Make a heatmap with the top-25 **most highly expressed** genes
    (i.e., genes with the highest mean expression levels across all samples).
 
-<details><summary>{{< fa lightbulb >}} _Click here for a hint: how to get that top-25_</summary>
+   <details><summary>{{< fa lightbulb >}} _Click here for a hint: how to get that top-25_</summary>
 
-```{r}
-norm_mat <- assay(dds_vst)
-top25_hi <- names(sort(rowMeans(norm_mat), decreasing = TRUE)[1:25])
-```
+   ```{r}
+   norm_mat <- assay(dds_vst)
+   top25_hi <- names(sort(rowMeans(norm_mat), decreasing = TRUE)[1:25])
+   ```
 
-</details>
+   </details>
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   # In the normalized count matrix, select only the genes of interest
+   norm_mat_sel <- norm_mat[top25_hi, ]
+
+   # Sort the metadata
+   meta_sort <- meta |>
+     arrange(treatment, time) |>
+     select(treatment, time)
+
+   # Create the heatmap
+   pheatmap(
+     norm_mat_sel,
+     annotation_col = meta_sort,
+     cluster_cols = FALSE,
+     show_rownames = FALSE,
+     scale = "row"
+   )
+   ```
+
+   </details>
 
 ## Exercise 5: Adding gene information to the DE results
 
@@ -311,6 +550,18 @@ Here, you'll add this information to the DEGs.
 
 1. Read the file `/fs/ess/PAS3493/share/week13/genes.tsv` into a data frame `genes`.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r, eval=FALSE}
+   genes <- read_tsv("/fs/ess/PAS3493/share/week13/genes.tsv")
+   ```
+
+   ```{r, echo=FALSE, message=FALSE}
+   genes <- read_tsv(here::here("assets/week13/genes.tsv"))
+   ```
+
+   </details>
+
 2. Convert `res_rc24` to a data frame,
    and move its row names (the gene IDs) into a column called `gene_id`
    (hint: `rownames_to_column()`).
@@ -318,8 +569,38 @@ Here, you'll add this information to the DEGs.
 3. Add the gene information to this data frame with `left_join()`,
    and look at the descriptions of the top-10 DEGs.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   res_genes <- res_rc24 |>
+     as.data.frame() |>
+     rownames_to_column("gene_id") |>
+     left_join(genes, by = "gene_id")
+
+   res_genes |>
+     arrange(padj) |>
+     select(gene_id, description, log2FoldChange, padj) |>
+     head(n = 10)
+   ```
+
+   The two top DEGs are chymotrypsins,
+   including `LOC120423767`, the gene plotted on the
+   [optional plotting self-study page](/bonus/r-plotting.qmd#box-plots-of-gene-counts).
+
+   </details>
+
 4. How many of the DEGs (adjusted p-value below 0.05) are protein-coding genes,
    and how many are lncRNAs?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   res_genes |>
+     filter(padj < 0.05) |>
+     count(biotype)
+   ```
+
+   </details>
 
 ## Exercise 6: A polished Quarto report
 
@@ -342,6 +623,58 @@ your `w15_exercises.qmd` into a nicely formatted report.
 5. In your text, report the number of DEGs for the `relictum_24hpi` vs. `control_24hpi`
    comparison using **inline code**, so the number is computed when you render the document.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - The YAML header:
+
+     ```yaml
+     ---
+     title: "Week 15 exercises"
+     author: "Jane Doe"
+     date: 2026-11-30
+     format:
+       html:
+         embed-resources: true
+         toc: true
+         theme: cosmo
+     execute:
+       warning: false
+       message: false
+     ---
+     ```
+
+   - The setup chunk:
+
+     ````markdown
+     ```{{r}}
+     #| echo: false
+     library(tidyverse)
+     # [...]
+     ```
+     ````
+
+   - The volcano plot chunk:
+
+     ````markdown
+     ```{{r}}
+     #| fig-cap: "Volcano plot for relictum vs. control at 24 hpi"
+     #| fig-width: 8
+     #| fig-height: 6.5
+     res_df |>
+       ggplot(aes(x = log2FoldChange, y = -log10(padj), color = DEG)) +
+       # [...]
+     ```
+     ````
+
+   - Inline code to report the number of DEGs:
+
+     ```markdown
+     We found `r "\x60r sum(res_rc24$padj < 0.05, na.rm = TRUE)\x60"` DEGs
+     for the relictum vs. control comparison at 24 hpi.
+     ```
+
+   </details>
+
 6. Render the document and check that everything looks the way you intended.
 
 ## Exercise 7: Rendering from a subfolder
@@ -355,13 +688,59 @@ from week 14, and fix it with the `here()` function.
    Then, render the document.
    Why does this fail?
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   With `week15` as your working directory in the terminal:
+
+   ```bash
+   mkdir reports
+   mv w15_exercises.qmd reports/
+   ```
+
+   Rendering fails at the `readRDS()` line, with an error that the file can't be opened.
+   The working directory when rendering is now `week15/reports`,
+   so the relative path `results/DE/dds.rds` points to `week15/reports/results/DE/dds.rds`,
+   which doesn't exist.
+
+   </details>
+
 2. In the terminal, create an empty file `.here` in your `week15` folder,
    so that `here()` will treat `week15` as the top-level folder.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```bash
+   touch .here
+   ```
+
+   </details>
 
 3. Install and load the _here_ package,
    and change the `readRDS()` line in your setup chunk to use `here()`.
    Then, render the document again,
    and check that the setup chunk also still works when you run it interactively.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Install the package in the Console:
+
+   ```{r, eval=FALSE}
+   install.packages("here")
+   ```
+
+   Then, in the setup chunk:
+
+   ```{r, eval=FALSE}
+   library(here)
+   # [...]
+   dds <- readRDS(here("results/DE/dds.rds"))
+   ```
+
+   `here("results/DE/dds.rds")` now always points to `week15/results/DE/dds.rds`,
+   both when rendering (working dir `week15/reports`)
+   and when running code interactively (working dir `week15`).
+
+   </details>
 
 ## Exercise 8: Output for GitHub
 
@@ -371,493 +750,333 @@ and view it on GitHub, like you can do for your final project
 
 1. Add `gfm` as a second output format in your YAML header.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```yaml
+   format:
+     html:
+       embed-resources: true
+       toc: true
+       theme: cosmo
+     gfm: default
+   ```
+
+   </details>
+
 2. Render the document to both formats in the terminal.
    Which new files and folders were created?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   With `week15` as your working directory in the terminal:
+
+   ```bash
+   quarto render reports/w15_exercises.qmd
+   ```
+
+   Besides the HTML file, this creates a Markdown file `reports/w15_exercises.md`,
+   and a folder `reports/w15_exercises_files` with the plots as PNG files.
+
+   </details>
 
 3. Open the `.md` file in Positron, and look at it with the Markdown preview.
    How are the plots included in the document?
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Unlike the self-contained HTML file,
+   the `.md` file doesn't contain the plots themselves.
+   Instead, it links to the PNG files in the `_files` folder,
+   for example:
+
+   ```markdown
+   ![](w15_exercises_files/figure-commonmark/unnamed-chunk-3-1.png)
+   ```
+
+   That's why you need to commit both the `.md` file and the `_files` folder
+   to your GitHub repository.
+
+   </details>
+
 4. Turn your `reports` folder into a Git repository,
    and commit the `.qmd`, `.md`, and `.html` files, and the `_files` folder.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```bash
+   cd reports
+   git init
+   git add w15_exercises.qmd w15_exercises.md w15_exercises.html w15_exercises_files
+   git commit -m "Add week 15 exercises report"
+   ```
+
+   </details>
 
 5. Create a new repository on GitHub,
    connect your local repository to it, and push,
    like in the [week 6 exercises](/week06/w6_exercises.qmd#exercise-1-github).
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   After creating an empty repository on GitHub
+   (without a README or any other files):
+
+   ```bash
+   # (replace <SSH-URL-to-repo> with your repo's SSH URL,
+   #  which looks like 'git@github.com:<github-username>/<repo-name>.git')
+   git remote add origin <SSH-URL-to-repo>
+   git push -u origin main
+   ```
+
+   </details>
+
 6. On GitHub, click on the `.md` file and then on the `.html` file.
    How do they look?
 
-## Solutions
-
-### Exercise 1
-
-<details><summary>**1.** The identity of the log~2~-fold change outlier</summary>
-
-```{r}
-res_df |> filter(log2FoldChange > 20)
-```
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   GitHub displays the `.md` file as a formatted document, including the plots.
+   The `.html` file, on the other hand, is shown as raw HTML code
+   (or, because the embedded plots make it a large file,
+   GitHub may only offer to show the raw file or download it).
+
+   </details>
+
+## Exercise 9: Going further with Claude
+
+In this exercise, you'll use Claude to take the analysis beyond the lecture,
+and to review your report.
+Keep working in your `reports/w15_exercises.qmd` document,
+with your `week15` folder open in Positron.
+Because your `reports` folder is now a Git repository,
+you can see exactly what Claude changed with `git diff`,
+and undo any changes you don't want.
+
+### Instructions for Claude
+
+1. Create a [`CLAUDE.md` file](/week09/w9a_claude.qmd#persistent-instructions-with-claude.md)
+   in your `week15` folder.
+   Briefly describe the project,
+   and add the R conventions from this course that you want Claude to follow.
+   Include at least these:
+   use the tidyverse and the `|>` pipe,
+   use `here()` for file paths,
+   and don't put `install.packages()` in a Quarto document.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see an example_</summary>
+
+   ```{.markdown .file filename="CLAUDE.md"}
+   # Week 15: RNA-seq differential expression analysis
+
+   - This folder contains a differential expression analysis with DESeq2
+     of mosquito RNA-seq data (_Culex pipiens_ infected with two _Plasmodium_ species),
+     in the Quarto document `reports/w15_exercises.qmd`.
+   - The DESeq2 object is saved in `results/DE/dds.rds`.
+
+   ## R conventions
+
+   - Use tidyverse functions and the native pipe `|>`.
+   - Use `here()` for all file paths, and never use `setwd()`.
+   - Don't add `install.packages()` to Quarto documents:
+     tell me which packages to install instead, and I'll install them in the console.
+   - Load all packages in the first code chunk of a document.
+   - Add new code in new code chunks, each under a Markdown header,
+     with a sentence that explains what it does.
+   ```
+
+   </details>
+
+### All pairwise comparisons
+
+In the lecture, you extracted the results for one of the 6 pairwise comparisons in the paper,
+and in Exercise 3, you did so for one or more others.
+Here, you'll have Claude do this for all 6 at once.
+
+2. Ask Claude to add a section to your report that extracts the DE results
+   for all 6 pairwise comparisons in Table 1 of the paper,
+   and makes a table with the numbers of up- and downregulated DEGs for each comparison.
+   Review Claude's edit before you accept it, and then run the new code.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see an example_</summary>
+
+   Claude's version will differ each time you ask, but here is one example:
+
+   ```{r}
+   contrasts <- list(
+     rc24 = c("group", "relictum_24hpi", "control_24hpi"),
+     cc24 = c("group", "cathemerium_24hpi", "control_24hpi"),
+     rcat24 = c("group", "relictum_24hpi", "cathemerium_24hpi"),
+     rc10 = c("group", "relictum_10dpi", "control_10dpi"),
+     cc10 = c("group", "cathemerium_10dpi", "control_10dpi"),
+     rcat10 = c("group", "relictum_10dpi", "cathemerium_10dpi")
+   )
+
+   res_all <- map(contrasts, function(contrast) {
+     results(dds, contrast = contrast) |>
+       as.data.frame() |>
+       rownames_to_column("gene_id")
+   })
+
+   deg_summary <- res_all |>
+     list_rbind(names_to = "comparison") |>
+     filter(padj < 0.05) |>
+     summarize(
+       up = sum(log2FoldChange > 0),
+       down = sum(log2FoldChange < 0),
+       .by = comparison
+     )
+
+   deg_summary
+   ```
+
+   The code uses two functions from the tidyverse that we didn't cover:
+   `map()` runs a function for each element of a list
+   (here, for each comparison),
+   and `list_rbind()` combines a list of data frames into a single data frame.
+
+   </details>
+
+3. Check Claude's work:
+
+   - Which 6 comparisons did Claude pick,
+     and is the "focal" group listed first in each `contrast` vector?
+   - Do the numbers for `relictum_24hpi` vs. `control_24hpi` match the ones you found
+     in [Exercise 3](#exercise-3-more-degs)?
+   - Did Claude follow the instructions in your `CLAUDE.md`?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - The paper compares each _Plasmodium_ species (_P. relictum_ and _P. cathemerium_)
+     with the controls,
+     and the two species with each other,
+     at each of the two time points.
+     In each `contrast` vector, the first group is the focal group:
+     for example, a positive log~2~-fold change for `rc24` means that a gene
+     is more highly expressed in `relictum_24hpi` than in `control_24hpi`.
+     If Claude switched the two groups in a comparison,
+     its numbers of up- and downregulated genes for that comparison are switched as well.
+   - The numbers should match exactly.
+     If they don't, find out what Claude did differently:
+     for example, it may have also filtered by log~2~-fold change,
+     or used `pvalue` instead of `padj`.
+
+   </details>
+
+4. Ask Claude to visualize the overlap between the sets of DEGs of the 6 comparisons
+   with an "**upset plot**",
+   which is the type of plot in Fig. 2 of the paper.
+   Install any packages that Claude's code needs in the console.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see an example_</summary>
+
+   Here is an upset plot made with the _UpSetR_ package:
+
+   ```{r, eval=FALSE}
+   install.packages("UpSetR") # Run this in the console
+   ```
+
+   ```{r}
+   #| warning: false
+   #| fig-width: 9
+   #| fig-height: 5
+   library(UpSetR)
 
-(Interestingly, `res_rc24` contains a second gene with a LFC \> 20,
-which is not in `res_df` because its `pvalue` and `padj` are `NA`:
+   # A list with a vector of DEG IDs for each comparison
+   deg_ids <- map(res_all, function(res) {
+     res |>
+       filter(padj < 0.05) |>
+       pull(gene_id)
+   })
 
-```{r}
-as.data.frame(res_rc24) |> filter(log2FoldChange > 20)
-```
+   upset(fromList(deg_ids), nsets = 6, order.by = "freq")
+   ```
 
-See the collapsed box "`NA` values in the DESeq2 results table" in the lecture
-for why p-values can be set to `NA`.)
+   </details>
 
-</details>
+5. In an upset plot, the bars on the left show the number of DEGs in each comparison,
+   and each bar at the top shows the number of DEGs in a combination of comparisons,
+   as marked by the connected dots below it.
+   Find the bar for the DEGs shared by `rc24` and `cc24` only.
+   Then, compute the number of DEGs that these two comparisons have in common yourself,
+   with the `intersect()` function,
+   which returns the elements that are in both of two vectors.
+   Why are these two numbers different?
 
-<details><summary>**2.** Labeling the outlier gene in the volcano plot</summary>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-```{r}
-outlier <- res_df |> filter(log2FoldChange > 20)
+   ```{r}
+   length(intersect(deg_ids$rc24, deg_ids$cc24))
+   ```
 
-res_df |>
-  ggplot(aes(x = log2FoldChange, y = -log10(padj), color = DEG)) +
-  geom_point() +
-  geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
-  # Add the label, in black, and a bit above the point (vjust):
-  geom_text(data = outlier, aes(label = gene_id), color = "black", vjust = -1) +
-  scale_color_manual(values = c("grey60", "firebrick")) +
-  labs(title = "relictum vs. control at 24 hpi") +
-  theme_bw()
-```
+   `intersect()` returns all DEGs that are shared by `rc24` and `cc24`,
+   which is more than the bar for `rc24` and `cc24` only.
+   That's because each gene is counted in just one bar of an upset plot:
+   the one for the exact combination of comparisons in which it is a DEG.
+   So, the bar for `rc24` and `cc24` only counts genes that are DEGs
+   in those two comparisons and _none_ of the others,
+   while genes that are also a DEG in, for example, `rcat24`,
+   are counted in another bar.
+   To get the `intersect()` result from the plot,
+   you'd have to add up all bars whose dots include both `rc24` and `cc24`.
 
-</details>
+   </details>
 
-Part 3 is a worked example, with the code in the exercise itself.
+### A reproducibility review
 
-<details><summary>**4.** Plot the outlier gene</summary>
+6. Commit your current version of the report.
+   Then, ask Claude to review your report for reproducibility,
+   and to suggest changes without making them yet.
+   Then, let it make only the changes you agree with,
+   and check them with `git diff`.
 
-```{r}
-focal_gene_counts <- plotCounts(
-  dds,
-  gene = "LOC120431476",
-  intgroup = c("time", "treatment"),
-  returnData = TRUE
-)
-
-focal_gene_counts |>
-  ggplot(aes(x = treatment, y = count, fill = treatment)) +
-  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
-  geom_point(size = 4, shape = 21, position = position_jitter(w = 0.1, h = 0)) +
-  facet_wrap(vars(time)) +
-  theme_bw() +
-  theme(legend.position = "none")
-```
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-Wow! It looks like in every single time + treatment combination, all but one (or in one
-case, two) of the samples have zero expression, but there are several extreme outliers.
+   With `week15/reports` as your working directory in the terminal:
 
-For our focal comparison at `24hpi` (left panel/facet), comparing `control` vs `relictum`,
-it looks like the difference between these two groups is solely due to the one outlier
-in `relictum`. Nevertheless, even the multiple-testing corrected p-value (`padj`) is
-significant for this gene:
+   ```bash
+   git add w15_exercises.qmd
+   git commit -m "Add all pairwise comparisons and upset plot"
+   ```
 
-```{r}
-as.data.frame(res_rc24) |>
-  rownames_to_column("gene") |>
-  filter(gene == "LOC120431476")
-```
-
-So, we have to be careful with taking our statistical results at face value, and need to
-visualize important genes!
-
-</details>
+   Then, after Claude has made its changes:
 
-<details><summary>**5.** Plot more top DEGs</summary>
-
-For example, for the second most highly significant DEG:
+   ```bash
+   git diff
+   ```
 
-```{r}
-top_genes <- res_df |>
-  arrange(padj) |>
-  head(n = 3)
+   </details>
 
-plotCounts(
-  dds,
-  gene = top_genes$gene_id[2],
-  intgroup = c("time", "treatment"),
-  returnData = TRUE
-) |>
-  ggplot(aes(x = treatment, y = count, fill = treatment)) +
-  facet_wrap(vars(time)) +
-  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
-  geom_point(size = 4, shape = 21, position = position_jitter(w = 0.1, h = 0)) +
-  theme_bw() +
-  theme(legend.position = "none")
-```
+7. Which of Claude's suggestions did you accept, and why?
+   Compare them with the guidelines in the
+   [week 14 lecture](/week14/w14a_quarto.qmd#structuring-your-quarto-document).
 
-</details>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-### Exercise 2
+   There is no single right answer here.
+   Suggestions that match the week 14 guidelines include
+   moving `library(UpSetR)` to the first chunk,
+   moving file paths to the top of the document,
+   and adding `sessionInfo()` at the end.
+   Claude may also suggest things we didn't cover,
+   like using [_renv_](/bonus/renv.qmd):
+   these can be good ideas, but only accept a change if you understand what it does.
 
-<details><summary>**1.** PCA with different numbers of genes</summary>
+   </details>
 
-The `ntop` argument sets the number of genes (with the highest variance) to use,
-which is 500 by default:
+### Learning about your genes
 
-```{r, eval=FALSE}
-plotPCA(dds_vst, ntop = 100, intgroup = c("time", "treatment"))
-plotPCA(dds_vst, ntop = 5000, intgroup = c("time", "treatment"))
-```
+8. In [Exercise 5](#exercise-5-adding-gene-information-to-the-de-results),
+   you saw that the two top DEGs at 24 hpi are chymotrypsins.
+   Ask Claude what is known about the function of chymotrypsins in mosquitoes,
+   and to give you sources for its answer.
+   Open one of these sources, and check that it says what Claude says it does.
 
-</details>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-<details><summary>**2.** A customized PCA plot</summary>
+   Claude will likely tell you that chymotrypsins are proteases
+   in the mosquito midgut that help digest the blood meal.
 
-First, get the data in the right format, as explained in the hint:
+   When checking a source, look for the specific claim that Claude based on it,
+   and not just for the right topic.
 
-```{r}
-pca_df <- plotPCA(
-  dds_vst,
-  ntop = 500,
-  intgroup = c("time", "treatment"),
-  returnData = TRUE
-)
-```
-
-Second, extract and store the percentage of variance explained by different
-principal components, so you can later add this information to the plot:
-
-```{r}
-pct_var <- round(100 * attr(pca_df, "percentVar"), 1)
-pct_var
-```
-
-Now we can make the plot:
-
-```{r}
-pca_df |>
-  ggplot(aes(x = PC1, y = PC2, color = treatment, shape = time)) +
-  geom_point(size = 5) +
-  labs(
-    x = paste0("PC1 (", pct_var[1], "%)"),
-    y = paste0("PC2 (", pct_var[2], "%)")
-  ) +
-  scale_color_brewer(palette = "Dark2", name = "Infection status") +
-  scale_shape(name = "Time points") +
-  theme_bw() +
-  theme(panel.grid.minor = element_blank())
-```
-
-</details>
-
-### Exercise 3
-
-<details><summary>**1.** Up- and downregulated DEGs</summary>
-
-- **Solution using tidyverse/dplyr:**
-
-```{r}
-# First we need to convert the results table into a regular data frame
-as.data.frame(res_rc24) |>
-  # Then we only select the rows/genes that are significant
-  filter(padj < 0.05) |>
-  # If we run count() on a logical test, we get the nrs. that are FALSE v. TRUE
-  dplyr::count(log2FoldChange > 0)
-```
-
-- **Solution using base R:**
-
-```{r}
-# Down-regulated (relictum < control):
-sum(res_rc24$log2FoldChange < 0 & res_rc24$padj < 0.05, na.rm = TRUE)
-
-# Up-regulated (relictum > control):
-sum(res_rc24$log2FoldChange > 0 & res_rc24$padj < 0.05, na.rm = TRUE)
-```
-
-</details>
-
-<details><summary>**2.** DEGs with an absolute LFC \> 1</summary>
-
-- **Solution using tidyverse/dplyr:**
-
-```{r}
-# First we need to convert the results table into a regular data frame
-as.data.frame(res_rc24) |>
-  # Then we only select the rows/genes that are significant
-  filter(padj < 0.05, abs(log2FoldChange) > 1) |>
-  # If we run count() on a logical test, we get the nrs. that are FALSE v. TRUE
-  dplyr::count(log2FoldChange > 0)
-```
-
-- **Solution using base R:**
-
-```{r}
-# Down-regulated (relictum < control):
-sum(res_rc24$log2FoldChange < -1 & res_rc24$padj < 0.05, na.rm = TRUE)
-
-# Up-regulated (relictum > control):
-sum(res_rc24$log2FoldChange > 1 & res_rc24$padj < 0.05, na.rm = TRUE)
-```
-
-</details>
-
-<details><summary>**3.** Other contrasts</summary>
-
-For example, for `cathemerium` vs. `control` at 24 hpi:
-
-```{r}
-res_cc24 <- results(
-  dds,
-  contrast = c("group", "cathemerium_24hpi", "control_24hpi")
-)
-sum(res_cc24$padj < 0.05, na.rm = TRUE)
-```
-
-</details>
-
-### Exercise 4
-
-Part 1 is a worked example, with the code in the exercise itself.
-
-<details><summary>**2.** A heatmap of the most highly expressed genes</summary>
-
-```{r}
-# In the normalized count matrix, select only the genes of interest
-norm_mat_sel <- norm_mat[top25_hi, ]
-
-# Sort the metadata
-meta_sort <- meta |>
-  arrange(treatment, time) |>
-  select(treatment, time)
-
-# Create the heatmap
-pheatmap(
-  norm_mat_sel,
-  annotation_col = meta_sort,
-  cluster_cols = FALSE,
-  show_rownames = FALSE,
-  scale = "row"
-)
-```
-
-</details>
-
-### Exercise 5
-
-<details><summary>**1.** Read the gene annotation table</summary>
-
-```{r, eval=FALSE}
-genes <- read_tsv("/fs/ess/PAS3493/share/week13/genes.tsv")
-```
-
-```{r, echo=FALSE, message=FALSE}
-genes <- read_tsv(here::here("assets/week13/genes.tsv"))
-```
-
-</details>
-
-<details><summary>**2.--3.** Adding the gene information</summary>
-
-```{r}
-res_genes <- res_rc24 |>
-  as.data.frame() |>
-  rownames_to_column("gene_id") |>
-  left_join(genes, by = "gene_id")
-
-res_genes |>
-  arrange(padj) |>
-  select(gene_id, description, log2FoldChange, padj) |>
-  head(n = 10)
-```
-
-The two top DEGs are chymotrypsins,
-including `LOC120423767`, the gene plotted on the
-[optional R self-study page](/bonus/r.qmd#box-plots-of-gene-counts).
-
-</details>
-
-<details><summary>**4.** Biotypes of the DEGs</summary>
-
-```{r}
-res_genes |>
-  filter(padj < 0.05) |>
-  count(biotype)
-```
-
-</details>
-
-### Exercise 6
-
-<details><summary>**1--5.** An example of the different elements of the report</summary>
-
-- The YAML header:
-
-  ```yaml
-  ---
-  title: "Week 15 exercises"
-  author: "Jane Doe"
-  date: 2026-11-30
-  format:
-    html:
-      embed-resources: true
-      toc: true
-      theme: cosmo
-  execute:
-    warning: false
-    message: false
-  ---
-  ```
-
-- The setup chunk:
-
-  ````markdown
-  ```{{r}}
-  #| echo: false
-  library(tidyverse)
-  # [...]
-  ```
-  ````
-
-- The volcano plot chunk:
-
-  ````markdown
-  ```{{r}}
-  #| fig-cap: "Volcano plot for relictum vs. control at 24 hpi"
-  #| fig-width: 8
-  #| fig-height: 6.5
-  res_df |>
-    ggplot(aes(x = log2FoldChange, y = -log10(padj), color = DEG)) +
-    # [...]
-  ```
-  ````
-
-- Inline code to report the number of DEGs:
-
-  ```markdown
-  We found `r "\x60r sum(res_rc24$padj < 0.05, na.rm = TRUE)\x60"` DEGs
-  for the relictum vs. control comparison at 24 hpi.
-  ```
-
-</details>
-
-### Exercise 7
-
-<details><summary>**1.** Moving the document and rendering it</summary>
-
-With `week15` as your working directory in the terminal:
-
-```bash
-mkdir reports
-mv w15_exercises.qmd reports/
-```
-
-Rendering fails at the `readRDS()` line, with an error that the file can't be opened.
-The working directory when rendering is now `week15/reports`,
-so the relative path `results/DE/dds.rds` points to `week15/reports/results/DE/dds.rds`,
-which doesn't exist.
-
-</details>
-
-<details><summary>**2.** Creating the `.here` file</summary>
-
-```bash
-touch .here
-```
-
-</details>
-
-<details><summary>**3.** Using `here()`</summary>
-
-Install the package in the Console:
-
-```{r, eval=FALSE}
-install.packages("here")
-```
-
-Then, in the setup chunk:
-
-```{r, eval=FALSE}
-library(here)
-# [...]
-dds <- readRDS(here("results/DE/dds.rds"))
-```
-
-`here("results/DE/dds.rds")` now always points to `week15/results/DE/dds.rds`,
-both when rendering (working dir `week15/reports`)
-and when running code interactively (working dir `week15`).
-
-</details>
-
-### Exercise 8
-
-<details><summary>**1.** Adding the `gfm` format</summary>
-
-```yaml
-format:
-  html:
-    embed-resources: true
-    toc: true
-    theme: cosmo
-  gfm: default
-```
-
-</details>
-
-<details><summary>**2.** Rendering to both formats</summary>
-
-With `week15` as your working directory in the terminal:
-
-```bash
-quarto render reports/w15_exercises.qmd
-```
-
-Besides the HTML file, this creates a Markdown file `reports/w15_exercises.md`,
-and a folder `reports/w15_exercises_files` with the plots as PNG files.
-
-</details>
-
-<details><summary>**3.** The plots in the `.md` file</summary>
-
-Unlike the self-contained HTML file,
-the `.md` file doesn't contain the plots themselves.
-Instead, it links to the PNG files in the `_files` folder,
-for example:
-
-```markdown
-![](w15_exercises_files/figure-commonmark/unnamed-chunk-3-1.png)
-```
-
-That's why you need to commit both the `.md` file and the `_files` folder
-to your GitHub repository.
-
-</details>
-
-<details><summary>**4.** Creating a Git repository and committing the files</summary>
-
-```bash
-cd reports
-git init
-git add w15_exercises.qmd w15_exercises.md w15_exercises.html w15_exercises_files
-git commit -m "Add week 15 exercises report"
-```
-
-</details>
-
-<details><summary>**5.** Connecting to GitHub and pushing</summary>
-
-After creating an empty repository on GitHub
-(without a README or any other files):
-
-```bash
-# (replace <SSH-URL-to-repo> with your repo's SSH URL,
-#  which looks like 'git@github.com:<github-username>/<repo-name>.git')
-git remote add origin <SSH-URL-to-repo>
-git push -u origin main
-```
-
-</details>
-
-<details><summary>**6.** The `.md` and `.html` files on GitHub</summary>
-
-GitHub displays the `.md` file as a formatted document, including the plots.
-The `.html` file, on the other hand, is shown as raw HTML code
-(or, because the embedded plots make it a large file,
-GitHub may only offer to show the raw file or download it).
-
-</details>
+   </details>

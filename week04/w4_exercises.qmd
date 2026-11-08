@@ -72,7 +72,33 @@ Use shell commands to do the following:
    Use this as the working dir for all following questions in this exercise,
    so avoid navigating anywhere else.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   This assumes you start in `/fs/ess/PAS3493/people/$USER`:
+
+   ```bash
+   mkdir -p week04/ex1
+   cd week04/ex1
+   ```
+
+   Or, with absolute paths:
+
+   ```bash
+   mkdir -p /fs/ess/PAS3493/people/$USER/week04/ex1
+   cd /fs/ess/PAS3493/people/$USER/week04/ex1
+   ```
+
+   </details>
+
 2. Create a new file called `newfile.txt` in your working dir.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```bash
+   touch newfile.txt
+   ```
+
+   </details>
 
 ::: callout-note
 #### Note on `cp` and `mv` behavior
@@ -96,15 +122,78 @@ cp newfile.txt more_data/
 
 3. What do you think the command would do or attempt to do?
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Because we added a trailing forward slash to `more_data/`,
+   we are making clear that we are referring to a directory.
+   So the command will attempt to copy the file into a dir `more_data`,
+   with the file keeping the same name.
+
+   </details>
+
 4. Do you think the command will succeed?
    Run the command and see whether you were right.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   The `more_data/` dir does not exist,
+   and `cp` will not create a dir on the fly --- so it will fail:
+
+   ```bash
+   cp newfile.txt more_data/
+   ```
+   ```bash-out
+   cp: cannot create regular file 'more_data/': Not a directory
+   ```
+
+   </details>
+
 5. What would the command have done if you had omitted the trailing slash?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   If you had omitted the trailing forward slash,
+   it would have created a copy of the file with _file_ name `more_data`
+   (if that seems confusing: note that in Unix, files don't need to have a file
+   extension).
+
+   P.S.: To copy the file according to the original intention,
+   first create the destination dir and then copy:
+
+   ```bash
+   mkdir more_data
+   cp newfile.txt more_data/
+   ```
+
+   Note also that once the `more_data` dir exists,
+   it **does not** make a difference whether or not you use a trailing slash.
+
+   </details>
 
 ## Exercise 2: Copying, removing, and moving dummy FASTQ files
 
 1. Create a dir `week04/ex2` within `/fs/ess/PAS3493/people/$USER`, and navigate there.
    Like in the previous exercise, use this as the working dir for all following questions in this exercise.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Assuming you're doing this right after Exercise 1,
+   you should be in `/fs/ess/PAS3493/people/$USER/week04/ex1`,
+   in which case the following commands work:
+
+   ```bash
+   mkdir ../ex2
+   cd ../ex2
+   ```
+
+   Or, with absolute paths:
+
+   ```bash
+   mkdir /fs/ess/PAS3493/people/$USER/week04/ex2
+   cd /fs/ess/PAS3493/people/$USER/week04/ex2
+   ```
+
+   </details>
 
 2. Create a new dir `seqs`, and use the command below to create some empty dummy files
    with FASTQ file names in that dir.
@@ -120,6 +209,57 @@ cp newfile.txt more_data/
    You don't need to understand how this works.
    :::
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - Create the dir:
+
+     ```bash
+     mkdir seqs
+     ```
+
+   - Create the dummy files:
+
+     ```bash
+     touch seqs/sample{01..25}_R{1,2}.fastq
+     ```
+
+   - Check the result:
+
+     ```bash
+     ls seqs
+     ```
+     ```bash-out
+     sample01_R1.fastq  sample03_R1.fastq  sample05_R1.fastq  sample07_R1.fastq  sample09_R1.fastq  sample11_R1.fastq  sample13_R1.fastq  sample15_R1.fastq  sample17_R1.fastq  sample19_R1.fastq  sample21_R1.fastq  sample23_R1.fastq  sample25_R1.fastq
+   sample01_R2.fastq  sample03_R2.fastq  sample05_R2.fastq  sample07_R2.fastq  sample09_R2.fastq  sample11_R2.fastq  sample13_R2.fastq  sample15_R2.fastq  sample17_R2.fastq  sample19_R2.fastq  sample21_R2.fastq  sample23_R2.fastq  sample25_R2.fastq
+   sample02_R1.fastq  sample04_R1.fastq  sample06_R1.fastq  sample08_R1.fastq  sample10_R1.fastq  sample12_R1.fastq  sample14_R1.fastq  sample16_R1.fastq  sample18_R1.fastq  sample20_R1.fastq  sample22_R1.fastq  sample24_R1.fastq
+   sample02_R2.fastq  sample04_R2.fastq  sample06_R2.fastq  sample08_R2.fastq  sample10_R2.fastq  sample12_R2.fastq  sample14_R2.fastq  sample16_R2.fastq  sample18_R2.fastq  sample20_R2.fastq  sample22_R2.fastq  sample24_R2.fastq
+     ```
+
+   - Count the number of files:
+
+     ```bash
+     ls seqs | wc -l
+     ```
+     ```bash-out
+     50
+     ```
+
+     Note that this gives the correct count even though when printed to screen,
+     `ls` output typically uses multiple columns and therefore shows more than one
+     file per line.
+
+     In contrast,
+     the count from `ls -l` is _not_ correct, since its output includes a `total` line:
+
+     ```bash
+     ls -l seqs | wc -l
+     ```
+     ```bash-out
+     51
+     ```
+
+   </details>
+
 3. You should have found that the `seqs` dir contains 50 files.
    Without running it, how many files do you think `ls seqs/*2*` will list?
 
@@ -130,14 +270,171 @@ cp newfile.txt more_data/
 
    Then check your answer by adding `| wc -l` to that command.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   The correct answer is **c) 33**.
+
+   Because `*` matches any number of any characters (including none),
+   `*2*` matches every file name that contains a "2" _somewhere_:
+
+   - All 25 `_R2` files --- because "`_R2`" itself contains a 2!
+   - Plus the 8 R1 files of the samples whose number contains a 2:
+     `02`, `12`, `20`, `21`, `22`, `23`, `24`, and `25`.
+
+   ```bash
+   ls seqs/*2* | wc -l
+   ```
+   ```bash-out
+   33
+   ```
+
+   </details>
+
 4. Copy the dummy FASTQ files for samples `01` through `09` into your working dir
    with a single command.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - Copy the files ---
+     remember to use `.` to indicate your current working dir as the destination path.
+
+     ```bash
+     cp seqs/sample0* .
+     ```
+
+   - Let's check the result:
+
+     ```bash
+     ls
+     ```
+     ```bash-out
+     sample01_R1.fastq  sample02_R1.fastq  sample03_R1.fastq  sample04_R1.fastq  sample05_R1.fastq  sample06_R1.fastq  sample07_R1.fastq  sample08_R1.fastq  sample09_R1.fastq  seqs
+   sample01_R2.fastq  sample02_R2.fastq  sample03_R2.fastq  sample04_R2.fastq  sample05_R2.fastq  sample06_R2.fastq  sample07_R2.fastq  sample08_R2.fastq  sample09_R2.fastq
+     ```
+
+   </details>
 
 5. Remove the files you just copied,
    and make the command report what it's doing.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```bash
+   rm -v sample0*
+   ```
+   ```bash-out
+   removed 'sample01_R1.fastq'
+   removed 'sample01_R2.fastq'
+   removed 'sample02_R1.fastq'
+   removed 'sample02_R2.fastq'
+   removed 'sample03_R1.fastq'
+   removed 'sample03_R2.fastq'
+   removed 'sample04_R1.fastq'
+   removed 'sample04_R2.fastq'
+   removed 'sample05_R1.fastq'
+   removed 'sample05_R2.fastq'
+   removed 'sample06_R1.fastq'
+   removed 'sample06_R2.fastq'
+   removed 'sample07_R1.fastq'
+   removed 'sample07_R2.fastq'
+   removed 'sample08_R1.fastq'
+   removed 'sample08_R2.fastq'
+   removed 'sample09_R1.fastq'
+   removed 'sample09_R2.fastq'
+   ```
+
+   </details>
+
 6. Move all R1 files into a dir `seqs_R1`, and then rename `seqs`,
    which should now only contain R2 files, to `seqs_R2`.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - Create the new dir:
+
+     ```bash
+     mkdir seqs_R1
+     ```
+
+     This step is needed: when you move multiple files, the destination must be an existing dir.
+     Without it, you'd get an error: `mv: target 'seqs_R1' is not a directory`.
+
+   - Move the R1 files into the new dir:
+
+     ```bash
+     mv seqs/*R1.fastq seqs_R1
+     ```
+
+   - Rename the old dir from `seqs` to `seqs_R2`:
+
+     ```bash
+     mv seqs seqs_R2
+     ```
+
+   - Check the result:
+
+     ```bash
+     tree
+     ```
+     ```bash-out
+     .
+     ├── seqs_R1
+     │   ├── sample01_R1.fastq
+     │   ├── sample02_R1.fastq
+     │   ├── sample03_R1.fastq
+     │   ├── sample04_R1.fastq
+     │   ├── sample05_R1.fastq
+     │   ├── sample06_R1.fastq
+     │   ├── sample07_R1.fastq
+     │   ├── sample08_R1.fastq
+     │   ├── sample09_R1.fastq
+     │   ├── sample10_R1.fastq
+     │   ├── sample11_R1.fastq
+     │   ├── sample12_R1.fastq
+     │   ├── sample13_R1.fastq
+     │   ├── sample14_R1.fastq
+     │   ├── sample15_R1.fastq
+     │   ├── sample16_R1.fastq
+     │   ├── sample17_R1.fastq
+     │   ├── sample18_R1.fastq
+     │   ├── sample19_R1.fastq
+     │   ├── sample20_R1.fastq
+     │   ├── sample21_R1.fastq
+     │   ├── sample22_R1.fastq
+     │   ├── sample23_R1.fastq
+     │   ├── sample24_R1.fastq
+     │   └── sample25_R1.fastq
+     └── seqs_R2
+         ├── sample01_R2.fastq
+         ├── sample02_R2.fastq
+         ├── sample03_R2.fastq
+         ├── sample04_R2.fastq
+         ├── sample05_R2.fastq
+         ├── sample06_R2.fastq
+         ├── sample07_R2.fastq
+         ├── sample08_R2.fastq
+         ├── sample09_R2.fastq
+         ├── sample10_R2.fastq
+         ├── sample11_R2.fastq
+         ├── sample12_R2.fastq
+         ├── sample13_R2.fastq
+         ├── sample14_R2.fastq
+         ├── sample15_R2.fastq
+         ├── sample16_R2.fastq
+         ├── sample17_R2.fastq
+         ├── sample18_R2.fastq
+         ├── sample19_R2.fastq
+         ├── sample20_R2.fastq
+         ├── sample21_R2.fastq
+         ├── sample22_R2.fastq
+         ├── sample23_R2.fastq
+         ├── sample24_R2.fastq
+         └── sample25_R2.fastq
+
+     2 directories, 50 files
+     ```
+
+   </details>
 
 ## Exercise 3: More copying, and `rmdir`
 
@@ -145,9 +442,39 @@ cp newfile.txt more_data/
    Use this as the working dir for all following questions in this exercise,
    so avoid navigating anywhere else.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Assuming you're doing this right after Exercise 2,
+   you should be in `/fs/ess/PAS3493/people/$USER/week04/ex2`,
+   in which case the following commands work:
+
+   ```bash
+   mkdir ../ex3
+   cd ../ex3
+   ```
+
+   Or, with absolute paths:
+
+   ```bash
+   mkdir /fs/ess/PAS3493/people/$USER/week04/ex3
+   cd /fs/ess/PAS3493/people/$USER/week04/ex3
+   ```
+
+   </details>
+
 2. This week, you downloaded the @garrigós2025 dataset (`garrigos` folder).
    Copy its entire `ref` subdir into you current working dir,
    giving the new copy the name `ref_copy`.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Because you are copying a dir, you will need the `-r` (recursive) option:
+
+   ```bash
+   cp -r ../../garrigos/ref ref_copy
+   ```
+
+   </details>
 
 3. Run the following command
    (`rmdir` was only mentioned briefly on the lecture page!):
@@ -160,14 +487,68 @@ cp newfile.txt more_data/
    _(Hint: check the callout box in the_
    _`rm` [section of the lecture page](./w4b_shell-files1.qmd#rm-to-remove))_
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   `rmdir` tries to remove a directory,
+   but unlike `rm -r`, it only works on _empty_ directories.
+   Here it fails because `ref_copy` still contains the GTF file:
+
+   ```bash
+   rmdir ref_copy
+   ```
+   ```bash-out
+   rmdir: failed to remove 'ref_copy': Directory not empty
+   ```
+
+   </details>
+
 4. Move the GTF file in `ref_copy` to your current working dir,
    keeping the same file name.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   To keep the same file name,
+   remember to simply use the `.` shortcut for the current working dir as the destination:
+
+   ```bash
+   mv ref_copy/annot.gtf.gz .
+   ```
+
+   </details>
 
 5. Do you think you will now be able to successfully run `rmdir ref_copy`?
    Try it.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Yes, because the `ref_copy` dir is now empty, this will work:
+
+   ```bash
+   # [No output means it succeeds!]
+   rmdir ref_copy
+   ```
+
+   Let's check --- indeed, the `ref_copy` dir is no longer there:
+
+   ```bash
+   ls
+   ```
+   ```bash-out
+   annot.gtf.gz
+   ```
+
+   </details>
+
 6. Does `rmdir` seem like a slightly silly, incompetent command?
    Why do you think it exists at all?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   `rmdir` exists as a safety measure: because it refuses to remove non-empty dirs,
+   you can't accidentally delete a dir with important files inside,
+   which is easy to do with `rm -r`.
+
+   </details>
 
 ## Exercise 4: Exploring the GTF annotation file
 
@@ -224,10 +605,60 @@ _You should still be in your `ex3` dir with the GTF file and can stay there._
      If you're not sure,
      you can compare the output with and without it to see why.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - The file has 4 header lines:
+
+     ```bash
+     less -S annot.gtf.gz
+     ```
+     ```bash-out
+     #gtf-version 2.2
+     #!genome-build TS_CPP_V2
+     #!genome-build-accession NCBI_Assembly:GCF_016801865.2
+     #!annotation-source NCBI RefSeq GCF_016801865.2-RS_2022_12
+     NC_068937.1     Gnomon  gene    2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id ""; db_xref "GeneID:120427725"; description "homeotic protein deformed"; gbkey "Gene"; gene "LOC120427725"; gene_biotype "protein_coding";
+     NC_068937.1     Gnomon  transcript      2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gbkey "mRNA"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA";
+     ```
+
+   - You can tell the header apart because all header lines start with a `#`:
+     the first line that doesn't start with a `#` is the first line of the table.
+
+   - The `-S` option is very useful here: each line in the table part is one feature,
+     and with the line-wrapping `less` will do by default (i.e., without the `-S` option),
+     it's hard to see where one line ends and the next begins.
+
+   </details>
+
 2. Recall that `zcat` is the counterpart of `cat` for gzip-compressed files:
    it prints their contents in human-readable form.
    Pipe the output of `zcat` to another command to print only the first 15 lines
    of `annot.gtf.gz`.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```bash
+   zcat annot.gtf.gz | head -n 15
+   ```
+   ```bash-out
+   #gtf-version 2.2
+   #!genome-build TS_CPP_V2
+   #!genome-build-accession NCBI_Assembly:GCF_016801865.2
+   #!annotation-source NCBI RefSeq GCF_016801865.2-RS_2022_12
+   NC_068937.1     Gnomon  gene    2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id ""; db_xref "GeneID:120427725"; description "homeotic protein deformed"; gbkey "Gene"; gene "LOC120427725"; gene_biotype "protein_coding";
+   NC_068937.1     Gnomon  transcript      2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gbkey "mRNA"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA";
+   NC_068937.1     Gnomon  exon    2046    2531    .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "1";
+   NC_068937.1     Gnomon  exon    52113   52136   .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "2";
+   NC_068937.1     Gnomon  exon    70113   70962   .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "3";
+   NC_068937.1     Gnomon  exon    105987  106087  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "4";
+   NC_068937.1     Gnomon  exon    106551  106734  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "5";
+   NC_068937.1     Gnomon  exon    109296  109660  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "6";
+   NC_068937.1     Gnomon  exon    109726  110808  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "7";
+   NC_068937.1     Gnomon  CDS     70143   70962   .       +       0       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gbkey "CDS"; gene "LOC120427725"; product "homeotic protein deformed"; protein_id "XP_052563405.1"; exon_number "3";
+   NC_068937.1     Gnomon  CDS     105987  106087  .       +       2       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gbkey "CDS"; gene "LOC120427725"; product "homeotic protein deformed"; protein_id "XP_052563405.1"; exon_number "4";
+   ```
+
+   </details>
 
 3. Count the number of lines in the GTF file both in compressed and uncompressed form.
    Are the counts the same?
@@ -239,6 +670,33 @@ _You should still be in your `ex3` dir with the GTF file and can stay there._
 
    </details>
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - Uncompressed count:
+
+     ```bash
+     zcat annot.gtf.gz | wc -l
+     ```
+     ```bash-out
+     408402
+     ```
+
+   - Compressed count:
+
+     ```bash
+     wc -l annot.gtf.gz
+     ```
+     ```bash-out
+     22934 annot.gtf.gz
+     ```
+
+   So: no, the counts are not the same!
+   The lesson: line counts of compressed files are meaningless ---
+   to count lines in a compressed file, count the lines of its decompressed _output_,
+   e.g. with `zcat <file> | wc -l`.
+
+   </details>
+
 4. Count the number of lines in the GTF file that contain the text "carbonic anhydrase".
    Based on this count, what can you conclude about the number of carbonic anhydrase genes in the genome?
 
@@ -246,6 +704,27 @@ _You should still be in your `ex3` dir with the GTF file and can stay there._
    b) Fewer than the line count, because each gene is described by multiple lines.
    c) More than the line count, because `grep -c` counts at most one match per line.
    d) You can't tell, because line counts of compressed files are meaningless.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - Count the lines that contain "carbonic anhydrase":
+
+     ```bash
+     zcat annot.gtf.gz | grep -c "carbonic anhydrase"
+     ```
+     ```bash-out
+     243
+     ```
+
+   - The correct answer is **b)**: fewer genes than lines.
+     Recall from the GTF snippet at the top of this exercise that a single gene is
+     described by multiple lines:
+     one `gene` line, but also `transcript`, `exon`, and (for protein-coding genes) `CDS` lines.
+
+   - Regarding answer **d)**: because we used `zcat`,
+     `grep` operated on the decompressed contents, so this count _is_ meaningful.
+
+   </details>
 
 5. Build on your command from the previous question to create a
    [frequency table](/week04/w4c_shell-files2.html#generating-a-frequency-table)
@@ -261,522 +740,33 @@ _You should still be in your `ex3` dir with the GTF file and can stay there._
    To create the frequency table, use the `cut`-`sort`-`uniq` combination from the lecture.
    </details>
 
-## Solutions
-
-### Exercise 1
-
-<details><summary>**1.** Create a new dir and navigate there.</summary>
-
-This assumes you start in `/fs/ess/PAS3493/people/$USER`:
-
-```bash
-mkdir -p week04/ex1
-cd week04/ex1
-```
-
-Or, with absolute paths:
-
-```bash
-mkdir -p /fs/ess/PAS3493/people/$USER/week04/ex1
-cd /fs/ess/PAS3493/people/$USER/week04/ex1
-```
-
-</details>
-
-<details><summary>**2.** Create a new file called `newfile.txt` in your working dir.</summary>
-
-```bash
-touch newfile.txt
-```
-
-</details>
-
-<details><summary>**3.** What do you think the command would do or attempt to do?</summary>
-
-Because we added a trailing forward slash to `more_data/`,
-we are making clear that we are referring to a directory.
-So the command will attempt to copy the file into a dir `more_data`,
-with the file keeping the same name.
-
-</details>
-
-<details><summary>**4.** Do you think the command will succeed?</summary>
-
-The `more_data/` dir does not exist,
-and `cp` will not create a dir on the fly --- so it will fail:
-
-```bash
-cp newfile.txt more_data/
-```
-```bash-out
-cp: cannot create regular file 'more_data/': Not a directory
-```
-
-</details>
-
-<details><summary>**5.** What would the command have done if you had omitted the trailing slash?</summary>
-
-If you had omitted the trailing forward slash,
-it would have created a copy of the file with _file_ name `more_data`
-(if that seems confusing: note that in Unix, files don't need to have a file
-extension).
-
-P.S.: To copy the file according to the original intention,
-first create the destination dir and then copy:
-
-```bash
-mkdir more_data
-cp newfile.txt more_data/
-```
-
-Note also that once the `more_data` dir exists,
-it **does not** make a difference whether or not you use a trailing slash.
-
-</details>
-
-### Exercise 2
-
-<details><summary>**1.** Create a new dir and navigate there.</summary>
-
-Assuming you're doing this right after Exercise 1,
-you should be in `/fs/ess/PAS3493/people/$USER/week04/ex1`,
-in which case the following commands work:
-
-```bash
-mkdir ../ex2
-cd ../ex2
-```
-
-Or, with absolute paths:
-
-```bash
-mkdir /fs/ess/PAS3493/people/$USER/week04/ex2
-cd /fs/ess/PAS3493/people/$USER/week04/ex2
-```
-
-</details>
-
-<details><summary>**2.** Create a dir with dummy sequence files.</summary>
-
-- Create the dir:
-
-  ```bash
-  mkdir seqs
-  ```
-
-- Create the dummy files:
-
-  ```bash
-  touch seqs/sample{01..25}_R{1,2}.fastq
-  ```
-
-- Check the result:
-
-  ```bash
-  ls seqs
-  ```
-  ```bash-out
-  sample01_R1.fastq  sample03_R1.fastq  sample05_R1.fastq  sample07_R1.fastq  sample09_R1.fastq  sample11_R1.fastq  sample13_R1.fastq  sample15_R1.fastq  sample17_R1.fastq  sample19_R1.fastq  sample21_R1.fastq  sample23_R1.fastq  sample25_R1.fastq
-sample01_R2.fastq  sample03_R2.fastq  sample05_R2.fastq  sample07_R2.fastq  sample09_R2.fastq  sample11_R2.fastq  sample13_R2.fastq  sample15_R2.fastq  sample17_R2.fastq  sample19_R2.fastq  sample21_R2.fastq  sample23_R2.fastq  sample25_R2.fastq
-sample02_R1.fastq  sample04_R1.fastq  sample06_R1.fastq  sample08_R1.fastq  sample10_R1.fastq  sample12_R1.fastq  sample14_R1.fastq  sample16_R1.fastq  sample18_R1.fastq  sample20_R1.fastq  sample22_R1.fastq  sample24_R1.fastq
-sample02_R2.fastq  sample04_R2.fastq  sample06_R2.fastq  sample08_R2.fastq  sample10_R2.fastq  sample12_R2.fastq  sample14_R2.fastq  sample16_R2.fastq  sample18_R2.fastq  sample20_R2.fastq  sample22_R2.fastq  sample24_R2.fastq
-  ```
-
-- Count the number of files:
-
-  ```bash
-  ls seqs | wc -l
-  ```
-  ```bash-out
-  50
-  ```
-
-  Note that this gives the correct count even though when printed to screen,
-  `ls` output typically uses multiple columns and therefore shows more than one
-  file per line.
-
-  In contrast,
-  the count from `ls -l` is _not_ correct, since its output includes a `total` line:
-
-  ```bash
-  ls -l seqs | wc -l
-  ```
-  ```bash-out
-  51
-  ```
-
-</details>
-
-<details><summary>**3.** How many files does `ls seqs/*2*` list?</summary>
-
-The correct answer is **c) 33**.
-
-Because `*` matches any number of any characters (including none),
-`*2*` matches every file name that contains a "2" _somewhere_:
-
-- All 25 `_R2` files --- because "`_R2`" itself contains a 2!
-- Plus the 8 R1 files of the samples whose number contains a 2:
-  `02`, `12`, `20`, `21`, `22`, `23`, `24`, and `25`.
-
-```bash
-ls seqs/*2* | wc -l
-```
-```bash-out
-33
-```
-
-</details>
-
-<details><summary>**4.** Copy the files for samples 01 through 09 into your working dir with a single command.</summary>
-
-- Copy the files ---
-  remember to use `.` to indicate your current working dir as the destination path.
-
-  ```bash
-  cp seqs/sample0* .
-  ```
-
-- Let's check the result:
-
-  ```bash
-  ls
-  ```
-  ```bash-out
-  sample01_R1.fastq  sample02_R1.fastq  sample03_R1.fastq  sample04_R1.fastq  sample05_R1.fastq  sample06_R1.fastq  sample07_R1.fastq  sample08_R1.fastq  sample09_R1.fastq  seqs
-sample01_R2.fastq  sample02_R2.fastq  sample03_R2.fastq  sample04_R2.fastq  sample05_R2.fastq  sample06_R2.fastq  sample07_R2.fastq  sample08_R2.fastq  sample09_R2.fastq
-  ```
-
-</details>
-
-<details><summary>**5.** Remove the files you just copied.</summary>
-
-```bash
-rm -v sample0*
-```
-```bash-out
-removed 'sample01_R1.fastq'
-removed 'sample01_R2.fastq'
-removed 'sample02_R1.fastq'
-removed 'sample02_R2.fastq'
-removed 'sample03_R1.fastq'
-removed 'sample03_R2.fastq'
-removed 'sample04_R1.fastq'
-removed 'sample04_R2.fastq'
-removed 'sample05_R1.fastq'
-removed 'sample05_R2.fastq'
-removed 'sample06_R1.fastq'
-removed 'sample06_R2.fastq'
-removed 'sample07_R1.fastq'
-removed 'sample07_R2.fastq'
-removed 'sample08_R1.fastq'
-removed 'sample08_R2.fastq'
-removed 'sample09_R1.fastq'
-removed 'sample09_R2.fastq'
-```
-
-</details>
-
-<details><summary>**6.** Move all R1 files into a dir `seqs_R1` and rename `seqs`.</summary>
-
-- Create the new dir:
-
-  ```bash
-  mkdir seqs_R1
-  ```
-
-  This step is needed: when you move multiple files, the destination must be an existing dir.
-  Without it, you'd get an error: `mv: target 'seqs_R1' is not a directory`.
-
-- Move the R1 files into the new dir:
-
-  ```bash
-  mv seqs/*R1.fastq seqs_R1
-  ```
-
-- Rename the old dir from `seqs` to `seqs_R2`:
-
-  ```bash
-  mv seqs seqs_R2
-  ```
-
-- Check the result:
-
-  ```bash
-  tree
-  ```
-  ```bash-out
-  .
-  ├── seqs_R1
-  │   ├── sample01_R1.fastq
-  │   ├── sample02_R1.fastq
-  │   ├── sample03_R1.fastq
-  │   ├── sample04_R1.fastq
-  │   ├── sample05_R1.fastq
-  │   ├── sample06_R1.fastq
-  │   ├── sample07_R1.fastq
-  │   ├── sample08_R1.fastq
-  │   ├── sample09_R1.fastq
-  │   ├── sample10_R1.fastq
-  │   ├── sample11_R1.fastq
-  │   ├── sample12_R1.fastq
-  │   ├── sample13_R1.fastq
-  │   ├── sample14_R1.fastq
-  │   ├── sample15_R1.fastq
-  │   ├── sample16_R1.fastq
-  │   ├── sample17_R1.fastq
-  │   ├── sample18_R1.fastq
-  │   ├── sample19_R1.fastq
-  │   ├── sample20_R1.fastq
-  │   ├── sample21_R1.fastq
-  │   ├── sample22_R1.fastq
-  │   ├── sample23_R1.fastq
-  │   ├── sample24_R1.fastq
-  │   └── sample25_R1.fastq
-  └── seqs_R2
-      ├── sample01_R2.fastq
-      ├── sample02_R2.fastq
-      ├── sample03_R2.fastq
-      ├── sample04_R2.fastq
-      ├── sample05_R2.fastq
-      ├── sample06_R2.fastq
-      ├── sample07_R2.fastq
-      ├── sample08_R2.fastq
-      ├── sample09_R2.fastq
-      ├── sample10_R2.fastq
-      ├── sample11_R2.fastq
-      ├── sample12_R2.fastq
-      ├── sample13_R2.fastq
-      ├── sample14_R2.fastq
-      ├── sample15_R2.fastq
-      ├── sample16_R2.fastq
-      ├── sample17_R2.fastq
-      ├── sample18_R2.fastq
-      ├── sample19_R2.fastq
-      ├── sample20_R2.fastq
-      ├── sample21_R2.fastq
-      ├── sample22_R2.fastq
-      ├── sample23_R2.fastq
-      ├── sample24_R2.fastq
-      └── sample25_R2.fastq
-
-  2 directories, 50 files
-  ```
-
-</details>
-
-### Exercise 3
-
-<details><summary>**1.** Create a new dir and navigate there.</summary>
-
-Assuming you're doing this right after Exercise 2,
-you should be in `/fs/ess/PAS3493/people/$USER/week04/ex2`,
-in which case the following commands work:
-
-```bash
-mkdir ../ex3
-cd ../ex3
-```
-
-Or, with absolute paths:
-
-```bash
-mkdir /fs/ess/PAS3493/people/$USER/week04/ex3
-cd /fs/ess/PAS3493/people/$USER/week04/ex3
-```
-
-</details>
-
-<details><summary>**2.** Copy the `ref` dir to `ref_copy`.</summary>
-
-Because you are copying a dir, you will need the `-r` (recursive) option:
-
-```bash
-cp -r ../../garrigos/ref ref_copy
-```
-
-</details>
-
-<details><summary>**3.** Run the `rmdir` command.</summary>
-
-`rmdir` tries to remove a directory,
-but unlike `rm -r`, it only works on _empty_ directories.
-Here it fails because `ref_copy` still contains the GTF file:
-
-```bash
-rmdir ref_copy
-```
-```bash-out
-rmdir: failed to remove 'ref_copy': Directory not empty
-```
-
-</details>
-
-<details><summary>**4.** Move the GTF file in `ref_copy` to your current working dir.</summary>
-
-To keep the same file name,
-remember to simply use the `.` shortcut for the current working dir as the destination:
-
-```bash
-mv ref_copy/annot.gtf.gz .
-```
-
-</details>
-
-<details><summary>**5.** Do you think you will now be able to successfully run `rmdir ref_copy`?</summary>
-
-Yes, because the `ref_copy` dir is now empty, this will work:
-
-```bash
-# [No output means it succeeds!]
-rmdir ref_copy
-```
-
-Let's check --- indeed, the `ref_copy` dir is no longer there:
-
-```bash
-ls
-```
-```bash-out
-annot.gtf.gz
-```
-
-</details>
-
-<details><summary>**6.** Why does `rmdir` exist if it's so limited?</summary>
-
-`rmdir` exists as a safety measure: because it refuses to remove non-empty dirs,
-you can't accidentally delete a dir with important files inside,
-which is easy to do with `rm -r`.
-
-</details>
-
-### Exercise 4
-
-<details><summary>**1.** Explore `annot.gtf.gz` with `less -S`.</summary>
-
-- The file has 4 header lines:
-
-  ```bash
-  less -S annot.gtf.gz
-  ```
-  ```bash-out
-  #gtf-version 2.2
-  #!genome-build TS_CPP_V2
-  #!genome-build-accession NCBI_Assembly:GCF_016801865.2
-  #!annotation-source NCBI RefSeq GCF_016801865.2-RS_2022_12
-  NC_068937.1     Gnomon  gene    2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id ""; db_xref "GeneID:120427725"; description "homeotic protein deformed"; gbkey "Gene"; gene "LOC120427725"; gene_biotype "protein_coding";
-  NC_068937.1     Gnomon  transcript      2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gbkey "mRNA"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA";
-  ```
-
-- You can tell the header apart because all header lines start with a `#`:
-  the first line that doesn't start with a `#` is the first line of the table.
-
-- The `-S` option is very useful here: each line in the table part is one feature,
-  and with the line-wrapping `less` will do by default (i.e., without the `-S` option),
-  it's hard to see where one line ends and the next begins.
-
-</details>
-
-<details><summary>**2.** Pipe the output of `zcat` to another command to print the file's first 15 lines.</summary>
-
-```bash
-zcat annot.gtf.gz | head -n 15
-```
-```bash-out
-#gtf-version 2.2
-#!genome-build TS_CPP_V2
-#!genome-build-accession NCBI_Assembly:GCF_016801865.2
-#!annotation-source NCBI RefSeq GCF_016801865.2-RS_2022_12
-NC_068937.1     Gnomon  gene    2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id ""; db_xref "GeneID:120427725"; description "homeotic protein deformed"; gbkey "Gene"; gene "LOC120427725"; gene_biotype "protein_coding";
-NC_068937.1     Gnomon  transcript      2046    110808  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gbkey "mRNA"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA";
-NC_068937.1     Gnomon  exon    2046    2531    .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "1";
-NC_068937.1     Gnomon  exon    52113   52136   .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "2";
-NC_068937.1     Gnomon  exon    70113   70962   .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "3";
-NC_068937.1     Gnomon  exon    105987  106087  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "4";
-NC_068937.1     Gnomon  exon    106551  106734  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "5";
-NC_068937.1     Gnomon  exon    109296  109660  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "6";
-NC_068937.1     Gnomon  exon    109726  110808  .       +       .       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gene "LOC120427725"; model_evidence "Supporting evidence includes similarity to: 25 Proteins"; product "homeotic protein deformed, transcript variant X3"; transcript_biotype "mRNA"; exon_number "7";
-NC_068937.1     Gnomon  CDS     70143   70962   .       +       0       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gbkey "CDS"; gene "LOC120427725"; product "homeotic protein deformed"; protein_id "XP_052563405.1"; exon_number "3";
-NC_068937.1     Gnomon  CDS     105987  106087  .       +       2       gene_id "LOC120427725"; transcript_id "XM_052707445.1"; db_xref "GeneID:120427725"; gbkey "CDS"; gene "LOC120427725"; product "homeotic protein deformed"; protein_id "XP_052563405.1"; exon_number "4";
-```
-
-</details>
-
-<details><summary>**3.** Count the number of lines in the GTF file both in compressed and uncompressed form.</summary>
-
-- Uncompressed count:
-
-  ```bash
-  zcat annot.gtf.gz | wc -l
-  ```
-  ```bash-out
-  408402
-  ```
-
-- Compressed count:
-
-  ```bash
-  wc -l annot.gtf.gz
-  ```
-  ```bash-out
-  22934 annot.gtf.gz
-  ```
-
-So: no, the counts are not the same!
-The lesson: line counts of compressed files are meaningless ---
-to count lines in a compressed file, count the lines of its decompressed _output_,
-e.g. with `zcat <file> | wc -l`.
-
-</details>
-
-<details><summary>**4.** What can you conclude about the number of carbonic anhydrase genes?</summary>
-
-- Count the lines that contain "carbonic anhydrase":
-
-  ```bash
-  zcat annot.gtf.gz | grep -c "carbonic anhydrase"
-  ```
-  ```bash-out
-  243
-  ```
-
-- The correct answer is **b)**: fewer genes than lines.
-  Recall from the GTF snippet at the top of this exercise that a single gene is
-  described by multiple lines:
-  one `gene` line, but also `transcript`, `exon`, and (for protein-coding genes) `CDS` lines.
-
-- Regarding answer **d)**: because we used `zcat`,
-  `grep` operated on the decompressed contents, so this count _is_ meaningful.
-
-</details>
-
-<details><summary>**5.** Create a frequency table of feature types among the "carbonic anhydrase" lines.</summary>
-
-- Select column 3 with `cut`, then `sort` and count with `uniq -c`.
-  Unlike in the lecture, you don't need something along the lines of `tail -n +2` here:
-  the header lines don't contain "carbonic anhydrase", so `grep` has already removed them.
-
-  ```bash
-  zcat annot.gtf.gz | grep "carbonic anhydrase" | cut -f 3 | sort | uniq -c
-  ```
-  ```bash-out
-       81 CDS
-       89 exon
-       16 gene
-       19 start_codon
-       19 stop_codon
-       19 transcript
-  ```
-
-- So, there are **16** carbonic anhydrase genes.
-
-- Besides the feature types we've discussed, you also see `start_codon` and `stop_codon` lines,
-  which give the positions of the first and last codon of each coding sequence.
-
-- There are more transcripts (19) than genes (16) because some genes have multiple
-  transcripts --- different versions of the gene's mRNA,
-  mostly due to alternative splicing.
-  In the GTF snippet at the top of this exercise, you can see a hint of this
-  in the `product` attribute: `transcript variant X3`.
-
-</details>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - Select column 3 with `cut`, then `sort` and count with `uniq -c`.
+     Unlike in the lecture, you don't need something along the lines of `tail -n +2` here:
+     the header lines don't contain "carbonic anhydrase", so `grep` has already removed them.
+
+     ```bash
+     zcat annot.gtf.gz | grep "carbonic anhydrase" | cut -f 3 | sort | uniq -c
+     ```
+     ```bash-out
+          81 CDS
+          89 exon
+          16 gene
+          19 start_codon
+          19 stop_codon
+          19 transcript
+     ```
+
+   - So, there are **16** carbonic anhydrase genes.
+
+   - Besides the feature types we've discussed, you also see `start_codon` and `stop_codon` lines,
+     which give the positions of the first and last codon of each coding sequence.
+
+   - There are more transcripts (19) than genes (16) because some genes have multiple
+     transcripts --- different versions of the gene's mRNA,
+     mostly due to alternative splicing.
+     In the GTF snippet at the top of this exercise, you can see a hint of this
+     in the `product` attribute: `transcript variant X3`.
+
+   </details>

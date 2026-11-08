@@ -38,6 +38,8 @@ You'll learn about chunk labels and two optional Positron features for Quarto do
 how to cite papers and software,
 how to avoid re-running slow code every time you render a document,
 and how to turn an existing R script into a Quarto document.
+Finally, you'll see a few examples of using Claude
+to make slides, add references, and build a website with Quarto.
 
 ## Chunk labels
 
@@ -124,7 +126,7 @@ You rarely have to type these entries yourself:
 
 - Most journal websites have an "Export citation" or "Cite" button
   with a BibTeX option.
-- Reference managers like [Zotero](https://www.zotero.org) can export your library,
+- Reference managers like [Zotero {{< fa external-link >}}](https://www.zotero.org){target="_blank"} can export your library,
   or part of it, to a `.bib` file.
 - For R packages, run `citation("<package-name>")` in the R console,
   which prints the package's preferred citation, including a BibTeX entry.
@@ -175,7 +177,7 @@ add an empty `refs` div in that spot:
 
 By default, Quarto uses the Chicago author-date style.
 To use a different style, such as that of the journal you are submitting to,
-download its `.csl` file from the [Zotero Style Repository](https://www.zotero.org/styles),
+download its `.csl` file from the [Zotero Style Repository {{< fa external-link >}}](https://www.zotero.org/styles){target="_blank"},
 and point to it with the `csl` key in the YAML header:
 
 ```yaml
@@ -376,3 +378,80 @@ But you can now also do one of two things with it:
   You can then continue working in the Quarto document,
   though you may want to tidy it up a bit,
   for example to remove empty lines at the end of chunks.
+
+### Asking Claude
+
+You can also ask Claude to do the conversion, for example:
+
+> ***Turn scripts/analysis.R into a Quarto document analysis.qmd.***
+> ***Split the code into chunks at each logical step, with a Markdown header for each step,***
+> ***and turn the comments that explain the code into Markdown text.***
+> ***Don't change the code itself.***
+
+Claude's conversion is usually more polished than one with `knitr::spin()`,
+but compare the code in the new document with the code in the script,
+to make sure that Claude didn't change it along the way.
+Then, render the document,
+keeping in mind that the
+[working directory may differ](../week14/w14a_quarto.qmd#the-working-directory-when-rendering-and-the-here-package)
+from the one you ran the script in.
+
+## Quarto with Claude
+
+Quarto can do much more than the HTML reports we've made in this course,
+and Claude is a good guide to features you haven't used before.
+Here are a few examples of what you can ask it.
+
+### Slides
+
+Quarto can render a document as a slide deck,
+with `format: revealjs` in the YAML header.
+Each `##` header then starts a new slide,
+and code chunks work just like in other Quarto documents.
+For example, to turn your [week 15 report](../week15/w15_exercises.qmd) into slides:
+
+> ***Create a Quarto revealjs slide deck slides.qmd from reports/w15_exercises.qmd***
+> ***for a 10-minute lab meeting presentation.***
+> ***Put one plot per slide, hide all code, and keep the inline code for any numbers.***
+
+Then, check that:
+
+- The numbers in the slides still come from inline code,
+  rather than being typed in,
+  so that they stay correct when your analysis changes.
+- The slides render,
+  and that the plots fit on the slides
+  (you may need to adjust the figure sizes with `fig-width` and `fig-height`).
+
+### Adding references
+
+Claude can add citations and a bibliography file to your document,
+but don't let it write the BibTeX entries from memory,
+because it may get details like the DOI or page numbers wrong.
+Instead, ask it to get the entries from their DOIs,
+which it can do with a shell command,
+or with `citation()` for R packages:
+
+> ***Add a references.bib file and cite DESeq2 and the Garrigós et al. (2025) paper in the***
+> ***introduction of reports/w15_exercises.qmd. Get the BibTeX entry for the paper***
+> ***from its DOI, and for DESeq2 from citation("DESeq2"), rather than writing them yourself.***
+
+Then, check that each entry in `references.bib` is for the reference you meant,
+for example by clicking its DOI link.
+
+### A website
+
+This course's website is a Quarto **website**:
+a set of Quarto documents in one folder,
+with a configuration file `_quarto.yml` that defines, for example, the navigation bar.
+You can make a personal or lab website the same way,
+and host it for free on GitHub Pages:
+
+> ***Create a Quarto website for my lab in a new folder lab-website,***
+> ***with pages for Home, People, Research, and Publications, and a navigation bar.***
+> ***Render it, and explain how to preview it and how to publish it on GitHub Pages.***
+
+To see your website while you work on it,
+run `quarto preview` in the terminal, inside the website's folder.
+This renders the website, shows it in a browser,
+and updates it whenever you save a change to one of its pages.

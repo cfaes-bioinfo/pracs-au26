@@ -148,6 +148,27 @@ go over those again.
    - A Slurm log file name that includes "trimgalore" and the job ID
    - That Slurm should email you if the job fails
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   The first few lines of your script should look like this:
+
+   ```{.bash .file filename="scripts/trimgalore.sh (excerpt)"}
+   #!/bin/bash
+   #SBATCH --account=PAS3493
+   #SBATCH --cpus-per-task=8
+   #SBATCH --time=30
+   #SBATCH --output=slurm-trimgalore-%j.out
+   #SBATCH --mail-type=FAIL
+   set -euo pipefail
+   ```
+
+   - The `#SBATCH` lines should come right after the shebang line,
+     and before any other code:
+     Slurm stops reading `#SBATCH` lines at the first line of code.
+   - The order of the `#SBATCH` lines doesn't matter.
+
+   </details>
+
 2. In GA4, you didn't change TrimGalore's number of cores,
    because you only had 1 core available.
    Now that your batch job will have 8 cores,
@@ -156,16 +177,153 @@ go over those again.
    Based on the option's description,
    would it be worth reserving 16 cores instead, to make the job twice as fast?
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Print the help info (only relevant output lines shown below):
+
+   ```bash
+   apptainer exec oras://community.wave.seqera.io/library/trim-galore:2.3.0--a56e49e832976df4 \
+       trim_galore --help
+   ```
+   ```bash-out
+     -j, --cores <CORES>
+             Number of worker threads for parallel processing (default: 1).
+             At --cores 1 the worker-pool is bypassed (single thread, ~5 MB RAM).
+             From --cores 2 upward, an N+4 thread model applies: N workers +
+             2 decompressors + 1 batcher + 1 writer.
+             Wall-clock speedup is near-linear up to --cores 8 for paired-end runs;
+             beyond that, gzip-output I/O on the storage layer typically becomes
+             binding before workers run out of useful per-read work,
+             so additional cores help progressively less
+   ```
+
+   The option is `-j`/`--cores`.
+   Unlike FastQC's `--threads` option,
+   which only parallelizes the processing of multiple files,
+   TrimGalore can also use multiple cores to process a single pair of files faster.
+   So, edit the `trim_galore` command as follows:
+
+   ```bash
+   apptainer exec "$TRIMGALORE_CONTAINER" \
+       trim_galore \
+       --cores 8 \
+       --paired \
+       --fastqc \
+       --output_dir "$outdir" \
+       "$fastq_r1" \
+       "$fastq_r2"
+   ```
+
+   Reserving 16 cores would probably not be worth it:
+   according to the help info, the speedup is near-linear up to 8 cores,
+   but beyond that, additional cores help "progressively less".
+   So, the job would be less than twice as fast,
+   while your project would be billed for twice as many cores.
+
+   You may also notice that with `--cores 8`, TrimGalore runs 4 additional "helper" threads,
+   e.g. to read and write the FASTQ files.
+   That's fine: Slurm restricts your job to the 8 reserved cores, so these threads simply share them,
+   and setting `--cores` to the number of reserved cores remains a good rule of thumb.
+
+   Finally, keep in mind that our practice FASTQ files are so small
+   that the job will be quick either way,
+   so you may not notice much of a speedup compared to your 1-core runs in GA4.
+   With full-size FASTQ files, multiple cores make a much bigger difference.
+
+   </details>
+
 3. Submit the script as a batch job for sample `S63` only,
    with `results/trimgalore` as the output dir.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```bash
+   sbatch scripts/trimgalore.sh \
+       ../garrigos/fastq/S63_R1.fastq.gz \
+       ../garrigos/fastq/S63_R2.fastq.gz \
+       results/trimgalore
+   ```
+   ```bash-out
+   Submitted batch job 37616012
+   ```
+
+   </details>
 
 4. Monitor the job,
    and when it's done, check that everything went well
    (if it didn't, fix the problem and resubmit).
    What did you check, and how?
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - Check the queue until the job is no longer listed:
+
+     ```bash
+     squeue -u $USER -l
+     ```
+
+   - If you didn't get a failure email,
+     that already suggests the job succeeded.
+
+   - Check that the Slurm log file ends with the "_Successfully finished_" line,
+     and take a look at the rest of its contents:
+
+     ```bash
+     tail slurm-trimgalore*.out
+     ```
+     ```bash-out
+     JSON report: results/trimgalore/S63_R1.fastq.gz_trimming_report.json
+     Report: results/trimgalore/S63_R2.fastq.gz_trimming_report.txt
+     JSON report: results/trimgalore/S63_R2.fastq.gz_trimming_report.json
+
+     Running FastQC on results/trimgalore/S63_R1_val_1.fq.gz
+
+     Running FastQC on results/trimgalore/S63_R2_val_2.fq.gz
+
+     Successfully finished script trimgalore.sh
+     Sat Oct 24 08:58:44 PM EDT 2026
+     ```
+
+     ```bash
+     less slurm-trimgalore*.out
+     ```
+
+   - Check that the expected TrimGalore output files are there,
+     and that none of them are suspiciously small:
+
+     ```bash
+     ls -lh results/trimgalore
+     ```
+     ```bash-out
+     total 50M
+     -rw-rw----+ 1 jelmer PAS0471 2.7K Oct 24 20:58 S63_R1.fastq.gz_trimming_report.json
+     -rw-rw----+ 1 jelmer PAS0471 2.3K Oct 24 20:58 S63_R1.fastq.gz_trimming_report.txt
+     -rw-rw----+ 1 jelmer PAS0471 288K Oct 24 20:58 S63_R1_val_1_fastqc.html
+     -rw-rw----+ 1 jelmer PAS0471 355K Oct 24 20:58 S63_R1_val_1_fastqc.zip
+     -rw-rw----+ 1 jelmer PAS0471  25M Oct 24 20:58 S63_R1_val_1.fq.gz
+     -rw-rw----+ 1 jelmer PAS0471 2.3K Oct 24 20:58 S63_R2.fastq.gz_trimming_report.json
+     -rw-rw----+ 1 jelmer PAS0471 2.5K Oct 24 20:58 S63_R2.fastq.gz_trimming_report.txt
+     -rw-rw----+ 1 jelmer PAS0471 274K Oct 24 20:58 S63_R2_val_2_fastqc.html
+     -rw-rw----+ 1 jelmer PAS0471 334K Oct 24 20:58 S63_R2_val_2_fastqc.zip
+     -rw-rw----+ 1 jelmer PAS0471  25M Oct 24 20:58 S63_R2_val_2.fq.gz
+     ```
+
+     You should see the same 10 output files as in GA4.
+     For each of the R1 and R2 files, you have a trimmed FASTQ file,
+     a trimming report in TXT and JSON format, and a FastQC HTML and Zip file.
+
+   </details>
+
 5. Remove all outputs of this test run:
    the Slurm log file and the TrimGalore output files.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```bash
+   rm -r slurm-trimgalore*.out results/trimgalore
+   ```
+
+   </details>
 
 ## Exercise 2: Batch jobs for all samples
 
@@ -183,13 +341,132 @@ go over those again.
    to check that it will submit the jobs you intend.
    Then, remove the `echo` and run the loop for real.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Your `protocol.md` should now look something like this:
+
+   ````{.markdown .file filename="protocol.md"}
+   # RNA-seq analysis of _Culex pipiens_: read QC and trimming
+
+   - Author: Jane Doe
+   - Date: 2026-10-30
+   - This was run at the Ohio Supercomputer Center (OSC),
+     in the dir `/fs/ess/PAS3493/people/jdoe/week10`
+
+   ## Set up: Set the input file paths
+
+   ```bash
+   fastq_dir=../garrigos/fastq
+   ```
+
+   ## Step 2: Read trimming with TrimGalore
+
+   ```bash
+   for fastq_r1 in "$fastq_dir"/*_R1.fastq.gz; do
+       fastq_r2="${fastq_r1/_R1/_R2}"
+       sbatch scripts/trimgalore.sh "$fastq_r1" "$fastq_r2" results/trimgalore
+   done
+   ```
+   ````
+
+   After running the set up code, check the loop with `echo`:
+
+   ```bash
+   for fastq_r1 in "$fastq_dir"/*_R1.fastq.gz; do
+       fastq_r2="${fastq_r1/_R1/_R2}"
+       echo sbatch scripts/trimgalore.sh "$fastq_r1" "$fastq_r2" results/trimgalore
+   done
+   ```
+   ```bash-out
+   sbatch scripts/trimgalore.sh ../garrigos/fastq/S63_R1.fastq.gz ../garrigos/fastq/S63_R2.fastq.gz results/trimgalore
+   sbatch scripts/trimgalore.sh ../garrigos/fastq/S64_R1.fastq.gz ../garrigos/fastq/S64_R2.fastq.gz results/trimgalore
+   sbatch scripts/trimgalore.sh ../garrigos/fastq/S65_R1.fastq.gz ../garrigos/fastq/S65_R2.fastq.gz results/trimgalore
+   sbatch scripts/trimgalore.sh ../garrigos/fastq/S66_R1.fastq.gz ../garrigos/fastq/S66_R2.fastq.gz results/trimgalore
+   sbatch scripts/trimgalore.sh ../garrigos/fastq/S67_R1.fastq.gz ../garrigos/fastq/S67_R2.fastq.gz results/trimgalore
+   sbatch scripts/trimgalore.sh ../garrigos/fastq/S68_R1.fastq.gz ../garrigos/fastq/S68_R2.fastq.gz results/trimgalore
+   sbatch scripts/trimgalore.sh ../garrigos/fastq/S69_R1.fastq.gz ../garrigos/fastq/S69_R2.fastq.gz results/trimgalore
+   # [...output truncated...]
+   ```
+
+   Then, remove the `echo` and run it for real:
+
+   ```bash
+   for fastq_r1 in "$fastq_dir"/*_R1.fastq.gz; do
+       fastq_r2="${fastq_r1/_R1/_R2}"
+       sbatch scripts/trimgalore.sh "$fastq_r1" "$fastq_r2" results/trimgalore
+   done
+   ```
+   ```bash-out
+   Submitted batch job 56656686
+   Submitted batch job 56656687
+   Submitted batch job 56656688
+   Submitted batch job 56656689
+   # [...output truncated...]
+   ```
+
+   - Like in GA4, the loop goes over the R1 files only,
+     so that the script runs once per sample rather than once per FASTQ file.
+   - The only differences with the loop in the GA4 solutions are the glob,
+     which now matches all samples (and uses the `$fastq_dir` variable),
+     and `sbatch` instead of `bash`.
+
+   </details>
+
 7. Monitor the batch jobs,
    and when they are done, check that all of them succeeded:
    - Did every Slurm log file get a "_Successfully finished_" line?
    - Do you have a pair of trimmed FASTQ files for every sample?
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   - Count the "_Successfully finished_" lines in each Slurm log file.
+     Any file with a count of `0` means that its job didn't finish:
+
+     ```bash
+     grep -c "Successfully finished" slurm-trimgalore*.out
+     ```
+     ```bash-out
+     slurm-trimgalore-56656686.out:1
+     slurm-trimgalore-56656687.out:1
+     slurm-trimgalore-56656688.out:1
+     slurm-trimgalore-56656689.out:1
+     slurm-trimgalore-56656691.out:1
+     slurm-trimgalore-56656694.out:1
+     # [...output truncated...]
+     ```
+
+   - Count the trimmed R1 and R2 FASTQ files,
+     which should be one each per sample, i.e. 22:
+
+     ```bash
+     ls results/trimgalore/*_val_1.fq.gz | wc -l
+     ```
+     ```bash-out
+     22
+     ```
+     ```bash
+     ls results/trimgalore/*_val_2.fq.gz | wc -l
+     ```
+     ```bash-out
+     22
+     ```
+
+   - Also check the file sizes with `ls -lh results/trimgalore`,
+     and take a close look at (at least) one of the Slurm log files.
+
+   </details>
+
 8. In this case, it is appropriate to keep the Slurm log files:
    move them into a dir `logs` in the TrimGalore output dir.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```bash
+   mkdir results/trimgalore/logs
+   mv slurm-trimgalore*.out results/trimgalore/logs/
+   ```
+
+   </details>
 
 ## Exercise 3: Complete your protocol
 
@@ -202,16 +479,92 @@ go over those again.
    - For each step, add a brief description of what the script does
      and which arguments it takes, above the code block.
 
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ````{.markdown .file filename="protocol.md"}
+   # RNA-seq analysis of _Culex pipiens_: read QC and trimming
+
+   - Author: Jane Doe
+   - Date: 2026-10-30
+   - This was run at the Ohio Supercomputer Center (OSC),
+     in the dir `/fs/ess/PAS3493/people/jdoe/week10`
+
+   ## Set up: Set the input file paths
+
+   ```bash
+   fastq_dir=../garrigos/fastq
+   ```
+
+   ## Step 1: Read QC with FastQC
+
+   The `fastqc.sh` script runs FastQC on 1 FASTQ file at a time,
+   and takes 2 arguments: the input FASTQ file and the output dir.
+
+   ```bash
+   for fastq in "$fastq_dir"/*fastq.gz; do
+       sbatch scripts/fastqc.sh "$fastq" results/fastqc
+   done
+   ```
+
+   ## Step 2: Read trimming with TrimGalore
+
+   The `trimgalore.sh` script runs TrimGalore on the paired-end FASTQ files of 1 sample at a time,
+   and takes 3 arguments: the R1 FASTQ file, the R2 FASTQ file, and the output dir.
+
+   ```bash
+   for fastq_r1 in "$fastq_dir"/*_R1.fastq.gz; do
+       fastq_r2="${fastq_r1/_R1/_R2}"
+       sbatch scripts/trimgalore.sh "$fastq_r1" "$fastq_r2" results/trimgalore
+   done
+   ```
+   ````
+
+   </details>
+
 10. In the lecture's protocol, the STAR step loops over the _output_ files of the TrimGalore step.
     Say the TrimGalore job for one sample failed, and you didn't notice.
     What would happen when you run the STAR step?
     Why is this worse than getting an error?
+
+    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+    The STAR loop would simply skip the failed sample,
+    because its trimmed FASTQ files don't exist.
+    You wouldn't get any error:
+    all STAR jobs would succeed, and you'd just end up with one sample fewer in your count table.
+
+    You may not notice this until much later.
+    This is why you should check that all jobs of a step succeeded before moving on,
+    e.g. by counting the output files like you did in Exercise 2.
+
+    </details>
 
 11. Say you notice that the TrimGalore job for one sample failed,
     and you fix the problem.
     Which steps of the lecture's protocol would you then need to rerun,
     and for which samples?
     Could you simply rerun the code blocks in the protocol for those steps?
+
+    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+    You'd need to rerun TrimGalore and the steps that use its output,
+    STAR and Salmon, but only for the failed sample.
+    FastQC and MultiQC use the raw FASTQ files, so they are not affected.
+
+    You shouldn't simply rerun the protocol's loops,
+    because those would submit jobs for _all_ samples again.
+    Instead, submit single jobs for the failed sample, e.g. for sample `S63`:
+
+    ```bash
+    sbatch scripts/trimgalore.sh \
+        "$fastq_dir"/S63_R1.fastq.gz "$fastq_dir"/S63_R2.fastq.gz results/trimgalore
+    ```
+
+    And once that job has finished, do the same for the STAR step, and then for the Salmon step.
+    This is one advantage of scripts that process a single sample:
+    you can easily rerun just the part of the workflow that failed.
+
+    </details>
 
 ## Exercise 4: A SeqKit batch job script with Claude
 
@@ -242,6 +595,81 @@ as a single batch job, and then check that script carefully.
     - Did Claude add any other `#SBATCH` options or lines you don't recognize?
       If so, find out what they do.
 
+    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+    Claude's script will vary, but it should look similar to this:
+
+    ```{.bash .file filename="scripts/seqkit_stats.sh"}
+    #!/bin/bash
+    #SBATCH --account=PAS3493
+    #SBATCH --cpus-per-task=4
+    #SBATCH --mail-type=FAIL
+    #SBATCH --output=slurm-seqkit_stats-%j.out
+    set -euo pipefail
+
+    # Script to run seqkit stats on all FASTQ files in an input dir,
+    # and write the results to a TSV file in an output dir
+    # Usage: sbatch scripts/seqkit_stats.sh <input dir> <output dir>
+
+    # seqkit container
+    # NOTE: replace this with the actual URL from https://seqera.io/containers/
+    # (search for "seqkit"); I could not look up the exact build hash
+    CONTAINER=oras://community.wave.seqera.io/library/seqkit:<VERSION>--<HASH>
+
+    # Number of cores (should match --cpus-per-task above)
+    THREADS=4
+
+    # Copy the placeholder variables
+    indir="$1"
+    outdir="$2"
+
+    # Initial logging
+    echo "Starting script seqkit_stats.sh"
+    date
+    echo "Input dir:    $indir"
+    echo "Output dir:   $outdir"
+    echo
+
+    # Create the output dir if needed
+    mkdir -p "$outdir"
+
+    # Define the output file
+    outfile="$outdir/seqkit_stats.tsv"
+
+    # Run seqkit stats with its container:
+    # --tabular: output in TSV format (instead of a human-readable table)
+    # --threads: number of cores to use
+    # The glob (*.fastq.gz) expands to all gzipped FASTQ files in the input dir
+    apptainer exec "$CONTAINER" \
+        seqkit stats \
+        --tabular \
+        --threads "$THREADS" \
+        "$indir"/*.fastq.gz \
+        > "$outfile"
+
+    # Final logging
+    echo
+    echo "Used seqkit version:"
+    apptainer exec "$CONTAINER" seqkit version
+    echo
+    echo "Output file:  $outfile"
+    echo "Successfully finished script seqkit_stats.sh"
+    date
+    ```
+
+    - The value of `--threads` should match `--cpus-per-task`.
+      (If Claude left out `--threads`, SeqKit would still use 4 threads, its default,
+      but it's better to be explicit, as your `CLAUDE.md` asks.)
+
+    - Unlike FastQC in the w10b jobs, multiple cores do help here:
+      this single job processes all 44 FASTQ files,
+      and SeqKit uses its threads to process multiple files in parallel.
+
+    - The example above does not have the container link yet --- one valid link is:
+      `oras://community.wave.seqera.io/library/seqkit:2.14.0--242173bf1fbab6c9`.
+
+    </details>
+
 15. It's possible that Claude explicitly asked you to find a container link,
     which is the best outcome.
     But to make sure that it consistently does that in the future,
@@ -257,6 +685,70 @@ as a single batch job, and then check that script carefully.
     Submit the job from your protocol, and check that it succeeded.
     Do the read counts in the output file make sense?
 
+    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+    In `protocol.md`:
+
+    ````{.markdown .file filename="protocol.md (excerpt)"}
+    ## Step 3: Read statistics with SeqKit
+
+    The `seqkit_stats.sh` script runs `seqkit stats` once for all FASTQ files,
+    and takes 2 arguments: the input dir with FASTQ files and the output dir.
+
+    ```bash
+    sbatch scripts/seqkit_stats.sh "$fastq_dir" results/seqkit
+    ```
+    ````
+
+    Check the Slurm log file:
+
+    ```bash
+    cat slurm-seqkit_stats*.out
+    ```
+    ```bash-out
+    Starting script seqkit_stats.sh
+    Sat Oct 24 09:45:05 PM EDT 2026
+    Input dir:    ../garrigos/fastq
+    Output dir:   results/seqkit
+
+    INFO:    Using cached SIF image
+    INFO:    gocryptfs not found, will not be able to use gocryptfs
+    processed files:  44 / 44  ETA: 0s. done
+
+    Used seqkit version:
+    INFO:    Using cached SIF image
+    INFO:    gocryptfs not found, will not be able to use gocryptfs
+    seqkit v2.14.0
+
+    Output file:  results/seqkit/seqkit_stats.tsv
+    Successfully finished script seqkit_stats.sh
+    Sat Oct 24 09:45:15 PM EDT 2026
+    ```
+
+    Take a look at the output file in the editor: click on it in the file explorer.
+
+    Or if you prefer to look at it in the terminal,
+    you can use `column -t` to line up the columns:
+
+    ```bash
+    column -t results/seqkit/seqkit_stats.tsv
+    ```
+    ```bash-out
+    file                               format  type  num_seqs  sum_len   min_len  avg_len  max_len
+    ../garrigos/fastq/S63_R1.fastq.gz  FASTQ   DNA   500000    35498138  35       71.0     74
+    ../garrigos/fastq/S63_R2.fastq.gz  FASTQ   DNA   500000    36784563  35       73.6     74
+    ../garrigos/fastq/S64_R1.fastq.gz  FASTQ   DNA   500000    36270777  35       72.5     74
+    ../garrigos/fastq/S64_R2.fastq.gz  FASTQ   DNA   500000    36793857  35       73.6     74
+    ../garrigos/fastq/S65_R1.fastq.gz  FASTQ   DNA   500000    36615112  35       73.2     74
+    ../garrigos/fastq/S65_R2.fastq.gz  FASTQ   DNA   500000    36794133  35       73.6     74
+    # [...output truncated...]
+    ```
+
+    The `num_seqs` column should show 500,000 reads for each file,
+    since the files were subsampled to that number of reads.
+
+    </details>
+
 ## Bonus: Rename the output FASTQ files
 
 The TrimGalore output FASTQ files are oddly named,
@@ -271,6 +763,29 @@ which is why the TrimGalore script in that protocol renames its output files.
     TrimGalore, giving them the same names as the input files.
     Then, resubmit the script for sample `S63` to check that your changes work,
     using a separate output dir like `results/trimgalore_test`.
+
+    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+    Add the following code to your script, after the `trim_galore` command:
+
+    ```{.bash .file filename="scripts/trimgalore.sh (excerpt)"}
+    # Rename the output FASTQ files to the same names as the input files
+    sample_id=$(basename "$fastq_r1" _R1.fastq.gz)
+    R1_out_init="$outdir"/"$sample_id"_R1_val_1.fq.gz
+    R2_out_init="$outdir"/"$sample_id"_R2_val_2.fq.gz
+    R1_out_final="$outdir"/"$sample_id"_R1.fastq.gz
+    R2_out_final="$outdir"/"$sample_id"_R2.fastq.gz
+
+    mv -v "$R1_out_init" "$R1_out_final"
+    mv -v "$R2_out_init" "$R2_out_final"
+    ```
+
+    - `basename` with a second argument removes that suffix from the file name,
+      so `../garrigos/fastq/S63_R1.fastq.gz` becomes `S63`.
+    - Alternatively, you could use `$(basename "$fastq_r1")` to get `S63_R1.fastq.gz`,
+      and use that directly as the final R1 file name.
+
+    </details>
 
 <details><summary>{{< fa lightbulb >}} Hints _(Click to expand)_</summary>
 
@@ -305,530 +820,3 @@ because you will do the renaming inside the script without a loop.
 </details>
 
 <hr style="height:1pt; visibility:hidden;" />
-
-## Solutions
-
-### Exercise 1
-
-<details><summary>**1.** Add `#SBATCH` lines</summary>
-
-The first few lines of your script should look like this:
-
-```{.bash .file filename="scripts/trimgalore.sh (excerpt)"}
-#!/bin/bash
-#SBATCH --account=PAS3493
-#SBATCH --cpus-per-task=8
-#SBATCH --time=30
-#SBATCH --output=slurm-trimgalore-%j.out
-#SBATCH --mail-type=FAIL
-set -euo pipefail
-```
-
-- The `#SBATCH` lines should come right after the shebang line,
-  and before any other code:
-  Slurm stops reading `#SBATCH` lines at the first line of code.
-- The order of the `#SBATCH` lines doesn't matter.
-
-</details>
-
-<details><summary>**2.** Let TrimGalore use 8 cores</summary>
-
-Print the help info (only relevant output lines shown below):
-
-```bash
-apptainer exec oras://community.wave.seqera.io/library/trim-galore:2.3.0--a56e49e832976df4 \
-    trim_galore --help
-```
-```bash-out
-  -j, --cores <CORES>
-          Number of worker threads for parallel processing (default: 1).
-          At --cores 1 the worker-pool is bypassed (single thread, ~5 MB RAM).
-          From --cores 2 upward, an N+4 thread model applies: N workers +
-          2 decompressors + 1 batcher + 1 writer.
-          Wall-clock speedup is near-linear up to --cores 8 for paired-end runs;
-          beyond that, gzip-output I/O on the storage layer typically becomes
-          binding before workers run out of useful per-read work,
-          so additional cores help progressively less
-```
-
-The option is `-j`/`--cores`.
-Unlike FastQC's `--threads` option,
-which only parallelizes the processing of multiple files,
-TrimGalore can also use multiple cores to process a single pair of files faster.
-So, edit the `trim_galore` command as follows:
-
-```bash
-apptainer exec "$TRIMGALORE_CONTAINER" \
-    trim_galore \
-    --cores 8 \
-    --paired \
-    --fastqc \
-    --output_dir "$outdir" \
-    "$fastq_r1" \
-    "$fastq_r2"
-```
-
-Reserving 16 cores would probably not be worth it:
-according to the help info, the speedup is near-linear up to 8 cores,
-but beyond that, additional cores help "progressively less".
-So, the job would be less than twice as fast,
-while your project would be billed for twice as many cores.
-
-You may also notice that with `--cores 8`, TrimGalore runs 4 additional "helper" threads,
-e.g. to read and write the FASTQ files.
-That's fine: Slurm restricts your job to the 8 reserved cores, so these threads simply share them,
-and setting `--cores` to the number of reserved cores remains a good rule of thumb.
-
-Finally, keep in mind that our practice FASTQ files are so small
-that the job will be quick either way,
-so you may not notice much of a speedup compared to your 1-core runs in GA4.
-With full-size FASTQ files, multiple cores make a much bigger difference.
-
-</details>
-
-<details><summary>**3.** Submit a test job for `S63`</summary>
-
-```bash
-sbatch scripts/trimgalore.sh \
-    ../garrigos/fastq/S63_R1.fastq.gz \
-    ../garrigos/fastq/S63_R2.fastq.gz \
-    results/trimgalore
-```
-```bash-out
-Submitted batch job 37616012
-```
-
-</details>
-
-<details><summary>**4.** Monitor and check the job</summary>
-
-- Check the queue until the job is no longer listed:
-
-  ```bash
-  squeue -u $USER -l
-  ```
-
-- If you didn't get a failure email,
-  that already suggests the job succeeded.
-
-- Check that the Slurm log file ends with the "_Successfully finished_" line,
-  and take a look at the rest of its contents:
-
-  ```bash
-  tail slurm-trimgalore*.out
-  ```
-  ```bash-out
-  JSON report: results/trimgalore/S63_R1.fastq.gz_trimming_report.json
-  Report: results/trimgalore/S63_R2.fastq.gz_trimming_report.txt
-  JSON report: results/trimgalore/S63_R2.fastq.gz_trimming_report.json
-
-  Running FastQC on results/trimgalore/S63_R1_val_1.fq.gz
-
-  Running FastQC on results/trimgalore/S63_R2_val_2.fq.gz
-
-  Successfully finished script trimgalore.sh
-  Sat Oct 24 08:58:44 PM EDT 2026
-  ```
-
-  ```bash
-  less slurm-trimgalore*.out
-  ```
-
-- Check that the expected TrimGalore output files are there,
-  and that none of them are suspiciously small:
-
-  ```bash
-  ls -lh results/trimgalore
-  ```
-  ```bash-out
-  total 50M
-  -rw-rw----+ 1 jelmer PAS0471 2.7K Oct 24 20:58 S63_R1.fastq.gz_trimming_report.json
-  -rw-rw----+ 1 jelmer PAS0471 2.3K Oct 24 20:58 S63_R1.fastq.gz_trimming_report.txt
-  -rw-rw----+ 1 jelmer PAS0471 288K Oct 24 20:58 S63_R1_val_1_fastqc.html
-  -rw-rw----+ 1 jelmer PAS0471 355K Oct 24 20:58 S63_R1_val_1_fastqc.zip
-  -rw-rw----+ 1 jelmer PAS0471  25M Oct 24 20:58 S63_R1_val_1.fq.gz
-  -rw-rw----+ 1 jelmer PAS0471 2.3K Oct 24 20:58 S63_R2.fastq.gz_trimming_report.json
-  -rw-rw----+ 1 jelmer PAS0471 2.5K Oct 24 20:58 S63_R2.fastq.gz_trimming_report.txt
-  -rw-rw----+ 1 jelmer PAS0471 274K Oct 24 20:58 S63_R2_val_2_fastqc.html
-  -rw-rw----+ 1 jelmer PAS0471 334K Oct 24 20:58 S63_R2_val_2_fastqc.zip
-  -rw-rw----+ 1 jelmer PAS0471  25M Oct 24 20:58 S63_R2_val_2.fq.gz
-  ```
-
-  You should see the same 10 output files as in GA4.
-  For each of the R1 and R2 files, you have a trimmed FASTQ file,
-  a trimming report in TXT and JSON format, and a FastQC HTML and Zip file.
-
-</details>
-
-<details><summary>**5.** Clean up the test run</summary>
-
-```bash
-rm -r slurm-trimgalore*.out results/trimgalore
-```
-
-</details>
-
-### Exercise 2
-
-<details><summary>**6.** Submit a job for each sample</summary>
-
-Your `protocol.md` should now look something like this:
-
-````{.markdown .file filename="protocol.md"}
-# RNA-seq analysis of _Culex pipiens_: read QC and trimming
-
-- Author: Jane Doe
-- Date: 2026-10-30
-- This was run at the Ohio Supercomputer Center (OSC),
-  in the dir `/fs/ess/PAS3493/people/jdoe/week10`
-
-## Set up: Set the input file paths
-
-```bash
-fastq_dir=../garrigos/fastq
-```
-
-## Step 2: Read trimming with TrimGalore
-
-```bash
-for fastq_r1 in "$fastq_dir"/*_R1.fastq.gz; do
-    fastq_r2="${fastq_r1/_R1/_R2}"
-    sbatch scripts/trimgalore.sh "$fastq_r1" "$fastq_r2" results/trimgalore
-done
-```
-````
-
-After running the set up code, check the loop with `echo`:
-
-```bash
-for fastq_r1 in "$fastq_dir"/*_R1.fastq.gz; do
-    fastq_r2="${fastq_r1/_R1/_R2}"
-    echo sbatch scripts/trimgalore.sh "$fastq_r1" "$fastq_r2" results/trimgalore
-done
-```
-```bash-out
-sbatch scripts/trimgalore.sh ../garrigos/fastq/S63_R1.fastq.gz ../garrigos/fastq/S63_R2.fastq.gz results/trimgalore
-sbatch scripts/trimgalore.sh ../garrigos/fastq/S64_R1.fastq.gz ../garrigos/fastq/S64_R2.fastq.gz results/trimgalore
-sbatch scripts/trimgalore.sh ../garrigos/fastq/S65_R1.fastq.gz ../garrigos/fastq/S65_R2.fastq.gz results/trimgalore
-sbatch scripts/trimgalore.sh ../garrigos/fastq/S66_R1.fastq.gz ../garrigos/fastq/S66_R2.fastq.gz results/trimgalore
-sbatch scripts/trimgalore.sh ../garrigos/fastq/S67_R1.fastq.gz ../garrigos/fastq/S67_R2.fastq.gz results/trimgalore
-sbatch scripts/trimgalore.sh ../garrigos/fastq/S68_R1.fastq.gz ../garrigos/fastq/S68_R2.fastq.gz results/trimgalore
-sbatch scripts/trimgalore.sh ../garrigos/fastq/S69_R1.fastq.gz ../garrigos/fastq/S69_R2.fastq.gz results/trimgalore
-# [...output truncated...]
-```
-
-Then, remove the `echo` and run it for real:
-
-```bash
-for fastq_r1 in "$fastq_dir"/*_R1.fastq.gz; do
-    fastq_r2="${fastq_r1/_R1/_R2}"
-    sbatch scripts/trimgalore.sh "$fastq_r1" "$fastq_r2" results/trimgalore
-done
-```
-```bash-out
-Submitted batch job 56656686
-Submitted batch job 56656687
-Submitted batch job 56656688
-Submitted batch job 56656689
-# [...output truncated...]
-```
-
-- Like in GA4, the loop goes over the R1 files only,
-  so that the script runs once per sample rather than once per FASTQ file.
-- The only differences with the loop in the GA4 solutions are the glob,
-  which now matches all samples (and uses the `$fastq_dir` variable),
-  and `sbatch` instead of `bash`.
-
-</details>
-
-<details><summary>**7.** Check that all jobs succeeded</summary>
-
-- Count the "_Successfully finished_" lines in each Slurm log file.
-  Any file with a count of `0` means that its job didn't finish:
-
-  ```bash
-  grep -c "Successfully finished" slurm-trimgalore*.out
-  ```
-  ```bash-out
-  slurm-trimgalore-56656686.out:1
-  slurm-trimgalore-56656687.out:1
-  slurm-trimgalore-56656688.out:1
-  slurm-trimgalore-56656689.out:1
-  slurm-trimgalore-56656691.out:1
-  slurm-trimgalore-56656694.out:1
-  # [...output truncated...]
-  ```
-
-- Count the trimmed R1 and R2 FASTQ files,
-  which should be one each per sample, i.e. 22:
-
-  ```bash
-  ls results/trimgalore/*_val_1.fq.gz | wc -l
-  ```
-  ```bash-out
-  22
-  ```
-  ```bash
-  ls results/trimgalore/*_val_2.fq.gz | wc -l
-  ```
-  ```bash-out
-  22
-  ```
-
-- Also check the file sizes with `ls -lh results/trimgalore`,
-  and take a close look at (at least) one of the Slurm log files.
-
-</details>
-
-<details><summary>**8.** Move the Slurm log files</summary>
-
-```bash
-mkdir results/trimgalore/logs
-mv slurm-trimgalore*.out results/trimgalore/logs/
-```
-
-</details>
-
-### Exercise 3
-
-<details><summary>**9.** Complete your protocol</summary>
-
-````{.markdown .file filename="protocol.md"}
-# RNA-seq analysis of _Culex pipiens_: read QC and trimming
-
-- Author: Jane Doe
-- Date: 2026-10-30
-- This was run at the Ohio Supercomputer Center (OSC),
-  in the dir `/fs/ess/PAS3493/people/jdoe/week10`
-
-## Set up: Set the input file paths
-
-```bash
-fastq_dir=../garrigos/fastq
-```
-
-## Step 1: Read QC with FastQC
-
-The `fastqc.sh` script runs FastQC on 1 FASTQ file at a time,
-and takes 2 arguments: the input FASTQ file and the output dir.
-
-```bash
-for fastq in "$fastq_dir"/*fastq.gz; do
-    sbatch scripts/fastqc.sh "$fastq" results/fastqc
-done
-```
-
-## Step 2: Read trimming with TrimGalore
-
-The `trimgalore.sh` script runs TrimGalore on the paired-end FASTQ files of 1 sample at a time,
-and takes 3 arguments: the R1 FASTQ file, the R2 FASTQ file, and the output dir.
-
-```bash
-for fastq_r1 in "$fastq_dir"/*_R1.fastq.gz; do
-    fastq_r2="${fastq_r1/_R1/_R2}"
-    sbatch scripts/trimgalore.sh "$fastq_r1" "$fastq_r2" results/trimgalore
-done
-```
-````
-
-</details>
-
-<details><summary>**10.** A failed TrimGalore job and the STAR step</summary>
-
-The STAR loop would simply skip the failed sample,
-because its trimmed FASTQ files don't exist.
-You wouldn't get any error:
-all STAR jobs would succeed, and you'd just end up with one sample fewer in your count table.
-
-You may not notice this until much later.
-This is why you should check that all jobs of a step succeeded before moving on,
-e.g. by counting the output files like you did in Exercise 2.
-
-</details>
-
-<details><summary>**11.** Which steps to rerun after a failed TrimGalore job?</summary>
-
-You'd need to rerun TrimGalore and the steps that use its output,
-STAR and Salmon, but only for the failed sample.
-FastQC and MultiQC use the raw FASTQ files, so they are not affected.
-
-You shouldn't simply rerun the protocol's loops,
-because those would submit jobs for _all_ samples again.
-Instead, submit single jobs for the failed sample, e.g. for sample `S63`:
-
-```bash
-sbatch scripts/trimgalore.sh \
-    "$fastq_dir"/S63_R1.fastq.gz "$fastq_dir"/S63_R2.fastq.gz results/trimgalore
-```
-
-And once that job has finished, do the same for the STAR step, and then for the Salmon step.
-This is one advantage of scripts that process a single sample:
-you can easily rerun just the part of the workflow that failed.
-
-</details>
-
-### Exercise 4
-
-<details><summary>**13--14.** Claude's SeqKit script</summary>
-
-Claude's script will vary, but it should look similar to this:
-
-```{.bash .file filename="scripts/seqkit_stats.sh"}
-#!/bin/bash
-#SBATCH --account=PAS3493
-#SBATCH --cpus-per-task=4
-#SBATCH --mail-type=FAIL
-#SBATCH --output=slurm-seqkit_stats-%j.out
-set -euo pipefail
-
-# Script to run seqkit stats on all FASTQ files in an input dir,
-# and write the results to a TSV file in an output dir
-# Usage: sbatch scripts/seqkit_stats.sh <input dir> <output dir>
-
-# seqkit container
-# NOTE: replace this with the actual URL from https://seqera.io/containers/
-# (search for "seqkit"); I could not look up the exact build hash
-CONTAINER=oras://community.wave.seqera.io/library/seqkit:<VERSION>--<HASH>
-
-# Number of cores (should match --cpus-per-task above)
-THREADS=4
-
-# Copy the placeholder variables
-indir="$1"
-outdir="$2"
-
-# Initial logging
-echo "Starting script seqkit_stats.sh"
-date
-echo "Input dir:    $indir"
-echo "Output dir:   $outdir"
-echo
-
-# Create the output dir if needed
-mkdir -p "$outdir"
-
-# Define the output file
-outfile="$outdir/seqkit_stats.tsv"
-
-# Run seqkit stats with its container:
-# --tabular: output in TSV format (instead of a human-readable table)
-# --threads: number of cores to use
-# The glob (*.fastq.gz) expands to all gzipped FASTQ files in the input dir
-apptainer exec "$CONTAINER" \
-    seqkit stats \
-    --tabular \
-    --threads "$THREADS" \
-    "$indir"/*.fastq.gz \
-    > "$outfile"
-
-# Final logging
-echo
-echo "Used seqkit version:"
-apptainer exec "$CONTAINER" seqkit version
-echo
-echo "Output file:  $outfile"
-echo "Successfully finished script seqkit_stats.sh"
-date
-```
-
-- The value of `--threads` should match `--cpus-per-task`.
-  (If Claude left out `--threads`, SeqKit would still use 4 threads, its default,
-  but it's better to be explicit, as your `CLAUDE.md` asks.)
-
-- Unlike FastQC in the w10b jobs, multiple cores do help here:
-  this single job processes all 44 FASTQ files,
-  and SeqKit uses its threads to process multiple files in parallel.
-
-- The example above does not have the container link yet --- one valid link is:
-  `oras://community.wave.seqera.io/library/seqkit:2.14.0--242173bf1fbab6c9`.
-
-</details>
-
-<details><summary>**16.** Add the script to the protocol and submit it</summary>
-
-In `protocol.md`:
-
-````{.markdown .file filename="protocol.md (excerpt)"}
-## Step 3: Read statistics with SeqKit
-
-The `seqkit_stats.sh` script runs `seqkit stats` once for all FASTQ files,
-and takes 2 arguments: the input dir with FASTQ files and the output dir.
-
-```bash
-sbatch scripts/seqkit_stats.sh "$fastq_dir" results/seqkit
-```
-````
-
-Check the Slurm log file:
-
-```bash
-cat slurm-seqkit_stats*.out
-```
-```bash-out
-Starting script seqkit_stats.sh
-Sat Oct 24 09:45:05 PM EDT 2026
-Input dir:    ../garrigos/fastq
-Output dir:   results/seqkit
-
-INFO:    Using cached SIF image
-INFO:    gocryptfs not found, will not be able to use gocryptfs
-processed files:  44 / 44  ETA: 0s. done
-
-Used seqkit version:
-INFO:    Using cached SIF image
-INFO:    gocryptfs not found, will not be able to use gocryptfs
-seqkit v2.14.0
-
-Output file:  results/seqkit/seqkit_stats.tsv
-Successfully finished script seqkit_stats.sh
-Sat Oct 24 09:45:15 PM EDT 2026
-```
-
-Take a look at the output file in the editor: click on it in the file explorer.
-
-Or if you prefer to look at it in the terminal,
-you can use `column -t` to line up the columns:
-
-```bash
-column -t results/seqkit/seqkit_stats.tsv
-```
-```bash-out
-file                               format  type  num_seqs  sum_len   min_len  avg_len  max_len
-../garrigos/fastq/S63_R1.fastq.gz  FASTQ   DNA   500000    35498138  35       71.0     74
-../garrigos/fastq/S63_R2.fastq.gz  FASTQ   DNA   500000    36784563  35       73.6     74
-../garrigos/fastq/S64_R1.fastq.gz  FASTQ   DNA   500000    36270777  35       72.5     74
-../garrigos/fastq/S64_R2.fastq.gz  FASTQ   DNA   500000    36793857  35       73.6     74
-../garrigos/fastq/S65_R1.fastq.gz  FASTQ   DNA   500000    36615112  35       73.2     74
-../garrigos/fastq/S65_R2.fastq.gz  FASTQ   DNA   500000    36794133  35       73.6     74
-# [...output truncated...]
-```
-
-The `num_seqs` column should show 500,000 reads for each file,
-since the files were subsampled to that number of reads.
-
-</details>
-
-### Bonus
-
-<details><summary>**17.** Rename the output FASTQ files</summary>
-
-Add the following code to your script, after the `trim_galore` command:
-
-```{.bash .file filename="scripts/trimgalore.sh (excerpt)"}
-# Rename the output FASTQ files to the same names as the input files
-sample_id=$(basename "$fastq_r1" _R1.fastq.gz)
-R1_out_init="$outdir"/"$sample_id"_R1_val_1.fq.gz
-R2_out_init="$outdir"/"$sample_id"_R2_val_2.fq.gz
-R1_out_final="$outdir"/"$sample_id"_R1.fastq.gz
-R2_out_final="$outdir"/"$sample_id"_R2.fastq.gz
-
-mv -v "$R1_out_init" "$R1_out_final"
-mv -v "$R2_out_init" "$R2_out_final"
-```
-
-- `basename` with a second argument removes that suffix from the file name,
-  so `../garrigos/fastq/S63_R1.fastq.gz` becomes `S63`.
-- Alternatively, you could use `$(basename "$fastq_r1")` to get `S63_R1.fastq.gz`,
-  and use that directly as the final R1 file name.
-
-</details>

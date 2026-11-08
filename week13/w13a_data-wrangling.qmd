@@ -1198,6 +1198,75 @@ So the low mean for the control treatment is entirely due to the 10 dpi samples.
 ---->
 :::
 
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise: Reading Claude's code
+
+Code that Claude writes for you is only useful if you can read it.
+Here, you'll practice with code that uses today's functions.
+
+1. Ask Claude to add a code chunk to your `week13a.qmd` that computes,
+   for each sample, the number of genes with a count of zero,
+   adds the treatment and time point of each sample,
+   and sorts the samples from most to fewest zero-count genes.
+   Tell it to use `counts_long` and `meta`,
+   and only the tidyverse functions in your document.
+   **Before you run the code**,
+   add a comment above each line that says what it does,
+   and check the help page of any function you don't know.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see an example_</summary>
+
+   Claude's code will differ each time you ask, but here is one example,
+   with comments:
+
+   ```{r}
+   counts_long |>
+     # Keep only the rows with a count of zero
+     filter(count == 0) |>
+     # Count the remaining rows (genes) for each sample
+     count(sample_id) |>
+     # Add the treatment and time point of each sample from the metadata
+     left_join(meta, by = "sample_id") |>
+     # Sort from the highest to the lowest number of zero-count genes
+     arrange(desc(n))
+   ```
+
+   </details>
+
+2. Run the code. Then, check the number for one sample yourself,
+   without using `count()` or `summarize()`.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   For example, for sample `S77`:
+
+   ```{r}
+   counts_long |>
+     filter(sample_id == "S77", count == 0) |>
+     nrow()
+   ```
+
+   </details>
+
+3. Do samples with more zero-count genes tend to have smaller libraries?
+   To check, add the library sizes to Claude's output with another `left_join()`.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   counts_long |>
+     filter(count == 0) |>
+     count(sample_id) |>
+     left_join(lib_sizes, by = "sample_id") |>
+     arrange(desc(n))
+   ```
+
+   Yes, this is a general tendency, though not a strict rule:
+   with fewer reads, more genes with low expression levels get no reads at all.
+
+   </details>
+:::
+
 ::: {.callout-note collapse="true"}
 #### Which genes are most highly expressed? _(Click to expand)_
 

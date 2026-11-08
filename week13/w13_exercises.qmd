@@ -35,32 +35,77 @@ number-sections: false
 
 ## Introduction
 
-These exercises cover the R and Quarto material from weeks 12 and 13:
-R basics, data frames and data wrangling with _dplyr_,
-data visualization with _ggplot2_, and Quarto documents.
+### Overview
+
+In these exercises, you'll keep exploring the RNA-seq gene count table from this week's lectures,
+practicing the R material from weeks 12 and 13
+in a few different ways:
+
+- In Exercise 1, you'll **predict** the output of code before running it.
+- In Exercise 2, you'll **find and fix** the mistakes in some code,
+  and see which of them Claude can find.
+- In Exercise 3, you'll go from a biological question to an answer with _dplyr_,
+  learning two new functions along the way.
+- In Exercise 4, you'll make and customize a **violin plot**.
+- In Exercise 5, you'll **recreate** a plot from just an image.
+- In Exercise 6, you'll use **Claude** to polish a plot and to make a new type of plot,
+  and check its work.
+- The optional Exercise 7 uses another new function to ask whether a few genes dominate the data.
 
 ::: callout-tip
 #### Lecture page exercises
-Make sure to do any of the exercises on the week 12 and 13 lecture pages that we did
+Make sure to do any of the exercises on this week's lecture pages that we did
 not do in class.
+Also, if you struggled with any of the exercises we did do in class,
+go over those again.
 :::
 
-## Setting up
+### Setting up
 
 1. Open Positron and connect to OSC
    [like in week 12](/week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc),
    and open the `week13` folder that you created in this week's lectures.
 
-2. [Create a new Quarto document](/week12/w12b_r-basics.qmd#creating-a-quarto-document)
-   and save it in the `week13` folder as `w13_exercises.qmd`.
-   This will be your main document for these exercises.
-   Add a YAML header with a title, your name as the author, and the date.
-   Render the document to check that the YAML header works.
+2. Create a new Quarto document `week13/w13_exercises.qmd`,
+   with a YAML header with a title, your name, and the date.
 
-3. Initialize a Git repository in your `week13` folder,
-   using Positron's terminal and following the instructions from
-   [week 5](/week05/w5b_git.qmd).
-   Commit to the repo at least once before you push it to GitHub (see the last exercise).
+3. Add the following code chunk to the top of your document,
+   which loads the tidyverse, reads the three tables from the lectures,
+   and makes a long version of the count table that includes the metadata:
+
+```{r, eval=FALSE}
+library(tidyverse)
+
+# Read the count table, metadata, and gene annotation table
+counts <- read_tsv(
+  "/fs/ess/PAS3493/share/week13/salmon.merged.gene_counts_length_scaled.tsv"
+) |>
+  select(!gene_name)
+meta <- read_tsv("../garrigos/meta/metadata.tsv") |>
+  mutate(time = factor(time, levels = c("24hpi", "10dpi")))
+genes <- read_tsv("/fs/ess/PAS3493/share/week13/genes.tsv")
+
+# Make a long-format count table, with the metadata added
+counts_long <- counts |>
+  pivot_longer(cols = !gene_id, names_to = "sample_id", values_to = "count") |>
+  left_join(meta, by = "sample_id")
+```
+
+```{r, echo=FALSE, message=FALSE}
+library(tidyverse)
+
+counts <- read_tsv(
+  "../assets/week13/salmon.merged.gene_counts_length_scaled.tsv"
+) |>
+  select(!gene_name)
+meta <- read_tsv("../assets/week13/metadata.tsv") |>
+  mutate(time = factor(time, levels = c("24hpi", "10dpi")))
+genes <- read_tsv("../assets/week13/genes.tsv")
+
+counts_long <- counts |>
+  pivot_longer(cols = !gene_id, names_to = "sample_id", values_to = "count") |>
+  left_join(meta, by = "sample_id")
+```
 
 ::: callout-tip
 #### General tips for the exercises
@@ -68,357 +113,889 @@ not do in class.
 - Install any packages that you haven't installed yet in the console,
   _not_ in your Quarto document.
   Apart from installing packages, run all your code in code chunks.
-- Add a header for each exercise (and each part of exercises) to your document,
+- Add a header for each exercise to your document,
   so it's easy to navigate the rendered document using the table of contents.
+- Render your document every now and then, to catch problems early.
 :::
 
-## Exercise 1: R basics
+## Exercise 1: Predict the output
 
-1. Assign the value `5` to an object `week11`, and `10` to an object `week12`.
-   Then, add the values of `week11` and `week12` and assign the result to a new object
-   `total_weeks`, and print it.
+For each question, first decide on your answer,
+and then run the code to check whether you were right.
 
-2. Create a vector `v1` that contains the numbers 1 through 5,
-   and check its data type.
-   Then, change the value of the third element of `v1` to `"Midweek"`, and print `v1`.
-   (To change an element, put the brackets on the left side of the assignment arrow:
-   for example, `v1[1] <- 10` would change the first element to `10`.)
-   What is the data type of `v1` now, and why?
-   What happens if you try to convert `v1` to a numeric vector?
+1. How many rows will this code return?
 
-3. Create a character vector `fav_food` with the names of five of your favorite foods.
-   Replace the third element of the vector with a bird name,
-   and extract the first and fifth elements.
+   ```{r, eval=FALSE}
+   meta |>
+     filter(time == "24hpi", treatment != "control") |>
+     nrow()
+   ```
 
-## Exercise 2: Data frames and _dplyr_
+   a) 3
+   b) 7
+   c) 15
+   d) 18
 
-1. Load the _tidyverse_.
-   Read the `metadata.tsv` file in the `garrigos/meta` folder in your personal dir,
-   and save it as an object `metadata`,
-   using a relative path.
-   How many variables and rows does `metadata` have?
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-2. In the `metadata` object, replace `dpi` with `_dpi` in the `time` variable,
-   and `cathemerium` with `cath` in the `treatment` variable.
-   Use the `sub()` function, which is explained on the
-   [bonus R page](/bonus/r.qmd#search-and-replace-with-sub).
+   **b)** is correct:
 
-3. Look at the help for the `matrix()` function and create a matrix with the numbers
-   1 to 10 in 2 rows and 5 columns, and assign it to a new object called `my_matrix`.
+   ```{r}
+   meta |>
+     filter(time == "24hpi", treatment != "control") |>
+     nrow()
+   ```
 
-4. In week 12's first lecture, we worked with the `iris` data frame,
-   which is one of the data sets that comes with R.
-   For this exercise, we will use the `mtcars` data frame, which similarly comes with R.
-   Start by storing `mtcars` in a new object called `my_cars`,
-   then view the first 6 rows of `my_cars`.
+   Because the two conditions are separated by a comma,
+   a row has to meet _both_ of them:
+   these are the 7 _cathemerium_ and _relictum_ samples at 24 hpi.
+   The other answers are 3 (the 24 hpi control samples),
+   15 (all non-control samples, regardless of time point),
+   and 18 (the rows that meet _either_ condition, which you'd get with `|` instead of a comma).
 
-5. Check the structure of the `my_cars` data frame,
-   which shows the data types of the variables in the data frame.
-   Compute the mean of the `mpg` variable of `my_cars`.
+   </details>
 
-6. Select the columns `mpg`, `cyl`, and `hp` from `my_cars`, and display the first 6 rows.
+2. What will this code return?
 
-7. Write a single "pipeline" that manipulates `my_cars` by:
-   - Selecting columns `mpg` (miles per gallon) and `cyl` (number of cylinders)
-   - Only keeping rows with `mpg` greater than 10 and `cyl` equal to 6
-   - Renaming the `cyl` column to `cylinders`
-   - Assigning the resulting data frame to an object called `my_cars_filtered`
+   ```{r, eval=FALSE}
+   mean(counts$S63 > 0)
+   ```
 
-8. Save the new data frame as a CSV file called `my_cars_filtered.csv` in your `week13` folder.
-   In the Explorer,
-   check that the file is there and click on it to view it in the editor.
+   a) The mean count of sample `S63`
+   b) A `TRUE` or `FALSE` for each gene
+   c) The proportion of genes with at least one read in sample `S63`
+   d) An error, because you can't compute the mean of logicals
 
-## Exercise 3: Data wrangling
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-For this exercise, instead of creating new objects, use pipes, unless explicitly stated.
+   **c)** is correct:
 
-1. List all the datasets available in the `ggplot2` package.
-   Save the built-in dataset `midwest` as an object `midwest_datasets`,
-   and use `midwest_datasets` to answer all the questions below.
+   ```{r}
+   mean(counts$S63 > 0)
+   ```
 
-2. Filter the rows with `poptotal > 30000` and `popdensity > 800`.
+   The comparison returns a `TRUE` or `FALSE` for each gene,
+   and because `TRUE` counts as 1 and `FALSE` as 0,
+   the mean of these logicals is the proportion of `TRUE`s:
+   `r round(100 * mean(counts$S63 > 0))`% of genes were detected in sample `S63`.
+   This is the same as `sum(counts$S63 > 0) / nrow(counts)`,
+   but shorter.
 
-3. Select the first 11 variables of the dataset.
-   Then, create a new column named `asian_ameri` by dividing `popasian` by `popamerindian`,
-   and sort by `asian_ameri` in descending order.
-   Save this output as a `new_dataset` object.
+   </details>
 
-4. Compute the mean total population per state, naming the column with the mean `poptotal`.
+3. First, check how many rows `counts` and `genes` have.
+   Then, predict how many rows each of the following two joins will return:
 
-## Exercise 4: Data visualization in a Quarto document
+   ```{r, eval=FALSE}
+   counts |> left_join(genes, by = "gene_id")
+   genes |> left_join(counts, by = "gene_id")
+   ```
 
-In class, we created a scatter plot, a box plot, and a bar graph.
-For this exercise, you will create violin plots using the `midwest_datasets` object
---- read the _ggplot2_ documentation to see how to do that.
+   a) Both return the number of rows in `counts`
+   b) Both return the number of rows in `genes`
+   c) The first returns the number of rows in `counts`, and the second the number of rows in `genes`
+   d) The first returns the number of rows in `genes`, and the second the number of rows in `counts`
 
-1. Create a violin plot with `state` on the x-axis and `area` on the y-axis.
-   Facet the plot based on `category`
-   (see the [optional R self-study page](/bonus/r.qmd#faceting) for how to do this).
+   Do you know which genes are in one table but not the other?
+   Use `anti_join()`,
+   which is explained on the [optional R self-study page](/bonus/r.qmd#other-types-of-joins),
+   to find out what kind of genes are in `genes` but not in `counts`.
 
-2. Create a violin plot with `state` on the x-axis and `poptotal` on the y-axis.
-   Add jittered points to the plot, and color only the points based on `category`.
-   Is this point color a global or a local mapping? Explain.
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-3. In the previous plot, change the theme to `theme_bw()`,
-   and fill the violins by `state` using manually chosen colors instead of the default colors.
-   Save this plot as an object `violin_plot`, and print it.
+   **c)** is correct:
 
-4. Export `violin_plot` to a file `violin_plot.png` in your `week13` folder.
+   ```{r}
+   nrow(counts)
+   nrow(genes)
 
-5. Below each plot, write a sentence or two of Markdown text that describes what it shows.
+   counts |> left_join(genes, by = "gene_id") |> nrow()
+   genes |> left_join(counts, by = "gene_id") |> nrow()
+   ```
 
-6. Render your document, and check that it includes all your plots.
+   `left_join()` keeps all rows of the first ("left") data frame,
+   adding `NA`s where there is no match in the second one.
+   So the order of the two data frames matters.
 
-## Exercise 5: Publish your repo on GitHub
+   The genes that are in the annotation table but not in the count table are all pseudogenes:
 
-As before, publish your Git repo on GitHub.
+   ```{r}
+   genes |>
+     anti_join(counts, by = "gene_id") |>
+     count(biotype)
+   ```
 
-1. Create a repository on GitHub, connect it to your local repo,
-   and push your local repo to GitHub.
+   Conversely, the "unassigned genes" that you saw in the lecture
+   are in the count table but not in the annotation table.
 
-2. Create a new issue and tag GitHub users `@kstarr791` and `@jelmerp`,
-   asking us to take a look at your work.
+   </details>
 
-## Solutions
+4. How many rows will this code return?
 
-### Exercise 1
+   ```{r, eval=FALSE}
+   counts_long |>
+     summarize(total = sum(count), .by = c(treatment, time))
+   ```
 
-<details><summary>**1.** Objects and arithmetic</summary>
+   a) 2
+   b) 3
+   c) 6
+   d) 22
 
-```{r}
-week11 <- 5
-week12 <- 10
-total_weeks <- week11 + week12
-total_weeks
-```
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-</details>
+   **c)** is correct:
 
-<details><summary>**2.** Type coercion</summary>
+   ```{r}
+   counts_long |>
+     summarize(total = sum(count), .by = c(treatment, time))
+   ```
 
-```{r}
-v1 <- 1:5
-typeof(v1)
+   You get one row for each _combination_ of treatment and time point: 3 x 2 = 6.
 
-v1[3] <- "Midweek"
-v1
-typeof(v1)
-```
+   </details>
 
-After replacing a number with a character string,
-the entire vector has become a character vector,
-because [a vector can only contain one data type](w13a_data-wrangling.qmd#data-types).
+5. Which of these lines of code return the same result?
 
-When you try to convert it back to numeric,
-R will return `NA` (with a warning) for any elements that can't be converted to a number:
+   ```{r, eval=FALSE}
+   round(mean(counts$S63), 1)
+   round(digits = 1, x = mean(counts$S63))
+   round(1, mean(counts$S63))
+   ```
 
-```{r}
-as.numeric(v1)
-```
+   a) All three
+   b) Only the first two
+   c) Only the first and the third
+   d) None
 
-</details>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-<details><summary>**3.** A character vector</summary>
+   **b)** is correct:
 
-```{r}
-fav_food <- c("pizza", "sushi", "tacos", "pho", "curry")
-fav_food[3] <- "cardinal"
-fav_food[c(1, 5)]
-```
+   ```{r}
+   round(mean(counts$S63), 1)
+   round(digits = 1, x = mean(counts$S63))
+   round(1, mean(counts$S63))
+   ```
 
-</details>
+   - In the first line, the arguments are not named,
+     so R matches them by position: first `x`, then `digits`.
+   - In the second line, the arguments are named, so their order doesn't matter.
+   - In the third line, the arguments are not named but in the "wrong" order,
+     so R rounds the number 1 to about 1,289 digits, which is still 1.
+     Note that R doesn't give an error or warning here!
 
-### Exercise 2
+   </details>
 
-<details><summary>**1.** Read the metadata</summary>
+## Exercise 2: Find the bugs
 
-```{r, message=FALSE}
-library(tidyverse)
-```
+The code below is supposed to make a plot of the library sizes of the control samples,
+with the time points along the x-axis,
+a box plot for each time point with a different fill color,
+and the individual samples shown as points on top of the boxes.
 
 ```{r, eval=FALSE}
-metadata <- read_tsv("../garrigos/meta/metadata.tsv")
+control_libs <- counts_long |>
+  filter(treatment = "Control") |>
+  summarize(lib_size_M = sum(count) / 1e6, .by = sample_id, time)
+
+control_libs |>
+  ggplot(aes(x = time, y = lib_size_M, fill = "time")) +
+  geom_point(size = 3) +
+  geom_boxplot()
 ```
 
-```{r, echo=FALSE, message=FALSE}
-metadata <- read_tsv(here::here("assets/week13/metadata.tsv"))
-```
+1. The code contains five mistakes.
+   Two of these cause an error, but three don't.
+   Find and fix all of them, one by one.
+   For each mistake, note whether it caused an error, and if not,
+   how you noticed it.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   control_libs <- counts_long |>
+     filter(treatment == "control") |>
+     summarize(lib_size_M = sum(count) / 1e6, .by = c(sample_id, time))
+
+   control_libs |>
+     ggplot(aes(x = time, y = lib_size_M, fill = time)) +
+     geom_boxplot() +
+     geom_point(size = 3)
+   ```
+
+   The two mistakes that cause errors are:
+
+   - `filter(treatment = "control")` should use `==` to test for equality.
+     The error message even suggests the fix.
+   - `.by = sample_id, time` should be `.by = c(sample_id, time)`.
+     Without `c()`, `time` is no longer part of the `.by` argument,
+     and `summarize()` tries to make a column with all of the values of `time`.
+     The error message (`time must be size 1`) is harder to understand,
+     but it does mention `time`.
+
+   You probably saw the second error only after you fixed the capital "C" in `"Control"`.
+   That's because the three mistakes below don't cause errors:
+
+   - `"Control"` should be `"control"`.
+     R is case-sensitive, so no rows match, and `filter()` returns an empty data frame.
+     You might have noticed this from the empty plot,
+     or by looking at `control_libs`.
+   - `fill = "time"` should not have quotes.
+     With quotes, `"time"` is treated as a single fixed value,
+     so both boxes get the same color, and the legend has a single entry: "time".
+   - `geom_point()` should come after `geom_boxplot()`.
+     Layers are drawn in the order you add them,
+     so the filled boxes were drawn over the points, hiding most of them.
+
+   Mistakes without errors are the most dangerous ones,
+   so always check your output, and not just whether the code ran.
+
+   </details>
+
+2. Start a new conversation in Claude,
+   paste the original code with the mistakes,
+   and ask Claude to find the mistakes,
+   _without_ telling it what the plot should look like.
+   Which of the five mistakes did it find?
+   Then, also give Claude the description of the intended plot above the code.
+   Which mistakes could Claude only find with this description,
+   or by looking at your data?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Claude's answers will differ,
+   but it can find the two mistakes that cause errors from the code alone.
+   It may also flag `fill = "time"`, because quoting a column name inside `aes()`
+   is a common mistake.
+
+   The other two mistakes depend on what you want, and on your data:
+
+   - Whether `geom_point()` should come after `geom_boxplot()`
+     depends on whether you want the points to be visible on top of the boxes,
+     which is in the description.
+   - Whether `"Control"` is wrong depends on how the treatments are spelled in your data.
+     Claude can only know this if it looks at the data,
+     for example by reading the metadata file,
+     or by running code.
+
+   So, the more context you give Claude, the more it can check.
+
+   </details>
+
+## Exercise 3: Vitellogenins
+
+In the lecture, you saw that some of the most highly expressed genes are **vitellogenins**:
+yolk proteins that female mosquitoes produce after a blood meal, to provision their eggs.
+All mosquitoes in this experiment took a blood meal at the start
+(with or without _Plasmodium_ parasites, depending on the treatment).
+In this exercise, you'll see how vitellogenin expression differs between the time points.
+
+1. Find all genes whose `description` in the `genes` table contains "vitellogenin",
+   and save them in a data frame `vg_genes`.
+   How many are there, and on which chromosomes are they?
+
+   To do this, you need a new function, `str_detect()`, from the tidyverse's _stringr_ package.
+   It checks whether each element of a character vector contains a pattern,
+   and returns a logical:
+
+   ```{r}
+   str_detect(c("vitellogenin-1", "cathepsin B-like"), pattern = "vitellogenin")
+   ```
+
+   Because it returns a logical, you can use it inside `filter()`.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   vg_genes <- genes |>
+     filter(str_detect(description, pattern = "vitellogenin"))
+
+   vg_genes
+
+   vg_genes |>
+     count(chromosome)
+   ```
+
+   There are 9 vitellogenin genes, 7 of which are on chromosome 3.
+
+   </details>
+
+2. Compute the total count of all vitellogenin genes for each sample,
+   in millions, and keep the `treatment` and `time` columns in the output.
+   Save the result as `vg_per_sample`.
+
+   (Hint: recall how you can use `%in%` to
+   [keep rows that match any of several values](w13a_data-wrangling.qmd#filter-to-pick-rows-observations),
+   and that `$` extracts a column from a data frame.)
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   vg_per_sample <- counts_long |>
+     filter(gene_id %in% vg_genes$gene_id) |>
+     summarize(
+       vg_count_M = sum(count) / 1e6,
+       .by = c(sample_id, treatment, time)
+     )
+
+   vg_per_sample
+   ```
+
+   </details>
+
+3. Compute the mean of `vg_count_M` for each combination of treatment and time point.
+   Then, make the output easier to read by giving each time point its own column
+   with `pivot_wider()`,
+   which is explained on the [optional R self-study page](/bonus/r.qmd#reshaping-from-long-to-wide-with-pivot_wider).
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   vg_per_sample |>
+     summarize(mean_vg_count_M = mean(vg_count_M), .by = c(treatment, time)) |>
+     pivot_wider(names_from = time, values_from = mean_vg_count_M)
+   ```
+
+   </details>
+
+4. Vitellogenin counts could also differ between samples
+   simply because some samples have larger libraries than others.
+   Compute the _percentage_ of each sample's reads that are from vitellogenin genes.
+   What is the range of these percentages at each time point?
+
+   (Hint: compute the library sizes like in the lecture,
+   and join them with `vg_per_sample`.)
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   lib_sizes <- counts_long |>
+     summarize(lib_size_M = sum(count) / 1e6, .by = sample_id)
+
+   vg_pct <- vg_per_sample |>
+     left_join(lib_sizes, by = "sample_id") |>
+     mutate(vg_pct = 100 * vg_count_M / lib_size_M)
+
+   vg_pct |>
+     summarize(min_pct = min(vg_pct), max_pct = max(vg_pct), .by = time)
+   ```
+
+   At 24 hpi, 7--17% of all reads in a sample are from just these 9 genes,
+   while at 10 dpi, it is less than 0.1%.
+
+   </details>
+
+5. How would you explain the difference between the time points?
+   And based on these numbers, would you conclude that infection with _P. relictum_
+   lowers vitellogenin expression at 24 hpi?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   Vitellogenins are produced in large amounts in the first days after a blood meal,
+   when the mosquito provisions its eggs.
+   At 24 hpi, the mosquitoes are in the middle of this,
+   while 10 days later, it is long over.
+
+   The _relictum_ samples do have the lowest vitellogenin percentages at 24 hpi:
+
+   ```{r}
+   vg_pct |>
+     filter(time == "24hpi") |>
+     summarize(mean_pct = mean(vg_pct), .by = treatment)
+   ```
+
+   But with only 3 or 4 samples per group and no statistical test,
+   you can't draw a conclusion from this yet:
+   that's what the differential expression analysis in week 15 is for.
+
+   </details>
+
+## Exercise 4: Violin plots
+
+Is there a difference in expression levels between protein-coding genes and lncRNA genes?
+A **violin plot**, made with `geom_violin()`, shows the distribution of a numeric variable for each category.
+It works like a box plot, but shows the full shape of the distribution.
+
+1. Compute the mean count of each gene across all samples,
+   add the gene information from `genes`,
+   and keep only protein-coding and lncRNA genes with a mean count above 0.
+   Save the result as `gene_means`.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   gene_means <- counts_long |>
+     summarize(mean_count = mean(count), .by = gene_id) |>
+     left_join(genes, by = "gene_id") |>
+     filter(biotype %in% c("protein_coding", "lncRNA"), mean_count > 0)
+   ```
+
+   </details>
+
+2. Make a violin plot with `biotype` on the x-axis and `mean_count` on the y-axis.
+   You'll see that the violins are squashed against the x-axis.
+   Why is that?
+   Fix this by adding a `scale_y_log10()` layer, which puts the y-axis on a log scale.
+   And why did we remove genes with a mean count of 0 in the previous step?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   gene_means |>
+     ggplot(aes(x = biotype, y = mean_count)) +
+     geom_violin()
+   ```
+
+   A few genes have extremely high counts, so most genes are squashed near 0.
+   This is typical for gene counts, which is why they are usually plotted on a log scale:
+
+   ```{r}
+   gene_means |>
+     ggplot(aes(x = biotype, y = mean_count)) +
+     geom_violin() +
+     scale_y_log10()
+   ```
+
+   The log of 0 is minus infinity, which can't be plotted:
+   _ggplot2_ would remove these genes with a warning.
+
+   </details>
+
+3. Add the individual genes as jittered points on top of the violins.
+   Because there are so many genes,
+   use the `alpha` and `size` arguments of `geom_jitter()`
+   to make the points semi-transparent and small.
+   Experiment with their values: which work well?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   gene_means |>
+     ggplot(aes(x = biotype, y = mean_count)) +
+     geom_violin() +
+     geom_jitter(width = 0.2, alpha = 0.05, size = 0.5) +
+     scale_y_log10()
+   ```
+
+   `alpha` ranges from 0 (fully transparent) to 1 (opaque).
+   With a low `alpha`, areas with many points look darker,
+   so you can still see where most genes are.
+   `width = 0.2` reduces how much the points are spread out horizontally.
+
+   </details>
+
+4. Fill the violins by biotype.
+   Does it matter whether you add this mapping inside `ggplot()` or inside `geom_violin()`?
+   Try both.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   gene_means |>
+     ggplot(aes(x = biotype, y = mean_count)) +
+     geom_violin(aes(fill = biotype)) +
+     geom_jitter(width = 0.2, alpha = 0.05, size = 0.5) +
+     scale_y_log10()
+   ```
+
+   Here, both give the same plot.
+   A global mapping inside `ggplot()` also applies to the points,
+   but the default points have no fill (only a color), so they don't change.
+
+   </details>
+
+5. Add a narrow box plot inside each violin with `geom_boxplot(width = 0.1)`.
+   What does the violin show that the box plot doesn't?
+   And which of the two biotypes is more highly expressed?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   gene_means |>
+     ggplot(aes(x = biotype, y = mean_count)) +
+     geom_violin(aes(fill = biotype)) +
+     geom_jitter(width = 0.2, alpha = 0.05, size = 0.5) +
+     geom_boxplot(width = 0.1, outlier.shape = NA) +
+     scale_y_log10()
+   ```
+
+   (With `outlier.shape = NA`, the box plot's outliers aren't plotted twice.)
+
+   A box plot only shows a few summary statistics (the median, quartiles, and outliers),
+   while the violin shows the full shape of the distribution.
+   For example, the protein-coding genes have a long "tail" of lowly expressed genes.
+
+   Protein-coding genes are much more highly expressed than lncRNA genes:
+   note that each step on the log-scale y-axis is a 1,000-fold difference.
+
+   </details>
+
+6. Finish your plot by adding axis labels, removing the legend,
+   and applying a theme of your choice.
+   Save the plot as an object `violin_plot`,
+   and export it to a PNG file in a `results` folder with `ggsave()`.
+   Finally, in the Markdown text below your plot,
+   write a sentence or two that describes what it shows.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r}
+   violin_plot <- gene_means |>
+     ggplot(aes(x = biotype, y = mean_count)) +
+     geom_violin(aes(fill = biotype)) +
+     geom_jitter(width = 0.2, alpha = 0.05, size = 0.5) +
+     geom_boxplot(width = 0.1, outlier.shape = NA) +
+     scale_y_log10() +
+     labs(x = "Gene biotype", y = "Mean count across samples") +
+     theme_bw() +
+     theme(legend.position = "none")
+
+   violin_plot
+   ```
+
+   ```{r, eval=FALSE}
+   dir.create("results", showWarnings = FALSE)
+   ggsave(filename = "results/violin_plot.png", plot = violin_plot)
+   ```
+
+   </details>
+
+## Exercise 5: Recreate this plot
+
+1. Using `vg_per_sample` from Exercise 3, recreate the plot below as closely as you can.
+
+   ```{r, echo=FALSE}
+   #| fig-width: 8
+   #| fig-height: 4
+   vg_plot <- vg_per_sample |>
+     ggplot(aes(x = treatment, y = vg_count_M, fill = treatment)) +
+     geom_boxplot() +
+     geom_point(size = 2) +
+     facet_wrap(vars(time), scales = "free_y") +
+     scale_fill_manual(
+       values = c(cathemerium = "orange", control = "grey55", relictum = "skyblue")
+     ) +
+     labs(
+       title = "Vitellogenin expression is much lower at 10 dpi",
+       x = NULL,
+       y = "Vitellogenin counts (millions)"
+     ) +
+     theme_bw() +
+     theme(legend.position = "none")
+
+   vg_plot
+   ```
+
+   <details><summary>{{< fa lightbulb >}} &nbsp; _Click for hints_</summary>
+
+   - The plot has two panels, which you can make with "faceting":
+     see the [optional plotting self-study page](/bonus/r-plotting.qmd#faceting).
+     Look closely at the y-axes of the two panels,
+     and check the help for the faceting function to see how to get that behavior.
+   - The fill colors are `"orange"`, `"grey55"`, and `"skyblue"`.
+   - To remove an axis label, set it to `NULL` in `labs()`.
+
+   </details>
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   ```{r, eval=FALSE}
+   vg_per_sample |>
+     ggplot(aes(x = treatment, y = vg_count_M, fill = treatment)) +
+     geom_boxplot() +
+     geom_point(size = 2) +
+     facet_wrap(vars(time), scales = "free_y") +
+     scale_fill_manual(
+       values = c(cathemerium = "orange", control = "grey55", relictum = "skyblue")
+     ) +
+     labs(
+       title = "Vitellogenin expression is much lower at 10 dpi",
+       x = NULL,
+       y = "Vitellogenin counts (millions)"
+     ) +
+     theme_bw() +
+     theme(legend.position = "none")
+   ```
+
+   The 24 hpi panel comes first because we turned `time` into a factor
+   in the setup code.
+
+   </details>
+
+2. What does `scales = "free_y"` do, and why is it needed in this plot?
+   What is a downside of using it?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   With `scales = "free_y"`, each panel gets its own y-axis range.
+   Without it, both panels share the same y-axis,
+   and all the 10 dpi values would be squashed at 0,
+   so you couldn't see any differences between the treatments at 10 dpi.
+
+   The downside is that it's easy to miss that the y-axes differ:
+   at a glance, the two panels look like they have similar values,
+   while those at 10 dpi are hundreds of times lower.
+   (The plot title helps here.)
+
+   </details>
+
+## Exercise 6: Working with Claude
+
+In this exercise, you'll use Claude to go beyond what we covered in the lectures:
+first to polish a plot, and then to make a type of plot that we haven't covered.
+If you haven't set up Claude Code in Positron yet,
+do so first by following the [last step of the Positron setup page](/week12/w12a_positron-setup.qmd#set-up-claude-code-in-positron).
+
+### Polish a plot
+
+1. Ask Claude to make your `violin_plot` from Exercise 4 "publication-ready",
+   and to add the new version as a separate code chunk below your original one.
+   Review Claude's edit before you accept it,
+   and then run the new code chunk.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see an example_</summary>
+
+   Claude's version will differ each time you ask, but here is one example:
+
+   ```{r}
+   gene_means |>
+     mutate(
+       biotype = factor(
+         biotype,
+         levels = c("protein_coding", "lncRNA"),
+         labels = c("Protein-coding", "lncRNA")
+       )
+     ) |>
+     ggplot(aes(x = biotype, y = mean_count)) +
+     geom_violin(aes(fill = biotype), color = NA, alpha = 0.6) +
+     geom_jitter(width = 0.15, alpha = 0.03, size = 0.3) +
+     geom_boxplot(width = 0.08, outlier.shape = NA, fill = "white") +
+     scale_y_log10(labels = scales::label_comma()) +
+     scale_fill_manual(values = c("#1b9e77", "#d95f02")) +
+     labs(
+       x = NULL,
+       y = "Mean read count per gene (log scale)"
+     ) +
+     theme_classic(base_size = 14) +
+     theme(legend.position = "none")
+   ```
+
+   </details>
+
+2. Above every line that Claude added or changed,
+   add a short comment that explains what the line does, in your own words.
+   For anything you don't recognize, check the help page, or ask Claude.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   For the example above, these comments could be:
+
+   ```r
+   gene_means |>
+     # Set the order of the biotypes, and give them nicer labels for the x-axis
+     mutate(
+       biotype = factor(
+         biotype,
+         levels = c("protein_coding", "lncRNA"),
+         labels = c("Protein-coding", "lncRNA")
+       )
+     ) |>
+     ggplot(aes(x = biotype, y = mean_count)) +
+     # Remove the violins' outlines, and make the fill semi-transparent
+     geom_violin(aes(fill = biotype), color = NA, alpha = 0.6) +
+     # Make the points narrower, more transparent, and smaller
+     geom_jitter(width = 0.15, alpha = 0.03, size = 0.3) +
+     # Fill the boxes with white, so they stand out from the violins
+     geom_boxplot(width = 0.08, outlier.shape = NA, fill = "white") +
+     # Show regular numbers like "1,000" on the y-axis instead of "1e+03"
+     scale_y_log10(labels = scales::label_comma()) +
+     # Choose the fill colors manually, using color codes
+     scale_fill_manual(values = c("#1b9e77", "#d95f02")) +
+     labs(
+       x = NULL, # The biotype names speak for themselves
+       y = "Mean read count per gene (log scale)"
+     ) +
+     # A theme without grid lines, with larger text throughout
+     theme_classic(base_size = 14) +
+     theme(legend.position = "none")
+   ```
+
+   </details>
+
+3. Did any of Claude's changes affect _which data_ are shown,
+   rather than only how the plot looks?
+   For example, check whether any points or genes were removed,
+   and whether the y-axis now covers a smaller range.
+   Then, edit the code to keep only the changes you agree with.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   In the example above, all changes only affect how the plot looks.
+
+   One change to watch out for in particular is setting axis limits with `limits = ...`
+   inside a `scale_` function, or with `ylim()`:
+   these _remove_ all data outside the limits
+   (with a warning about "removed rows" that is easy to miss),
+   which also changes the violins and the box plot statistics.
+   To zoom in on part of a plot without removing data,
+   use `coord_cartesian(ylim = ...)` instead.
+
+   </details>
+
+### A new type of plot
+
+4. Ask Claude to make a plot of `counts_long` that shows the distribution
+   of the gene counts in each of the 22 samples in a single plot,
+   using a type of plot other than a box plot, violin plot, or histogram.
+   If Claude's code uses a package that you don't have yet, install it in the console.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see an example_</summary>
+
+   Claude may suggest, for example, density curves or a "ridgeline" plot.
+   Here is a ridgeline plot made with the _ggridges_ package:
+
+   ```{r, eval=FALSE}
+   install.packages("ggridges") # Run this in the console
+   ```
+
+   ```{r}
+   #| message: false
+   #| fig-height: 7
+   library(ggridges)
+
+   counts_long |>
+     filter(count > 0) |>
+     ggplot(aes(x = log10(count), y = sample_id, fill = time)) +
+     geom_density_ridges(alpha = 0.7) +
+     labs(x = "log10(count)", y = NULL, fill = "Time point") +
+     theme_bw()
+   ```
+
+   </details>
+
+5. In the Markdown text below your plot, describe in your own words what the plot shows.
+   Also check how Claude dealt with genes with a count of 0:
+   what did it do, and how does that affect the plot?
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   In the example above, each curve shows the distribution of `log10(count)`
+   for one sample, which is very similar for all samples.
+
+   Claude will typically either remove genes with a count of 0, as in the example,
+   or add 1 to all counts before taking the log, with `log10(count + 1)`.
+   With the first option, the plot only shows genes that were detected in that sample.
+   With the second option, all undetected genes end up at 0 on the x-axis,
+   which adds a peak there.
+
+   You may also see values below 0 on the x-axis in the example above:
+   these are genes with counts below 1,
+   which are possible because Salmon _estimates_ the counts.
+
+   </details>
+
+6. Would you choose Claude's plot or violin plots to show these distributions in a paper?
+   And which would you choose to spot a sample that looks very different from the rest?
+   Explain your choices.
+
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+   There is no single right answer here.
+   For 22 samples, a ridgeline plot like the one above is compact and easy to read,
+   and you can quickly spot an odd sample, because all curves are stacked with the same x-axis.
+   Violins can show the same information,
+   but 22 of them side by side get narrow,
+   and if you plot them by time point, you'd need two panels.
+
+   </details>
+
+## Exercise 7 (optional): Do a few genes dominate?
+
+In Exercise 3, you saw that just 9 genes took up about 10% of the reads at 24 hpi.
+Here, you'll check how much of each sample's reads go to its most highly expressed genes,
+using another new function: `slice_max()`.
+It keeps the rows with the highest values in a column ---
+for example, the 3 genes with the highest counts in sample `S63`:
 
 ```{r}
-metadata
+counts_long |>
+  filter(sample_id == "S63") |>
+  slice_max(count, n = 3)
 ```
 
-`metadata` is a data frame (more specifically, a tibble)
-with `r ncol(metadata)` variables and `r nrow(metadata)` rows.
+Like `summarize()`, `slice_max()` has a `.by` argument to do this separately for each group of rows,
+but it is called `by`, without the dot.
 
-</details>
+1. Which gene has the highest count in each sample,
+   and what is its description?
 
-<details><summary>**2.** Replace parts of strings</summary>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-```{r}
-metadata |>
-  mutate(
-    time = sub(pattern = "dpi", replacement = "_dpi", x = time),
-    treatment = sub(
-      pattern = "cathemerium",
-      replacement = "cath",
-      x = treatment
-    )
-  )
-```
+   ```{r}
+   counts_long |>
+     slice_max(count, n = 1, by = sample_id) |>
+     left_join(genes, by = "gene_id") |>
+     select(sample_id, time, gene_id, description)
+   ```
 
-</details>
+   In all samples at 24 hpi, the top gene is the same vitellogenin gene,
+   and at 10 dpi, it is the unassigned gene `unassigned_gene_22`.
 
-<details><summary>**3.** A matrix</summary>
+   </details>
 
-```{r}
-my_matrix <- matrix(1:10, nrow = 2, ncol = 5)
-my_matrix
-```
+2. Compute the percentage of each sample's reads that go to its 10 most highly expressed genes.
+   Make a horizontal bar graph with one bar per sample,
+   with the bars sorted by this percentage and filled by time point.
 
-</details>
+   (Hint: for horizontal bars, put the samples on the y-axis.
+   To sort the bars, see the collapsed box "Sorting bars by value"
+   in the [lecture](w13b_data-viz.qmd#bar-graphs-with-geom_col).)
 
-<details><summary>**4.** The `mtcars` data frame</summary>
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-```{r}
-my_cars <- mtcars
-head(my_cars)
-```
+   Using `lib_sizes` from Exercise 3:
 
-</details>
+   ```{r}
+   top10 <- counts_long |>
+     slice_max(count, n = 10, by = sample_id) |>
+     summarize(top10_count_M = sum(count) / 1e6, .by = c(sample_id, time)) |>
+     left_join(lib_sizes, by = "sample_id") |>
+     mutate(top10_pct = 100 * top10_count_M / lib_size_M)
 
-<details><summary>**5.** Structure and mean</summary>
+   top10 |>
+     mutate(sample_id = fct_reorder(sample_id, top10_pct)) |>
+     ggplot(aes(x = top10_pct, y = sample_id, fill = time)) +
+     geom_col() +
+     labs(x = "% of reads from the 10 most highly expressed genes", y = NULL) +
+     theme_bw()
+   ```
 
-```{r}
-str(my_cars)
-mean(my_cars$mpg)
-```
+   At 24 hpi, the top 10 genes take 13--23% of the reads,
+   versus less than 9% at 10 dpi.
 
-</details>
+   </details>
 
-<details><summary>**6.** Select columns</summary>
+3. Which genes are in the top 10 at each time point?
+   Count how often each gene description appears among the top 10 genes of the samples
+   at each time point.
 
-```{r}
-my_cars |>
-  select(mpg, cyl, hp) |>
-  head()
-```
+   <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
-</details>
+   ```{r}
+   counts_long |>
+     slice_max(count, n = 10, by = sample_id) |>
+     left_join(genes, by = "gene_id") |>
+     count(time, description, sort = TRUE)
+   ```
 
-<details><summary>**7.** A pipeline</summary>
+   At 24 hpi, the top genes include vitellogenins, a cathepsin (a protease),
+   and vitelline membrane proteins (which are also used to make eggs).
+   The `NA` descriptions are the unassigned genes.
 
-```{r}
-my_cars_filtered <- my_cars |>
-  select(mpg, cyl) |>
-  filter(mpg > 10, cyl == 6) |>
-  rename(cylinders = cyl)
-my_cars_filtered
-```
+   </details>
 
-</details>
+## Finishing up
 
-<details><summary>**8.** Write a CSV file</summary>
-
-```{r, eval=FALSE}
-write_csv(my_cars_filtered, "my_cars_filtered.csv")
-```
-
-</details>
-
-### Exercise 3
-
-<details><summary>**1.** The `midwest` dataset</summary>
-
-```{r, eval=FALSE}
-data(package = "ggplot2")
-```
-
-```{r}
-midwest_datasets <- midwest
-```
-
-</details>
-
-<details><summary>**2.** Filter rows</summary>
-
-```{r}
-midwest_datasets |>
-  filter(poptotal > 30000, popdensity > 800)
-```
-
-</details>
-
-<details><summary>**3.** Select, mutate, and arrange</summary>
-
-```{r}
-new_dataset <- midwest_datasets |>
-  select(1:11) |>
-  mutate(asian_ameri = popasian / popamerindian) |>
-  arrange(desc(asian_ameri))
-new_dataset
-```
-
-</details>
-
-<details><summary>**4.** Mean population per state</summary>
-
-```{r}
-midwest_datasets |>
-  summarize(poptotal = mean(poptotal), .by = state)
-```
-
-</details>
-
-### Exercise 4
-
-<details><summary>**1.** A faceted violin plot</summary>
-
-```{r}
-midwest_datasets |>
-  ggplot(aes(x = state, y = area)) +
-  geom_violin() +
-  facet_wrap(vars(category))
-```
-
-</details>
-
-<details><summary>**2.** Violin plot with jittered points</summary>
-
-```{r}
-midwest_datasets |>
-  ggplot(aes(x = state, y = poptotal)) +
-  geom_violin() +
-  geom_jitter(aes(color = category))
-```
-
-This is a local mapping:
-because the color mapping is specified inside `geom_jitter()` rather than inside `ggplot()`,
-it only applies to the points, and not to the violins.
-
-</details>
-
-<details><summary>**3.** Customized plot</summary>
-
-```{r}
-violin_plot <- midwest_datasets |>
-  ggplot(aes(x = state, y = poptotal)) +
-  geom_violin(aes(fill = state)) +
-  geom_jitter(aes(color = category)) +
-  scale_fill_manual(
-    values = c("gold", "skyblue", "salmon", "palegreen", "plum")
-  ) +
-  theme_bw()
-
-violin_plot
-```
-
-</details>
-
-<details><summary>**4.** Export the plot</summary>
-
-```{r, eval=FALSE}
-ggsave(filename = "violin_plot.png", plot = violin_plot)
-```
-
-</details>
+Render your document, and check that it includes all your plots
+and that its table of contents shows all exercises.
