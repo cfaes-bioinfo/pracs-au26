@@ -44,14 +44,12 @@ We'll use **Positron**, an IDE created by Posit,
 the company behind the popular R IDE RStudio.
 Positron is a newer alternative to RStudio, and a good fit for this course:
 
-1. It is **built on VS Code**^[
-   Specifically, on Code OSS, the open-source base of VS Code.
-   Positron is really a variant ("fork") of VS Code.],
+1. It is **built on VS Code**
    so it will look and feel very familiar (unlike RStudio).
 2. It adds **data science features** that VS Code lacks,
    like an R console, and panes for variables, plots, and help.
-3. Posit is investing heavily in Positron as its next-generation IDE
-   (RStudio is still maintained, but most new features are going into Positron).
+3. It is Posit's next-generation IDE:
+   RStudio is still maintained, but most new features go into Positron.
 4. It has much better support than RStudio for Python and for AI assistance.
 
 ::: {.callout-note collapse="true"}
@@ -85,7 +83,7 @@ and restart Positron.
 
 ### Positron at OSC
 
-Unlike VS Code Server, Positron is not available through OSC OnDemand.
+Unlike VS Code Server, Positron is not currently available through OSC OnDemand.
 Instead, you will **install Positron on your own computer**,
 and **connect it to OSC** using SSH.
 That way, only the program's interface runs on your computer:
@@ -104,8 +102,7 @@ In this session, you will:
 6. Set up Claude Code in Positron
 
 These are all **one-time setup steps**:
-there are quite a few of them, but once you're done,
-reconnecting to OSC and opening your folder will take just a single click.
+once you're done, reconnecting to your folder at OSC will take just a single click.
 
 <hr style="height:1pt; visibility:hidden;" />
 
@@ -202,19 +199,12 @@ Then, open Positron!
 
 ## Setting up the connection to OSC
 
-Because Positron is built on VS Code,
-it connects to OSC in the same way as a local VS Code installation does
-(see the [reference page dedicated to this](/bonus/vscode-local.qmd)),
-using the same SSH configuration^[
-   The only difference is that you don't need to install any extension,
-   because Positron has remote SSH support built in.].
-
 ### The SSH configuration file
 
-We will define two remote "**hosts**" at OSC that you can connect to:
+In this section, we'll define two remote "**hosts**" at OSC that you can connect to:
 
-- `osc-pitzer-login` connects to a **login node** of OSC's Pitzer cluster.
-- `osc-pitzer-compute` connects to a **compute node** of OSC's Pitzer cluster.
+- `osc-pitzer-login` connects to a Pitzer **login node**.
+- `osc-pitzer-compute` connects to a Pitzer **compute node**.
 
 Go ahead and:
 
@@ -227,8 +217,7 @@ Go ahead and:
 
 2. This will open your SSH configuration file, `~/.ssh/config`,
    which is probably empty. Paste the following into it
-   (note the separate tabs for Windows and Mac below!
-   Linux users: use the Mac version):
+   (note that there are again separate tabs for Windows and Mac/Linux below):
 
    ::: {.panel-tabset group="os"}
    ### Windows
@@ -247,7 +236,7 @@ Go ahead and:
        ProxyCommand C:/Windows/System32/OpenSSH/ssh.exe -o LogLevel=QUIET -o BatchMode=yes osc-pitzer-login ./osc-compute-proxy.sh
    ```
 
-   ### Mac
+   ### Mac or Linux
 
    ```{.file filename="&#126;/.ssh/config" hl-text="osc-username"}
    Host osc-pitzer-login
@@ -265,9 +254,7 @@ Go ahead and:
    :::
 
 3. Change **both** occurrences of [osc-username]{.hl-text} to your actual
-   **OSC username** (e.g. `User jelmer`) ---
-   this is not your OSU name.#
-   (if you're not sure, run `whoami` in a terminal at OSC).
+   **OSC username** (e.g. `User jelmer`).
 
 4. Save the file.
 
@@ -298,20 +285,23 @@ so you won't be prompted for your OSC password^[
   This is **required** for the compute node connection,
   and convenient for the login node connection and any other SSH connection to OSC.]:
 
-1. Open a terminal in Positron (`Terminal` > `New Terminal`).
+1. Open a **terminal** in Positron (`Terminal` > `New Terminal`).
 
-2. Run the following command to generate an SSH key pair^[
+2. Run the following command to **generate an SSH key pair**^[
     This terminal runs on your own computer,
     and this command works regardless of whether you're using Windows or Mac.].
    You'll be asked several questions, as shown below ---
    in each case, just press <kbd>Enter</kbd> to select the default answer.
-   (If you're instead told that the file already exists and asked whether to overwrite it,
-   type `n`: you already have a key pair, and can move on to the next step.)
 
-    ``` {.bash}
-    ssh-keygen -t ed25519
-    ```
-    ```bash-out
+   ::: {.callout-tip appearance="simple"}
+   If you're instead told that the file already exists and asked whether to
+   overwrite it, type `n` and move on to step 3.
+   :::
+
+   ``` {.bash}
+   ssh-keygen -t ed25519
+   ```
+   ```bash-out
    Generating public/private ed25519 key pair.
    Enter file in which to save the key (/Users/poelstra.1/.ssh/id_ed25519):
    Enter passphrase for "/Users/poelstra.1/.ssh/id_ed25519" (empty for no passphrase):
@@ -339,13 +329,12 @@ so you won't be prompted for your OSC password^[
    +----[SHA256]-----+
    ```
 
-3. Transfer the public key to OSC
-   (enter your OSC password when prompted):
+3. Run the command below to **transfer the public key** to OSC, and you will:
 
-   - If this is your first SSH connection to OSC from this computer,
-     you'll first be asked whether you're sure you want to continue connecting:
+   - Likely first be asked whether you're sure you want to continue connecting:
      type `yes` and press <kbd>Enter</kbd>.
-   - When typing your password, nothing will appear on screen: that's normal.
+   - Then be prompted for you **OSC password**:
+     when typing your it, *nothing* will appear on screen: that's normal.
 
    ::: {.panel-tabset group="os"}
    ### Windows
@@ -357,7 +346,7 @@ so you won't be prompted for your OSC password^[
    <user>@pitzer.osc.edu's password:
    ```
 
-   Other than the password prompt, this command doesn't print anything.
+   _(Other than the password prompt, this command doesn't print anything.)_
 
    ### Mac
    ```bash
@@ -376,10 +365,9 @@ so you won't be prompted for your OSC password^[
    ```
    :::
 
-4. Test it: the following should print OSC's login message and then the name of a Pitzer
-   login node, without asking for your password
-   (you may or may not see a warning about "post-quantum key exchange" at the top:
-   you can safely ignore it):
+4. Test it --- the following should print OSC's login message and then the name
+   of a Pitzer login node, **without** asking for your password
+   (you can ignore a warning about "post-quantum key exchange" you may see):
 
    ```bash
    ssh osc-pitzer-login hostname
@@ -407,13 +395,17 @@ so you won't be prompted for your OSC password^[
 
 ### The proxy script at OSC
 
-The compute node connection runs a short "proxy script" in your Home dir at OSC.
-Copy it there by running the following command in your Positron terminal
-(this should only print the same OSC login messages as in the previous step):
+The compute node connection runs a short "proxy script" in your OSC Home dir.
+Copy it there by running:
 
 ```bash
 ssh osc-pitzer-login 'cp /fs/ess/PAS3493/share/osc-compute-proxy.sh ~/ && chmod +x ~/osc-compute-proxy.sh'
 ```
+```bash-out
+# [Should print the same OSC login messages as in the previous step]
+```
+
+<hr style="height:1pt; visibility:hidden;" />
 
 ::: {.callout-important collapse="true"}
 #### More about the proxy script _(Click to expand)_
@@ -516,20 +508,23 @@ To make sure Positron will find R when it connects to OSC,
 we'll always load one of OSC's R modules by adding a `module load` command
 to your Bash settings file at OSC, `~/.bashrc`
 ([learn more about this file here](/bonus/shell-config.qmd)).
-
-Run the following in your Positron terminal
-(again, the output should only consist of OSC's login messages):
+Run the following in your Positron terminal:
 
 ```bash
 ssh osc-pitzer-login "echo 'module load gcc/12.3.0 R/4.6.1' >> ~/.bashrc"
 ```
+```bash-out
+# [Should print the same OSC login messages as before]
+```
+
+<hr style="height:1pt; visibility:hidden;" />
 
 ::: callout-note
 #### A module-loading message
 
 From now on, every new shell at OSC will load R,
 so whenever you open a terminal at OSC or run an `ssh` command to OSC,
-you may see the following message --- that's expected, and harmless:
+you may see the following message --- that's expected:
 
 ```bash-out-solo
 Lmod is automatically replacing "intel/2021.10.0" with "gcc/12.3.0".
@@ -553,7 +548,7 @@ edit the `module load` line in `~/.bashrc`.
 
 By default, R packages are installed at OSC by compiling them from their source code,
 which can take a *long* time.
-Instead, we'll use pre-compiled ("binary") packages from
+Instead, we'll use **pre-compiled** ("binary") packages from
 [Posit Package Manager {{< fa external-link >}}](https://packagemanager.posit.co){target="_blank"},
 which is considerably faster.
 
@@ -563,6 +558,8 @@ Run the following in your Positron terminal:
 ```bash
 ssh osc-pitzer-login 'cat /fs/ess/PAS3493/share/Rprofile >> ~/.Rprofile'
 ```
+
+<hr style="height:1pt; visibility:hidden;" />
 
 ::: {.callout-note collapse="true"}
 #### What does this add to your `~/.Rprofile`? _(Click to expand)_
@@ -608,19 +605,34 @@ Now that the SSH configuration is set up, let's try to connect Positron to OSC!
    ![](/img/positron-select-connection.png){fig-align="center" width="60%" .no-border .lightbox fig-alt="Screenshot of the list of SSH hosts to connect to."}
 
 3. Positron will connect to OSC:
-   the first time, this may take five minutes or so,
+   the first time, this may take **around five minutes**,
    because Positron needs to install its "server" component in your Home dir at OSC.
-   After that, connecting will be faster, but typically still takes 30 seconds or so,
-   because a compute job needs to be requested and started.
+   (After that, connecting will be faster, but typically still takes 30 seconds or so,
+   because a compute job needs to be requested and started.)
 
    ![](/img/positron-connecting-progress-box.png){fig-align="center" width="65%" .no-border .lightbox fig-alt="Screenshot of a notification reading 'Setting up SSH Host osc-pitzer-compute'."}
 
+   ::: {.columns}
+   ::: {.column}
+
+   There is a decent chance the connection **fails** the first time,
+   and Positron will show an error message.
+   If that happens, simply **try again**: a second attempt usually works.
+   So, run "Remote-SSH: Connect Current Window to Host..." again,
+   potentially after opening a new Positron window (`File` > `New Window`).
+
    If you're on Windows, you _may_ also get a pop-up like this --- click "Allow":
 
-   ![](/img/windows-firewall-approval.png){fig-align="center" width="45%" .no-border .lightbox fig-alt="Screenshot of a Windows Firewall pop-up asking whether to allow Positron to communicate on private and public networks."}
+   :::
+   ::: {.column}
 
-Once it has connected, let's double-check you're on a Pitzer compute node ---
-open a **terminal** in Positron (`Terminal` > `New Terminal`), and run `hostname`:
+   ![](/img/windows-firewall-approval.png){fig-align="center" width="85%" .no-border .lightbox fig-alt="Screenshot of a Windows Firewall pop-up asking whether to allow Positron to communicate on private and public networks."}
+
+   :::
+   :::
+
+Once it has connected, double-check you're on a Pitzer compute node ---
+open a **terminal** again, and run `hostname`:
 
 ```bash
 # Compute node names start with something like p0133, not with pitzer-login
@@ -633,13 +645,10 @@ p0133.ten.osc.edu
 <hr style="height:1pt; visibility:hidden;" />
 
 ::: {.callout-note collapse="true"}
-#### If the compute node connection fails or seems stuck _(Click to expand)_
+#### If the compute node connection continues to fail or seems stuck _(Click to expand)_
 
-First, simply **try again**:
-a first connection attempt regularly fails,
-while the second one works.
-
-If it fails again, find out which part of the connection fails
+If the connection doesn't work even though you've tried several times,
+find out which part of the connection fails
 by running these commands in a terminal on your own computer
 (open a new Positron window with `File` > `New Window` if needed):
 
@@ -647,10 +656,12 @@ by running these commands in a terminal on your own computer
   without asking for your password.
   If it asks for a password, redo the [SSH key step](#avoid-being-prompted-for-your-osc-password).
   If it errors, check the username in your SSH configuration file.
+
 - `ssh osc-pitzer-compute hostname` should print a compute node name
   (after up to a minute or so).
   If it fails, make sure the proxy script exists:
   `ssh osc-pitzer-login ls -l osc-compute-proxy.sh`.
+
 - If both commands work but Positron still can't connect,
   Positron's server component at OSC may be broken.
   This can happen when its installation was interrupted,
@@ -682,7 +693,11 @@ and OSC prefers that you don't do this.
 
 1. In the top-right corner of the window, you should see `R 4.6.1`,
    as shown in the top screenshot.
-   _(If instead you're seeing "Start Session", as in the bottom screenshot, see the box below.)_
+
+   <hr style="height:50pt; visibility:hidden;" />
+
+   _If instead you're seeing "Start Session", as in this bottom screenshot_
+   _on the right, see the orange box below._
 
 :::
 ::: {.column width="40%"}
@@ -730,7 +745,7 @@ Positron really wants you to **open a folder**,
 even more so than VS Code (you'll learn why that is a good idea in the next lecture).
 
 Open your personal dir, `/fs/ess/PAS3493/people/<user>`,
-by clicking the "Open Folder" button in the Explorer,
+by clicking the "**Open Folder**" button in the Explorer,
 shown in the screenshot on the right
 (open the Explorer first if needed)^[
    Or you can use `File` > `Open Folder` like you're used to in VS Code.].
@@ -743,12 +758,12 @@ shown in the screenshot on the right
 :::
 :::
 
-Like in VS Code, you'll have to "Trust" a folder for full access ---
-in Positron, this is essential, because R won't start in an untrusted folder:
+Like in VS Code, you'll have to "Trust" a folder for full access^[
+   In Positron, this is essential, because R won't start in an untrusted folder]:
 
 1. In the banner at the top, shown in the screenshot below, click "Manage".
 
-   ![](/img/positron-restricted-mode-banner.png){fig-align="center" width="92%" .lightbox fig-alt="Screenshot of the Restricted Mode banner, with 'Manage' and 'Learn More' links."}
+   ![](/img/positron-restricted-mode-banner.png){fig-align="center" width="95%" .lightbox fig-alt="Screenshot of the Restricted Mode banner, with 'Manage' and 'Learn More' links."}
 
 2. In the dialog that appears, click "Trust" and close the dialog.
 
@@ -773,6 +788,10 @@ and you'll use it throughout the R part of the course.
    that you already set up, so there is no need to add your API key again.
 3. [Open Claude like in VS Code](/week09/w9a_claude.qmd#open-claude),
    and check that it responds to a prompt.
+
+<hr style="height:1pt; visibility:hidden;" />
+
+-----
 
 <hr style="height:1pt; visibility:hidden;" />
 
