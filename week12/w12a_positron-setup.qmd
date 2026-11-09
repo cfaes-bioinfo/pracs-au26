@@ -215,6 +215,39 @@ Go ahead and:
 
    ![](/img/positron-remote-open-in-command-palette.png){fig-align="center" width="70%" .lightbox fig-alt="Screenshot of the Positron Command Palette with 'remote open' typed in, showing the command 'Remote-SSH: Open SSH Configuration File...' as the top result."}
 
+   ::: {.callout-warning collapse="true"}
+   #### Error: "ENOENT: no such file or directory"? _(Click to expand)_
+   If you get an error like the one below,
+   the folder for your SSH configuration file, `~/.ssh`, doesn't exist yet:
+
+   ```bash-out-solo
+   Error running command openremotessh.explorer.configure: A system error occurred (ENOENT: no such file or directory, open '.../.ssh/config')
+   ```
+
+   Open a **terminal** in Positron (`Terminal` > `New Terminal`),
+   and create the folder:
+
+   ::: {.panel-tabset group="os"}
+   ### Windows
+
+   ```powershell
+   mkdir -Force ~/.ssh
+   ```
+
+   ### Mac or Linux
+
+   ```bash
+   mkdir -p ~/.ssh
+   ```
+   :::
+
+   <hr style="height:1pt; visibility:hidden;" />
+
+   Then, run "Remote-SSH: Open SSH Configuration File..." again.
+
+   <hr style="height:1pt; visibility:hidden;" />
+   :::
+
 2. This will open your SSH configuration file, `~/.ssh/config`,
    which is probably empty. Paste the following into it
    (note that there are again separate tabs for Windows and Mac/Linux below):
@@ -256,7 +289,12 @@ Go ahead and:
 3. Change **both** occurrences of [osc-username]{.hl-text} to your actual
    **OSC username** (e.g. `User jelmer`).
 
-4. Save the file.
+4. Make sure to **save the file**:
+   file changes are **not** auto-saved in Positron, by default.
+   Press the disk icon ({{< fa floppy-disk >}})
+   or <kbd>Cmd/Ctrl</kbd>+<kbd>S</kbd> to save your changes.
+
+<hr style="height:1pt; visibility:hidden;" />
 
 ::: {.callout-tip collapse="true"}
 #### Why is the compute node entry in the config file so complicated? _(Click to expand)_
@@ -347,6 +385,30 @@ so you won't be prompted for your OSC password^[
    ```
 
    _(Other than the password prompt, this command doesn't print anything.)_
+
+   ::: {.callout-warning collapse="true"}
+   #### Error: "Bad owner or permissions on ... .ssh/config"? _(Click to expand)_
+   On some Windows computers, an extra user group has access to all files
+   in your user folder, including your SSH configuration file.
+   SSH then refuses to use the file, with an error like:
+
+   ```bash-out-solo
+   Bad permissions. Try removing permissions for user: <computer>\SSUserGroup (...) on file C:/Users/<user>/.ssh/config.
+   Bad owner or permissions on C:\\Users\\<user>/.ssh/config
+   ```
+
+   To fix this, run the following two commands,
+   which make sure that only you have access to the file:
+
+   ```powershell
+   icacls "$env:USERPROFILE\.ssh\config" /inheritance:r
+   icacls "$env:USERPROFILE\.ssh\config" /grant:r "$($env:USERNAME):F"
+   ```
+
+   Then, run the `cat ... | ssh ...` command above again.
+   If you later get a similar error about `id_ed25519`,
+   run the same two commands with `config` replaced by `id_ed25519`.
+   :::
 
    ### Mac
    ```bash
