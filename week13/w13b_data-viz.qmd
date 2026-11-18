@@ -58,21 +58,24 @@ In this lecture, you will learn:
 - How to change the order of categories in a plot
 - How to export plots in different formats
 
-## Setting up
-
-### A new Quarto document
+### Setting up
 
 With your `week13` folder open in Positron,
-create a new Quarto document `week13b.qmd`, and add a YAML header.
+[Create a new Quarto document](/week12/w12b_r-basics.html#creating-a-quarto-document)
+`week13b.qmd`, and modify the YAML header.
 
-In it, load the _tidyverse_, which includes _ggplot2_:
+## Package and data prep
+
+### Load the tidyverse
+
+Load the _tidyverse_, which includes _ggplot2_:
 
 ```{r}
 #| message: false
 library(tidyverse)
 ```
 
-### The data
+### Read the input data
 
 We'll use the gene count table and the metadata from Monday:
 
@@ -90,6 +93,8 @@ counts <- read_tsv(
 )
 meta <- read_tsv("../assets/week13/metadata.tsv")
 ```
+
+### Prep the input data
 
 As on Monday, we'll reshape the count table to long format,
 and then add the treatment and time point of each sample with a join:
@@ -123,6 +128,8 @@ adding these columns to `.by` still gives one row per sample,
 but keeps the `treatment` and `time` columns in the output.
 
 ## Creating a ggplot
+
+### ggplot components
 
 A basic ggplot has three components:
 
@@ -272,7 +279,7 @@ sample_stats |>
 ---->
 
 - Create a scatter plot with `lib_size_M` on the x-axis and `n_detected` on the y-axis.
-  Color the points by `treatment`, and map `time` to the shape of the points.
+  Color the points by `treatment`, and map `time` to the shape (`shape`) of the points.
 
 <!----
 <details>
@@ -331,10 +338,12 @@ sample_stats |>
   geom_smooth(method = "lm")
 ```
 
+::: {.callout-note appearance="simple"}
 With `method = "lm"`, the trend line is a straight line from a linear model
 (the default is a curved line).
 The message about the `formula` just tells you how the line was fitted,
 and you can ignore it.
+:::
 
 Above, we mapped `color = treatment` at the **global** level inside `ggplot()`,
 so both the points and the lines are colored by treatment,
@@ -443,7 +452,7 @@ sample_stats |>
   ggplot(aes(x = lib_size_M, y = n_detected)) |>
   geom_point(color = red) +
   labs(title = "Library size versus detected genes")
-  theme_bw()
+theme_bw()
 ```
 
 <!----
@@ -484,9 +493,11 @@ also covers histograms and a different way to make bar graphs.
 For more examples, see the
 [ggplot2 cheat sheet {{< fa external-link >}}](https://rstudio.github.io/cheatsheets/data-visualization.pdf){target="_blank"}.
 
-One general observation is that once you know the basic syntax of *ggplot*,
+::: {.callout-tip appearance="simple"}
+Once you know the basic syntax of *ggplot*,
 it is relatively easy to make many different types of plots because of the package's
 consistent grammar.
+:::
 
 ### Bar graphs with `geom_col()`
 
@@ -534,9 +545,11 @@ sample_stats |>
 
 The _relictum_ samples have slightly larger libraries,
 and library sizes vary a lot among the control samples.
-But each box contains samples from both time points:
-to split the boxes by time point, we can map `time` to an aesthetic as before.
+But each box contains samples from both time points.
 
+
+To create **separate boxes for each time point**,
+we can map `time` to an aesthetic as before.
 We'll use the `fill` aesthetic to color the boxes by time point.
 For "filled" shapes like boxes, `color` only changes the outline,
 while `fill` changes the inside:
