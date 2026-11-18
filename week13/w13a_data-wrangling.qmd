@@ -69,7 +69,8 @@ from the RNA-seq data set that you've been working with.
    like in the [previous lecture](/week12/w12b_r-basics.qmd#setup-starting-positron-and-connecting-to-osc).
 2. Create a new folder `week13` in your personal dir,
    and [open it in Positron](/week12/w12b_r-basics.qmd#working-directory-and-opening-a-folder).
-3. Create a new Quarto document `week13a.qmd` in it, and add a YAML header.
+3. [Create a new Quarto document](/week12/w12b_r-basics.html#creating-a-quarto-document)
+   `week13a.qmd` in the `week13` folder, and modify the YAML header.
 
 ## Vectors and data types
 
@@ -193,7 +194,7 @@ the second element by the second element, and so on.
 :::
 
 ::: exercise
-#### {{< fa user-edit >}} Self-study exercise: Gene lengths in base pairs
+#### {{< fa user-edit >}} Self-study exercise 1: Gene lengths in base pairs
 
 Now say that you have gene lengths in base pairs instead:
 
@@ -340,7 +341,7 @@ R will read the whole column as `character`.
 :::
 
 ::: exercise
-#### {{< fa user-edit >}} Self-study exercise: Data types
+#### {{< fa user-edit >}} Self-study exercise 2: Data types
 
 For each line of code below, what do you think the data type (if any) will be?
 Try it out and see if you were right.
@@ -494,6 +495,54 @@ it will use the _dplyr_ function and not the _stats_ function.
 You _can_ use a "masked" function,
 by prefacing it with its package name as follows: `stats::filter()`.
 :::
+
+::: {.callout-note collapse="true"}
+### The tidyverse as a "dialect" of R _(Click to expand)_
+
+The tidyverse is often described as a "dialect" of R:
+it provides alternative ways of doing many things that you can also do in base R,
+with functions that share a consistent syntax and are designed to work together.
+Neither way is "wrong", and the two can be freely mixed,
+so you'll likely come across both styles in R code you find online.
+
+For example, here is how to subset rows and columns of a `counts` data frame
+(which you'll create below) in each style:
+
+::: {.columns}
+::: {.column width="48%"}
+**Base R**
+
+```r
+# Keep only the row for the gene ATP6:
+counts[counts$gene_id == "ATP6", ]
+```
+
+```r
+# Keep only two columns:
+counts[, c("gene_id", "S63")]
+```
+
+:::
+::: {.column width="2%"}
+:::
+::: {.column width="50%"}
+**Tidyverse**
+
+```r
+# Keep only the row for the gene ATP6:
+filter(counts, gene_id == "ATP6")
+```
+
+```r
+# Keep only two columns:
+select(counts, gene_id, S63)
+```
+
+:::
+:::
+
+:::
+
 
 ### Today's key tidyverse functions
 
@@ -974,7 +1023,7 @@ lib_sizes
 ```
 
 :::exercise
-#### {{< fa user-edit >}} Self-study exercise: `summarize()`
+#### {{< fa user-edit >}} Self-study exercise 3: `summarize()`
 
 Compute the number of genes with zero counts for each sample.
 (Hint: recall how you [counted elements that meet a condition](#comparing-things).)
@@ -1136,16 +1185,79 @@ lib_sizes |>
 The _relictum_ samples have somewhat larger libraries on average.
 
 ::: exercise
-#### {{< fa user-edit >}} Exercise 3: Summarizing by two variables
+#### {{< fa user-edit >}} Exercise 3: Which function?
+
+For each task below, which of these functions would you use?
+
+a) `select()`
+b) `filter()`
+c) `mutate()`
+d) `summarize()`
+e) `left_join()`
+
+1. Keep only the rows of `meta` for the samples collected at 10 dpi.
+
+    <!----
+    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+    **b)** `filter()`, because you're keeping rows based on a condition:
+
+    ```{r}
+    meta |> filter(time == "10dpi")
+    ```
+
+    </details>
+    ---->
+
+2. Compute the mean count of each gene across all samples, starting from `counts_long`.
+
+    <!----
+    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+    **d)** `summarize()`, with `.by = gene_id`,
+    because you're collapsing the rows of each gene into a single value:
+
+    ```{r}
+    counts_long |> summarize(mean_count = mean(count), .by = gene_id)
+    ```
+
+    </details>
+    ---->
+
+3. Add a column with each sample's library size to `counts_long`.
+
+    <!----
+    <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
+
+    **e)** `left_join()`, because the library sizes are in a different data frame,
+    `lib_sizes`.
+    Each row of `lib_sizes` matches all rows of `counts_long` for that sample:
+
+    ```{r}
+    counts_long |> left_join(lib_sizes, by = "sample_id")
+    ```
+
+    </details>
+    ---->
+
+:::
+
+::: exercise
+#### {{< fa user-edit >}} Self-study exercise 4: Summarizing by two variables
 
 Each treatment includes samples from two time points.
 Modify the code above to compute the mean library size
 for each combination of treatment and time point.
+
 Do the library sizes of the control samples look the same at both time points?
 
-(Hint: recall how you combine multiple values into a vector.)
+<details><summary>{{< fa lightbulb >}} &nbsp; _Click to see a hint_</summary>
 
-<!----
+The `.by` argument accepts a vector of column names:
+recall how you combine multiple values into a vector.
+
+</details>
+
 <details><summary>{{< fa check-circle >}} &nbsp; _Click to see the solution_</summary>
 
 ```{r}
@@ -1159,11 +1271,33 @@ but the smallest at 10 dpi (15.3 million).
 So the low mean for the control treatment is entirely due to the 10 dpi samples.
 
 </details>
----->
 :::
 
+## Writing to files
+
+To write a data frame to a TSV file, you can use the `write_tsv()` function,
+with argument `x` for the R object and argument `file` for the file path ---
+for example, to save the library sizes:
+
+```{r eval=FALSE}
+write_tsv(x = lib_sizes, file = "lib_sizes.tsv")
+```
+
+If you want to take a look at the file you just created,
+find it in the **Explorer** and click on it.
+Positron opens CSV and TSV (and even Excel) files in the Data Explorer,
+just like a data frame:
+
+![](/img/positron-data-explorer-from-file.png){fig-align="center" width="90%" .lightbox .no-border fig-alt="Screenshot of the Data Explorer showing the lib_sizes.tsv file."}
+
+This is a quick way to look at any data file without reading it into R,
+for example to check its column names before you read it.
+To see the plain text instead,
+click the "Open as Plain Text File" button at the top of the Data Explorer.
+
+
 ::: exercise
-#### {{< fa user-edit >}} Self-study exercise: Reading Claude's code
+#### {{< fa user-edit >}} Self-study exercise 5: Reading Claude's code
 
 Code that Claude writes for you is only useful if you can read it.
 Here, you'll practice with code that uses today's functions.
@@ -1230,28 +1364,6 @@ Here, you'll practice with code that uses today's functions.
 
    </details>
 :::
-
-## Writing to files
-
-To write a data frame to a TSV file, you can use the `write_tsv()` function,
-with argument `x` for the R object and argument `file` for the file path ---
-for example, to save the library sizes:
-
-```{r eval=FALSE}
-write_tsv(x = lib_sizes, file = "lib_sizes.tsv")
-```
-
-If you want to take a look at the file you just created,
-find it in the **Explorer** and click on it.
-Positron opens CSV and TSV (and even Excel) files in the Data Explorer,
-just like a data frame:
-
-![](/img/positron-data-explorer-from-file.png){fig-align="center" width="90%" .lightbox .no-border fig-alt="Screenshot of the Data Explorer showing the lib_sizes.tsv file."}
-
-This is a quick way to look at any data file without reading it into R,
-for example to check its column names before you read it.
-To see the plain text instead,
-click the "Open as Plain Text File" button at the top of the Data Explorer.
 
 ## Recap
 
